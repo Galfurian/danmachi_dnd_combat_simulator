@@ -1,17 +1,15 @@
-from abc import abstractmethod
-from asyncio import shield
 from copy import deepcopy
-from logging import error, warning, info, debug
-import logging
-import json
+from logging import error, warning
 from cli_prompt import PromptToolkitCLI
-from character import Character
+from character import *
 from effect import *
 from actions import *
 from combat_manager import CombatManager
 from rich.console import Console
 from rich.rule import Rule
-from collections import Counter, defaultdict
+from collections import Counter
+
+import logging
 
 """Sets up basic logging configuration."""
 logging.basicConfig(
@@ -36,103 +34,95 @@ console.print(
     style="bold blue",
 )
 
+
+# =============================================================================
+
 console.print(Rule("Loading Weapons", style="bold green"))
 
 # Load weapons.
-weapons: dict[str, WeaponAttack] = {}
-with open("data/weapon_data.json", "r") as f:
-    weapon_data = json.load(f)
-    for entry in weapon_data:
-        weapon = BaseAction.from_dict(entry)
-        weapons[weapon.name] = weapon
-        print(f"Loaded weapon: {weapon.name}")
+weapons = load_actions("data/weapon_data.json")
+for weapon_name, weapon in weapons.items():
+    print(f"    Loaded weapon: {weapon_name}")
+
+# =============================================================================
 
 console.print(Rule("Loading Armor", style="bold green"))
 
 # Load armor data.
-armors: dict[str, Armor] = {}
-with open("data/armor_data.json", "r") as f:
-    armor_data = json.load(f)
-    for entry in armor_data:
-        armor = Armor.from_dict(entry)
-        armors[armor.name] = armor
-        print(f"Loaded armor: {armor.name}")
+armors = load_effects("data/armor_data.json")
+for armor_name, armor in armors.items():
+    print(f"    Loaded armor: {armor_name}")
+
+# =============================================================================
 
 console.print(Rule("Loading Spells", style="bold green"))
 
 # Load spells.
-spells: dict[str, Spell] = {}
+spells: dict[str, BaseAction] = {}
 
 # Load SpellAttack.
-with open("data/spell_attack_data.json", "r") as f:
-    spell_attack_data = json.load(f)
-    for entry in spell_attack_data:
-        spell = SpellAttack.from_dict(entry)
-        spells[spell.name] = spell
-        print(f"Loaded spell attack: {spell.name}")
-
+spells.update(load_actions("data/spell_attack_data.json"))
 # Load SpellHeal.
-with open("data/spell_heal_data.json", "r") as f:
-    spell_heal_data = json.load(f)
-    for entry in spell_heal_data:
-        spell = SpellHeal.from_dict(entry)
-        spells[spell.name] = spell
-        print(f"Loaded spell heal: {spell.name}")
-
+spells.update(load_actions("data/spell_heal_data.json"))
 # Load SpellBuff.
-with open("data/spell_buff_data.json", "r") as f:
-    spell_buff_data = json.load(f)
-    for entry in spell_buff_data:
-        spell = SpellBuff.from_dict(entry)
-        spells[spell.name] = spell
-        print(f"Loaded spell buff: {spell.name}")
-
+spells.update(load_actions("data/spell_buff_data.json"))
 # Load SpellDebuff.
-with open("data/spell_debuff_data.json", "r") as f:
-    spell_debuff_data = json.load(f)
-    for entry in spell_debuff_data:
-        spell = SpellDebuff.from_dict(entry)
-        spells[spell.name] = spell
-        print(f"Loaded spell debuff: {spell.name}")
+spells.update(load_actions("data/spell_debuff_data.json"))
+
+for spell_name, spell in spells.items():
+    print(f"    Loaded spell {spell.type:<12}: {spell_name}")
+
+# =============================================================================
 
 console.print(Rule("Loading Character Classes", style="bold green"))
 
 # Load character classes.
-classes: dict[str, CharacterClass] = {}
-with open("data/character_classes.json", "r") as f:
-    class_data = json.load(f)
-    for entry in class_data:
-        character_class = CharacterClass.from_dict(entry)
-        classes[character_class.name] = character_class
-        print(f"Loaded character class: {character_class.name}")
+classes = load_character_classes("data/character_classes.json")
+for class_name, class_data in classes.items():
+    print(
+        f"    Loaded class: {class_name} (hp_mult: {class_data.hp_mult}, mind_mult: {class_data.mind_mult})"
+    )
 
-registries = {
+# =============================================================================
+
+console.print(Rule("Loading Character Races", style="bold green"))
+
+# Load character races.
+races = load_character_races("data/character_races.json")
+for race_name, race_data in races.items():
+    print(f"    Loaded race: {race_name} (base_ac_bonus: {race_data.base_ac_bonus})")
+
+# =============================================================================
+
+registries: dict[str, Any] = {
     "weapons": weapons,
     "armors": armors,
     "spells": spells,
     "classes": classes,
+    "races": races,
     "actions": {},
 }
 
+# =============================================================================
+
+console.print(Rule("Loading Enemies", style="bold green"))
+
 # Load the enemies.
-enemies: dict[str, Character] = {}
-with open("data/enemies.json", "r") as f:
-    enemy_data = json.load(f)
-    for entry in enemy_data:
-        enemy = Character.from_dict(entry, registries)
-        enemies[enemy.name] = enemy
-        print(f"Loaded enemy: {enemy.name}")
+enemies = load_characters("data/enemies_danmachi_f1_f10.json", registries)
+for enemy_name, enemy in enemies.items():
+    print(f"    Loaded enemy: {enemy_name} (hp: {enemy.hp}, ac: {enemy.ac})")
+
+# =============================================================================
+
+console.print(Rule("Loading Player Character", style="bold green"))
 
 # Load the player character.
-player: Character = None
-with open("data/player.json", "r") as f:
-    player_data = json.load(f)
-    player = Character.from_dict(player_data, registries)
-    print(f"Loaded player character: {player.name}")
-
+player = load_player_character("data/player.json", registries)
 if player is None:
-    error("Player character could not be loaded. Please check the player data file.")
+    error("Failed to load player character. Please check the data file.")
     exit(1)
+
+# =============================================================================
 
 # Initialize the list of opponents, and a supporting function to add them.
 opponents: list[Character] = []
@@ -155,7 +145,7 @@ def make_opponents_names_unique():
     # Count how many times each base name appears
     name_counts = Counter(o.name for o in opponents)
     # Track how many times we've seen each base name so far
-    seen = Counter()
+    seen: Counter[str] = Counter()
     for opponent in opponents:
         base = opponent.name
         if name_counts[base] > 1:
@@ -167,10 +157,10 @@ if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
 
-    add_opponent("Goblin")
-    add_opponent("Goblin")
-    add_opponent("Goblin")
-    add_opponent("Orc Shaman")
+    # add_opponent("Goblin")
+    # add_opponent("Goblin")
+    # add_opponent("Goblin")
+    add_opponent("Infant Dragon")
 
     make_opponents_names_unique()
 

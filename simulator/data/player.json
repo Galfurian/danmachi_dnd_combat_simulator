@@ -1,30 +1,170 @@
 {
     "name": "Zephyros",
-    "is_player": true,
+    "is_ally": true,
+    "race": "Aasimar",
     "levels": {
-        "Paladin": 2,
-        "Sorcerer": 3
+        "Paladin": 3,
+        "Sorcerer": 4
     },
     "stats": {
         "strength": 14,
-        "dexterity": 12,
-        "constitution": 14,
-        "intelligence": 10,
-        "wisdom": 12,
+        "dexterity": 15,
+        "constitution": 15,
+        "intelligence": 16,
+        "wisdom": 14,
         "charisma": 18
     },
     "spellcasting_ability": "charisma",
-    "equipped_weapons": [
-        "Longsword"
-    ],
     "equipped_armor": [
-        "Chainmail"
+        {
+            "type": "Armor",
+            "name": "Chainmail",
+            "ac_bonus": 16,
+            "armor_slot": "TORSO"
+        },
+        {
+            "type": "Armor",
+            "name": "Steel Shield",
+            "ac_bonus": 2,
+            "armor_slot": "SHIELD"
+        },
+        {
+            "type": "Armor",
+            "name": "Defense Style",
+            "ac_bonus": 1,
+            "armor_slot": "COMBAT_STYLE"
+        }
     ],
-    "active_effects": [],
-    "actions": [],
+    "equipped_weapons": [
+        {
+            "class": "WeaponAttack",
+            "name": "Longsword",
+            "type": "STANDARD",
+            "hands_required": 1,
+            "attack_roll": "1D20+[STR]",
+            "damage_components": [
+                {
+                    "roll": "1D8+[STR]",
+                    "type": "SLASHING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Fine Shortsword",
+            "type": "STANDARD",
+            "hands_required": 1,
+            "attack_roll": "1D20+[DEX]+1",
+            "damage_components": [
+                {
+                    "roll": "1D6+[DEX]+1",
+                    "type": "PIERCING"
+                }
+            ]
+        }
+    ],
     "spells": [
-        "Burning Hands",
-        "Healing Word",
-        "Blessing of Valor"
+        {
+            "class": "SpellAttack",
+            "name": "Sacred Flame",
+            "type": "STANDARD",
+            "level": 0,
+            "mind": 0,
+            "damage_type": "RADIANT",
+            "damage_roll": "1D8"
+        },
+        {
+            "class": "SpellHeal",
+            "name": "Healing Word",
+            "type": "BONUS",
+            "level": 1,
+            "mind": 1,
+            "heal_roll": "[MIND]D4+([CHA]*[MIND])"
+        },
+        {
+            "class": "SpellBuff",
+            "name": "Bless",
+            "type": "STANDARD",
+            "level": 1,
+            "mind": 1,
+            "effect": {
+                "type": "Buff",
+                "name": "Bless",
+                "mind": 1,
+                "max_duration": 3,
+                "modifiers": {
+                    "ATTACK_BONUS": "1D4"
+                }
+            }
+        },
+        {
+            "class": "SpellBuff",
+            "name": "Shield of Faith",
+            "type": "BONUS",
+            "level": 1,
+            "mind": 1,
+            "effect": {
+                "type": "Buff",
+                "name": "Shield of Faith",
+                "mind": 1,
+                "max_duration": 10,
+                "modifiers": {
+                    "AC": "2"
+                }
+            }
+        },
+        {
+            "class": "SpellHeal",
+            "name": "Cure Wounds",
+            "type": "STANDARD",
+            "level": 1,
+            "mind": 1,
+            "heal_roll": "[MIND]D8+([CHA]*[MIND])"
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Searing Smite",
+            "type": "BONUS",
+            "level": 1,
+            "mind": 1,
+            "damage_type": "FIRE",
+            "damage_roll": "1D6"
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Wrathful Smite",
+            "type": "BONUS",
+            "level": 1,
+            "mind": 1,
+            "damage_type": "PSYCHIC",
+            "damage_roll": "1D6"
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Divine Smite",
+            "type": "STANDARD",
+            "level": 1,
+            "mind": 1,
+            "damage_type": "RADIANT",
+            "damage_roll": "2D8"
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Firebolt",
+            "type": "STANDARD",
+            "level": 0,
+            "mind": 0,
+            "damage_type": "FIRE",
+            "damage_roll": "1D10"
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Shatter",
+            "type": "STANDARD",
+            "level": 2,
+            "mind": 2,
+            "damage_type": "THUNDER",
+            "damage_roll": "3D8"
+        }
     ]
 }

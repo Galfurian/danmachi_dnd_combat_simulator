@@ -1,8 +1,11 @@
-from logging import info, debug, warning, error
-from typing import Any, Dict, List
+import json
+from logging import debug, warning
+from typing import Any
 from rich.console import Console
 
 from constants import *
+from actions import BaseAction
+from effect import Effect
 from utils import *
 
 
@@ -14,7 +17,9 @@ class ActiveEffect:
         self.source: "Character" = source
         self.effect: "Effect" = effect
         self.mind_level: int = mind_level
-        self.duration: int = effect.duration
+        self.duration: int = effect.max_duration
+
+        assert self.duration > 0, "ActiveEffect duration must be greater than 0."
 
 
 class CharacterClass:
@@ -23,11 +28,11 @@ class CharacterClass:
         self.hp_mult: int = hp_mult
         self.mind_mult: int = mind_mult
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the CharacterClass instance to a dictionary.
 
         Returns:
-            Dict[str, Any]: The dictionary representation of the CharacterClass instance.
+            dict[str, Any]: The dictionary representation of the CharacterClass instance.
         """
         return {
             "name": self.name,
@@ -36,7 +41,7 @@ class CharacterClass:
         }
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "CharacterClass":
+    def from_dict(data: dict[str, Any]) -> "CharacterClass":
         """Creates a CharacterClass instance from a dictionary.
 
         Args:
@@ -52,25 +57,62 @@ class CharacterClass:
         )
 
 
+class CharacterRace:
+    def __init__(self, name: str, base_ac_bonus: int = 0):
+        self.name = name
+        self.base_ac_bonus = base_ac_bonus
+
+    def to_dict(self) -> dict[str, Any]:
+        """Converts the CharacterRace instance to a dictionary.
+
+        Returns:
+            dict[str, Any]: The dictionary representation of the CharacterRace instance.
+        """
+        return {
+            "name": self.name,
+            "base_ac_bonus": self.base_ac_bonus,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "CharacterRace":
+        """Creates a CharacterRace instance from a dictionary.
+
+        Args:
+            data (dict): The dictionary representation of the CharacterRace.
+
+        Returns:
+            CharacterRace: The CharacterRace instance.
+        """
+        return CharacterRace(
+            name=data["name"],
+            base_ac_bonus=data.get("base_ac_bonus", 0),
+        )
+
+
 class Character:
     def __init__(
         self,
         name: str,
-        levels: Dict[CharacterClass, int],
+        race: CharacterRace,
+        levels: dict[CharacterClass, int],
         strength: int,
         dexterity: int,
         constitution: int,
         intelligence: int,
         wisdom: int,
         charisma: int,
-        spellcasting_ability: str,
+        spellcasting_ability: Optional[str] = None,
     ):
-        # Determines if the character is a player or an NPC.
-        self.is_player = False
+        # Determines if the character is an ally or an enemy.
+        self.is_ally = False
         # Name of the character.
         self.name: str = name
+        # The character race.
+        self.race: CharacterRace = race
+        # The character's class levels.
+        self.levels: dict[CharacterClass, int] = levels
         # Stats.
-        self.stats: Dict[str, int] = {
+        self.stats: dict[str, int] = {
             "strength": strength,
             "dexterity": dexterity,
             "constitution": constitution,
@@ -78,12 +120,10 @@ class Character:
             "wisdom": wisdom,
             "charisma": charisma,
         }
-        # Resources.
-        self.levels: Dict[CharacterClass, int] = levels
         # Set Armor CharacterClass and Initiative.
         self.ac: int = 0
         # Spellcasting Ability.
-        self.spellcasting_ability: str = spellcasting_ability
+        self.spellcasting_ability: Optional[str] = spellcasting_ability
         # Calculate hp and mind based on class multipliers.
         self.hp_max: int = 0
         self.mind_max: int = 0
@@ -106,14 +146,14 @@ class Character:
         # List of active effects.
         self.active_effects: list[ActiveEffect] = []
         # List of actions.
-        self.actions: Dict[str, Any] = {}
+        self.actions: dict[str, Any] = {}
         # List of spells
-        self.spells: Dict[str, Any] = {}
+        self.spells: dict[str, Any] = {}
         # Modifiers
-        self.attack_modifiers: Dict[str, str] = {}
-        self.damage_modifiers: Dict[str, str] = {}
+        self.attack_modifiers: dict[str, str] = {}
+        self.damage_modifiers: dict[str, str] = {}
         # Turn flags to track used actions.
-        self.turn_flags: Dict[str, bool] = {
+        self.turn_flags: dict[str, bool] = {
             "standard_action_used": False,
             "bonus_action_used": False,
         }
@@ -352,8 +392,23 @@ class Character:
             if active.effect == effect:
                 return True
         return False
+    
+    def get_remaining_effect_duration(self, effect: Any) -> int:
+        """
+        Returns the remaining duration of a specific effect on the character.
+        
+        Args:
+            effect (Effect): The effect to check.
+        
+        Returns:
+            int: The remaining duration of the effect, or 0 if not found.
+        """
+        for active in self.active_effects:
+            if active.effect == effect:
+                return active.duration
+        return 0
 
-    def can_equip_weapon(self, weapon) -> bool:
+    def can_equip_weapon(self, weapon: Any) -> bool:
         """
         Checks if the character can equip a specific weapon.
 
@@ -363,9 +418,14 @@ class Character:
         Returns:
             bool: True if the weapon can be equipped, False otherwise.
         """
+        if not hasattr(weapon, "hands_required"):
+            warning(
+                f"{self.name} cannot equip {weapon.name} because it is not a valid weapon."
+            )
+            return False
         return (self.hands_used + weapon.hands_required) <= self.total_hands
 
-    def can_equip_armor(self, armor) -> bool:
+    def can_equip_armor(self, armor: Any) -> bool:
         """Checks if the character can equip a specific armor.
 
         Args:
@@ -374,6 +434,11 @@ class Character:
         Returns:
             bool: True if the armor can be equipped, False otherwise.
         """
+        if not hasattr(armor, "armor_slot"):
+            warning(
+                f"{self.name} cannot equip {armor.name} because it is not a valid armor."
+            )
+            return False
         # Check if the armor slot is already occupied.
         for equipped in self.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
@@ -384,12 +449,17 @@ class Character:
         # If the armor slot is not occupied, we can equip it.
         return True
 
-    def equip_weapon(self, weapon) -> None:
+    def equip_weapon(self, weapon: Any) -> bool:
         """Equips a weapon to the character's weapon slots.
 
         Args:
             weapon (Weapon): The weapon to equip.
         """
+        if not hasattr(weapon, "hands_required"):
+            warning(
+                f"{self.name} cannot equip {weapon.name} because it is not a valid weapon."
+            )
+            return False
         if self.can_equip_weapon(weapon):
             self.equipped_weapons.append(weapon)
             self.hands_used += weapon.hands_required
@@ -397,12 +467,17 @@ class Character:
         warning(f"{self.name} does not have enough free hands to equip {weapon.name}.")
         return False
 
-    def remove_weapon(self, weapon) -> None:
+    def remove_weapon(self, weapon: Any) -> bool:
         """Removes a weapon from the character's equipped weapons.
 
         Args:
             weapon (Weapon): The weapon to remove.
         """
+        if not hasattr(weapon, "hands_required"):
+            warning(
+                f"{self.name} cannot remove {weapon.name} because it is not a valid weapon."
+            )
+            return False
         if weapon in self.equipped_weapons:
             debug(f"Unequipping weapon: {weapon.name} from {self.name}")
             self.equipped_weapons.remove(weapon)
@@ -411,34 +486,52 @@ class Character:
         warning(f"{self.name} does not have {weapon.name} equipped.")
         return False
 
-    def add_armor(self, armor) -> None:
+    def add_armor(self, armor: Any) -> bool:
         """
         Adds an armor effect to the character's list of equipped armor.
         """
+        if not hasattr(armor, "armor_slot"):
+            warning(
+                f"{self.name} cannot equip {armor.name} because it is not a valid armor."
+            )
+            return False
         if self.can_equip_armor(armor):
             debug(f"Equipping armor: {armor.name} for {self.name}")
             # Add the armor to the character's armor list.
             self.equipped_armor.append(armor)
             # Apply the armor's effects to the character.
             armor.wear(self)
+            return True
+        warning(
+            f"{self.name} cannot equip {armor.name} because the armor slot is already occupied."
+        )
+        return False
 
-    def remove_armor(self, armor) -> None:
+    def remove_armor(self, armor: Any) -> bool:
         """
         Removes an armor effect from the character's list of equipped armor.
         """
+        if not hasattr(armor, "armor_slot"):
+            warning(
+                f"{self.name} cannot unequip {armor.name} because it is not a valid armor."
+            )
+            return False
         if armor in self.equipped_armor:
             debug(f"Unequipping armor: {armor.name} from {self.name}")
             # Remove the armor from the character's armor list.
             self.equipped_armor.remove(armor)
             # Revert the armor's effects on the character.
             armor.strip(self)
+            return True
+        warning(f"{self.name} does not have {armor.name} equipped.")
+        return False
 
     def turn_update(self):
         """
         Updates the duration of all active effects. Removes expired effects.
         This should be called at the end of a character's turn or a round.
         """
-        effects_to_remove = []
+        effects_to_remove: list[ActiveEffect] = []
         for active in self.active_effects:
             active.effect.turn_update(active.source, self, active.mind_level)
             # Decrease the duration of the effect.
@@ -469,10 +562,11 @@ class Character:
             f"{f'Effects: {effects}' if effects else ''}"
         )
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "is_player": self.is_player,
+            "is_ally": self.is_ally,
+            "race": self.race.name,
             "levels": {cls.name: lvl for cls, lvl in self.levels.items()},
             "stats": self.stats,
             "spellcasting_ability": self.spellcasting_ability,
@@ -483,23 +577,25 @@ class Character:
         }
 
     @staticmethod
-    def from_dict(data: dict, registries: dict) -> "Character":
+    def from_dict(data: dict[str, Any], registries: dict[str, Any]) -> "Character":
         cls_registry = registries["classes"]
-        weapon_registry = registries["weapons"]
-        armor_registry = registries["armors"]
-        action_registry = registries["actions"]
-        spell_registry = registries["spells"]
+        race_registry = registries["races"]
+
+        # Load the race from the races registry.
+        race = race_registry[data["race"]]
 
         # Load the levels from the class registry.
-        levels = {}
+        levels: dict[CharacterClass, int] = {}
         for cls_name, cls_level in data["levels"].items():
             if cls_name not in cls_registry:
                 warning(f"CharacterClass {cls_name} not found in registry.")
                 continue
             levels[cls_registry[cls_name]] = cls_level
 
+        # Create the character instance.
         char = Character(
             name=data["name"],
+            race=race,
             levels=levels,
             strength=data["stats"]["strength"],
             dexterity=data["stats"]["dexterity"],
@@ -509,29 +605,100 @@ class Character:
             charisma=data["stats"]["charisma"],
             spellcasting_ability=data.get("spellcasting_ability", None),
         )
-        char.is_player = data.get("is_player", False)
+
+        # Set the character as a player if specified.
+        char.is_ally = data.get("is_ally", False)
+
         # Load the weapons.
-        for equipped_weapon in data.get("equipped_weapons", []):
-            if equipped_weapon in weapon_registry:
-                char.equipped_weapons.append(weapon_registry[equipped_weapon])
-            else:
-                warning(f"Weapon {equipped_weapon} not found in registry.")
+        for equipped_weapon_data in data.get("equipped_weapons", []):
+            char.equip_weapon(BaseAction.from_dict(equipped_weapon_data))
+
         # Load the armor.
-        for equipped_armor in data.get("equipped_armor", []):
-            if equipped_armor in armor_registry:
-                char.add_armor(armor_registry[equipped_armor])
-            else:
-                warning(f"Armor {equipped_armor} not found in registry.")
+        for equipped_armor_data in data.get("equipped_armor", []):
+            char.add_armor(Effect.from_dict(equipped_armor_data))
+
         # Load the actions.
-        for action_name in data.get("actions", []):
-            if action_name in action_registry:
-                char.learn_action(action_registry[action_name])
-            else:
-                warning(f"Action {action_name} not found in registry.")
+        for action_data in data.get("actions", []):
+            char.learn_action(BaseAction.from_dict(action_data))
+
         # Load the spells.
-        for spell_name in data.get("spells", []):
-            if spell_name in spell_registry:
-                char.learn_spell(spell_registry[spell_name])
-            else:
-                warning(f"Spell {spell_name} not found in registry.")
+        for spell_data in data.get("spells", []):
+            char.learn_spell(BaseAction.from_dict(spell_data))
+
         return char
+
+
+def load_character_classes(file_path: str) -> dict[str, CharacterClass]:
+    """
+    Loads character classes from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing character classes.
+
+    Returns:
+        dict[str, CharacterClass]: A dictionary mapping class names to CharacterClass instances.
+    """
+    classes: dict[str, CharacterClass] = {}
+    with open(file_path, "r") as f:
+        class_data = json.load(f)
+        for entry in class_data:
+            character_class = CharacterClass.from_dict(entry)
+            classes[character_class.name] = character_class
+    return classes
+
+
+def load_character_races(file_path: str) -> dict[str, CharacterRace]:
+    """Loads character races from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing character races.
+
+    Returns:
+        dict[str, CharacterRace]: A dictionary mapping race names to CharacterRace instances.
+    """
+    races: dict[str, CharacterRace] = {}
+    with open(file_path, "r") as f:
+        race_data = json.load(f)
+        for entry in race_data:
+            character_race = CharacterRace.from_dict(entry)
+            races[character_race.name] = character_race
+    return races
+
+
+def load_characters(file_path: str, registries: dict[str, Any]) -> dict[str, Character]:
+    """
+    Loads characters from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing character data.
+        registries (dict[str, Any]): A dictionary containing registries for classes and races.
+
+    Returns:
+        dict[str, Character]: A dictionary mapping character names to Character instances.
+    """
+    characters: dict[str, Character] = {}
+    with open(file_path, "r") as f:
+        character_data = json.load(f)
+        for entry in character_data:
+            character = Character.from_dict(entry, registries)
+            characters[character.name] = character
+    return characters
+
+
+def load_player_character(
+    file_path: str, registries: dict[str, Any]
+) -> Character | None:
+    """
+    Loads the player character from a JSON file.
+
+    Args:
+        file_path (str): The path to the JSON file containing player character data.
+        registries (dict[str, Any]): A dictionary containing registries for classes and races.
+
+    Returns:
+        Character: The loaded player character.
+    """
+    with open(file_path, "r") as f:
+        player_data = json.load(f)
+        player = Character.from_dict(player_data, registries)
+        return player

@@ -1,48 +1,55 @@
+import json
 from logging import debug
 from rich.console import Console
 
 from utils import *
 from typing import Any
-from character import Character
 from constants import *
 
 console = Console()
 
 
-class Effect(object):
-    def __init__(self, name: str):
-        self.name = name
+class Effect:
+    def __init__(self, name: str, max_duration: int = -1):
+        self.name: str = name
+        self.max_duration: int = max_duration
 
-    def apply(self, actor: Character, target: Character, mind_level: int = 0) -> None:
-        """Apply the effect to the target character.
+    def apply(self, actor: Any, target: Any, mind_level: int = 0) -> None:
+        """Apply the effect to the target Any.
 
         Args:
-            actor (Character): The character applying the effect.
-            target (Character): The character receiving the effect.
+            actor (Any): The character applying the effect.
+            target (Any): The character receiving the effect.
             mind_level (int, optional): The mind level of the actor. Defaults to 0.
         """
         ...
 
-    def remove(self, actor: Character, target: Character) -> None:
+    def remove(self, actor: Any, target: Any) -> None:
         """Remove the effect from the target character.
 
         Args:
-            actor (Character): The character removing the effect.
-            target (Character): The character from whom the effect is being removed.
+            actor (Any): The character removing the effect.
+            target (Any): The character from whom the effect is being removed.
         """
         ...
 
-    def turn_update(
-        self, actor: Character, target: Character, mind_level: int = 0
-    ) -> None:
+    def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
 
         Args:
-            actor (Character): The character applying the effect.
-            target (Character): The character receiving the effect.
+            actor (Any): The character applying the effect.
+            target (Any): The character receiving the effect.
             mind_level (int, optional): The mind level of the actor. Defaults to 0.
         """
         ...
+
+    def is_permanent(self) -> bool:
+        """Check if the effect is permanent (i.e., has no duration).
+
+        Returns:
+            bool: True if the effect is permanent, False otherwise.
+        """
+        return self.max_duration <= 0
 
     def validate(self):
         """Validate the effect's properties."""
@@ -57,6 +64,14 @@ class Effect(object):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Effect":
+        """Creates an Effect instance from a dictionary representation.
+
+        Args:
+            data (dict[str, Any]): The dictionary representation of the effect.
+
+        Returns:
+            Effect: An instance of the Effect class.
+        """
         assert data is not None, "Data must not be None."
         if data.get("type") == "Buff":
             return Buff.from_dict(data)
@@ -66,19 +81,17 @@ class Effect(object):
             return DoT.from_dict(data)
         if data.get("type") == "HoT":
             return HoT.from_dict(data)
-        if data.get("type") == "Effect":
-            return Effect(data["name"])
         raise ValueError(f"Unknown effect type: {data.get('type')}")
 
 
 class Buff(Effect):
-    def __init__(self, name: str, duration: int, modifiers: dict[BonusType, str]):
-        super().__init__(name)
-        self.duration: int = duration
+    def __init__(self, name: str, max_duration: int, modifiers: dict[BonusType, str]):
+        super().__init__(name, max_duration)
+
         self.modifiers: dict[BonusType, str] = modifiers
         self._cached_values: dict[BonusType, int] = {}
 
-    def apply(self, actor: Character, target: Character, mind_level: int = 0):
+    def apply(self, actor: Any, target: Any, mind_level: int = 0):
         debug(f"Applying buff '{self.name}' to {target.name}.")
         # Evaluate each modifier and apply it to the target
         for bonus_type, bonus_expr in self.modifiers.items():
@@ -104,7 +117,7 @@ class Buff(Effect):
             # Store the evaluated bonus in the cached values.
             self._cached_values[bonus_type] = bonus
 
-    def remove(self, actor: Character, target: Character):
+    def remove(self, actor: Any, target: Any):
         debug(f"Removing buff '{self.name}' from {target.name}.")
         for bonus_type, bonus in self._cached_values.items():
             if bonus_type == BonusType.HP_MAX:
@@ -127,7 +140,7 @@ class Buff(Effect):
 
     def validate(self):
         super().validate()
-        assert self.duration > 0, "Buff duration must be greater than 0."
+        assert self.max_duration > 0, "Buff duration must be greater than 0."
         assert isinstance(self.modifiers, dict), "Modifiers must be a dictionary."
         for key in self.modifiers.keys():
             assert isinstance(
@@ -141,7 +154,7 @@ class Buff(Effect):
         return {
             "type": "Buff",
             "name": self.name,
-            "duration": self.duration,
+            "max_duration": self.max_duration,
             "modifiers": {k.name: v for k, v in self.modifiers.items()},
         }
 
@@ -151,24 +164,24 @@ class Buff(Effect):
         modifiers = {BonusType[k]: v for k, v in data["modifiers"].items()}
         return Buff(
             name=data["name"],
-            duration=data["duration"],
+            max_duration=data["max_duration"],
             modifiers=modifiers,
         )
 
 
 class Armor(Effect):
     def __init__(self, name: str, ac_bonus: int, armor_slot: ArmorSlot):
-        super().__init__(name)
+        super().__init__(name, -1)
         self.ac_bonus = ac_bonus
         self.armor_slot: ArmorSlot = armor_slot
 
         self.validate()
 
-    def wear(self, actor: Character):
+    def wear(self, actor: Any):
         debug(f"{actor.name} wears armor '{self.name}' with AC bonus {self.ac_bonus}.")
         actor.ac += self.ac_bonus
 
-    def strip(self, actor: Character):
+    def strip(self, actor: Any):
         debug(f"{actor.name} strips armor '{self.name}' with AC bonus {self.ac_bonus}.")
         actor.ac -= self.ac_bonus
 
@@ -200,18 +213,17 @@ class DoT(Effect):
     def __init__(
         self,
         name: str,
-        duration: int,
+        max_duration: int,
         damage_per_turn: str,
         damage_type: DamageType,
     ):
-        super().__init__(name)
-        self.duration = duration
+        super().__init__(name, max_duration)
         self.damage_per_turn = damage_per_turn
         self.damage_type: DamageType = damage_type
 
         self.validate()
 
-    def turn_update(self, actor: Character, target: Character, mind_level: int = 0):
+    def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
         # Calculate the damage amount using the provided expression.
         dot_value, dot_desc = roll_and_describe(self.damage_per_turn, actor, mind_level)
         # Asser that the damage value is a positive integer.
@@ -225,7 +237,7 @@ class DoT(Effect):
             f"    :fire: [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
         )
         # If the target is defeated, print a message.
-        if not target.is_alive() and not target.is_player:
+        if not target.is_alive() and not target.is_ally:
             console.print(
                 f"    [bold red]{target.name} has been defeated![/]",
                 markup=True,
@@ -233,7 +245,7 @@ class DoT(Effect):
 
     def validate(self):
         super().validate()
-        assert self.duration > 0, "DoT duration must be greater than 0."
+        assert self.max_duration > 0, "DoT duration must be greater than 0."
         assert isinstance(
             self.damage_per_turn, str
         ), "Damage per turn must be a string expression."
@@ -245,7 +257,7 @@ class DoT(Effect):
         return {
             "type": "DoT",
             "name": self.name,
-            "duration": self.duration,
+            "max_duration": self.max_duration,
             "damage_per_turn": self.damage_per_turn,
             "damage_type": self.damage_type.name,
         }
@@ -255,7 +267,7 @@ class DoT(Effect):
         assert data is not None, "Data must not be None."
         return DoT(
             name=data["name"],
-            duration=data["duration"],
+            max_duration=data["max_duration"],
             damage_per_turn=data["damage_per_turn"],
             damage_type=DamageType[data["damage_type"]],
         )
@@ -265,16 +277,15 @@ class HoT(Effect):
     def __init__(
         self,
         name: str,
-        duration: int,
+        max_duration: int,
         heal_per_turn: str,
     ):
-        super().__init__(name)
-        self.duration = duration
+        super().__init__(name, max_duration)
         self.heal_per_turn = heal_per_turn
 
         self.validate()
 
-    def turn_update(self, actor: Character, target: Character, mind_level: int = 0):
+    def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
         # Calculate the heal amount using the provided expression.
         hot_value, hot_desc = roll_and_describe(self.heal_per_turn, actor, mind_level)
         # Assert that the heal value is a positive integer.
@@ -290,7 +301,7 @@ class HoT(Effect):
 
     def validate(self):
         super().validate()
-        assert self.duration > 0, "HoT duration must be greater than 0."
+        assert self.max_duration > 0, "HoT duration must be greater than 0."
         assert isinstance(
             self.heal_per_turn, str
         ), "Heal per turn must be a string expression."
@@ -299,7 +310,7 @@ class HoT(Effect):
         return {
             "type": "HoT",
             "name": self.name,
-            "duration": self.duration,
+            "max_duration": self.max_duration,
             "heal_per_turn": self.heal_per_turn,
         }
 
@@ -308,6 +319,24 @@ class HoT(Effect):
         assert data is not None, "Data must not be None."
         return HoT(
             name=data["name"],
-            duration=data["duration"],
+            max_duration=data["max_duration"],
             heal_per_turn=data["heal_per_turn"],
         )
+
+
+def load_effects(filename: str) -> dict[str, Effect]:
+    """Loads an effect from a dictionary.
+
+    Args:
+        data (dict): The dictionary containing the effect data.
+
+    Returns:
+        Effect: The loaded effect.
+    """
+    effects: dict[str, Effect] = {}
+    with open(filename, "r") as f:
+        effect_data = json.load(f)
+        for effect_data in effect_data:
+            effect = Effect.from_dict(effect_data)
+            effects[effect.name] = effect
+    return effects

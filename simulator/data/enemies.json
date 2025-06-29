@@ -1,55 +1,7 @@
 [
     {
-        "name": "Goblin",
-        "is_player": false,
-        "levels": {
-            "Rogue": 1
-        },
-        "stats": {
-            "strength": 10,
-            "dexterity": 14,
-            "constitution": 10,
-            "intelligence": 8,
-            "wisdom": 8,
-            "charisma": 6
-        },
-        "equipped_weapons": [
-            "Shortsword"
-        ],
-        "equipped_armor": [
-            "Leather Armor"
-        ],
-        "active_effects": [],
-        "actions": [],
-        "spells": []
-    },
-    {
-        "name": "Orc",
-        "is_player": false,
-        "levels": {
-            "Warrior": 1
-        },
-        "stats": {
-            "strength": 16,
-            "dexterity": 12,
-            "constitution": 16,
-            "intelligence": 7,
-            "wisdom": 11,
-            "charisma": 8
-        },
-        "equipped_weapons": [
-            "Greataxe"
-        ],
-        "equipped_armor": [
-            "Hide Armor"
-        ],
-        "active_effects": [],
-        "actions": [],
-        "spells": []
-    },
-    {
         "name": "Orc Shaman",
-        "is_player": false,
+        "is_ally": false,
         "levels": {
             "Cleric": 1
         },

@@ -1,0 +1,393 @@
+[
+    {
+        "name": "Goblin",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Beast": 1
+        },
+        "stats": {
+            "strength": 10,
+            "dexterity": 14,
+            "constitution": 10,
+            "intelligence": 8,
+            "wisdom": 8,
+            "charisma": 6
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Rusty Dagger",
+                "type": "STANDARD",
+                "hands_required": 1,
+                "attack_roll": "1D20+[DEX]",
+                "damage_components": [
+                    {
+                        "roll": "1D4+[DEX]",
+                        "type": "PIERCING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Kobold",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Beast": 1
+        },
+        "stats": {
+            "strength": 12,
+            "dexterity": 12,
+            "constitution": 10,
+            "intelligence": 6,
+            "wisdom": 6,
+            "charisma": 6
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Clawed Gauntlets",
+                "type": "STANDARD",
+                "hands_required": 2,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D6+[STR]",
+                        "type": "SLASHING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Dungeon Worm",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Beast": 1
+        },
+        "stats": {
+            "strength": 11,
+            "dexterity": 10,
+            "constitution": 12,
+            "intelligence": 2,
+            "wisdom": 6,
+            "charisma": 1
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Bite",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D6+[STR]",
+                        "type": "PIERCING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "War Shadow",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Beast": 2
+        },
+        "stats": {
+            "strength": 12,
+            "dexterity": 16,
+            "constitution": 10,
+            "intelligence": 6,
+            "wisdom": 10,
+            "charisma": 6
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Shadow Claws",
+                "type": "STANDARD",
+                "hands_required": 2,
+                "attack_roll": "1D20+[DEX]",
+                "damage_components": [
+                    {
+                        "roll": "1D6+[DEX]",
+                        "type": "SLASHING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Killer Ant",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Insectoid": 2
+        },
+        "stats": {
+            "strength": 14,
+            "dexterity": 10,
+            "constitution": 14,
+            "intelligence": 2,
+            "wisdom": 8,
+            "charisma": 2
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Mandibles",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D8+[STR]",
+                        "type": "PIERCING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Poison Jelly",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Ooze": 2
+        },
+        "stats": {
+            "strength": 8,
+            "dexterity": 6,
+            "constitution": 14,
+            "intelligence": 1,
+            "wisdom": 8,
+            "charisma": 1
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Acidic Touch",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D6",
+                        "type": "ACID"
+                    }
+                ]
+            }
+        ],
+        "spells": [
+            {
+                "class": "SpellAttack",
+                "name": "Poison Spit",
+                "type": "STANDARD",
+                "level": 1,
+                "mind": 1,
+                "damage_type": "POISON",
+                "damage_roll": "[MIND]D4",
+                "multi_target_expr": null,
+                "upscale_choices": [
+                    1,
+                    2
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Poisoned",
+                    "max_duration": 3,
+                    "damage_type": "POISON",
+                    "damage_per_turn": "[MIND]D4"
+                }
+            }
+        ]
+    },
+    {
+        "name": "Orc",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Brute": 2
+        },
+        "stats": {
+            "strength": 16,
+            "dexterity": 10,
+            "constitution": 14,
+            "intelligence": 6,
+            "wisdom": 8,
+            "charisma": 6
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Greatclub",
+                "type": "STANDARD",
+                "hands_required": 2,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D10+[STR]",
+                        "type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Ligerfang",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Beast": 3
+        },
+        "stats": {
+            "strength": 16,
+            "dexterity": 15,
+            "constitution": 12,
+            "intelligence": 2,
+            "wisdom": 10,
+            "charisma": 6
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Fangs",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D8+[STR]",
+                        "type": "PIERCING"
+                    }
+                ]
+            },
+            {
+                "class": "WeaponAttack",
+                "name": "Pounce",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D6+[STR]",
+                        "type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Silverback",
+        "is_ally": false,
+        "race": "Monster",
+        "levels": {
+            "Brute": 4
+        },
+        "stats": {
+            "strength": 18,
+            "dexterity": 12,
+            "constitution": 16,
+            "intelligence": 4,
+            "wisdom": 10,
+            "charisma": 5
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Massive Fists",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D12+[STR]",
+                        "type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ],
+        "spells": []
+    },
+    {
+        "name": "Infant Dragon",
+        "is_ally": false,
+        "race": "Dragonkin",
+        "levels": {
+            "Dragonkin": 3
+        },
+        "stats": {
+            "strength": 16,
+            "dexterity": 12,
+            "constitution": 14,
+            "intelligence": 10,
+            "wisdom": 12,
+            "charisma": 8
+        },
+        "actions": [
+            {
+                "class": "WeaponAttack",
+                "name": "Claws",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D8+[STR]",
+                        "type": "SLASHING"
+                    }
+                ]
+            },
+            {
+                "class": "WeaponAttack",
+                "name": "Tail Whip",
+                "type": "STANDARD",
+                "hands_required": 0,
+                "attack_roll": "1D20+[STR]",
+                "damage_components": [
+                    {
+                        "roll": "1D10+[STR]",
+                        "type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ],
+        "spells": [
+            {
+                "class": "SpellAttack",
+                "name": "Fire Breath",
+                "type": "STANDARD",
+                "level": 2,
+                "mind": 2,
+                "damage_type": "FIRE",
+                "damage_roll": "[MIND]D10",
+                "multi_target_expr": "3",
+                "upscale_choices": [
+                    2,
+                    3,
+                    4
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Burning",
+                    "max_duration": 3,
+                    "damage_type": "FIRE",
+                    "damage_per_turn": "[MIND]D6"
+                }
+            }
+        ]
+    }
+]

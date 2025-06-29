@@ -15,7 +15,7 @@
             "type": "Buff",
             "name": "Blessed Might",
             "mind": 1,
-            "duration": 10,
+            "max_duration": 10,
             "modifiers": {
                 "ATTACK_BONUS": "1d4",
                 "DAMAGE_BONUS": "floor([MIND] / 2)"
@@ -38,7 +38,7 @@
             "type": "Buff",
             "name": "Divine Protection",
             "mind": 1,
-            "duration": 5,
+            "max_duration": 5,
             "modifiers": {
                 "AC": "1 + floor([MIND] / 2)"
             }
@@ -59,7 +59,7 @@
             "type": "Buff",
             "name": "Stony Flesh",
             "mind": 2,
-            "duration": 4,
+            "max_duration": 4,
             "modifiers": {
                 "AC": "1 + floor([MIND] / 2)"
             }
@@ -80,7 +80,7 @@
             "type": "Buff",
             "name": "Mind Shield",
             "mind": 2,
-            "duration": 3,
+            "max_duration": 3,
             "modifiers": {
                 "MIND_MAX": "floor([MIND] * 1.5)"
             }

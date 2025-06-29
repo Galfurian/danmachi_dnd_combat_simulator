@@ -28,5 +28,30 @@
         "name": "Wizard",
         "hp_mult": 2,
         "mind_mult": 8
+    },
+    {
+        "name": "Beast",
+        "hp_mult": 10,
+        "mind_mult": 0
+    },
+    {
+        "name": "Insectoid",
+        "hp_mult": 8,
+        "mind_mult": 0
+    },
+    {
+        "name": "Ooze",
+        "hp_mult": 6,
+        "mind_mult": 1
+    },
+    {
+        "name": "Brute",
+        "hp_mult": 12,
+        "mind_mult": 0
+    },
+    {
+        "name": "Dragonkin",
+        "hp_mult": 10,
+        "mind_mult": 4
     }
 ]

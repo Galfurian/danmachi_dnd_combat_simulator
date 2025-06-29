@@ -40,7 +40,7 @@
             "type": "HoT",
             "name": "Regeneration",
             "mind": 2,
-            "duration": 3,
+            "max_duration": 3,
             "heal_per_turn": "[MIND]D4"
         },
         "multi_target_expr": null,
@@ -76,7 +76,7 @@
             "type": "HoT",
             "name": "Radiant Warmth",
             "mind": 2,
-            "duration": 2,
+            "max_duration": 2,
             "heal_per_turn": "1D4"
         },
         "multi_target_expr": "1 + floor([MIND] / 2)",

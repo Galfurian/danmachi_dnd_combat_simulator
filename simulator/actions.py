@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+import json
 from logging import debug, error
 from rich.console import Console
 from typing import Any, Optional
 
-from character import Character
 from colors import *
-from character import *
 from effect import *
 from utils import *
 from constants import *
@@ -13,37 +12,18 @@ from constants import *
 console = Console()
 
 
-class DamageComponent:
-    def __init__(self, roll: str, damage_type: DamageType):
-        self.roll: str = roll
-        self.damage_type: DamageType = damage_type
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "roll": self.roll,
-            "type": self.damage_type.name,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "DamageComponent":
-        return DamageComponent(
-            roll=data["roll"],
-            damage_type=DamageType[data["type"]],
-        )
-
-
-class BaseAction(ABC):
+class BaseAction:
     def __init__(self, name: str, type: ActionType, category: ActionCategory):
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
 
-    def execute(self, actor: Character, target: Character) -> bool:
+    def execute(self, actor: Any, target: Any) -> bool:
         """Abstract method for executables.
 
         Args:
-            actor (Character): The character performing the action.
-            target (Character): The character targeted by the action.
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
 
         Returns:
             bool: True if the action was successfully executed, False otherwise.
@@ -51,13 +31,17 @@ class BaseAction(ABC):
         ...
 
     def apply_effect(
-        self, actor: Character, target: Character, effect: Effect, mind_level: int = 0
+        self,
+        actor: Any,
+        target: Any,
+        effect: "Effect",
+        mind_level: int = 0,
     ):
         """Applies an effect to a target character.
 
         Args:
-            actor (Character): The character performing the action.
-            target (Character): The character targeted by the action.
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
             effect (Effect): The effect to apply.
             mind_level (int, optional): The mind level to use for the effect. Defaults to 0.
         """
@@ -66,6 +50,18 @@ class BaseAction(ABC):
         effect.apply(actor, target, mind_level)
         # Add the effect to the target's effects list.
         target.add_effect(actor, effect, mind_level)
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        return False
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the action to a dictionary representation.
@@ -103,6 +99,25 @@ class BaseAction(ABC):
         raise ValueError(f"Unknown action class: {data.get('class')}")
 
 
+class DamageComponent:
+    def __init__(self, roll: str, damage_type: DamageType):
+        self.roll: str = roll
+        self.damage_type: DamageType = damage_type
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "roll": self.roll,
+            "type": self.damage_type.name,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "DamageComponent":
+        return DamageComponent(
+            roll=data["roll"],
+            damage_type=DamageType[data["type"]],
+        )
+
+
 class WeaponAttack(BaseAction):
     def __init__(
         self,
@@ -119,13 +134,11 @@ class WeaponAttack(BaseAction):
         self.damage_components: list[DamageComponent] = damage_components
         self.effect: Optional[Effect] = effect
 
-    def execute(self, actor: Character, target: Character):
+    def execute(self, actor: Any, target: Any):
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
-        actor_str = (
-            f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
-        )
+        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
         target_str = (
-            f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
+            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
         )
 
         # --- Build & resolve attack roll ---
@@ -166,7 +179,7 @@ class WeaponAttack(BaseAction):
                     markup=True,
                 )
 
-            if not target.is_alive() and not target.is_player:
+            if not target.is_alive() and not target.is_ally:
                 console.print(
                     f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
@@ -180,6 +193,28 @@ class WeaponAttack(BaseAction):
                 markup=True,
             )
 
+        return True
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are not both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if actor.is_ally == target.is_ally:
+            return False
         return True
 
     def to_dict(self) -> dict[str, Any]:
@@ -225,13 +260,13 @@ class Spell(BaseAction):
         level: int,
         mind: int,
         category: ActionCategory,
-        multi_target_expr: Optional[str] = None,
+        multi_target_expr: str = "",
         upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(name, type, category)
         self.level: int = level
         self.mind: int = mind
-        self.multi_target_expr: Optional[str] = multi_target_expr
+        self.multi_target_expr: str = multi_target_expr
         self.upscale_choices: Optional[list[int]] = upscale_choices or [mind]
 
     def is_single_target(self) -> bool:
@@ -242,11 +277,19 @@ class Spell(BaseAction):
         """
         return not self.multi_target_expr or self.multi_target_expr.strip() == ""
 
-    def target_count(self, actor: Character, mind_level: Optional[int] = None) -> int:
+    def get_upscale_choices(self) -> list[int]:
+        """Returns the valid MIND levels this spell can be cast at.
+
+        Returns:
+            list[int]: The valid MIND levels.
+        """
+        return self.upscale_choices or [self.mind]
+
+    def target_count(self, actor: Any, mind_level: Optional[int] = None) -> int:
         """Returns the number of targets this ability can affect.
 
         Args:
-            actor (Character): The character casting the spell.
+            actor (Any): The character casting the spell.
             mind_level (int, optional): The mind level to use for evaluation. Defaults to -1.
 
         Returns:
@@ -267,12 +310,12 @@ class Spell(BaseAction):
         """
         return self.upscale_choices or [self.mind]
 
-    def execute(self, actor: Character, target: Character) -> bool:
+    def execute(self, actor: Any, target: Any) -> bool:
         """Executes the spell.
 
         Args:
-            actor (Character): The character casting the spell.
-            target (Character): The character targeted by the spell.
+            actor (Any): The character casting the spell.
+            target (Any): The character targeted by the spell.
 
         Returns:
             bool: True if the spell was successfully cast, False otherwise.
@@ -280,13 +323,13 @@ class Spell(BaseAction):
         raise NotImplementedError("Spells must use the cast_spell method.")
 
     @abstractmethod
-    def cast_spell(self, actor: Character, target: Character, mind_level: int) -> bool:
+    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """
         Abstract method for executing an action.
 
         Args:
-            actor (Character): The character performing the action.
-            target (Character): The character targeted by the action.
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
 
         Returns:
             bool: True if the action was successfully executed, False otherwise.
@@ -337,7 +380,7 @@ class SpellAttack(Spell):
         damage_type: DamageType,
         damage_roll: str,
         effect: Optional[Effect] = None,
-        multi_target_expr: Optional[str] = None,
+        multi_target_expr: str = "",
         upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
@@ -353,9 +396,7 @@ class SpellAttack(Spell):
         self.damage_roll: str = damage_roll
         self.effect: Optional[Effect] = effect
 
-    def cast_spell(
-        self, actor: Character, target: Character, mind_level: int = -1
-    ) -> bool:
+    def cast_spell(self, actor: Any, target: Any, mind_level: int = -1) -> bool:
         """
         Executes a spell attack from the actor to the target with breakdown logs.
         """
@@ -366,11 +407,9 @@ class SpellAttack(Spell):
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
 
-        actor_str = (
-            f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
-        )
+        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
         target_str = (
-            f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
+            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
         )
 
         # --- Build and roll attack expression ---
@@ -407,7 +446,7 @@ class SpellAttack(Spell):
                     f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                     markup=True,
                 )
-            if not target.is_alive() and not target.is_player:
+            if not target.is_alive() and not target.is_ally:
                 console.print(
                     f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
@@ -420,6 +459,28 @@ class SpellAttack(Spell):
                 markup=True,
             )
 
+        return True
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are not both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if actor.is_ally == target.is_ally:
+            return False
         return True
 
     def to_dict(self) -> dict[str, Any]:
@@ -450,7 +511,7 @@ class SpellAttack(Spell):
             damage_type=DamageType[data["damage_type"]],
             damage_roll=data["damage_roll"],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            multi_target_expr=data.get("multi_target_expr", None),
+            multi_target_expr=data.get("multi_target_expr", ""),
             upscale_choices=data.get("upscale_choices", None),
         )
 
@@ -464,7 +525,7 @@ class SpellHeal(Spell):
         mind: int,
         heal_roll: str,
         effect: Optional[Effect] = None,
-        multi_target_expr: Optional[str] = None,
+        multi_target_expr: str = "",
         upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
@@ -480,13 +541,13 @@ class SpellHeal(Spell):
         self.effect: Optional[Effect] = effect
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = None
     ) -> bool:
         """Casts a healing spell from the actor to the target.
 
         Args:
-            actor (Character): The character casting the spell.
-            target (Character): The character receiving the healing.
+            actor (Any): The character casting the spell.
+            target (Any): The character receiving the healing.
             mind_level (int, optional): The level of mind to use for the spell. Defaults to -1.
 
         Returns:
@@ -502,11 +563,9 @@ class SpellHeal(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = (
-            f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
-        )
+        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
         target_str = (
-            f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
+            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
         )
 
         # Compute the healing based on the mind spent and roll
@@ -528,6 +587,28 @@ class SpellHeal(Spell):
                 markup=True,
             )
 
+        return True
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if actor.is_ally != target.is_ally:
+            return False
         return True
 
     def to_dict(self):
@@ -556,7 +637,7 @@ class SpellHeal(Spell):
             mind=data["mind"],
             heal_roll=data["heal_roll"],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            multi_target_expr=data.get("multi_target_expr", None),
+            multi_target_expr=data.get("multi_target_expr", ""),
             upscale_choices=data.get("upscale_choices", None),
         )
 
@@ -569,8 +650,8 @@ class SpellBuff(Spell):
         level: int,
         mind: int,
         effect: Effect,
-        multi_target_expr: Optional[str] = None,
-        upscale_choices: Optional[List[int]] = None,
+        multi_target_expr: str = "",
+        upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
             name,
@@ -586,7 +667,7 @@ class SpellBuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellBuff."
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = None
     ) -> bool:
         """
         Executes a buff spell, applying a beneficial effect to the target.
@@ -601,11 +682,9 @@ class SpellBuff(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = (
-            f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
-        )
+        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
         target_str = (
-            f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
+            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
         )
 
         # Informational log
@@ -622,6 +701,28 @@ class SpellBuff(Spell):
                 markup=True,
             )
 
+        return True
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if actor.is_ally != target.is_ally:
+            return False
         return True
 
     def to_dict(self):
@@ -646,7 +747,7 @@ class SpellBuff(Spell):
             level=data["level"],
             mind=data["mind"],
             effect=Effect.from_dict(data["effect"]),
-            multi_target_expr=data.get("multi_target_expr", None),
+            multi_target_expr=data.get("multi_target_expr", ""),
             upscale_choices=data.get("upscale_choices", None),
         )
 
@@ -659,8 +760,8 @@ class SpellDebuff(Spell):
         level: int,
         mind: int,
         effect: Effect,
-        multi_target_expr: Optional[str] = None,
-        upscale_choices: Optional[List[int]] = None,
+        multi_target_expr: str = "",
+        upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
             name,
@@ -676,7 +777,7 @@ class SpellDebuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellDebuff."
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = None
     ) -> bool:
         """
         Executes a debuff spell, applying a detrimental effect to the target.
@@ -691,11 +792,9 @@ class SpellDebuff(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = (
-            f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
-        )
+        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
         target_str = (
-            f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
+            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
         )
 
         # Informational log
@@ -712,6 +811,28 @@ class SpellDebuff(Spell):
                 markup=True,
             )
 
+        return True
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are not both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if actor.is_ally == target.is_ally:
+            return False
         return True
 
     def to_dict(self):
@@ -736,6 +857,24 @@ class SpellDebuff(Spell):
             level=data["level"],
             mind=data["mind"],
             effect=Effect.from_dict(data["effect"]),
-            multi_target_expr=data.get("multi_target_expr", None),
+            multi_target_expr=data.get("multi_target_expr", ""),
             upscale_choices=data.get("upscale_choices", None),
         )
+
+
+def load_actions(filename: str) -> dict[str, BaseAction]:
+    """Loads an action from a dictionary.
+
+    Args:
+        data (dict): The dictionary containing the action data.
+
+    Returns:
+        BaseAction: The loaded action.
+    """
+    actions: dict[str, BaseAction] = {}
+    with open(filename, "r") as f:
+        action_data = json.load(f)
+        for action_data in action_data:
+            action = BaseAction.from_dict(action_data)
+            actions[action.name] = action
+    return actions

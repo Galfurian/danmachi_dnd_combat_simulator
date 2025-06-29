@@ -14,7 +14,7 @@
             "type": "Buff",
             "name": "Weakened Strikes",
             "mind": 1,
-            "duration": 3,
+            "max_duration": 3,
             "modifiers": {
                 "ATTACK_BONUS": "-1",
                 "DAMAGE_BONUS": "-floor([MIND] / 2)"
@@ -36,7 +36,7 @@
             "type": "Buff",
             "name": "Crippled Defense",
             "mind": 2,
-            "duration": 4,
+            "max_duration": 4,
             "modifiers": {
                 "AC": "-1"
             }
@@ -57,7 +57,7 @@
             "type": "Buff",
             "name": "Leaking Mind",
             "mind": 2,
-            "duration": 3,
+            "max_duration": 3,
             "modifiers": {
                 "MIND_MAX": "-floor([MIND] * 1.5)"
             }
