@@ -1,18 +1,35 @@
 from abc import ABC, abstractmethod
-from logging import info, debug, warning, error
-from re import I
+from logging import debug, error
 from rich.console import Console
-
+from typing import Any, Optional
 
 from character import Character
 from colors import *
 from character import *
 from effect import *
-from effect import Character
 from utils import *
 from constants import *
 
 console = Console()
+
+
+class DamageComponent:
+    def __init__(self, roll: str, damage_type: DamageType):
+        self.roll: str = roll
+        self.damage_type: DamageType = damage_type
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "roll": self.roll,
+            "type": self.damage_type.name,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "DamageComponent":
+        return DamageComponent(
+            roll=data["roll"],
+            damage_type=DamageType[data["type"]],
+        )
 
 
 class BaseAction(ABC):
@@ -34,7 +51,7 @@ class BaseAction(ABC):
         ...
 
     def apply_effect(
-        self, actor: Character, target: Character, effect, mind_level: int = 0
+        self, actor: Character, target: Character, effect: Effect, mind_level: int = 0
     ):
         """Applies an effect to a target character.
 
@@ -50,7 +67,7 @@ class BaseAction(ABC):
         # Add the effect to the target's effects list.
         target.add_effect(actor, effect, mind_level)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the action to a dictionary representation.
 
         Returns:
@@ -64,7 +81,7 @@ class BaseAction(ABC):
         }
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "BaseAction":
         """Creates an executable from a dictionary representation.
 
         Args:
@@ -86,9 +103,6 @@ class BaseAction(ABC):
         raise ValueError(f"Unknown action class: {data.get('class')}")
 
 
-from utils import substitute_variables, roll_expression
-
-
 class WeaponAttack(BaseAction):
     def __init__(
         self,
@@ -96,20 +110,14 @@ class WeaponAttack(BaseAction):
         type: ActionType,
         hands_required: int,
         attack_roll: str,
-        damage_components: list[dict],
-        effect=None,
+        damage_components: list[DamageComponent],
+        effect: Optional[Effect] = None,
     ):
         super().__init__(name, type, ActionCategory.OFFENSIVE)
-        self.hands_required = hands_required
-        self.attack_roll = attack_roll
-        self.damage_components = damage_components
-        self.effect = effect
-
-        for component in self.damage_components:
-            if "roll" not in component or "type" not in component:
-                raise ValueError("Each damage component must have 'roll' and 'type'.")
-            if component["type"] not in DamageType.__members__:
-                raise ValueError(f"Invalid damage type: {component['type']}")
+        self.hands_required: int = hands_required
+        self.attack_roll: str = attack_roll
+        self.damage_components: list[DamageComponent] = damage_components
+        self.effect: Optional[Effect] = effect
 
     def execute(self, actor: Character, target: Character):
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
@@ -128,16 +136,17 @@ class WeaponAttack(BaseAction):
 
         # --- Outcome: HIT ---
         if attack_result >= target.ac:
-            total_damage = 0
-            damage_details = []
+            total_damage: int = 0
+            damage_details: list[str] = []
             for component in self.damage_components:
-                damage_expr = substitute_variables(component["roll"], actor)
+                damage_expr = substitute_variables(component.roll, actor)
                 damage_amount = roll_expression(damage_expr, actor)
-                damage_type = DamageType[component["type"]]
-                applied_damage = target.take_damage(damage_amount, damage_type)
+                applied_damage = target.take_damage(
+                    damage_amount, component.damage_type
+                )
                 total_damage += applied_damage
                 damage_details.append(
-                    f"{applied_damage} {damage_type.name.lower()} ({damage_expr})"
+                    f"{applied_damage} {component.damage_type.name.lower()} ({damage_expr})"
                 )
             console.print(
                 f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
@@ -150,10 +159,16 @@ class WeaponAttack(BaseAction):
                 markup=True,
             )
 
-            if self.effect:
+            if self.effect and target.is_alive():
                 self.apply_effect(actor, target, self.effect)
                 console.print(
                     f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                    markup=True,
+                )
+
+            if not target.is_alive() and not target.is_player:
+                console.print(
+                    f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
                 )
 
@@ -167,20 +182,22 @@ class WeaponAttack(BaseAction):
 
         return True
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         # Get the base dictionary representation.
         data = super().to_dict()
         # Add specific fields for WeaponAttack
         data["hands_required"] = self.hands_required
         data["attack_roll"] = self.attack_roll
-        data["damage_components"] = self.damage_components
+        data["damage_components"] = [
+            component.to_dict() for component in self.damage_components
+        ]
         # Include the effect if it exists.
         if self.effect:
             data["effect"] = self.effect.to_dict()
         return data
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "WeaponAttack":
         """
         Creates a WeaponAttack instance from a dictionary.
         Args:
@@ -193,48 +210,72 @@ class WeaponAttack(BaseAction):
             type=ActionType[data["type"]],
             hands_required=data["hands_required"],
             attack_roll=data["attack_roll"],
-            damage_components=data["damage_components"],
-            effect=Effect.from_dict(data.get("effect", None)),
+            damage_components=[
+                DamageComponent.from_dict(comp) for comp in data["damage_components"]
+            ],
+            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
         )
 
 
 class Spell(BaseAction):
     def __init__(
         self,
-        name,
+        name: str,
         type: ActionType,
         level: int,
         mind: int,
         category: ActionCategory,
-        multi_target_expr=None,
-        upscale_choices=None,
+        multi_target_expr: Optional[str] = None,
+        upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(name, type, category)
         self.level: int = level
         self.mind: int = mind
-        self.multi_target_expr = multi_target_expr
-        self.upscale_choices = upscale_choices or [mind]
+        self.multi_target_expr: Optional[str] = multi_target_expr
+        self.upscale_choices: Optional[list[int]] = upscale_choices or [mind]
 
     def is_single_target(self) -> bool:
-        """Returns True if this spell is single-target, False otherwise."""
-        return not self.multi_target_expr or not isinstance(self.multi_target_expr, str)
+        """Check if the spell is single-target.
 
-    def target_count(self, actor: Character, mind_level: int = -1) -> int:
-        """Number of targets this ability can affect. Default is 1 (single-target)."""
-        if not self.is_single_target():
+        Returns:
+            bool: True if single-target, False otherwise.
+        """
+        return not self.multi_target_expr or self.multi_target_expr.strip() == ""
+
+    def target_count(self, actor: Character, mind_level: Optional[int] = None) -> int:
+        """Returns the number of targets this ability can affect.
+
+        Args:
+            actor (Character): The character casting the spell.
+            mind_level (int, optional): The mind level to use for evaluation. Defaults to -1.
+
+        Returns:
+            int: The number of targets this ability can affect.
+        """
+        if not self.is_single_target() and mind_level:
             # First, get the mind level to use.
-            mind_level = mind_level if mind_level >= 0 else self.mind
+            mind_level = mind_level if mind_level else self.mind
             # Evaluate the multi-target expression to get the number of targets.
             return evaluate_expression(self.multi_target_expr, actor, mind_level)
         return 1
 
     def mind_choices(self) -> list[int]:
-        """Returns valid MIND levels this spell can be cast at. Default is [self.mind]."""
+        """Returns valid MIND levels this spell can be cast at.
+
+        Returns:
+            list[int]: The valid MIND levels.
+        """
         return self.upscale_choices or [self.mind]
 
     def execute(self, actor: Character, target: Character) -> bool:
-        """
-        Spells should not be executed directly from the base class.
+        """Executes the spell.
+
+        Args:
+            actor (Character): The character casting the spell.
+            target (Character): The character targeted by the spell.
+
+        Returns:
+            bool: True if the spell was successfully cast, False otherwise.
         """
         raise NotImplementedError("Spells must use the cast_spell method.")
 
@@ -242,15 +283,17 @@ class Spell(BaseAction):
     def cast_spell(self, actor: Character, target: Character, mind_level: int) -> bool:
         """
         Abstract method for executing an action.
+
         Args:
             actor (Character): The character performing the action.
             target (Character): The character targeted by the action.
+
         Returns:
             bool: True if the action was successfully executed, False otherwise.
         """
         pass
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
         # Add specific fields for Spell
@@ -264,6 +307,25 @@ class Spell(BaseAction):
             data["upscale_choices"] = self.upscale_choices
         return data
 
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Spell":
+        """
+        Creates a Spell instance from a dictionary.
+        Args:
+            data (dict): Dictionary containing the action data.
+        Returns:
+            Spell: An instance of Spell.
+        """
+        if data.get("class") == "SpellAttack":
+            return SpellAttack.from_dict(data)
+        if data.get("class") == "SpellHeal":
+            return SpellHeal.from_dict(data)
+        if data.get("class") == "SpellBuff":
+            return SpellBuff.from_dict(data)
+        if data.get("class") == "SpellDebuff":
+            return SpellDebuff.from_dict(data)
+        raise ValueError(f"Unknown spell class: {data.get('class')}")
+
 
 class SpellAttack(Spell):
     def __init__(
@@ -274,9 +336,9 @@ class SpellAttack(Spell):
         mind: int,
         damage_type: DamageType,
         damage_roll: str,
-        effect=None,
-        multi_target_expr=None,
-        upscale_choices=None,
+        effect: Optional[Effect] = None,
+        multi_target_expr: Optional[str] = None,
+        upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
             name,
@@ -289,7 +351,7 @@ class SpellAttack(Spell):
         )
         self.damage_type: DamageType = damage_type
         self.damage_roll: str = damage_roll
-        self.effect = effect
+        self.effect: Optional[Effect] = effect
 
     def cast_spell(
         self, actor: Character, target: Character, mind_level: int = -1
@@ -339,10 +401,15 @@ class SpellAttack(Spell):
                 f"[italic]{self.damage_type.name.lower()}[/] ({damage_desc})",
                 markup=True,
             )
-            if self.effect:
+            if self.effect and target.is_alive():
                 self.apply_effect(actor, target, self.effect)
                 console.print(
                     f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                    markup=True,
+                )
+            if not target.is_alive() and not target.is_player:
+                console.print(
+                    f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
                 )
         # --- Miss logic ---
@@ -355,7 +422,7 @@ class SpellAttack(Spell):
 
         return True
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
         # Add specific fields for SpellAttack
@@ -367,7 +434,7 @@ class SpellAttack(Spell):
         return data
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "SpellAttack":
         """
         Creates a SpellAttack instance from a dictionary.
         Args:
@@ -382,7 +449,7 @@ class SpellAttack(Spell):
             mind=data["mind"],
             damage_type=DamageType[data["damage_type"]],
             damage_roll=data["damage_roll"],
-            effect=Effect.from_dict(data.get("effect", None)),
+            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             multi_target_expr=data.get("multi_target_expr", None),
             upscale_choices=data.get("upscale_choices", None),
         )
@@ -396,9 +463,9 @@ class SpellHeal(Spell):
         level: int,
         mind: int,
         heal_roll: str,
-        effect=None,
-        multi_target_expr=None,
-        upscale_choices=None,
+        effect: Optional[Effect] = None,
+        multi_target_expr: Optional[str] = None,
+        upscale_choices: Optional[list[int]] = None,
     ):
         super().__init__(
             name,
@@ -410,24 +477,31 @@ class SpellHeal(Spell):
             upscale_choices,
         )
         self.heal_roll: str = heal_roll
-        self.effect = effect
+        self.effect: Optional[Effect] = effect
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: int = -1
+        self, actor: Character, target: Character, mind_level: Optional[int] = None
     ) -> bool:
-        """
-        Executes a healing spell from the actor to the target.
-        Uses mind to cast the spell.
+        """Casts a healing spell from the actor to the target.
+
+        Args:
+            actor (Character): The character casting the spell.
+            target (Character): The character receiving the healing.
+            mind_level (int, optional): The level of mind to use for the spell. Defaults to -1.
+
+        Returns:
+            bool: True if the spell was cast successfully, False otherwise.
         """
         debug(
             f"{actor.name} attempts to cast {self.name} on {target.name}, expression {self.heal_roll}."
         )
-        mind_level = mind_level if mind_level >= 0 else self.mind
-
+        # Determine the mind level to use.
+        mind_level = mind_level if mind_level is not None else self.mind
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
 
+        # Prepare the actor and target strings for output.
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
@@ -467,7 +541,7 @@ class SpellHeal(Spell):
         return data
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "SpellHeal":
         """
         Creates a SpellHeal instance from a dictionary.
         Args:
@@ -481,7 +555,7 @@ class SpellHeal(Spell):
             level=data["level"],
             mind=data["mind"],
             heal_roll=data["heal_roll"],
-            effect=Effect.from_dict(data.get("effect", None)),
+            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             multi_target_expr=data.get("multi_target_expr", None),
             upscale_choices=data.get("upscale_choices", None),
         )
@@ -494,9 +568,9 @@ class SpellBuff(Spell):
         type: ActionType,
         level: int,
         mind: int,
-        effect,
-        multi_target_expr=None,
-        upscale_choices=None,
+        effect: Effect,
+        multi_target_expr: Optional[str] = None,
+        upscale_choices: Optional[List[int]] = None,
     ):
         super().__init__(
             name,
@@ -512,19 +586,21 @@ class SpellBuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellBuff."
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: int = -1
+        self, actor: Character, target: Character, mind_level: Optional[int] = None
     ) -> bool:
         """
         Executes a buff spell, applying a beneficial effect to the target.
         Uses mind to cast the spell.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-        mind_level = mind_level if mind_level >= 0 else self.mind
 
+        # Determine the mind level to use.
+        mind_level = mind_level if mind_level is not None else self.mind
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
 
+        # Prepare the actor and target strings for output.
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
@@ -556,7 +632,7 @@ class SpellBuff(Spell):
         return data
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "SpellBuff":
         """
         Creates a SpellBuff instance from a dictionary.
         Args:
@@ -569,7 +645,7 @@ class SpellBuff(Spell):
             type=ActionType[data["type"]],
             level=data["level"],
             mind=data["mind"],
-            effect=Effect.from_dict(data.get("effect", None)),
+            effect=Effect.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", None),
             upscale_choices=data.get("upscale_choices", None),
         )
@@ -582,9 +658,9 @@ class SpellDebuff(Spell):
         type: ActionType,
         level: int,
         mind: int,
-        effect,
-        multi_target_expr=None,
-        upscale_choices=None,
+        effect: Effect,
+        multi_target_expr: Optional[str] = None,
+        upscale_choices: Optional[List[int]] = None,
     ):
         super().__init__(
             name,
@@ -600,19 +676,21 @@ class SpellDebuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellDebuff."
 
     def cast_spell(
-        self, actor: Character, target: Character, mind_level: int = -1
+        self, actor: Character, target: Character, mind_level: Optional[int] = None
     ) -> bool:
         """
         Executes a debuff spell, applying a detrimental effect to the target.
         Uses mind to cast the spell.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-        mind_level = mind_level if mind_level >= 0 else self.mind
 
+        # Determine the mind level to use.
+        mind_level = mind_level if mind_level is not None else self.mind
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
 
+        # Prepare the actor and target strings for output.
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
@@ -644,7 +722,7 @@ class SpellDebuff(Spell):
         return data
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "SpellDebuff":
         """
         Creates a SpellDebuff instance from a dictionary.
         Args:
@@ -657,7 +735,7 @@ class SpellDebuff(Spell):
             type=ActionType[data["type"]],
             level=data["level"],
             mind=data["mind"],
-            effect=Effect.from_dict(data.get("effect", None)),
+            effect=Effect.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", None),
             upscale_choices=data.get("upscale_choices", None),
         )

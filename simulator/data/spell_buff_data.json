@@ -18,7 +18,7 @@
             "duration": 10,
             "modifiers": {
                 "ATTACK_BONUS": "1d4",
-                "DAMAGE_BONUS": "floor(MIND / 2)"
+                "DAMAGE_BONUS": "floor([MIND] / 2)"
             }
         }
     },
@@ -40,7 +40,7 @@
             "mind": 1,
             "duration": 5,
             "modifiers": {
-                "AC": "1 + floor(MIND / 2)"
+                "AC": "1 + floor([MIND] / 2)"
             }
         }
     },
@@ -61,7 +61,7 @@
             "mind": 2,
             "duration": 4,
             "modifiers": {
-                "AC": "1 + floor(MIND / 2)"
+                "AC": "1 + floor([MIND] / 2)"
             }
         }
     },
@@ -71,7 +71,7 @@
         "type": "BONUS",
         "level": 2,
         "mind": 2,
-        "multi_target_expr": "1 + floor(MIND / 2)",
+        "multi_target_expr": "1 + floor([MIND] / 2)",
         "upscale_choices": [
             2,
             3
@@ -82,7 +82,7 @@
             "mind": 2,
             "duration": 3,
             "modifiers": {
-                "MIND_MAX": "floor(MIND * 1.5)"
+                "MIND_MAX": "floor([MIND] * 1.5)"
             }
         }
     }

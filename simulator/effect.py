@@ -1,14 +1,15 @@
-from logging import info, debug, warning, error
+from logging import debug
 from rich.console import Console
-from abc import ABC, abstractmethod
+
 from utils import *
+from typing import Any
 from character import Character
 from constants import *
 
 console = Console()
 
 
-class Effect:
+class Effect(object):
     def __init__(self, name: str):
         self.name = name
 
@@ -43,6 +44,11 @@ class Effect:
         """
         ...
 
+    def validate(self):
+        """Validate the effect's properties."""
+        assert self.name, "Effect name must not be empty."
+        assert isinstance(self.name, str), "Effect name must be a string."
+
     def to_dict(self):
         return {
             "type": self.__class__.__name__,
@@ -50,9 +56,8 @@ class Effect:
         }
 
     @staticmethod
-    def from_dict(data):
-        if not data:
-            return None
+    def from_dict(data: dict[str, Any]) -> "Effect":
+        assert data is not None, "Data must not be None."
         if data.get("type") == "Buff":
             return Buff.from_dict(data)
         if data.get("type") == "Armor":
@@ -63,50 +68,41 @@ class Effect:
             return HoT.from_dict(data)
         if data.get("type") == "Effect":
             return Effect(data["name"])
-        return None
+        raise ValueError(f"Unknown effect type: {data.get('type')}")
 
 
 class Buff(Effect):
-    def __init__(self, name: str, mind: int, duration: int, modifiers: dict):
+    def __init__(self, name: str, duration: int, modifiers: dict[BonusType, str]):
         super().__init__(name)
-        self.mind = mind
-        self.duration = duration
-        self.modifiers = modifiers
+        self.duration: int = duration
+        self.modifiers: dict[BonusType, str] = modifiers
         self._cached_values: dict[BonusType, int] = {}
-
-        assert self.duration > 0, "Duration must be greater than 0."
-        assert isinstance(self.modifiers, dict), "modifiers must be a dictionary."
-        for key in self.modifiers.keys():
-            assert isinstance(
-                key, BonusType
-            ), f"Bonus key '{key}' must be of type BonusType."
 
     def apply(self, actor: Character, target: Character, mind_level: int = 0):
         debug(f"Applying buff '{self.name}' to {target.name}.")
-        # Use the effect mind level, or the one provided.
-        mind_level = max(self.mind, mind_level)
         # Evaluate each modifier and apply it to the target
         for bonus_type, bonus_expr in self.modifiers.items():
+            bonus = 0
             if bonus_type == BonusType.HP_MAX:
                 bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                self._cached_values[bonus_type] = bonus
                 target.hp_max += bonus
                 target.hp += bonus
             elif bonus_type == BonusType.MIND_MAX:
                 bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                self._cached_values[bonus_type] = bonus
                 target.mind_max += bonus
                 target.mind += bonus
             elif bonus_type == BonusType.AC:
                 bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                self._cached_values[bonus_type] = bonus
                 target.ac += bonus
+            elif bonus_type == BonusType.INITIATIVE_BONUS:
+                bonus = evaluate_expression(bonus_expr, actor, mind_level)
+                target.initiative_bonus += bonus
             elif bonus_type == BonusType.ATTACK_BONUS:
-                self._cached_values[bonus_type] = bonus_expr
                 target.attack_modifiers[self.name] = bonus_expr
             elif bonus_type == BonusType.DAMAGE_BONUS:
-                self._cached_values[bonus_type] = bonus_expr
                 target.damage_modifiers[self.name] = bonus_expr
+            # Store the evaluated bonus in the cached values.
+            self._cached_values[bonus_type] = bonus
 
     def remove(self, actor: Character, target: Character):
         debug(f"Removing buff '{self.name}' from {target.name}.")
@@ -119,6 +115,8 @@ class Buff(Effect):
                 target.mind = min(target.mind, target.mind_max)
             elif bonus_type == BonusType.AC:
                 target.ac -= bonus
+            elif bonus_type == BonusType.INITIATIVE_BONUS:
+                target.initiative_bonus -= bonus
             elif bonus_type == BonusType.ATTACK_BONUS:
                 if self.name in target.attack_modifiers:
                     del target.attack_modifiers[self.name]
@@ -127,21 +125,32 @@ class Buff(Effect):
                     del target.damage_modifiers[self.name]
         self._cached_values.clear()
 
-    def to_dict(self):
+    def validate(self):
+        super().validate()
+        assert self.duration > 0, "Buff duration must be greater than 0."
+        assert isinstance(self.modifiers, dict), "Modifiers must be a dictionary."
+        for key in self.modifiers.keys():
+            assert isinstance(
+                key, BonusType
+            ), f"Bonus key '{key}' must be of type BonusType."
+            assert isinstance(
+                self.modifiers[key], str
+            ), f"Modifier value for '{key}' must be a string expression."
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": "Buff",
             "name": self.name,
-            "mind": self.mind,
             "duration": self.duration,
             "modifiers": {k.name: v for k, v in self.modifiers.items()},
         }
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "Buff":
+        assert data is not None, "Data must not be None."
         modifiers = {BonusType[k]: v for k, v in data["modifiers"].items()}
         return Buff(
             name=data["name"],
-            mind=data["mind"],
             duration=data["duration"],
             modifiers=modifiers,
         )
@@ -153,8 +162,7 @@ class Armor(Effect):
         self.ac_bonus = ac_bonus
         self.armor_slot: ArmorSlot = armor_slot
 
-        assert self.ac_bonus > 0, "AC bonus must be greater than 0."
-        assert isinstance(armor_slot, ArmorSlot), "armor_slot must be ArmorSlot enum."
+        self.validate()
 
     def wear(self, actor: Character):
         debug(f"{actor.name} wears armor '{self.name}' with AC bonus {self.ac_bonus}.")
@@ -164,7 +172,13 @@ class Armor(Effect):
         debug(f"{actor.name} strips armor '{self.name}' with AC bonus {self.ac_bonus}.")
         actor.ac -= self.ac_bonus
 
-    def to_dict(self):
+    def validate(self) -> None:
+        assert self.ac_bonus >= 0, "Armor AC bonus must be a non-negative integer."
+        assert isinstance(
+            self.armor_slot, ArmorSlot
+        ), f"Armor slot '{self.armor_slot}' must be of type ArmorSlot."
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": "Armor",
             "name": self.name,
@@ -173,7 +187,8 @@ class Armor(Effect):
         }
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "Armor":
+        assert data is not None, "Data must not be None."
         return Armor(
             name=data["name"],
             ac_bonus=data["ac_bonus"],
@@ -185,26 +200,18 @@ class DoT(Effect):
     def __init__(
         self,
         name: str,
-        mind: int,
         duration: int,
         damage_per_turn: str,
         damage_type: DamageType,
     ):
         super().__init__(name)
-        self.mind = mind
         self.duration = duration
         self.damage_per_turn = damage_per_turn
         self.damage_type: DamageType = damage_type
 
-        assert self.duration > 0, "Duration must be greater than 0."
-        assert self.damage_per_turn, "Damage per turn must be a valid string."
-        assert isinstance(
-            self.damage_type, DamageType
-        ), f"Damage type '{self.damage_type}' must be of type DamageType."
+        self.validate()
 
     def turn_update(self, actor: Character, target: Character, mind_level: int = 0):
-        # Compute the actually used mind level, which is the maximum of the effect's mind and the actor's mind.
-        mind_level = max(self.mind, mind_level)
         # Calculate the damage amount using the provided expression.
         dot_value, dot_desc = roll_and_describe(self.damage_per_turn, actor, mind_level)
         # Asser that the damage value is a positive integer.
@@ -217,22 +224,37 @@ class DoT(Effect):
         console.print(
             f"    :fire: [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
         )
+        # If the target is defeated, print a message.
+        if not target.is_alive() and not target.is_player:
+            console.print(
+                f"    [bold red]{target.name} has been defeated![/]",
+                markup=True,
+            )
 
-    def to_dict(self):
+    def validate(self):
+        super().validate()
+        assert self.duration > 0, "DoT duration must be greater than 0."
+        assert isinstance(
+            self.damage_per_turn, str
+        ), "Damage per turn must be a string expression."
+        assert isinstance(
+            self.damage_type, DamageType
+        ), f"Damage type '{self.damage_type}' must be of type DamageType."
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": "DoT",
             "name": self.name,
-            "mind": self.mind,
             "duration": self.duration,
             "damage_per_turn": self.damage_per_turn,
             "damage_type": self.damage_type.name,
         }
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "DoT":
+        assert data is not None, "Data must not be None."
         return DoT(
             name=data["name"],
-            mind=data["mind"],
             duration=data["duration"],
             damage_per_turn=data["damage_per_turn"],
             damage_type=DamageType[data["damage_type"]],
@@ -243,23 +265,19 @@ class HoT(Effect):
     def __init__(
         self,
         name: str,
-        mind: int,
         duration: int,
         heal_per_turn: str,
     ):
         super().__init__(name)
-        self.mind = mind
         self.duration = duration
         self.heal_per_turn = heal_per_turn
 
-        assert self.duration > 0, "Duration must be greater than 0."
+        self.validate()
 
     def turn_update(self, actor: Character, target: Character, mind_level: int = 0):
-        # Compute the actually used mind level, which is the maximum of the effect's mind and the actor's mind.
-        mind_level = max(self.mind, mind_level)
         # Calculate the heal amount using the provided expression.
         hot_value, hot_desc = roll_and_describe(self.heal_per_turn, actor, mind_level)
-        # Asser that the heal value is a positive integer.
+        # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0
         ), f"HoT '{self.name}' must have a non-negative integer heal value, got {hot_value}."
@@ -270,20 +288,26 @@ class HoT(Effect):
             f"    :heavy_plus_sign: [bold green]{target.name}[/] heals for {hot_value} ([white]{hot_desc}[/]) hp from [bold]{self.name}[/]."
         )
 
-    def to_dict(self):
+    def validate(self):
+        super().validate()
+        assert self.duration > 0, "HoT duration must be greater than 0."
+        assert isinstance(
+            self.heal_per_turn, str
+        ), "Heal per turn must be a string expression."
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": "HoT",
             "name": self.name,
-            "mind": self.mind,
             "duration": self.duration,
             "heal_per_turn": self.heal_per_turn,
         }
 
     @staticmethod
-    def from_dict(data):
+    def from_dict(data: dict[str, Any]) -> "HoT":
+        assert data is not None, "Data must not be None."
         return HoT(
             name=data["name"],
-            mind=data["mind"],
             duration=data["duration"],
             heal_per_turn=data["heal_per_turn"],
         )

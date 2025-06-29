@@ -98,11 +98,11 @@ with open("data/spell_debuff_data.json", "r") as f:
 console.print(Rule("Loading Character Classes", style="bold green"))
 
 # Load character classes.
-classes: dict[str, Class] = {}
+classes: dict[str, CharacterClass] = {}
 with open("data/character_classes.json", "r") as f:
     class_data = json.load(f)
     for entry in class_data:
-        character_class = Class.from_dict(entry)
+        character_class = CharacterClass.from_dict(entry)
         classes[character_class.name] = character_class
         print(f"Loaded character class: {character_class.name}")
 

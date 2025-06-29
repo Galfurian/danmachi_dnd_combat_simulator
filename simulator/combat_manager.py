@@ -52,6 +52,11 @@ class CombatManager:
         self.ui = ui
         # Combine all participants for the deque, ensuring player is handled specifically
         self.participants = deque([player] + enemies + (friendlies or []))
+        # Stores the initiative of each participant.
+        self.initiatives = {
+            participant: random.randint(1, 20) + participant.INITIATIVE
+            for participant in self.participants
+        }
         # The player character, who is controlled by the user.
         self.player = player
         # The list of enemies the player is fighting against.
@@ -71,13 +76,17 @@ class CombatManager:
         # Ensure each character has an 'initiative' attribute (e.g., random.randint(1, 20) + char.DEX)
         # before calling initialize if not already done.
         self.participants = deque(
-            sorted(self.participants, key=lambda c: c.initiative, reverse=True)
+            sorted(
+                self.participants,
+                key=lambda c: self.initiatives[c],
+                reverse=True,
+            )
         )
         console.print("[bold green]Combat initialized![/]")
         console.print("[bold yellow]Turn Order:[/]")
         for participant in self.participants:
             console.print(
-                f"  {participant.initiative:3} - {participant.name:<20} - {participant.get_status_line()}",
+                f"  {self.initiatives[participant]:3} - {participant.name:<20} - {participant.get_status_line()}",
                 markup=True,
             )
 

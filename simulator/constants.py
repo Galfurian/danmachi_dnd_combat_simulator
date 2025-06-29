@@ -7,6 +7,7 @@ class BonusType(Enum):
     AC = auto()
     ATTACK_BONUS = auto()
     DAMAGE_BONUS = auto()
+    INITIATIVE_BONUS = auto()
     # Add other bonus types as needed
 
 

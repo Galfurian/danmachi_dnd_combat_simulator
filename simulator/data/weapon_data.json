@@ -4,10 +4,10 @@
         "name": "Dagger",
         "type": "STANDARD",
         "hands_required": 1,
-        "attack_roll": "1D20+DEX",
+        "attack_roll": "1D20+[DEX]",
         "damage_components": [
             {
-                "roll": "1D4+DEX",
+                "roll": "1D4+[DEX]",
                 "type": "PIERCING"
             }
         ]
@@ -17,10 +17,10 @@
         "name": "Shortsword",
         "type": "STANDARD",
         "hands_required": 1,
-        "attack_roll": "1D20+DEX",
+        "attack_roll": "1D20+[DEX]",
         "damage_components": [
             {
-                "roll": "1D6+DEX",
+                "roll": "1D6+[DEX]",
                 "type": "PIERCING"
             }
         ]
@@ -30,10 +30,10 @@
         "name": "Longsword",
         "type": "STANDARD",
         "hands_required": 1,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "1D8+STR",
+                "roll": "1D8+[STR]",
                 "type": "SLASHING"
             }
         ]
@@ -43,10 +43,10 @@
         "name": "Greataxe",
         "type": "STANDARD",
         "hands_required": 2,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "1D12+STR",
+                "roll": "1D12+[STR]",
                 "type": "SLASHING"
             }
         ]
@@ -56,10 +56,10 @@
         "name": "Warhammer",
         "type": "STANDARD",
         "hands_required": 1,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "1D8+STR",
+                "roll": "1D8+[STR]",
                 "type": "BLUDGEONING"
             }
         ]
@@ -69,10 +69,10 @@
         "name": "Heavy Mace",
         "type": "STANDARD",
         "hands_required": 2,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "2D6+STR",
+                "roll": "2D6+[STR]",
                 "type": "BLUDGEONING"
             }
         ]
@@ -82,10 +82,10 @@
         "name": "Yew Longbow",
         "type": "STANDARD",
         "hands_required": 2,
-        "attack_roll": "1D20+DEX",
+        "attack_roll": "1D20+[DEX]",
         "damage_components": [
             {
-                "roll": "1D8+DEX",
+                "roll": "1D8+[DEX]",
                 "type": "PIERCING"
             }
         ]
@@ -95,10 +95,10 @@
         "name": "Firebrand Blade",
         "type": "STANDARD",
         "hands_required": 1,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "1D8+STR",
+                "roll": "1D8+[STR]",
                 "type": "SLASHING"
             },
             {
@@ -112,10 +112,10 @@
         "name": "Quarterstaff",
         "type": "STANDARD",
         "hands_required": 2,
-        "attack_roll": "1D20+STR",
+        "attack_roll": "1D20+[STR]",
         "damage_components": [
             {
-                "roll": "1D6+STR",
+                "roll": "1D6+[STR]",
                 "type": "BLUDGEONING"
             }
         ]

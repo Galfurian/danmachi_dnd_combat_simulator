@@ -1,7 +1,6 @@
 from logging import info, debug, warning, error
-from typing import List
+from typing import Any, Dict, List
 from rich.console import Console
-import random
 
 from constants import *
 from utils import *
@@ -11,38 +10,25 @@ console = Console()
 
 
 class ActiveEffect:
-    def __init__(self, source, effect, mind_level: int) -> None:
-        self.source = source
-        self.effect = effect
+    def __init__(self, source: "Character", effect: "Effect", mind_level: int) -> None:
+        self.source: "Character" = source
+        self.effect: "Effect" = effect
         self.mind_level: int = mind_level
         self.duration: int = effect.duration
 
-    def to_dict(self):
-        """Converts the ActiveEffect instance to a dictionary."""
-        return {
-            "source": self.source,
-            "effect": self.effect.name,
-            "mind_level": self.mind_level,
-        }
 
-    @staticmethod
-    def from_dict(data: dict):
-        """Creates an ActiveEffect instance from a dictionary."""
-        return ActiveEffect(
-            source=data["source"],
-            effect=data["effect"],  # Assuming effect is a string name of the effect
-            mind_level=data.get("mind_level", 0),
-        )
-
-
-class Class:
+class CharacterClass:
     def __init__(self, name: str, hp_mult: int, mind_mult: int):
-        self.name = name
-        self.hp_mult = hp_mult
-        self.mind_mult = mind_mult
+        self.name: str = name
+        self.hp_mult: int = hp_mult
+        self.mind_mult: int = mind_mult
 
-    def to_dict(self):
-        """Converts the Class instance to a dictionary."""
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the CharacterClass instance to a dictionary.
+
+        Returns:
+            Dict[str, Any]: The dictionary representation of the CharacterClass instance.
+        """
         return {
             "name": self.name,
             "hp_mult": self.hp_mult,
@@ -50,9 +36,16 @@ class Class:
         }
 
     @staticmethod
-    def from_dict(data: dict):
-        """Creates a Class instance from a dictionary."""
-        return Class(
+    def from_dict(data: Dict[str, Any]) -> "CharacterClass":
+        """Creates a CharacterClass instance from a dictionary.
+
+        Args:
+            data (dict): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        return CharacterClass(
             name=data["name"],
             hp_mult=data.get("hp_mult", 0),
             mind_mult=data.get("mind_mult", 0),
@@ -62,22 +55,22 @@ class Class:
 class Character:
     def __init__(
         self,
-        name,
-        levels: dict[Class, int],
-        strength,
-        dexterity,
-        constitution,
-        intelligence,
-        wisdom,
-        charisma,
-        spellcasting_ability,
+        name: str,
+        levels: Dict[CharacterClass, int],
+        strength: int,
+        dexterity: int,
+        constitution: int,
+        intelligence: int,
+        wisdom: int,
+        charisma: int,
+        spellcasting_ability: str,
     ):
         # Determines if the character is a player or an NPC.
         self.is_player = False
         # Name of the character.
-        self.name = name
+        self.name: str = name
         # Stats.
-        self.stats = {
+        self.stats: Dict[str, int] = {
             "strength": strength,
             "dexterity": dexterity,
             "constitution": constitution,
@@ -86,53 +79,44 @@ class Character:
             "charisma": charisma,
         }
         # Resources.
-        self.levels: dict[Class, int] = levels
-        # Set Armor Class and Initiative.
-        self.ac = 0
-        self.initiative = random.randint(1, 20) + self.DEX
+        self.levels: Dict[CharacterClass, int] = levels
+        # Set Armor CharacterClass and Initiative.
+        self.ac: int = 0
         # Spellcasting Ability.
-        self.spellcasting_ability = spellcasting_ability
+        self.spellcasting_ability: str = spellcasting_ability
         # Calculate hp and mind based on class multipliers.
-        self.hp_max = 0
-        self.mind_max = 0
+        self.hp_max: int = 0
+        self.mind_max: int = 0
         for cls, cls_level in levels.items():
             # HP: base multiplier + modifier, minimum 1 per level
             self.hp_max += max(1, (cls.hp_mult + self.CON)) * cls_level
             # Mind: base multiplier + modifier, minimum 0 per level
             self.mind_max += max(0, (cls.mind_mult + self.SPELLCASTING)) * cls_level
 
-        self.hp = self.hp_max
-        self.mind = self.mind_max
+        self.hp: int = self.hp_max
+        self.mind: int = self.mind_max
+        # Initiative bonuses.
+        self.initiative_bonus: int = 0
         # List of equipped weapons.
-        self.equipped_weapons: list = []
-        self.total_hands = 2
-        self.hands_used = 0
+        self.equipped_weapons: list[Any] = []
+        self.total_hands: int = 2
+        self.hands_used: int = 0
         # List of equipped armor.
-        self.equipped_armor = list()
+        self.equipped_armor: list[Any] = []
         # List of active effects.
-        self.active_effects: List[ActiveEffect] = list()
+        self.active_effects: list[ActiveEffect] = []
         # List of actions.
-        self.actions = {}
+        self.actions: Dict[str, Any] = {}
         # List of spells
-        self.spells = {}
+        self.spells: Dict[str, Any] = {}
         # Modifiers
-        self.attack_modifiers = {}
-        self.damage_modifiers = {}
+        self.attack_modifiers: Dict[str, str] = {}
+        self.damage_modifiers: Dict[str, str] = {}
         # Turn flags to track used actions.
-        self.turn_flags = {
+        self.turn_flags: Dict[str, bool] = {
             "standard_action_used": False,
             "bonus_action_used": False,
         }
-
-        for cls_name, cls_level in levels.items():
-            if not isinstance(cls_name, Class):
-                error(f"Invalid class {cls_name} for character {name}.")
-                continue
-            if not isinstance(cls_level, int) or cls_level < 1:
-                error(
-                    f"Invalid level {cls_level} for class {cls_name.name} in character {name}."
-                )
-                continue
 
     @property
     def STR(self):
@@ -173,8 +157,17 @@ class Character:
 
     @property
     def AC(self):
-        """Calculates the character's Armor Class (AC) based on equipped defences and active effects."""
+        """Calculates the character's Armor CharacterClass (AC) based on equipped defences and active effects."""
         return self.ac
+
+    @property
+    def INITIATIVE(self) -> int:
+        """Calculates the character's initiative based on dexterity and any active effects.
+
+        Returns:
+            int: The total initiative value.
+        """
+        return self.DEX + self.initiative_bonus
 
     def reset_turn_flags(self):
         """Resets the turn flags for the character."""
@@ -215,8 +208,16 @@ class Character:
         else:
             return self.turn_flags["standard_action_used"]
 
-    def take_damage(self, amount, damage_type: DamageType):
-        """Reduces the character's hp by the given amount."""
+    def take_damage(self, amount: int, damage_type: DamageType):
+        """Reduces the character's hp by the given amount, applying damage reduction if applicable.
+
+        Args:
+            amount (int): The amount of damage to deal.
+            damage_type (DamageType): The type of damage being dealt.
+
+        Returns:
+            int: The actual amount of damage taken.
+        """
         # Ensure the amount is non-negative.
         amount = max(amount, 0)
         # Apply damage reduction from armor or effects.
@@ -225,8 +226,15 @@ class Character:
         # Return the actual damage we removed.
         return amount
 
-    def heal(self, amount):
-        """Increases the character's hp by the given amount, up to max_hp."""
+    def heal(self, amount: int) -> int:
+        """Increases the character's hp by the given amount, up to max_hp.
+
+        Args:
+            amount (int): The amount of healing to apply.
+
+        Returns:
+            int: The actual amount healed, which may be less than the requested amount if it exceeds max_hp.
+        """
         # Compute the actual amount we can heal.
         amount = max(0, min(amount, self.hp_max - self.hp))
         # Ensure we don't exceed the maximum hp.
@@ -234,87 +242,105 @@ class Character:
         # Return the actual amount healed.
         return amount
 
-    def use_mind(self, amount):
-        """Reduces the character's mind by the given amount. Returns True if successful, False otherwise."""
+    def use_mind(self, amount: int) -> bool:
+        """Reduces the character's mind by the given amount, if they have enough mind points.
+
+        Args:
+            amount (int): The amount of mind points to use.
+
+        Returns:
+            bool: True if the mind points were successfully used, False otherwise.
+        """
         if self.mind >= amount:
             self.mind -= amount
             return True
         return False
 
-    def is_alive(self):
-        """Checks if the character's hp is above zero."""
+    def is_alive(self) -> bool:
+        """Checks if the character is alive (hp > 0).
+
+        Returns:
+            bool: True if the character is alive, False otherwise.
+        """
         return self.hp > 0
 
-    def get_spell_attack_bonus(self, spell_level=0):
-        """Calculates the spell attack bonus for spells cast by this character."""
-        ability = self.stats[self.spellcasting_ability]
-        bonus = get_stat_modifier(ability) + (spell_level // 2)
-        return bonus
+    def get_spell_attack_bonus(self, spell_level: int = 1) -> int:
+        """Calculates the spell attack bonus for the character.
 
-    def learn_action(self, action):
-        """Adds an Action object to the character's known actions."""
-        self.actions[action.name.lower()] = action
-        info(f"{self.name} learned {action.name}!")
+        Args:
+            spell_level (int, optional): The level of the spell being cast. Defaults to
 
-    def unlearn_action(self, action):
-        """Removes an Action object from the character's known actions."""
+        Returns:
+            int: The spell attack bonus for the character.
+        """
+        return self.SPELLCASTING + spell_level
+
+    def learn_action(self, action: Any):
+        """Adds an Action object to the character's known actions.
+
+        Args:
+            action (Any): The action to learn.
+        """
+        if not action.name.lower() in self.actions:
+            self.actions[action.name.lower()] = action
+            debug(f"{self.name} learned {action.name}!")
+
+    def unlearn_action(self, action: Any):
+        """Removes an Action object from the character's known actions.
+
+        Args:
+            action (Any): The action to unlearn.
+        """
         if action.name.lower() in self.actions:
             del self.actions[action.name.lower()]
             debug(f"{self.name} unlearned {action.name}!")
-        else:
-            error(f"{self.name} does not know the action: {action.name}")
 
-    def learn_spell(self, spell):
-        """Adds a Spell object to the character's known spells."""
-        self.spells[spell.name.lower()] = spell
-        info(f"{self.name} learned {spell.name}!")
+    def learn_spell(self, spell: Any):
+        """Adds a Spell object to the character's known spells.
 
-    def unlearn_spell(self, spell):
-        """Removes a Spell object from the character's known spells."""
+        Args:
+            spell (Any): The spell to learn.
+        """
+        if not spell.name.lower() in self.spells:
+            self.spells[spell.name.lower()] = spell
+            debug(f"{self.name} learned {spell.name}!")
+
+    def unlearn_spell(self, spell: Any):
+        """Removes a Spell object from the character's known spells.
+
+        Args:
+            spell (Any): The spell to unlearn.
+        """
         if spell.name.lower() in self.spells:
             del self.spells[spell.name.lower()]
             debug(f"{self.name} unlearned {spell.name}!")
-        else:
-            error(f"{self.name} does not know the spell: {spell.name}")
 
-    def use_action(self, action_name, target):
-        """
-        Executes an action against a target character.
-        """
-        action = self.actions.get(action_name.lower())
-        if not action:
-            error(f"{self.name} does not know the action: {action_name}")
-            return False
-        return action.execute(self, target)
+    def add_effect(self, source: "Character", effect: Any, mind_level: int = 0):
+        """Applies an effect to the character.
 
-    def use_spell(self, spell_name, target):
+        Args:
+            source (Character): The character that applied the effect.
+            effect (Any): The effect to apply.
+            mind_level (int, optional): The mind level required to maintain the effect. Defaults to 0.
         """
-        Executes a spell against a target character.
-        The rank of the spell, if we are upcasting it.
-        """
-        spell = self.spells.get(spell_name.lower())
-        if not spell:
-            error(f"{self.name} does not know the spell: {spell_name}")
-            return False
-        return spell.execute(self, target)
-
-    def add_effect(self, source, effect, mind_level=0):
-        """
-        Applies an effect to the character. Categorizes it as permanent or active.
-        """
-        self.active_effects.append(ActiveEffect(source, effect, mind_level))
+        if not self.has_effect(effect):
+            debug(f"Adding effect: {effect.name} to {self.name} from {source.name}")
+            self.active_effects.append(ActiveEffect(source, effect, mind_level))
 
     def remove_effect(self, effect: ActiveEffect):
-        """
-        Removes a specific effect from the character and reverts its changes.
-        """
-        debug(f"Removing effect: {effect.effect.name} from {self.name}")
-        # Call the effect's remove method to revert its changes.
-        effect.effect.remove(effect.source, self)
-        # Remove the active effect from the list.
-        self.active_effects.remove(effect)
+        """Removes a specific effect from the character.
 
-    def has_effect(self, effect) -> bool:
+        Args:
+            effect (ActiveEffect): The effect to remove.
+        """
+        if self.has_effect(effect):
+            debug(f"Removing effect: {effect.effect.name} from {self.name}")
+            # Call the effect's remove method to revert its changes.
+            effect.effect.remove(effect.source, self)
+            # Remove the active effect from the list.
+            self.active_effects.remove(effect)
+
+    def has_effect(self, effect: Any) -> bool:
         """
         Checks if the character has a specific active effect.
         Args:
@@ -468,7 +494,7 @@ class Character:
         levels = {}
         for cls_name, cls_level in data["levels"].items():
             if cls_name not in cls_registry:
-                warning(f"Class {cls_name} not found in registry.")
+                warning(f"CharacterClass {cls_name} not found in registry.")
                 continue
             levels[cls_registry[cls_name]] = cls_level
 
