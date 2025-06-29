@@ -1,0 +1,66 @@
+[
+    {
+        "class": "SpellDebuff",
+        "name": "Sapping Curse",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Weakened Strikes",
+            "mind": 1,
+            "duration": 3,
+            "modifiers": {
+                "ATTACK_BONUS": "-1",
+                "DAMAGE_BONUS": "-floor(MIND / 2)"
+            }
+        }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Crippling Hex",
+        "type": "STANDARD",
+        "level": 2,
+        "mind": 2,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Crippled Defense",
+            "mind": 2,
+            "duration": 4,
+            "modifiers": {
+                "AC": "-1"
+            }
+        }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Mind Leak",
+        "type": "BONUS",
+        "level": 2,
+        "mind": 2,
+        "multi_target_expr": "1 + floor(MIND / 2)",
+        "upscale_choices": [
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Leaking Mind",
+            "mind": 2,
+            "duration": 3,
+            "modifiers": {
+                "MIND_MAX": "-floor(MIND * 1.5)"
+            }
+        }
+    }
+]

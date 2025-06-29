@@ -1,0 +1,93 @@
+[
+    {
+        "class": "SpellAttack",
+        "name": "Sacred Flame",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "damage_type": "RADIANT",
+        "damage_roll": "[MIND]D8",
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Scorching Ray",
+        "type": "STANDARD",
+        "level": 2,
+        "mind": 2,
+        "damage_type": "FIRE",
+        "damage_roll": "[MIND]D6",
+        "multi_target_expr": "[MIND]",
+        "upscale_choices": [
+            2,
+            3,
+            4,
+            5
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Thunderclap",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "damage_type": "THUNDER",
+        "damage_roll": "[MIND]D6",
+        "multi_target_expr": "[MIND]",
+        "upscale_choices": [
+            2,
+            4,
+            6
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Ray of Frost",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "damage_type": "ICE",
+        "damage_roll": "[MIND]D8",
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Burning Hands",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "damage_type": "FIRE",
+        "damage_roll": "[MIND]D6",
+        "multi_target_expr": "1 + [MIND]",
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Ray of Fire",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "damage_type": "FIRE",
+        "damage_roll": "[MIND]D6",
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    }
+]

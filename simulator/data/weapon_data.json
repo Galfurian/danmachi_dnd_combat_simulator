@@ -1,0 +1,123 @@
+[
+    {
+        "class": "WeaponAttack",
+        "name": "Dagger",
+        "type": "STANDARD",
+        "hands_required": 1,
+        "attack_roll": "1D20+DEX",
+        "damage_components": [
+            {
+                "roll": "1D4+DEX",
+                "type": "PIERCING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Shortsword",
+        "type": "STANDARD",
+        "hands_required": 1,
+        "attack_roll": "1D20+DEX",
+        "damage_components": [
+            {
+                "roll": "1D6+DEX",
+                "type": "PIERCING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Longsword",
+        "type": "STANDARD",
+        "hands_required": 1,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "1D8+STR",
+                "type": "SLASHING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Greataxe",
+        "type": "STANDARD",
+        "hands_required": 2,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "1D12+STR",
+                "type": "SLASHING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Warhammer",
+        "type": "STANDARD",
+        "hands_required": 1,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "1D8+STR",
+                "type": "BLUDGEONING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Heavy Mace",
+        "type": "STANDARD",
+        "hands_required": 2,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "2D6+STR",
+                "type": "BLUDGEONING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Yew Longbow",
+        "type": "STANDARD",
+        "hands_required": 2,
+        "attack_roll": "1D20+DEX",
+        "damage_components": [
+            {
+                "roll": "1D8+DEX",
+                "type": "PIERCING"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Firebrand Blade",
+        "type": "STANDARD",
+        "hands_required": 1,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "1D8+STR",
+                "type": "SLASHING"
+            },
+            {
+                "roll": "1D4",
+                "type": "FIRE"
+            }
+        ]
+    },
+    {
+        "class": "WeaponAttack",
+        "name": "Quarterstaff",
+        "type": "STANDARD",
+        "hands_required": 2,
+        "attack_roll": "1D20+STR",
+        "damage_components": [
+            {
+                "roll": "1D6+STR",
+                "type": "BLUDGEONING"
+            }
+        ]
+    }
+]

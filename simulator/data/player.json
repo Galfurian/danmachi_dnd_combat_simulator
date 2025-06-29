@@ -1,0 +1,30 @@
+{
+    "name": "Zephyros",
+    "is_player": true,
+    "levels": {
+        "Paladin": 2,
+        "Sorcerer": 3
+    },
+    "stats": {
+        "strength": 14,
+        "dexterity": 12,
+        "constitution": 14,
+        "intelligence": 10,
+        "wisdom": 12,
+        "charisma": 18
+    },
+    "spellcasting_ability": "charisma",
+    "equipped_weapons": [
+        "Longsword"
+    ],
+    "equipped_armor": [
+        "Chainmail"
+    ],
+    "active_effects": [],
+    "actions": [],
+    "spells": [
+        "Burning Hands",
+        "Healing Word",
+        "Blessing of Valor"
+    ]
+}

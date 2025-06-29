@@ -1,0 +1,89 @@
+[
+    {
+        "class": "SpellHeal",
+        "name": "Cure Wounds",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "heal_roll": "[MIND]D8",
+        "effect": null,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Healing Word",
+        "type": "BONUS",
+        "level": 1,
+        "mind": 1,
+        "heal_roll": "[MIND]D4",
+        "effect": null,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Regenerative Touch",
+        "type": "STANDARD",
+        "level": 2,
+        "mind": 2,
+        "heal_roll": "2",
+        "effect": {
+            "type": "HoT",
+            "name": "Regeneration",
+            "mind": 2,
+            "duration": 3,
+            "heal_per_turn": "[MIND]D4"
+        },
+        "multi_target_expr": null,
+        "upscale_choices": [
+            2,
+            3,
+            4
+        ]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Mass Healing Word",
+        "type": "BONUS",
+        "level": 3,
+        "mind": 3,
+        "heal_roll": "[MIND]D4",
+        "effect": null,
+        "multi_target_expr": "[MIND]",
+        "upscale_choices": [
+            3,
+            4,
+            5
+        ]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Soothing Radiance",
+        "type": "STANDARD",
+        "level": 2,
+        "mind": 2,
+        "heal_roll": "2D6",
+        "effect": {
+            "type": "HoT",
+            "name": "Radiant Warmth",
+            "mind": 2,
+            "duration": 2,
+            "heal_per_turn": "1D4"
+        },
+        "multi_target_expr": "1 + floor([MIND] / 2)",
+        "upscale_choices": [
+            2,
+            3,
+            4
+        ]
+    }
+]

@@ -33,17 +33,22 @@ class BaseAction(ABC):
         """
         ...
 
-    def apply_effect(self, actor: Character, target: Character, effect=None):
+    def apply_effect(
+        self, actor: Character, target: Character, effect, mind_level: int = 0
+    ):
+        """Applies an effect to a target character.
+
+        Args:
+            actor (Character): The character performing the action.
+            target (Character): The character targeted by the action.
+            effect (Effect): The effect to apply.
+            mind_level (int, optional): The mind level to use for the effect. Defaults to 0.
         """
-        Applies an effect to the target character.
-        This is a placeholder for actions that may apply effects.
-        """
-        if effect:
-            debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
-            # Apply the effect to the target.
-            effect.apply(actor, target)
-            # Add the effect to the target's effects list.
-            target.add_effect(actor, effect)
+        debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
+        # Apply the effect to the target.
+        effect.apply(actor, target, mind_level)
+        # Add the effect to the target's effects list.
+        target.add_effect(actor, effect, mind_level)
 
     def to_dict(self) -> dict:
         """Converts the action to a dictionary representation.
@@ -59,7 +64,7 @@ class BaseAction(ABC):
         }
 
     @staticmethod
-    def from_dict(data) -> "BaseAction":
+    def from_dict(data):
         """Creates an executable from a dictionary representation.
 
         Args:
@@ -74,11 +79,14 @@ class BaseAction(ABC):
             return SpellAttack.from_dict(data)
         if data.get("class") == "SpellHeal":
             return SpellHeal.from_dict(data)
-        if data.get("class") == "BuffSpell":
-            return BuffSpell.from_dict(data)
-        if data.get("class") == "DebuffSpell":
-            return DebuffSpell.from_dict(data)
+        if data.get("class") == "SpellBuff":
+            return SpellBuff.from_dict(data)
+        if data.get("class") == "SpellDebuff":
+            return SpellDebuff.from_dict(data)
         raise ValueError(f"Unknown action class: {data.get('class')}")
+
+
+from utils import substitute_variables, roll_expression
 
 
 class WeaponAttack(BaseAction):
@@ -86,78 +94,86 @@ class WeaponAttack(BaseAction):
         self,
         name: str,
         type: ActionType,
-        damage_type: DamageType,
+        hands_required: int,
         attack_roll: str,
-        damage_roll: str,
+        damage_components: list[dict],
         effect=None,
     ):
         super().__init__(name, type, ActionCategory.OFFENSIVE)
-        self.damage_type: DamageType = damage_type
-        self.attack_roll: str = attack_roll
-        self.damage_roll: str = damage_roll
+        self.hands_required = hands_required
+        self.attack_roll = attack_roll
+        self.damage_components = damage_components
         self.effect = effect
 
+        for component in self.damage_components:
+            if "roll" not in component or "type" not in component:
+                raise ValueError("Each damage component must have 'roll' and 'type'.")
+            if component["type"] not in DamageType.__members__:
+                raise ValueError(f"Invalid damage type: {component['type']}")
+
     def execute(self, actor: Character, target: Character):
-        """
-        Executes a weapon attack from the actor to the target.
-        Applies attack and damage modifiers from the actor's active effects.
-        """
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
-        # Format once and for all the actor name and target name.
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
         target_str = (
             f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
         )
-        # Build the full attack expression by combining base roll with all attack modifiers
-        full_attack_expr = self.attack_roll
+
+        # --- Build & resolve attack roll ---
+        attack_expr = self.attack_roll
         for _, bonus_expr in actor.attack_modifiers.items():
-            # Correctly append the bonus expression string, preceded by a '+'
-            full_attack_expr += f"+{bonus_expr}"
-        debug(f"Weapon Attack Expression: {full_attack_expr}")
-        # Roll the attack result. Pass actor to roll_expression to resolve stat modifiers.
-        attack = roll_expression(full_attack_expr, actor)
-        # Check against the target AC
-        if attack >= target.ac:
-            # Build the full damage expression by combining base roll with all damage modifiers
-            full_damage_expr = self.damage_roll
-            for _, bonus_expr in actor.damage_modifiers.items():
-                # Correctly append the bonus expression string, preceded by a '+'
-                full_damage_expr += f"+{bonus_expr}"
-            debug(f"Weapon Damage Expression: {full_damage_expr}")
-            # Compute the damage. Pass actor to roll_expression to resolve stat modifiers.
-            damage = roll_expression(full_damage_expr, actor)
-            # Apply the damage.
-            damage = target.take_damage(damage, self.damage_type)
-            # Apply effect.
-            self.apply_effect(actor, target, self.effect)
-            # Log the successful attack.
+            attack_expr += f"+{bonus_expr}"
+        attack_result, attack_roll_desc = roll_and_describe(attack_expr, actor)
+
+        # --- Outcome: HIT ---
+        if attack_result >= target.ac:
+            total_damage = 0
+            damage_details = []
+            for component in self.damage_components:
+                damage_expr = substitute_variables(component["roll"], actor)
+                damage_amount = roll_expression(damage_expr, actor)
+                damage_type = DamageType[component["type"]]
+                applied_damage = target.take_damage(damage_amount, damage_type)
+                total_damage += applied_damage
+                damage_details.append(
+                    f"{applied_damage} {damage_type.name.lower()} ({damage_expr})"
+                )
             console.print(
-                f"{actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled [white]{attack}[/] vs AC [yellow]{target.ac}[/], "
-                f"hits for [bold magenta]{damage}[/] "
-                f"[italic]{self.damage_type.name.lower()}[/] damage.",
+                f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
+                f"rolled {attack_result} ({attack_roll_desc}) vs AC [yellow]{target.ac}[/] — [green]hit![/]",
                 markup=True,
             )
+            console.print(
+                f"        🗡️ [bold magenta]Damage:[/] {total_damage} total — "
+                + " + ".join(damage_details),
+                markup=True,
+            )
+
             if self.effect:
+                self.apply_effect(actor, target, self.effect)
                 console.print(
-                    f"    [yellow]Effect {self.effect.name} applied to {target_str} by {actor_str}.[/]"
+                    f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                    markup=True,
                 )
+
+        # --- Outcome: MISS ---
         else:
             console.print(
-                f"{actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled [red]{attack}[/] vs AC [yellow]{target.ac}[/], [red]misses[/]."
+                f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
+                f"rolled [red]{attack_result}[/] ({attack_roll_desc}) vs AC [yellow]{target.ac}[/] — [red]miss[/]",
+                markup=True,
             )
+
         return True
 
     def to_dict(self) -> dict:
         # Get the base dictionary representation.
         data = super().to_dict()
         # Add specific fields for WeaponAttack
-        data["damage_type"] = self.damage_type.name
+        data["hands_required"] = self.hands_required
         data["attack_roll"] = self.attack_roll
-        data["damage_roll"] = self.damage_roll
+        data["damage_components"] = self.damage_components
         # Include the effect if it exists.
         if self.effect:
             data["effect"] = self.effect.to_dict()
@@ -175,9 +191,9 @@ class WeaponAttack(BaseAction):
         return WeaponAttack(
             name=data["name"],
             type=ActionType[data["type"]],
-            damage_type=DamageType[data["damage_type"]],
+            hands_required=data["hands_required"],
             attack_roll=data["attack_roll"],
-            damage_roll=data["damage_roll"],
+            damage_components=data["damage_components"],
             effect=Effect.from_dict(data.get("effect", None)),
         )
 
@@ -199,16 +215,17 @@ class Spell(BaseAction):
         self.multi_target_expr = multi_target_expr
         self.upscale_choices = upscale_choices or [mind]
 
-    def target_count(self, actor: Character, mind: int = -1) -> int:
+    def is_single_target(self) -> bool:
+        """Returns True if this spell is single-target, False otherwise."""
+        return not self.multi_target_expr or not isinstance(self.multi_target_expr, str)
+
+    def target_count(self, actor: Character, mind_level: int = -1) -> int:
         """Number of targets this ability can affect. Default is 1 (single-target)."""
-        # First, get the mind level to use.
-        mind = mind if mind >= 0 else self.mind
-        # Second, check if there is a multi-target expression.
-        if self.multi_target_expr and isinstance(self.multi_target_expr, str):
+        if not self.is_single_target():
+            # First, get the mind level to use.
+            mind_level = mind_level if mind_level >= 0 else self.mind
             # Evaluate the multi-target expression to get the number of targets.
-            return evaluate_expression(
-                self.multi_target_expr, entity=actor, mind_level=mind
-            )
+            return evaluate_expression(self.multi_target_expr, actor, mind_level)
         return 1
 
     def mind_choices(self) -> list[int]:
@@ -278,58 +295,64 @@ class SpellAttack(Spell):
         self, actor: Character, target: Character, mind_level: int = -1
     ) -> bool:
         """
-        Executes a spell attack from the actor to the target.
+        Executes a spell attack from the actor to the target with breakdown logs.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-        # Get the actual mind level to use for the spell.
         mind_level = mind_level if mind_level >= 0 else self.mind
-        # Check if the actor has enough mind to cast the spell.
+
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
-        # Format once and for all the actor name and target name.
+
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
         target_str = (
             f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
         )
-        # Build the full spell attack expression. This uses the character's intrinsic spell attack bonus.
+
+        # --- Build and roll attack expression ---
         full_attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
-        # Also include any additional attack modifiers from effects (if applicable to spells)
-        for bonus_name, bonus_expr in actor.attack_modifiers.items():
+        for _, bonus_expr in actor.attack_modifiers.items():
             full_attack_expr += f"+{bonus_expr}"
-        debug(f"Spell Attack Expression: {full_attack_expr}")
-        # Roll the attack result. Pass actor to roll_expression to resolve stat modifiers.
-        attack = roll_expression(full_attack_expr, actor, mind_level)
-        # Check against the target AC
-        if attack >= target.ac:
-            # Compute the damage based on the mind spent and any damage modifiers
+
+        attack_roll, attack_desc = roll_and_describe(
+            full_attack_expr, actor, mind_level
+        )
+
+        # --- Hit logic ---
+        if attack_roll >= target.ac:
             full_damage_expr = self.damage_roll
-            for bonus_name, bonus_expr in actor.damage_modifiers.items():
+            for _, bonus_expr in actor.damage_modifiers.items():
                 full_damage_expr += f"+{bonus_expr}"
-            debug(f"Spell Damage Expression: {full_damage_expr}")
-            damage = roll_expression(full_damage_expr, actor, mind_level)
-            # Apply the damage.
-            damage = target.take_damage(damage, self.damage_type)
-            # Apply effect.
-            self.apply_effect(actor, target, self.effect)
-            # Log the successful attack.
+            damage_roll, damage_desc = roll_and_describe(
+                full_damage_expr, actor, mind_level
+            )
+            applied_damage = target.take_damage(damage_roll, self.damage_type)
             console.print(
-                f"{actor_str} casts [bold]{self.name}[/] on {target_str}: "
-                f"rolled [white]{attack}[/] vs AC [yellow]{target.ac}[/], "
-                f"hits for [bold magenta]{damage}[/] "
-                f"[italic]{self.damage_type.name.lower()}[/] damage."
+                f"    {actor_str} casts [bold]{self.name}[/] on {target_str}: "
+                f"rolled [white]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.ac}[/] — [green]hit![/]",
+                markup=True,
+            )
+            console.print(
+                f"        🗡️ [bold magenta]Damage:[/] {applied_damage} "
+                f"[italic]{self.damage_type.name.lower()}[/] ({damage_desc})",
+                markup=True,
             )
             if self.effect:
+                self.apply_effect(actor, target, self.effect)
                 console.print(
-                    f"    [yellow]Effect {self.effect.name} applied to {target_str} by {actor_str}.[/]"
+                    f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                    markup=True,
                 )
+        # --- Miss logic ---
         else:
             console.print(
-                f"{actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
-                f"rolled [red]{attack}[/] vs AC [yellow]{target.ac}[/], [red]misses[/]."
+                f"    {actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
+                f"rolled [red]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.ac}[/] — [red]miss[/]",
+                markup=True,
             )
+
         return True
 
     def to_dict(self) -> dict:
@@ -399,34 +422,38 @@ class SpellHeal(Spell):
         debug(
             f"{actor.name} attempts to cast {self.name} on {target.name}, expression {self.heal_roll}."
         )
-        # Get the actual mind level to use for the spell.
         mind_level = mind_level if mind_level >= 0 else self.mind
-        # Check if the actor has enough mind to cast the spell.
+
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
-        # Format once and for all the actor name and target name.
+
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
         target_str = (
             f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
         )
-        # Compute the healing based on the mind spent and heal roll.
-        heal = roll_expression(self.heal_roll, actor, mind_level)
-        # Apply the healing.
-        heal = target.heal(heal)
-        # Apply effect.
-        self.apply_effect(actor, target, self.effect)
-        # Log the successful healing.
+
+        # Compute the healing based on the mind spent and roll
+        heal_value, heal_desc = roll_and_describe(self.heal_roll, actor, mind_level)
+
+        # Apply healing to the target
+        actual_healed = target.heal(heal_value)
+
         console.print(
-            f"{actor_str} casts [bold]{self.name}[/] on {target_str}: "
-            f"heals for [bold green]{heal}[/]."
+            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}: "
+            f"heals for [bold green]{actual_healed}[/] ([white]{heal_desc}[/]).",
+            markup=True,
         )
+
         if self.effect:
+            self.apply_effect(actor, target, self.effect)
             console.print(
-                f"    [yellow]Effect {self.effect.name} applied to {target_str} by {actor_str}.[/]"
+                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                markup=True,
             )
+
         return True
 
     def to_dict(self):
@@ -460,7 +487,7 @@ class SpellHeal(Spell):
         )
 
 
-class BuffSpell(Spell):
+class SpellBuff(Spell):
     def __init__(
         self,
         name: str,
@@ -482,7 +509,7 @@ class BuffSpell(Spell):
         )
         self.effect = effect
         # Ensure the effect is provided.
-        assert self.effect is not None, "Effect must be provided for BuffSpell."
+        assert self.effect is not None, "Effect must be provided for SpellBuff."
 
     def cast_spell(
         self, actor: Character, target: Character, mind_level: int = -1
@@ -492,47 +519,52 @@ class BuffSpell(Spell):
         Uses mind to cast the spell.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-        # Get the actual mind level to use for the spell.
         mind_level = mind_level if mind_level >= 0 else self.mind
-        # Check if the actor has enough mind to cast the spell.
+
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
-        # Format once and for all the actor name and target name.
+
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
         target_str = (
             f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
         )
-        # Apply effect.
-        self.apply_effect(actor, target, self.effect)
+
+        # Informational log
         console.print(
-            f"{actor_str} casts [bold]{self.name}[/] on {target_str}, applying effect [bold]{self.effect.name}[/]."
+            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}.",
+            markup=True,
         )
+
+        # Apply the effect
         if self.effect:
+            self.apply_effect(actor, target, self.effect)
             console.print(
-                f"    [yellow]Effect {self.effect.name} applied to {target_str} by {actor_str}.[/]"
+                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                markup=True,
             )
+
         return True
 
     def to_dict(self):
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
-        # Add specific fields for BuffSpell
+        # Add specific fields for SpellBuff
         data["effect"] = self.effect.to_dict()
         return data
 
     @staticmethod
     def from_dict(data):
         """
-        Creates a BuffSpell instance from a dictionary.
+        Creates a SpellBuff instance from a dictionary.
         Args:
             data (dict): Dictionary containing the action data.
         Returns:
-            BuffSpell: An instance of BuffSpell.
+            SpellBuff: An instance of SpellBuff.
         """
-        return BuffSpell(
+        return SpellBuff(
             name=data["name"],
             type=ActionType[data["type"]],
             level=data["level"],
@@ -543,7 +575,7 @@ class BuffSpell(Spell):
         )
 
 
-class DebuffSpell(Spell):
+class SpellDebuff(Spell):
     def __init__(
         self,
         name: str,
@@ -565,7 +597,7 @@ class DebuffSpell(Spell):
         )
         self.effect = effect
         # Ensure the effect is provided.
-        assert self.effect is not None, "Effect must be provided for DebuffSpell."
+        assert self.effect is not None, "Effect must be provided for SpellDebuff."
 
     def cast_spell(
         self, actor: Character, target: Character, mind_level: int = -1
@@ -575,48 +607,52 @@ class DebuffSpell(Spell):
         Uses mind to cast the spell.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-        # Get the actual mind level to use for the spell.
         mind_level = mind_level if mind_level >= 0 else self.mind
-        # Check if the actor has enough mind to cast the spell.
+
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
-        # Format once and for all the actor name and target name.
+
         actor_str = (
             f"[{'bold green' if actor.is_player else 'bold red'}]{actor.name}[/]"
         )
         target_str = (
             f"[{'bold green' if target.is_player else 'bold red'}]{target.name}[/]"
         )
-        # Apply effect.
-        self.apply_effect(actor, target, self.effect)
-        # Log the successful debuff.
+
+        # Informational log
         console.print(
-            f"{actor_str} casts [bold]{self.name}[/] on {target_str}, applying effect [bold]{self.effect.name}[/]."
+            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}.",
+            markup=True,
         )
+
+        # Apply the debuff effect
         if self.effect:
+            self.apply_effect(actor, target, self.effect)
             console.print(
-                f"    [yellow]Effect {self.effect.name} applied to {target_str} by {actor_str}.[/]"
+                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
+                markup=True,
             )
+
         return True
 
     def to_dict(self):
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
-        # Add specific fields for DebuffSpell
+        # Add specific fields for SpellDebuff
         data["effect"] = self.effect.to_dict()
         return data
 
     @staticmethod
     def from_dict(data):
         """
-        Creates a DebuffSpell instance from a dictionary.
+        Creates a SpellDebuff instance from a dictionary.
         Args:
             data (dict): Dictionary containing the action data.
         Returns:
-            DebuffSpell: An instance of DebuffSpell.
+            SpellDebuff: An instance of SpellDebuff.
         """
-        return DebuffSpell(
+        return SpellDebuff(
             name=data["name"],
             type=ActionType[data["type"]],
             level=data["level"],

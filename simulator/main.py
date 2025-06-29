@@ -1,9 +1,17 @@
 from abc import abstractmethod
 from asyncio import shield
+from copy import deepcopy
 from logging import error, warning, info, debug
 import logging
-
+import json
 from cli_prompt import PromptToolkitCLI
+from character import Character
+from effect import *
+from actions import *
+from combat_manager import CombatManager
+from rich.console import Console
+from rich.rule import Rule
+from collections import Counter, defaultdict
 
 """Sets up basic logging configuration."""
 logging.basicConfig(
@@ -12,136 +20,161 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
-from character import Character
-from effect import *
-from actions import *
-from combat_manager import CombatManager
+
+console = Console()
+
+console.print(Rule("Combat Simulator", style="bold green"))
+
+console.print(
+    "Welcome to the Combat Simulator! This is a simple combat simulator for tabletop RPGs. "
+    "You can create characters, equip them with weapons and armor, and engage in combat. "
+    "The combat system is turn-based, and you can use various actions such as attacks, spells, and effects. "
+    "The combat manager will handle the turn order and combat logic. "
+    "You can also create custom characters and actions by modifying the data files in the 'data' directory. "
+    "Have fun!"
+    "\n\n",
+    style="bold blue",
+)
+
+console.print(Rule("Loading Weapons", style="bold green"))
+
+# Load weapons.
+weapons: dict[str, WeaponAttack] = {}
+with open("data/weapon_data.json", "r") as f:
+    weapon_data = json.load(f)
+    for entry in weapon_data:
+        weapon = BaseAction.from_dict(entry)
+        weapons[weapon.name] = weapon
+        print(f"Loaded weapon: {weapon.name}")
+
+console.print(Rule("Loading Armor", style="bold green"))
+
+# Load armor data.
+armors: dict[str, Armor] = {}
+with open("data/armor_data.json", "r") as f:
+    armor_data = json.load(f)
+    for entry in armor_data:
+        armor = Armor.from_dict(entry)
+        armors[armor.name] = armor
+        print(f"Loaded armor: {armor.name}")
+
+console.print(Rule("Loading Spells", style="bold green"))
+
+# Load spells.
+spells: dict[str, Spell] = {}
+
+# Load SpellAttack.
+with open("data/spell_attack_data.json", "r") as f:
+    spell_attack_data = json.load(f)
+    for entry in spell_attack_data:
+        spell = SpellAttack.from_dict(entry)
+        spells[spell.name] = spell
+        print(f"Loaded spell attack: {spell.name}")
+
+# Load SpellHeal.
+with open("data/spell_heal_data.json", "r") as f:
+    spell_heal_data = json.load(f)
+    for entry in spell_heal_data:
+        spell = SpellHeal.from_dict(entry)
+        spells[spell.name] = spell
+        print(f"Loaded spell heal: {spell.name}")
+
+# Load SpellBuff.
+with open("data/spell_buff_data.json", "r") as f:
+    spell_buff_data = json.load(f)
+    for entry in spell_buff_data:
+        spell = SpellBuff.from_dict(entry)
+        spells[spell.name] = spell
+        print(f"Loaded spell buff: {spell.name}")
+
+# Load SpellDebuff.
+with open("data/spell_debuff_data.json", "r") as f:
+    spell_debuff_data = json.load(f)
+    for entry in spell_debuff_data:
+        spell = SpellDebuff.from_dict(entry)
+        spells[spell.name] = spell
+        print(f"Loaded spell debuff: {spell.name}")
+
+console.print(Rule("Loading Character Classes", style="bold green"))
+
+# Load character classes.
+classes: dict[str, Class] = {}
+with open("data/character_classes.json", "r") as f:
+    class_data = json.load(f)
+    for entry in class_data:
+        character_class = Class.from_dict(entry)
+        classes[character_class.name] = character_class
+        print(f"Loaded character class: {character_class.name}")
+
+registries = {
+    "weapons": weapons,
+    "armors": armors,
+    "spells": spells,
+    "classes": classes,
+    "actions": {},
+}
+
+# Load the enemies.
+enemies: dict[str, Character] = {}
+with open("data/enemies.json", "r") as f:
+    enemy_data = json.load(f)
+    for entry in enemy_data:
+        enemy = Character.from_dict(entry, registries)
+        enemies[enemy.name] = enemy
+        print(f"Loaded enemy: {enemy.name}")
+
+# Load the player character.
+player: Character = None
+with open("data/player.json", "r") as f:
+    player_data = json.load(f)
+    player = Character.from_dict(player_data, registries)
+    print(f"Loaded player character: {player.name}")
+
+if player is None:
+    error("Player character could not be loaded. Please check the player data file.")
+    exit(1)
+
+# Initialize the list of opponents, and a supporting function to add them.
+opponents: list[Character] = []
 
 
-paladin = Class("Paladin", hp_mult=8, mind_mult=2)
-sorcerer = Class("Sorcerer", hp_mult=6, mind_mult=6)
-warrior = Class("Warrior", hp_mult=10, mind_mult=0)
+def add_opponent(name: str):
+    """
+    Adds an opponent to the combat.
+    """
+    if name in enemies:
+        opponents.append(deepcopy(enemies[name]))
+    else:
+        warning(f"Opponent '{name}' not found in enemies data.")
 
 
-def create_player() -> Character:
-    player = Character(
-        "Zephyros", {paladin: 1, sorcerer: 1}, 18, 12, 16, 10, 14, 10, "wisdom"
-    )
-    # Set the player's nature.
-    player.is_player = True
-    # Add the player's armor.
-    player.add_armor(Armor("Armor", 16))
-    player.add_armor(Armor("Shield", 2))
-    player.add_armor(Armor("Defense Style", 1))
-    # Add long sword as a weapon.
-    player.learn_action(
-        WeaponAttack(
-            "Longsword",
-            ActionType.STANDARD,
-            damage_type=DamageType.SLASHING,
-            attack_roll="1D20+STR",
-            damage_roll="1D8+STR",
-        )
-    )
-    player.learn_spell(
-        SpellAttack(
-            "Sacred Flame",
-            ActionType.STANDARD,
-            level=1,
-            mind=1,
-            damage_type=DamageType.RADIANT,
-            damage_roll="[MIND]D8",
-            effect=None,
-            multi_target_expr="[MIND]",
-        )
-    )
-    player.learn_spell(
-        SpellHeal(
-            "Healing Touch",
-            ActionType.STANDARD,
-            level=1,
-            mind=1,
-            heal_roll="[MIND]D8",
-        )
-    )
-    player.learn_spell(
-        BuffSpell(
-            name="Bless",
-            type=ActionType.STANDARD,
-            level=1,
-            mind=1,
-            effect=Buff(
-                name="Bless",
-                mind=1,
-                duration=3,
-                modifiers={BonusType.ATTACK_BONUS: "1d4"},
-            ),
-            multi_target_expr="[MIND]",
-            upscale_choices=[1, 2, 3, 4, 5],
-        )
-    )
-    return player
-
-
-def create_goblin() -> Character:
-    goblin = Character(
-        name="Goblin",
-        levels={warrior: 1},
-        strength=10,
-        dexterity=14,
-        constitution=12,
-        intelligence=8,
-        wisdom=8,
-        charisma=6,
-        spellcasting_ability="none",
-    )
-    goblin.add_armor(Armor("Leather Armor", 16))
-    goblin.learn_action(
-        WeaponAttack(
-            "Shortsword",
-            ActionType.STANDARD,
-            DamageType.SLASHING,
-            "1D20 + DEX",
-            "1D6 + DEX",
-        )
-    )
-    return goblin
-
-
-def create_orc() -> Character:
-    orc = Character(
-        name="Orc",
-        levels={warrior: 2},
-        strength=16,
-        dexterity=12,
-        constitution=14,
-        intelligence=6,
-        wisdom=7,
-        charisma=7,
-        spellcasting_ability="none",
-    )
-    orc.add_armor(Armor("Hide Armor", 12))
-    orc.learn_action(
-        WeaponAttack(
-            "Greataxe",
-            ActionType.STANDARD,
-            DamageType.SLASHING,
-            "1D20 + STR",
-            "1D12 + STR",
-        )
-    )
-    return orc
+def make_opponents_names_unique():
+    """
+    Ensures all opponent names are unique by appending a number if necessary, starting from (1).
+    """
+    # Count how many times each base name appears
+    name_counts = Counter(o.name for o in opponents)
+    # Track how many times we've seen each base name so far
+    seen = Counter()
+    for opponent in opponents:
+        base = opponent.name
+        if name_counts[base] > 1:
+            seen[base] += 1
+            opponent.name = f"{base} ({seen[base]})"
 
 
 if __name__ == "__main__":
 
-    player = create_player()
-    goblin = create_goblin()
-    orc = create_orc()
-
     ui = PromptToolkitCLI()
 
-    combat_manager = CombatManager(ui, player, [goblin, orc], [])
+    add_opponent("Goblin")
+    add_opponent("Goblin")
+    add_opponent("Goblin")
+    add_opponent("Orc Shaman")
+
+    make_opponents_names_unique()
+
+    combat_manager = CombatManager(ui, player, opponents, [])
 
     while not combat_manager.is_combat_over():
 

@@ -1,6 +1,5 @@
 from typing import List, Protocol
 
-from prompt_toolkit import ANSI
 from actions import BaseAction, Spell
 from character import Character
 from rich.console import Console
@@ -31,7 +30,7 @@ class PlayerInterface(Protocol):
         ...
 
 
-def to_ansi(s: str) -> ANSI:
+def to_ansi(s: str) -> str:
     with console.capture() as capture:
         console.print(s, markup=True, end="")
-    return ANSI(capture.get())
+    return capture.get()

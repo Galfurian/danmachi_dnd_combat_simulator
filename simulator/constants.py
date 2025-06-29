@@ -53,3 +53,15 @@ class ActionCategory(Enum):
     UTILITY = auto()  # Miscellaneous effects (e.g., movement, disarm traps)
     DEBUG = auto()  # Actions used for testing/debugging purposes
     # Add more categories as needed (e.g., Summon, Transform, Environmental)
+
+
+class ArmorSlot(Enum):
+    HEAD = auto()
+    TORSO = auto()
+    SHIELD = auto()
+    LEGS = auto()
+    CLOAK = auto()
+    GLOVES = auto()
+    RING = auto()
+    COMBAT_STYLE = auto()
+    # etc., expand as needed

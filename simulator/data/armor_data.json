@@ -1,0 +1,50 @@
+[
+    {
+        "type": "Armor",
+        "name": "Chainmail",
+        "ac_bonus": 16,
+        "armor_slot": "TORSO"
+    },
+    {
+        "type": "Armor",
+        "name": "Steel Shield",
+        "ac_bonus": 2,
+        "armor_slot": "SHIELD"
+    },
+    {
+        "type": "Armor",
+        "name": "Defense Style",
+        "ac_bonus": 1,
+        "armor_slot": "COMBAT_STYLE"
+    },
+    {
+        "type": "Armor",
+        "name": "Leather Armor",
+        "ac_bonus": 11,
+        "armor_slot": "TORSO"
+    },
+    {
+        "type": "Armor",
+        "name": "Hide Armor",
+        "ac_bonus": 12,
+        "armor_slot": "TORSO"
+    },
+    {
+        "type": "Armor",
+        "name": "Plate Armor",
+        "ac_bonus": 18,
+        "armor_slot": "TORSO"
+    },
+    {
+        "type": "Armor",
+        "name": "Spartan Iron Helmet",
+        "ac_bonus": 1,
+        "armor_slot": "HEAD"
+    },
+    {
+        "type": "Armor",
+        "name": "Blessed Aegis Shield",
+        "ac_bonus": 3,
+        "armor_slot": "SHIELD"
+    }
+]

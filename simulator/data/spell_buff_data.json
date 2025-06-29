@@ -1,0 +1,89 @@
+[
+    {
+        "class": "SpellBuff",
+        "name": "Blessing of Valor",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Blessed Might",
+            "mind": 1,
+            "duration": 10,
+            "modifiers": {
+                "ATTACK_BONUS": "1d4",
+                "DAMAGE_BONUS": "floor(MIND / 2)"
+            }
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Shield of Faith",
+        "type": "STANDARD",
+        "level": 1,
+        "mind": 1,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            1,
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Divine Protection",
+            "mind": 1,
+            "duration": 5,
+            "modifiers": {
+                "AC": "1 + floor(MIND / 2)"
+            }
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Stone Skin",
+        "type": "STANDARD",
+        "level": 2,
+        "mind": 2,
+        "multi_target_expr": null,
+        "upscale_choices": [
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Stony Flesh",
+            "mind": 2,
+            "duration": 4,
+            "modifiers": {
+                "AC": "1 + floor(MIND / 2)"
+            }
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Mind Fortification",
+        "type": "BONUS",
+        "level": 2,
+        "mind": 2,
+        "multi_target_expr": "1 + floor(MIND / 2)",
+        "upscale_choices": [
+            2,
+            3
+        ],
+        "effect": {
+            "type": "Buff",
+            "name": "Mind Shield",
+            "mind": 2,
+            "duration": 3,
+            "modifiers": {
+                "MIND_MAX": "floor(MIND * 1.5)"
+            }
+        }
+    }
+]

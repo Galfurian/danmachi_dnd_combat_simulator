@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Paladin",
+        "hp_mult": 8,
+        "mind_mult": 2
+    },
+    {
+        "name": "Sorcerer",
+        "hp_mult": 4,
+        "mind_mult": 6
+    },
+    {
+        "name": "Warrior",
+        "hp_mult": 10,
+        "mind_mult": 0
+    },
+    {
+        "name": "Rogue",
+        "hp_mult": 5,
+        "mind_mult": 5
+    },
+    {
+        "name": "Cleric",
+        "hp_mult": 6,
+        "mind_mult": 4
+    },
+    {
+        "name": "Wizard",
+        "hp_mult": 2,
+        "mind_mult": 8
+    }
+]

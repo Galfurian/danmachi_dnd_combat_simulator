@@ -6,6 +6,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from actions import BaseAction, Spell
 from character import Character
+from prompt_toolkit import ANSI
 from colors import *
 
 from constants import ActionType
@@ -47,7 +48,7 @@ class PromptToolkitCLI(PlayerInterface):
 
     def choose_action(self, actor: Character) -> BaseAction | int | None:
         # Turn the action dictionary into a list of actions.
-        actions = list(actor.actions.values())
+        actions = list(actor.actions.values()) + actor.equipped_weapons
         # If the actor has no actions, return None.
         if not actions:
             return None
@@ -69,9 +70,7 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row()
             tbl.add_row("0", "Cast a Spell", "", "")
         # Generate a prompt with the table and a question.
-        prompt = to_ansi(
-            "\n" + actor.get_status_line() + "\n" + table_to_str(tbl) + "\nAction > "
-        )
+        prompt = ANSI("\n" + table_to_str(tbl) + "\nAction > ")
         # Create a completer for the action names (including "Cast a Spell" if present)
         completer = WordCompleter([a.name for a in actions], ignore_case=True)
         # Prompt the user for input.
@@ -82,7 +81,7 @@ class PromptToolkitCLI(PlayerInterface):
         )
         # If the user didn't type anything, return None.
         if not answer:
-            return None
+            return -1
         # If the user typed a number, return the corresponding action.
         if answer.isdigit() and 1 <= int(answer) <= len(actions):
             return actions[int(answer) - 1]
@@ -113,9 +112,7 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
-        prompt = to_ansi(
-            "\n" + actor.get_status_line() + "\n" + table_to_str(tbl) + "\nTarget > "
-        )
+        prompt = ANSI("\n" + table_to_str(tbl) + "\nTarget > ")
         # Create a completer for the target names.
         completer = WordCompleter([t.name for t in targets], ignore_case=True)
         # Prompt the user for input.
@@ -141,12 +138,20 @@ class PromptToolkitCLI(PlayerInterface):
         return target
 
     def choose_targets(
-        self, actor: Character, targets: List[Character]
+        self,
+        actor: Character,
+        targets: List[Character],
+        max_targets: int = None,
     ) -> List[Character] | int | None:
         selected = set()
+
         while True:
             tbl = Table(
-                title="Select Targets (toggle with number, ENTER when done)",
+                title=(
+                    f"Select Targets (toggle with number, max {max_targets}, ENTER when done)"
+                    if max_targets
+                    else "Select Targets (toggle with number, ENTER when done)"
+                ),
                 pad_edge=False,
             )
             tbl.add_column("#", style="cyan", no_wrap=True)
@@ -163,16 +168,9 @@ class PromptToolkitCLI(PlayerInterface):
                     str(t.ac),
                     "[green]✓[/]" if t in selected else "",
                 )
-            tbl.add_row()
             tbl.add_row("0", "Done", "", "", "")
 
-            prompt = to_ansi(
-                "\n"
-                + actor.get_status_line()
-                + "\n"
-                + table_to_str(tbl)
-                + "\nSelect > "
-            )
+            prompt = ANSI("\n" + table_to_str(tbl) + "\nSelect > ")
             completer = WordCompleter(
                 [str(i) for i in range(len(targets) + 1)], ignore_case=True
             )
@@ -191,6 +189,11 @@ class PromptToolkitCLI(PlayerInterface):
                     if t in selected:
                         selected.remove(t)
                     else:
+                        if max_targets is not None and len(selected) >= max_targets:
+                            console.print(
+                                f"[yellow]You can only select up to {max_targets} target(s).[/]"
+                            )
+                            continue
                         selected.add(t)
 
     def choose_mind(self, actor: Character, spell: Spell) -> int:
@@ -198,8 +201,10 @@ class PromptToolkitCLI(PlayerInterface):
         choices = spell.mind_choices()
         if len(choices) == 1:
             return choices[0]
-        prompt = to_ansi(
-            f"\n[cyan]Choose MIND to spend for [bold]{spell.name}[/]: {choices}[/]\n> "
+        prompt = ANSI(
+            to_ansi(
+                f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed. Choose MIND to spend: {choices}[/]: "
+            )
         )
         completer = WordCompleter([str(c) for c in choices], ignore_case=True)
         while True:
@@ -217,9 +222,7 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
-        prompt = to_ansi(
-            "\n" + actor.get_status_line() + "\n" + table_to_str(tbl) + "\nSpell > "
-        )
+        prompt = ANSI("\n" + table_to_str(tbl) + "\nSpell > ")
         # Create a completer for the spell names.
         completer = WordCompleter([s.name for s in spells], ignore_case=True)
         # Prompt the user for input.
