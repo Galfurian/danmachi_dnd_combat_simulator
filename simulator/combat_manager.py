@@ -198,6 +198,8 @@ class CombatManager:
                     continue
                 # Get the number of targets for the spell.
                 maximum_num_targets = action.target_count(self.player, mind_level)
+                # There is no point in asking for more targets than we have valid targets.
+                maximum_num_targets = min(maximum_num_targets, len(valid_targets))
                 # If the action accepts just one target, we can ask for a single target.
                 if maximum_num_targets == 1:
                     # Ask for a single target.

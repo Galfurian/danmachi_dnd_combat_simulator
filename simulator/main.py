@@ -73,6 +73,17 @@ for enemy_name, enemy in enemies.items():
 
 # =============================================================================
 
+console.print(Rule("Loading Characters", style="bold green"))
+
+# Load the characters.
+characters = load_characters("data/characters.json", registries)
+for character_name, character in characters.items():
+    print(
+        f"    Loaded character: {character_name} (hp: {character.hp}, ac: {character.AC})"
+    )
+
+# =============================================================================
+
 console.print(Rule("Loading Player Character", style="bold green"))
 
 # Load the player character.
@@ -83,29 +94,30 @@ if player is None:
 
 # =============================================================================
 
-# Initialize the list of opponents, and a supporting function to add them.
+# Initialize the list of opponents and allies.
 opponents: list[Character] = []
+allies: list[Character] = []
 
 
-def add_opponent(name: str):
+def add_to_list(from_list: list[Character], to_list: list[Character], name: str):
     """
     Adds an opponent to the combat.
     """
-    if name in enemies:
-        opponents.append(deepcopy(enemies[name]))
+    if name in from_list:
+        to_list.append(deepcopy(from_list[name]))
     else:
         warning(f"Opponent '{name}' not found in enemies data.")
 
 
-def make_opponents_names_unique():
+def make_names_unique(in_list: list[Character]):
     """
     Ensures all opponent names are unique by appending a number if necessary, starting from (1).
     """
     # Count how many times each base name appears
-    name_counts = Counter(o.name for o in opponents)
+    name_counts = Counter(o.name for o in in_list)
     # Track how many times we've seen each base name so far
     seen: Counter[str] = Counter()
-    for opponent in opponents:
+    for opponent in in_list:
         base = opponent.name
         if name_counts[base] > 1:
             seen[base] += 1
@@ -115,12 +127,21 @@ def make_opponents_names_unique():
 if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
-    add_opponent("Goblin")
-    add_opponent("Goblin")
-    add_opponent("Goblin")
-    make_opponents_names_unique()
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
 
-    combat_manager = CombatManager(ui, player, opponents, [])
+    add_to_list(characters, allies, "Naerin")
+
+    make_names_unique(opponents)
+    make_names_unique(allies)
+
+    for enemy in opponents:
+        enemy.is_ally = False
+    for ally in allies:
+        ally.is_ally = True
+
+    combat_manager = CombatManager(ui, player, opponents, allies)
 
     try:
         while not combat_manager.is_combat_over():

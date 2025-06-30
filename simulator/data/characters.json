@@ -1,0 +1,45 @@
+[
+    {
+        "name": "Naerin",
+        "is_player": false,
+        "race": "Human",
+        "levels": {
+            "Warrior": 2
+        },
+        "stats": {
+            "strength": 14,
+            "dexterity": 14,
+            "constitution": 12,
+            "intelligence": 10,
+            "wisdom": 12,
+            "charisma": 11
+        },
+        "equipped_weapons": [
+            {
+                "class": "WeaponAttack",
+                "name": "Shortsword",
+                "type": "STANDARD",
+                "hands_required": 1,
+                "attack_roll": "1D20+[DEX]",
+                "damage_components": [
+                    {
+                        "roll": "1D6+[DEX]",
+                        "type": "PIERCING"
+                    }
+                ]
+            }
+        ],
+        "equipped_armor": [
+            {
+                "type": "Armor",
+                "name": "Studded Leather",
+                "ac": 12,
+                "armor_slot": "TORSO",
+                "armor_type": "LIGHT"
+            }
+        ],
+        "active_effects": [],
+        "actions": [],
+        "spells": []
+    }
+]

@@ -8,7 +8,6 @@ class BonusType(Enum):
     ATTACK = auto()
     DAMAGE = auto()
     INITIATIVE = auto()
-    # Add other bonus types as needed
 
 
 class ActionType(Enum):
@@ -30,16 +29,14 @@ class DamageType(Enum):
     SLASHING = auto()
     BLUDGEONING = auto()
     FIRE = auto()
-    ICE = auto()
-    ACID = auto()
+    COLD = auto()
+    LIGHTNING = auto()
     POISON = auto()
     NECROTIC = auto()
     RADIANT = auto()
-    LIGHTNING = auto()
-    THUNDER = auto()
-    FORCE = auto()
     PSYCHIC = auto()
-    # Add more damage types as needed
+    FORCE = auto()
+    ACID = auto()
 
 
 class ActionCategory(Enum):
@@ -47,13 +44,12 @@ class ActionCategory(Enum):
     Defines the primary purpose or effect category of an action or spell.
     """
 
-    OFFENSIVE = auto()  # Deals damage, applies debuffs
-    HEALING = auto()  # Restores HP
-    BUFF = auto()  # Applies beneficial effects to allies
-    DEBUFF = auto()  # Applies detrimental effects to enemies
-    UTILITY = auto()  # Miscellaneous effects (e.g., movement, disarm traps)
-    DEBUG = auto()  # Actions used for testing/debugging purposes
-    # Add more categories as needed (e.g., Summon, Transform, Environmental)
+    OFFENSIVE = auto()
+    HEALING = auto()
+    BUFF = auto()
+    DEBUFF = auto()
+    UTILITY = auto()
+    DEBUG = auto()
 
 
 class ArmorSlot(Enum):
@@ -65,10 +61,48 @@ class ArmorSlot(Enum):
     GLOVES = auto()
     RING = auto()
     COMBAT_STYLE = auto()
-    # etc., expand as needed
 
 
 class ArmorType(Enum):
     HEAVY = auto()
     MEDIUM = auto()
     LIGHT = auto()
+
+
+def get_damage_emoji(damage_type: DamageType) -> str:
+    emoji_map = {
+        DamageType.PIERCING: "🗡️",
+        DamageType.SLASHING: "🪓",
+        DamageType.BLUDGEONING: "🔨",
+        DamageType.FIRE: "🔥",
+        DamageType.COLD: "❄️",
+        DamageType.LIGHTNING: "⚡",
+        DamageType.POISON: "☠️",
+        DamageType.NECROTIC: "💀",
+        DamageType.RADIANT: "✨",
+        DamageType.PSYCHIC: "💫",
+        DamageType.FORCE: "🌀",
+        DamageType.ACID: "🧪",
+    }
+    return emoji_map.get(damage_type, "❔")
+
+
+def get_action_category_emoji(category: ActionCategory) -> str:
+    emoji_map = {
+        ActionCategory.OFFENSIVE: "⚔️",
+        ActionCategory.HEALING: "✳️",
+        ActionCategory.BUFF: "🛡️",
+        ActionCategory.DEBUFF: "💀",
+        ActionCategory.UTILITY: "🔧",
+        ActionCategory.DEBUG: "🐞",
+    }
+    return emoji_map.get(category, "❔")
+
+
+def get_armor_emoji(armor_type: ArmorType) -> str:
+    emoji_map = {
+        ArmorType.LIGHT: "🧥",
+        ArmorType.MEDIUM: "🥋",
+        ArmorType.HEAVY: "🛡️",
+    }
+    return emoji_map.get(armor_type, "❔")

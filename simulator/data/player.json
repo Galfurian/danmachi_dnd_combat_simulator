@@ -166,7 +166,7 @@
             "type": "STANDARD",
             "level": 2,
             "mind": 3,
-            "damage_type": "THUNDER",
+            "damage_type": "LIGHTNING",
             "damage_roll": "[MIND]D8",
             "multi_target_expr": "[MIND]-1",
             "upscale_choices": [
