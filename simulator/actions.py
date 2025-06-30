@@ -4,7 +4,6 @@ from logging import debug, error
 from rich.console import Console
 from typing import Any, Optional
 
-from colors import *
 from effect import *
 from utils import *
 from constants import *
@@ -135,11 +134,10 @@ class WeaponAttack(BaseAction):
         self.effect: Optional[Effect] = effect
 
     def execute(self, actor: Any, target: Any):
+        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
+        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
+
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
-        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
-        target_str = (
-            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
-        )
 
         # --- Build & resolve attack roll ---
         attack_expr = self.attack_roll
@@ -165,13 +163,13 @@ class WeaponAttack(BaseAction):
             # Then roll any additional damage from effects.
             for bonus in actor.get_all_melee_damage_bonuses():
                 roll_str = bonus["roll"]
-                type_str = DamageType[bonus["type"]].name
+                damage_type = DamageType[bonus["type"]]
                 damage_expr = substitute_variables(roll_str, actor)
                 damage_amount = roll_expression(damage_expr, actor)
-                applied_damage = target.take_damage(damage_amount, type_str)
+                applied_damage = target.take_damage(damage_amount, damage_type)
                 total_damage += applied_damage
                 damage_details.append(
-                    f"{applied_damage} {type_str.lower()} ({damage_expr})"
+                    f"{applied_damage} {get_damage_emoji(damage_type)} ({damage_expr})"
                 )
 
             console.print(
@@ -180,7 +178,7 @@ class WeaponAttack(BaseAction):
                 markup=True,
             )
             console.print(
-                f"        🗡️ [bold magenta]Damage:[/] {total_damage} total — "
+                f"        🗡️ [bold magenta]damage:[/] {total_damage} total — "
                 + " + ".join(damage_details),
                 markup=True,
             )
@@ -420,10 +418,8 @@ class SpellAttack(Spell):
             error(f"{actor.name} does not have enough mind to cast {self.name}.")
             return False
 
-        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
-        target_str = (
-            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
-        )
+        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
+        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # --- Build and roll attack expression ---
         attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
@@ -442,8 +438,7 @@ class SpellAttack(Spell):
                 markup=True,
             )
             console.print(
-                f"        💥 [bold magenta]Damage:[/] {applied_damage} "
-                f"[italic]{self.damage_type.name.lower()}[/] ({damage_desc})",
+                f"        {get_damage_emoji(self.damage_type)} [bold magenta]damage:[/] {applied_damage} ({damage_desc})",
                 markup=True,
             )
             if self.effect and target.is_alive():
@@ -569,10 +564,8 @@ class SpellHeal(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
-        target_str = (
-            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
-        )
+        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
+        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Compute the healing based on the mind spent and roll
         heal_value, heal_desc = roll_and_describe(self.heal_roll, actor, mind_level)
@@ -686,10 +679,8 @@ class SpellBuff(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
-        target_str = (
-            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
-        )
+        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
+        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Informational log
         console.print(
@@ -794,10 +785,8 @@ class SpellDebuff(Spell):
             return False
 
         # Prepare the actor and target strings for output.
-        actor_str = f"[{'bold green' if actor.is_ally else 'bold red'}]{actor.name}[/]"
-        target_str = (
-            f"[{'bold green' if target.is_ally else 'bold red'}]{target.name}[/]"
-        )
+        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
+        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Informational log
         console.print(

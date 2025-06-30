@@ -1,5 +1,4 @@
 # combat_manager.py
-from ast import Dict
 from collections import deque
 from logging import info, debug, warning, error
 import random
@@ -7,9 +6,8 @@ from typing import Tuple
 
 from rich.console import Console
 from rich.rule import Rule
-from rich.progress import BarColumn, Progress
 
-from character import Character
+from character import *
 from actions import (
     BaseAction,
     Spell,
@@ -94,7 +92,7 @@ class CombatManager:
         return [
             char
             for char in self.get_alive_participants()
-            if char != actor and actor.is_ally != char.is_ally
+            if is_oponent(actor.type, char.type)
         ]
 
     def get_alive_friendlies(self, actor: Character) -> list[Character]:
@@ -109,7 +107,7 @@ class CombatManager:
         return [
             char
             for char in self.get_alive_participants()
-            if char != actor and actor.is_ally == char.is_ally
+            if not is_oponent(actor.type, char.type)
         ]
 
     def run_turn(self) -> bool:
@@ -268,18 +266,16 @@ class CombatManager:
 
         # Priority 1: Heal lowest-HP ally if any are below threshold.
         if healing:
-            possible_healing_choices: list[tuple[SpellHeal, int, list[Character]]] = []
+            spell_heal_choices: list[tuple[SpellHeal, int, list[Character]]] = []
             for healing_spell in healing:
-                mind_level, targets = self._get_heal_targets_for_npc(
+                mind_level, targets = self._get_spell_heal_targets(
                     npc, allies, healing_spell
                 )
                 if targets:
-                    possible_healing_choices.append(
-                        (healing_spell, mind_level, targets)
-                    )
-            if possible_healing_choices:
+                    spell_heal_choices.append((healing_spell, mind_level, targets))
+            if spell_heal_choices:
                 # Choose best based on most HP restored, then lowest mind, then most targets
-                possible_healing_choices.sort(
+                spell_heal_choices.sort(
                     key=lambda x: (
                         -sum(
                             t.HP_MAX - t.hp for t in x[2] if t.hp < t.HP_MAX
@@ -288,7 +284,7 @@ class CombatManager:
                         -len(x[2]),  # most targets
                     )
                 )
-                best_healing_spell, mind_level, targets = possible_healing_choices[0]
+                best_healing_spell, mind_level, targets = spell_heal_choices[0]
                 for target in targets:
                     best_healing_spell.cast_spell(npc, target, mind_level)
                 npc.mind -= mind_level
@@ -296,11 +292,29 @@ class CombatManager:
 
         # Priority 2: Buff self if not already affected.
         if buffing:
+            spell_buff_choices: list[tuple[SpellBuff, int, list[Character]]] = []
             for buffing_spell in buffing:
-                targets = self._get_buff_targets_for_npc(npc, allies, buffing_spell)
-                debug(
-                    f"Buff targets for {npc.name} using {buffing_spell.name}: {[t.name for t in targets]}"
+                mind_level, targets = self._get_spell_buff_targets(
+                    npc, allies, buffing_spell
                 )
+                if targets:
+                    spell_buff_choices.append((buffing_spell, mind_level, targets))
+            if spell_buff_choices:
+                # Choose best based on most beneficial effect, then lowest mind, then most targets
+                spell_buff_choices.sort(
+                    key=lambda x: (
+                        -sum(
+                            t.get_effect_usefulness_index(x[0].effect) for t in x[2]
+                        ),  # most beneficial effect
+                        x[1],  # least mind
+                        -len(x[2]),  # most targets
+                    )
+                )
+                best_buffing_spell, mind_level, targets = spell_buff_choices[0]
+                for target in targets:
+                    best_buffing_spell.cast_spell(npc, target, mind_level)
+                npc.mind -= mind_level
+                return
 
         # Priority 4: Debuff enemies if any are present
         if debuffing:
@@ -314,19 +328,34 @@ class CombatManager:
 
         # Priority 4: Attack weakest enemy
         if offensive:
+            possible_choices: list[tuple[SpellAttack, int, list[Character]]] = []
             for offensive_spell in offensive:
-                targets = self._get_offensive_spell_targets_for_npc(
+                mind_level, targets = self._get_spell_attack_targets(
                     npc, enemies, offensive_spell
                 )
-                debug(
-                    f"Offensive spell targets for {npc.name} using {offensive_spell.name}: {[t.name for t in targets]}"
+                if targets:
+                    possible_choices.append((offensive_spell, mind_level, targets))
+            if possible_choices:
+                # Choose best based on most damage, then lowest mind, then most targets
+                possible_choices.sort(
+                    key=lambda x: (
+                        -sum(
+                            t.HP_MAX - t.hp for t in x[2] if t.hp < t.HP_MAX
+                        ),  # most damage
+                        x[1],  # least mind
+                        -len(x[2]),  # most targets
+                    )
                 )
+                best_offensive_spell, mind_level, targets = possible_choices[0]
+                for target in targets:
+                    best_offensive_spell.cast_spell(npc, target, mind_level)
+                npc.mind -= mind_level
+                return
 
         if weapon_attacks:
-            selected_action = weapon_attacks[0]
-            target = enemies[0]
-            if selected_action and target:
-                selected_action.execute(npc, target)
+            targets = self._get_weapon_attack_targets(npc, enemies, weapon_attacks[0])
+            if targets:
+                weapon_attacks[0].execute(npc, targets[0])
                 return
 
         warning(f"SKIP: {npc.name} has no usable action or valid targets.")
@@ -349,7 +378,19 @@ class CombatManager:
             if ability.is_valid_target(character, participant)
         ]
 
-    def _get_heal_targets_for_npc(
+    def _get_weapon_attack_targets(
+        self, npc: Character, enemies: list[Character], action: WeaponAttack
+    ) -> list[Character]:
+        """
+        Determines the optimal targets for a weapon attack cast by an NPC.
+        Returns a list of Character objects to target.
+        """
+        # Sort by lowest HP first, then by remaining duration of any existing effects.
+        prioritized_targets = sort_for_weapon_attack(npc, action, enemies)
+        # Select the first target (the weakest one).
+        return prioritized_targets[:1]
+
+    def _get_spell_heal_targets(
         self, npc: Character, allies: list[Character], spell: SpellHeal
     ) -> Tuple[int, list[Character]]:
         """
@@ -357,100 +398,56 @@ class CombatManager:
         Returns a list of Character objects to target.
         """
         # Sort by lowest HP first, then by remaining duration of any existing effects.
-        available_targets = sorted(
-            allies,
-            key=lambda c: (
-                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-                c.get_remaining_effect_duration(spell.effect),
-            ),
-        )
-        # Filter out allies who are already at full HP or already affected by the heal's effect.
-        available_targets = [
-            ally
-            for ally in available_targets
-            if ally.hp < ally.HP_MAX and not ally.has_effect(spell.effect)
-        ]
-        # If the spell is single target heal, just return the first target.
-        if spell.is_single_target():
-            if available_targets:
-                return 1, [available_targets[0]]
-            else:
-                return 0, []
+        targets = sort_for_spell_heal(npc, spell, allies)
         # Now, based on how many we need to heal, we need to determine how much
         # mind we can spend. Unfortunately, the number of targets is determined
         # by the spell.multi_target_expr, which might contain the [MIND] token.
-        selected_mind_level = 1
-        selected_targets = []
-        mind_levels = spell.get_upscale_choices()
-        for mind_level in mind_levels:
-            if mind_level > npc.mind:
-                continue
-            # Evaluate the number of targets allowed at this mind level.
-            num_targets = spell.target_count(npc, mind_level)
-            if selected_targets and num_targets > len(available_targets):
-                continue
-            selected_mind_level = mind_level
-            selected_targets = available_targets[:num_targets]
-            # If we have selected targets, we can stop.
-            if selected_targets:
-                break
-        if not selected_targets:
+        mind_level, targets = self._get_mind_level_and_targets_for_spell(
+            npc, spell, targets
+        )
+        # If no targets are available, return 0 mind and an empty list.
+        if not targets:
             return 0, []
         # Select up to num_targets.
-        return selected_mind_level, selected_targets
+        return mind_level, targets
 
-    def _get_offensive_spell_targets_for_npc(
+    def _get_spell_attack_targets(
         self, npc: Character, enemies: list[Character], spell: SpellAttack
-    ) -> list[Character]:
+    ) -> Tuple[int, list[Character]]:
         """
-        Determines the optimal targets for an offensive spell cast by an NPC, based on their current mind level.
+        Determines the optimal targets for an offensive spell cast by an NPC.
         Returns a list of Character objects to target.
         """
-        # Determine the maximum mind the NPC can spend (cannot go below 0)
-        mind_level = max(1, min(npc.mind, npc.MIND_MAX))
-        # Determine the number of targets allowed at this mind level
-        num_targets = spell.target_count(npc, mind_level)
-        # Filter out targets already affected by the spell's effect.
-        available_targets = [
-            enemy for enemy in enemies if not enemy.has_effect(spell.effect)
-        ]
         # Sort by lowest HP first, then by remaining duration of any existing effects.
-        prioritized_targets = sorted(
-            available_targets,
-            key=lambda c: (
-                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-                c.get_remaining_effect_duration(spell.effect),
-            ),
+        targets = sort_for_spell_attack(npc, spell, enemies)
+        # Select the mind level and targets based on the spell's requirements.
+        mind_level, targets = self._get_mind_level_and_targets_for_spell(
+            npc, spell, targets
         )
-        # Select up to num_targets
-        return prioritized_targets[:num_targets]
+        # If no targets are available, return an empty list.
+        if not targets:
+            return 0, []
+        # Return the selected targets.
+        return mind_level, targets
 
-    def _get_buff_targets_for_npc(
+    def _get_spell_buff_targets(
         self, npc: Character, allies: list[Character], spell: SpellBuff
-    ) -> list[Character]:
+    ) -> Tuple[int, list[Character]]:
         """
-        Determines the optimal targets for a buff spell cast by an NPC, based on their current mind level.
+        Determines the optimal targets for a buff spell cast by an NPC.
         Returns a list of Character objects to target.
         """
-        # Determine the maximum mind the NPC can spend (cannot go below 0)
-        mind_level = max(1, min(npc.mind, npc.MIND_MAX))
-        # Determine the number of targets allowed at this mind level
-        num_targets = spell.target_count(npc, mind_level)
-        # Filter out targets already affected by the buff's effect.
-        available_targets = [
-            ally for ally in allies if not ally.has_effect(spell.effect)
-        ]
-        # Prioritize self first, then lowest HP allies
-        prioritized_targets = sorted(
-            available_targets,
-            key=lambda c: (
-                c != npc,
-                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-                c.get_remaining_effect_duration(spell.effect),
-            ),
+        # Sort by AC, then by HP percentage, and finally by the number of active DoTs.
+        targets = sort_for_spell_buff(npc, spell, allies)
+        # Select the mind level and targets based on the spell's requirements.
+        mind_level, targets = self._get_mind_level_and_targets_for_spell(
+            npc, spell, targets
         )
-        # Select up to num_targets
-        return prioritized_targets[:num_targets]
+        # If no targets are available, return an empty list.
+        if not targets:
+            return 0, []
+        # Return the selected targets.
+        return mind_level, targets
 
     def _get_debuff_targets_for_npc(
         self, npc: Character, enemies: list[Character], spell: SpellDebuff
@@ -477,6 +474,29 @@ class CombatManager:
         )
         # Select up to num_targets
         return prioritized_targets[:num_targets]
+
+    def _get_mind_level_and_targets_for_spell(
+        self, character: Character, spell: Spell, targets: list[Character]
+    ) -> Tuple[int, list[Character]]:
+        selected_mind_level = 0
+        selected_targets = []
+        if targets:
+            for mind_level in spell.get_upscale_choices():
+                # If the mind level is greater than the character's current mind, skip it.
+                if mind_level > character.mind:
+                    continue
+                # Evaluate the number of targets allowed at this mind level.
+                num_targets = spell.target_count(character, mind_level)
+                # If we have already selected targets and the number of targets
+                # allowed at this mind level is greater than the number of targets,
+                # we can keep the previous mind level and targets.
+                if selected_targets and num_targets > len(targets):
+                    break
+                # Update the selected mind level and targets.
+                selected_mind_level = mind_level
+                selected_targets = targets[:num_targets]
+        # Return the selected mind level and targets.
+        return selected_mind_level, selected_targets
 
     def is_combat_over(self) -> bool:
         """

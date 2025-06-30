@@ -198,3 +198,17 @@ def evaluate_expression(
     except Exception as e:
         warning(f"Failed to evaluate '{substituted}': {e}")
         return 0
+
+
+def make_bar(current: int, maximum: int, length: int = 10, color: str = "white") -> str:
+    # Compute the filled part of the bar.
+    filled = int((current / maximum) * length)
+    # Compute the empty part of the bar.
+    empty = length - filled
+    # Start by creating the bar with the filled part.
+    bar = f"[{color}]" + "▮" * filled
+    # If there is an empty part, add it to the bar.
+    if empty > 0:
+        bar += "[dim white]" + "▯" * empty + "[/]"
+    bar += "[/]"
+    return bar

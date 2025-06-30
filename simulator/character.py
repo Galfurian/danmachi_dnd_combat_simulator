@@ -4,8 +4,8 @@ from typing import Any
 from rich.console import Console
 
 from constants import *
-from actions import BaseAction
-from effect import Buff, Effect
+from actions import BaseAction, SpellAttack, SpellBuff, SpellHeal, WeaponAttack
+from effect import Buff, DoT, Effect, HoT
 from utils import *
 
 
@@ -104,9 +104,7 @@ class Character:
         spellcasting_ability: Optional[str] = None,
     ):
         # Determines if the character is a player or an NPC.
-        self.is_player: bool = False
-        # Determines if the character is an ally or an enemy.
-        self.is_ally = False
+        self.type: CharacterType = CharacterType.ENEMY
         # Name of the character.
         self.name: str = name
         # The character race.
@@ -436,6 +434,20 @@ class Character:
                 return True
         return False
 
+    def get_all_effects_of_type(self, effect_type: type[Effect]) -> list[ActiveEffect]:
+        """
+        Returns a list of all active effects of a specific type.
+        Args:
+            effect_type (type[Effect]): The type of effect to filter by.
+        Returns:
+            list[ActiveEffect]: A list of active effects of the specified type.
+        """
+        return [
+            active
+            for active in self.active_effects
+            if isinstance(active.effect, effect_type)
+        ]
+
     def get_total_bonus_from_effects(self, bonus_type: BonusType) -> int:
         """
         Computes the total modifier from active effects for a given BonusType.
@@ -458,6 +470,23 @@ class Character:
                         active.effect.modifiers[bonus_type], self, active.mind_level
                     )
         return total
+
+    def get_effect_usefulness_index(self, effect: Effect) -> int:
+        """Computes how much the character needs a specific effect.
+
+        Args:
+            effect (Effect): The effect to check.
+
+        Returns:
+            int: The index of the effect in the active effects list, or -1 if not found.
+        """
+        usefulness_index = 0
+        for existing_effect in self.get_all_effects_of_type(Buff):
+            usefulness_index += existing_effect.duration < effect.max_duration
+            # If the target already has the buff, we don't need to buff them.
+            if effect.is_stronger_than(existing_effect.effect):
+                usefulness_index += 1
+        return usefulness_index
 
     def get_all_melee_damage_bonuses(self) -> list[str]:
         """
@@ -627,51 +656,19 @@ class Character:
         for active in effects_to_remove:
             self.remove_effect(active)
 
-    def get_character_icon(self) -> str:
-        if self.is_player:
-            return "👤"
-        if self.is_ally:
-            return "🤝"
-        return "💀"
-
-    @staticmethod
-    def _make_bar(
-        current: int, maximum: int, length: int = 10, color: str = "white"
-    ) -> str:
-        filled = int((current / maximum) * length)
-        empty = length - filled
-        bar = f"[{color}]" + "▮" * filled
-        if empty > 0:
-            bar += "[dim white]" + "▯" * empty + "[/]"
-        bar += "[/]"
-        return bar
-
-    @staticmethod
-    def _color_effect_name(effect) -> str:
-        color_map = {
-            "Buff": "bold green",
-            "DebuffSpell": "bold red",
-            "DoT": "magenta",
-            "HoT": "cyan",
-            "Armor": "yellow",
-        }
-        effect_type = type(effect).__name__
-        color = color_map.get(effect_type, "dim white")
-        return f"[{color}]{effect.name}[/]"
-
     def get_status_line(self):
         effects = (
-            ", ".join(self._color_effect_name(e.effect) for e in self.active_effects)
+            ", ".join(get_effect_color(e.effect) for e in self.active_effects)
             if self.active_effects
             else ""
         )
+        hp_bar = make_bar(self.hp, self.HP_MAX, color="green")
 
-        status = f"{self.get_character_icon()} [bold]{self.name:<10}[/] "
+        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<10}[/] "
         status += f"| AC: [bold yellow]{self.AC}[/] "
-        hp_bar = self._make_bar(self.hp, self.HP_MAX, color="green")
         status += f"| HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] {hp_bar} "
         if self.MIND_MAX > 0:
-            mind_bar = self._make_bar(self.mind, self.MIND_MAX, color="blue")
+            mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue")
             status += f"| MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] {mind_bar} "
         if effects:
             status += f"| Effects: {effects}"
@@ -680,7 +677,7 @@ class Character:
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "is_ally": self.is_ally,
+            "type": self.type.name,
             "race": self.race.name,
             "levels": {cls.name: lvl for cls, lvl in self.levels.items()},
             "stats": self.stats,
@@ -722,7 +719,7 @@ class Character:
         )
 
         # Set the character as a player if specified.
-        char.is_ally = data.get("is_ally", False)
+        char.type = CharacterType[data.get("type", "ENEMY").upper()]
 
         # Load the weapons.
         for equipped_weapon_data in data.get("equipped_weapons", []):
@@ -817,5 +814,84 @@ def load_player_character(
         player_data = json.load(f)
         player = Character.from_dict(player_data, registries)
         # Mark the character as a player character.
-        player.is_player = True
+        player.type = CharacterType.PLAYER
         return player
+
+
+def sort_for_weapon_attack(
+    actor: Character, action: WeaponAttack, targets: list[Character]
+) -> list[Character]:
+    """
+    Compares two characters based on their offensive capabilities.
+    Returns True if char1 is more offensive than char2, False otherwise.
+    """
+    return sorted(
+        targets,
+        key=lambda c: (
+            c.AC,
+            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
+            (
+                len(c.get_all_effects_of_type(DoT))
+                if isinstance(action.effect, DoT)
+                else 1
+            ),
+        ),
+    )
+
+
+def sort_for_spell_heal(
+    actor: Character, action: SpellHeal, targets: list[Character]
+) -> list[Character]:
+    """
+    Compares two characters based on their need for healing, or healing effects.
+    """
+    # Filter out targets who are already at full HP or already affected by the heal's effect.
+    targets = [target for target in targets if target.hp < target.HP_MAX]
+    return sorted(
+        targets,
+        key=lambda c: (
+            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
+            (
+                len(c.get_all_effects_of_type(HoT))
+                if isinstance(action.effect, HoT)
+                else 1
+            ),
+        ),
+    )
+
+
+def sort_for_spell_attack(
+    actor: Character, action: SpellAttack, targets: list[Character]
+) -> list[Character]:
+    """
+    Compares two characters based on their need for offensive spells.
+    """
+    return sorted(
+        targets,
+        key=lambda c: (
+            c.AC,
+            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
+            (
+                len(c.get_all_effects_of_type(DoT))
+                if isinstance(action.effect, DoT)
+                else 1
+            ),
+        ),
+    )
+
+
+def sort_for_spell_buff(
+    actor: Character, action: SpellBuff, targets: list[Character]
+) -> list[Character]:
+    """
+    Compares two characters based on their need for defensive spells.
+    """
+    # Compute a numerical value that identifies how much a character needs a buff.
+    usefulness_index: dict[Character, int] = {}
+    for target in targets:
+        usefulness_index[target] = target.get_effect_usefulness_index(action.effect)
+    # Sort based on the need for the buff.
+    return sorted(
+        targets,
+        key=lambda c: (usefulness_index.get(c, 0)),
+    )

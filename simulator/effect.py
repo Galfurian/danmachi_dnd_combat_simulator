@@ -101,6 +101,23 @@ class Buff(Effect):
                 self.modifiers[key], str
             ), f"Modifier value for '{key}' must be a string expression."
 
+    def is_stronger_than(self, other: "Buff") -> bool:
+        """Check if this buff is stronger than another buff in terms of comparable modifiers.
+
+        Args:
+            other (Buff): The other buff to compare against.
+
+        Returns:
+            bool: True if this buff is stronger, False otherwise.
+        """
+        overall_difference = 0
+        for key, value in self.modifiers.items():
+            if key in other.modifiers:
+                overall_difference += value - other.modifiers[key]
+        if overall_difference == 0:
+            return len(self.modifiers) > len(other.modifiers)
+        return overall_difference > 0
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "type": "Buff",
@@ -192,10 +209,10 @@ class DoT(Effect):
         dot_value = target.take_damage(dot_value, self.damage_type)
         # If the damage value is positive, print the damage message.
         console.print(
-            f"    ☠️ [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
+            f"    {get_damage_emoji(self.damage_type)} [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
         )
         # If the target is defeated, print a message.
-        if not target.is_alive() and not target.is_ally:
+        if not target.is_alive():
             console.print(
                 f"    [bold red]{target.name} has been defeated![/]",
                 markup=True,

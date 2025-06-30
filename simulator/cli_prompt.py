@@ -7,10 +7,14 @@ from prompt_toolkit.completion import WordCompleter
 from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from character import Character
 from prompt_toolkit import ANSI
-from colors import *
 from effect import Buff
 
-from constants import ActionCategory, ActionType
+from constants import (
+    ActionCategory,
+    ActionType,
+    get_action_category_color,
+    get_action_type_color,
+)
 from interfaces import PlayerInterface
 from utils import evaluate_expression
 
@@ -31,8 +35,8 @@ def table_to_str(table: Table, *, colour: bool = True) -> str:
     """
     Render a Rich Table → str.
 
-    • If `colour` is True (default) you get ANSI escape sequences.
-    • If False, output is plain ASCII (good for logs or tests).
+    - If `colour` is True (default) you get ANSI escape sequences.
+    - If False, output is plain ASCII (good for logs or tests).
     """
     if colour:
         with console.capture() as cap:
@@ -61,9 +65,9 @@ def show_prompt(
 
 class PromptToolkitCLI(PlayerInterface):
     """
-    • Shows a Rich table of abilities each time.
-    • Offers autocomplete + numeric shortcuts.
-    • Wipes the typed prompt line after ⏎ (erase_when_done=True).
+    - Shows a Rich table of abilities each time.
+    - Offers autocomplete + numeric shortcuts.
+    - Wipes the typed prompt line after ⏎ (erase_when_done=True).
     """
 
     def __init__(self) -> None:
@@ -356,22 +360,7 @@ class PromptToolkitCLI(PlayerInterface):
         return tbl
 
     def _color_action_type(self, action_type: ActionType) -> str:
-        color_map = {
-            ActionType.STANDARD: "bold yellow",
-            ActionType.BONUS: "bold green",
-            ActionType.FREE: "bold cyan",
-        }
-        style = color_map.get(action_type, "bold white")
-        return f"[{style}]{action_type.name.title()}[/{style}]"
+        return f"[{get_action_type_color(action_type)}]{action_type.name.title()}[/]"
 
     def _color_action_category(self, category: ActionCategory) -> str:
-        color_map = {
-            ActionCategory.OFFENSIVE: "bold red",
-            ActionCategory.HEALING: "bold green",
-            ActionCategory.BUFF: "bold yellow",
-            ActionCategory.DEBUFF: "bold cyan",
-            ActionCategory.UTILITY: "bold white",
-            ActionCategory.DEBUG: "dim",
-        }
-        style = color_map.get(category, "bold white")
-        return f"[{style}]{category.name.title()}[/{style}]"
+        return f"[{get_action_category_color(category)}]{category.name.title()}[/]"
