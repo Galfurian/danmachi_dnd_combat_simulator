@@ -634,24 +634,51 @@ class Character:
             return "🤝"
         return "💀"
 
+    @staticmethod
+    def _make_bar(
+        current: int, maximum: int, length: int = 10, color: str = "white"
+    ) -> str:
+        filled = int((current / maximum) * length)
+        empty = length - filled
+        bar = f"[{color}]" + "▮" * filled
+        if empty > 0:
+            bar += "[dim white]" + "▯" * empty + "[/]"
+        bar += "[/]"
+        return bar
+
+    @staticmethod
+    def _color_effect_name(effect) -> str:
+        color_map = {
+            "Buff": "bold green",
+            "DebuffSpell": "bold red",
+            "DoT": "magenta",
+            "HoT": "cyan",
+            "Armor": "yellow",
+        }
+        effect_type = type(effect).__name__
+        color = color_map.get(effect_type, "dim white")
+        return f"[{color}]{effect.name}[/]"
+
     def get_status_line(self):
-        """
-        Returns a status line string for the character, including name, hp, mind, and AC.
-        """
         effects = (
-            ", ".join(e.effect.name for e in self.active_effects)
+            ", ".join(self._color_effect_name(e.effect) for e in self.active_effects)
             if self.active_effects
             else ""
         )
 
-        return (
-            f"{self.get_character_icon()} "
-            f"[bold]{self.name}[/] "
-            f"HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] "
-            f"MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] "
-            f"AC: [bold yellow]{self.AC}[/] "
-            f"{f'Effects: {effects}' if effects else ''}"
-        )
+        status = f"{self.get_character_icon()} [bold]{self.name:<10}[/] "
+
+        hp_bar = self._make_bar(self.hp, self.HP_MAX, color="green")
+        status += f"HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] {hp_bar} "
+        if self.MIND_MAX > 0:
+            mind_bar = self._make_bar(self.mind, self.MIND_MAX, color="blue")
+            status += (
+                f"MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] {mind_bar} "
+            )
+        status += f"AC: [bold yellow]{self.AC}[/] "
+        if effects:
+            status += f"Effects: {effects}"
+        return status
 
     def to_dict(self) -> dict[str, Any]:
         return {

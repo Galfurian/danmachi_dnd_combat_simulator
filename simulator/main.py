@@ -157,10 +157,9 @@ if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
 
-    # add_opponent("Goblin")
-    # add_opponent("Goblin")
-    # add_opponent("Goblin")
-    add_opponent("Infant Dragon")
+    add_opponent("Goblin")
+    add_opponent("Goblin")
+    add_opponent("Goblin")
 
     make_opponents_names_unique()
 

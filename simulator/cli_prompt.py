@@ -10,7 +10,7 @@ from prompt_toolkit import ANSI
 from colors import *
 from effect import Buff
 
-from constants import ActionType
+from constants import ActionCategory, ActionType
 from interfaces import PlayerInterface
 from utils import evaluate_expression
 
@@ -316,16 +316,62 @@ class PromptToolkitCLI(PlayerInterface):
         return tbl
 
     def _create_action_table(self, actions: list[BaseAction]) -> Table:
+        # Optional: define sort priority if you want custom order
+        type_priority = {
+            ActionType.STANDARD: 0,
+            ActionType.BONUS: 1,
+            ActionType.FREE: 2,
+        }
+        category_priority = {
+            ActionCategory.OFFENSIVE: 0,
+            ActionCategory.HEALING: 1,
+            ActionCategory.BUFF: 2,
+            ActionCategory.DEBUFF: 3,
+            ActionCategory.UTILITY: 4,
+            ActionCategory.DEBUG: 5,
+        }
+        # Sort actions by ActionType (then by name for stability)
+        actions.sort(
+            key=lambda a: (
+                type_priority.get(a.type, 99),
+                category_priority.get(a.category, 99),
+                a.name.lower(),
+            )
+        )
+        # Create a Rich table of actions for the player to choose from.
         tbl = Table(title="Actions", pad_edge=False)
         tbl.add_column("#", style="cyan", no_wrap=True)
         tbl.add_column("Name", style="bold")
         tbl.add_column("Type", style="magenta")
-        tbl.add_column("Cost", justify="right")
+        tbl.add_column("Category", style="blue")
+        tbl.add_column("Mind Cost", justify="center")
         for i, action in enumerate(actions, 1):
             tbl.add_row(
                 str(i),
                 action.name,
-                action.type.name.title(),
-                str(getattr(action, "cost", 0)),
+                self._color_action_type(action.type),
+                self._color_action_category(action.category),
+                str(getattr(action, "mind", 0)),
             )
         return tbl
+
+    def _color_action_type(self, action_type: ActionType) -> str:
+        color_map = {
+            ActionType.STANDARD: "bold yellow",
+            ActionType.BONUS: "bold green",
+            ActionType.FREE: "bold cyan",
+        }
+        style = color_map.get(action_type, "bold white")
+        return f"[{style}]{action_type.name.title()}[/{style}]"
+
+    def _color_action_category(self, category: ActionCategory) -> str:
+        color_map = {
+            ActionCategory.OFFENSIVE: "bold red",
+            ActionCategory.HEALING: "bold green",
+            ActionCategory.BUFF: "bold yellow",
+            ActionCategory.DEBUFF: "bold cyan",
+            ActionCategory.UTILITY: "bold white",
+            ActionCategory.DEBUG: "dim",
+        }
+        style = color_map.get(category, "bold white")
+        return f"[{style}]{category.name.title()}[/{style}]"

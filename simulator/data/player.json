@@ -102,7 +102,7 @@
                     "attack": "1D4"
                 }
             },
-            "multi_target_expr": "[MIND]",
+            "multi_target_expr": "1+[MIND]",
             "upscale_choices": [
                 1,
                 2,
@@ -168,7 +168,7 @@
             "mind": 3,
             "damage_type": "THUNDER",
             "damage_roll": "[MIND]D8",
-            "multi_target_expr": "[MIND]-3",
+            "multi_target_expr": "[MIND]-1",
             "upscale_choices": [
                 3,
                 4,

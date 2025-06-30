@@ -12,6 +12,25 @@ from constants import *
 console = Console()
 
 
+class DamageComponent:
+    def __init__(self, roll: str, damage_type: DamageType):
+        self.roll: str = roll
+        self.damage_type: DamageType = damage_type
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "roll": self.roll,
+            "type": self.damage_type.name,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "DamageComponent":
+        return DamageComponent(
+            roll=data["roll"],
+            damage_type=DamageType[data["type"]],
+        )
+
+
 class BaseAction:
     def __init__(self, name: str, type: ActionType, category: ActionCategory):
         self.name: str = name
@@ -99,25 +118,6 @@ class BaseAction:
         raise ValueError(f"Unknown action class: {data.get('class')}")
 
 
-class DamageComponent:
-    def __init__(self, roll: str, damage_type: DamageType):
-        self.roll: str = roll
-        self.damage_type: DamageType = damage_type
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "roll": self.roll,
-            "type": self.damage_type.name,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "DamageComponent":
-        return DamageComponent(
-            roll=data["roll"],
-            damage_type=DamageType[data["type"]],
-        )
-
-
 class WeaponAttack(BaseAction):
     def __init__(
         self,
@@ -145,10 +145,10 @@ class WeaponAttack(BaseAction):
         attack_expr = self.attack_roll
         for bonus_expr in actor.get_all_bonuses_from_effects_of_type(BonusType.ATTACK):
             attack_expr += f"+{bonus_expr}"
-        attack_result, attack_roll_desc = roll_and_describe(attack_expr, actor)
+        attack_roll, attack_roll_desc = roll_and_describe(attack_expr, actor)
 
         # --- Outcome: HIT ---
-        if attack_result >= target.AC:
+        if attack_roll >= target.AC:
             total_damage: int = 0
             damage_details: list[str] = []
             # First roll the attack damage from the weapon.
@@ -176,7 +176,7 @@ class WeaponAttack(BaseAction):
 
             console.print(
                 f"    🎯 {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) {attack_result} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+                f"rolled ({attack_roll_desc}) {attack_roll} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
                 markup=True,
             )
             console.print(
@@ -202,7 +202,7 @@ class WeaponAttack(BaseAction):
         else:
             console.print(
                 f"    ❌ {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_result}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                f"rolled ({attack_roll_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
 
@@ -426,22 +426,15 @@ class SpellAttack(Spell):
         )
 
         # --- Build and roll attack expression ---
-        full_attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
-        for _, bonus_expr in actor.attack_modifiers.items():
-            full_attack_expr += f"+{bonus_expr}"
-
-        attack_roll, attack_desc = roll_and_describe(
-            full_attack_expr, actor, mind_level
-        )
+        attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
+        for bonus_expr in actor.get_all_bonuses_from_effects_of_type(BonusType.ATTACK):
+            attack_expr += f"+{bonus_expr}"
+        attack_roll, attack_desc = roll_and_describe(attack_expr, actor, mind_level)
 
         # --- Hit logic ---
         if attack_roll >= target.AC:
-            full_damage_expr = self.damage_roll
-            for _, bonus_expr in actor.damage_modifiers.items():
-                full_damage_expr += f"+{bonus_expr}"
-            damage_roll, damage_desc = roll_and_describe(
-                full_damage_expr, actor, mind_level
-            )
+            damage_expr = self.damage_roll
+            damage_roll, damage_desc = roll_and_describe(damage_expr, actor, mind_level)
             applied_damage = target.take_damage(damage_roll, self.damage_type)
             console.print(
                 f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
@@ -449,7 +442,7 @@ class SpellAttack(Spell):
                 markup=True,
             )
             console.print(
-                f"        🗡️ [bold magenta]Damage:[/] {applied_damage} "
+                f"        💥 [bold magenta]Damage:[/] {applied_damage} "
                 f"[italic]{self.damage_type.name.lower()}[/] ({damage_desc})",
                 markup=True,
             )
