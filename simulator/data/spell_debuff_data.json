@@ -16,8 +16,8 @@
             "mind": 1,
             "max_duration": 3,
             "modifiers": {
-                "ATTACK_BONUS": "-1",
-                "DAMAGE_BONUS": "-floor([MIND] / 2)"
+                "attack": "-1",
+                "damage": "-floor([MIND] / 2)"
             }
         }
     },
@@ -38,7 +38,7 @@
             "mind": 2,
             "max_duration": 4,
             "modifiers": {
-                "AC": "-1"
+                "ac": "-1"
             }
         }
     },
@@ -59,7 +59,7 @@
             "mind": 2,
             "max_duration": 3,
             "modifiers": {
-                "MIND_MAX": "-floor([MIND] * 1.5)"
+                "mind": "-floor([MIND] * 1.5)"
             }
         }
     }

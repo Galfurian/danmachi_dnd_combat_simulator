@@ -143,14 +143,15 @@ class WeaponAttack(BaseAction):
 
         # --- Build & resolve attack roll ---
         attack_expr = self.attack_roll
-        for _, bonus_expr in actor.attack_modifiers.items():
+        for bonus_expr in actor.get_all_bonuses_from_effects_of_type(BonusType.ATTACK):
             attack_expr += f"+{bonus_expr}"
         attack_result, attack_roll_desc = roll_and_describe(attack_expr, actor)
 
         # --- Outcome: HIT ---
-        if attack_result >= target.ac:
+        if attack_result >= target.AC:
             total_damage: int = 0
             damage_details: list[str] = []
+            # First roll the attack damage from the weapon.
             for component in self.damage_components:
                 damage_expr = substitute_variables(component.roll, actor)
                 damage_amount = roll_expression(damage_expr, actor)
@@ -161,9 +162,21 @@ class WeaponAttack(BaseAction):
                 damage_details.append(
                     f"{applied_damage} {component.damage_type.name.lower()} ({damage_expr})"
                 )
+            # Then roll any additional damage from effects.
+            for bonus in actor.get_all_melee_damage_bonuses():
+                roll_str = bonus["roll"]
+                type_str = DamageType[bonus["type"]].name
+                damage_expr = substitute_variables(roll_str, actor)
+                damage_amount = roll_expression(damage_expr, actor)
+                applied_damage = target.take_damage(damage_amount, type_str)
+                total_damage += applied_damage
+                damage_details.append(
+                    f"{applied_damage} {type_str.lower()} ({damage_expr})"
+                )
+
             console.print(
                 f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled {attack_result} ({attack_roll_desc}) vs AC [yellow]{target.ac}[/] — [green]hit![/]",
+                f"rolled {attack_result} ({attack_roll_desc}) vs AC [yellow]{target.AC}[/] — [green]hit![/]",
                 markup=True,
             )
             console.print(
@@ -189,7 +202,7 @@ class WeaponAttack(BaseAction):
         else:
             console.print(
                 f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled [red]{attack_result}[/] ({attack_roll_desc}) vs AC [yellow]{target.ac}[/] — [red]miss[/]",
+                f"rolled [red]{attack_result}[/] ({attack_roll_desc}) vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
 
@@ -422,7 +435,7 @@ class SpellAttack(Spell):
         )
 
         # --- Hit logic ---
-        if attack_roll >= target.ac:
+        if attack_roll >= target.AC:
             full_damage_expr = self.damage_roll
             for _, bonus_expr in actor.damage_modifiers.items():
                 full_damage_expr += f"+{bonus_expr}"
@@ -432,7 +445,7 @@ class SpellAttack(Spell):
             applied_damage = target.take_damage(damage_roll, self.damage_type)
             console.print(
                 f"    {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-                f"rolled [white]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.ac}[/] — [green]hit![/]",
+                f"rolled [white]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.AC}[/] — [green]hit![/]",
                 markup=True,
             )
             console.print(
@@ -455,7 +468,7 @@ class SpellAttack(Spell):
         else:
             console.print(
                 f"    {actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
-                f"rolled [red]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.ac}[/] — [red]miss[/]",
+                f"rolled [red]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
 
@@ -603,8 +616,6 @@ class SpellHeal(Spell):
         # - It is not the actor itself.
         # - Both actor and target are alive.
         # - If the actor and the enemy are both allies or enemies.
-        if target == actor:
-            return False
         if not actor.is_alive() or not target.is_alive():
             return False
         if actor.is_ally != target.is_ally:
@@ -717,8 +728,6 @@ class SpellBuff(Spell):
         # - It is not the actor itself.
         # - Both actor and target are alive.
         # - If the actor and the enemy are both allies or enemies.
-        if target == actor:
-            return False
         if not actor.is_alive() or not target.is_alive():
             return False
         if actor.is_ally != target.is_ally:

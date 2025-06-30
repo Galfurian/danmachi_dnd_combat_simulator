@@ -281,7 +281,7 @@ class CombatManager:
                 possible_healing_choices.sort(
                     key=lambda x: (
                         -sum(
-                            t.hp_max - t.hp for t in x[2] if t.hp < t.hp_max
+                            t.HP_MAX - t.hp for t in x[2] if t.hp < t.HP_MAX
                         ),  # most HP to heal
                         x[1],  # least mind
                         -len(x[2]),  # most targets
@@ -359,7 +359,7 @@ class CombatManager:
         available_targets = sorted(
             allies,
             key=lambda c: (
-                c.hp / c.hp_max if c.hp_max > 0 else 1,
+                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
                 c.get_remaining_effect_duration(spell.effect),
             ),
         )
@@ -367,7 +367,7 @@ class CombatManager:
         available_targets = [
             ally
             for ally in available_targets
-            if ally.hp < ally.hp_max and not ally.has_effect(spell.effect)
+            if ally.hp < ally.HP_MAX and not ally.has_effect(spell.effect)
         ]
         # If the spell is single target heal, just return the first target.
         if spell.is_single_target():
@@ -406,7 +406,7 @@ class CombatManager:
         Returns a list of Character objects to target.
         """
         # Determine the maximum mind the NPC can spend (cannot go below 0)
-        mind_level = max(1, min(npc.mind, npc.mind_max))
+        mind_level = max(1, min(npc.mind, npc.MIND_MAX))
         # Determine the number of targets allowed at this mind level
         num_targets = spell.target_count(npc, mind_level)
         # Filter out targets already affected by the spell's effect.
@@ -417,7 +417,7 @@ class CombatManager:
         prioritized_targets = sorted(
             available_targets,
             key=lambda c: (
-                c.hp / c.hp_max if c.hp_max > 0 else 1,
+                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
                 c.get_remaining_effect_duration(spell.effect),
             ),
         )
@@ -432,7 +432,7 @@ class CombatManager:
         Returns a list of Character objects to target.
         """
         # Determine the maximum mind the NPC can spend (cannot go below 0)
-        mind_level = max(1, min(npc.mind, npc.mind_max))
+        mind_level = max(1, min(npc.mind, npc.MIND_MAX))
         # Determine the number of targets allowed at this mind level
         num_targets = spell.target_count(npc, mind_level)
         # Filter out targets already affected by the buff's effect.
@@ -444,7 +444,7 @@ class CombatManager:
             available_targets,
             key=lambda c: (
                 c != npc,
-                c.hp / c.hp_max if c.hp_max > 0 else 1,
+                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
                 c.get_remaining_effect_duration(spell.effect),
             ),
         )
@@ -459,7 +459,7 @@ class CombatManager:
         Returns a list of Character objects to target.
         """
         # Determine the maximum mind the NPC can spend (cannot go below 0)
-        mind_level = max(1, min(npc.mind, npc.mind_max))
+        mind_level = max(1, min(npc.mind, npc.MIND_MAX))
         # Determine the number of targets allowed at this mind level
         num_targets = spell.target_count(npc, mind_level)
         # Filter out targets already affected by the debuff's effect.
@@ -470,7 +470,7 @@ class CombatManager:
         prioritized_targets = sorted(
             available_targets,
             key=lambda c: (
-                c.hp / c.hp_max if c.hp_max > 0 else 1,
+                c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
                 c.get_remaining_effect_duration(spell.effect),
             ),
         )

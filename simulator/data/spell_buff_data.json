@@ -17,8 +17,8 @@
             "mind": 1,
             "max_duration": 10,
             "modifiers": {
-                "ATTACK_BONUS": "1d4",
-                "DAMAGE_BONUS": "floor([MIND] / 2)"
+                "attack": "1d4",
+                "damage": "floor([MIND] / 2)"
             }
         }
     },
@@ -40,7 +40,7 @@
             "mind": 1,
             "max_duration": 5,
             "modifiers": {
-                "AC": "1 + floor([MIND] / 2)"
+                "ac": "1 + floor([MIND] / 2)"
             }
         }
     },
@@ -61,7 +61,7 @@
             "mind": 2,
             "max_duration": 4,
             "modifiers": {
-                "AC": "1 + floor([MIND] / 2)"
+                "ac": "1 + floor([MIND] / 2)"
             }
         }
     },
@@ -82,7 +82,7 @@
             "mind": 2,
             "max_duration": 3,
             "modifiers": {
-                "MIND_MAX": "floor([MIND] * 1.5)"
+                "mind": "floor([MIND] * 1.5)"
             }
         }
     }

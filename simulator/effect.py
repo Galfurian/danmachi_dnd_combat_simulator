@@ -1,5 +1,4 @@
 import json
-from logging import debug
 from rich.console import Console
 
 from utils import *
@@ -88,55 +87,7 @@ class Buff(Effect):
     def __init__(self, name: str, max_duration: int, modifiers: dict[BonusType, str]):
         super().__init__(name, max_duration)
 
-        self.modifiers: dict[BonusType, str] = modifiers
-        self._cached_values: dict[BonusType, int] = {}
-
-    def apply(self, actor: Any, target: Any, mind_level: int = 0):
-        debug(f"Applying buff '{self.name}' to {target.name}.")
-        # Evaluate each modifier and apply it to the target
-        for bonus_type, bonus_expr in self.modifiers.items():
-            bonus = 0
-            if bonus_type == BonusType.HP_MAX:
-                bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                target.hp_max += bonus
-                target.hp += bonus
-            elif bonus_type == BonusType.MIND_MAX:
-                bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                target.mind_max += bonus
-                target.mind += bonus
-            elif bonus_type == BonusType.AC:
-                bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                target.ac += bonus
-            elif bonus_type == BonusType.INITIATIVE_BONUS:
-                bonus = evaluate_expression(bonus_expr, actor, mind_level)
-                target.initiative_bonus += bonus
-            elif bonus_type == BonusType.ATTACK_BONUS:
-                target.attack_modifiers[self.name] = bonus_expr
-            elif bonus_type == BonusType.DAMAGE_BONUS:
-                target.damage_modifiers[self.name] = bonus_expr
-            # Store the evaluated bonus in the cached values.
-            self._cached_values[bonus_type] = bonus
-
-    def remove(self, actor: Any, target: Any):
-        debug(f"Removing buff '{self.name}' from {target.name}.")
-        for bonus_type, bonus in self._cached_values.items():
-            if bonus_type == BonusType.HP_MAX:
-                target.hp_max -= bonus
-                target.hp = min(target.hp, target.hp_max)
-            elif bonus_type == BonusType.MIND_MAX:
-                target.mind_max -= bonus
-                target.mind = min(target.mind, target.mind_max)
-            elif bonus_type == BonusType.AC:
-                target.ac -= bonus
-            elif bonus_type == BonusType.INITIATIVE_BONUS:
-                target.initiative_bonus -= bonus
-            elif bonus_type == BonusType.ATTACK_BONUS:
-                if self.name in target.attack_modifiers:
-                    del target.attack_modifiers[self.name]
-            elif bonus_type == BonusType.DAMAGE_BONUS:
-                if self.name in target.damage_modifiers:
-                    del target.damage_modifiers[self.name]
-        self._cached_values.clear()
+        self.modifiers: dict[BonusType, Any] = modifiers
 
     def validate(self):
         super().validate()
@@ -155,13 +106,13 @@ class Buff(Effect):
             "type": "Buff",
             "name": self.name,
             "max_duration": self.max_duration,
-            "modifiers": {k.name: v for k, v in self.modifiers.items()},
+            "modifiers": {k.name.lower(): v for k, v in self.modifiers.items()},
         }
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Buff":
         assert data is not None, "Data must not be None."
-        modifiers = {BonusType[k]: v for k, v in data["modifiers"].items()}
+        modifiers = {BonusType[k.upper()]: v for k, v in data["modifiers"].items()}
         return Buff(
             name=data["name"],
             max_duration=data["max_duration"],
@@ -170,42 +121,49 @@ class Buff(Effect):
 
 
 class Armor(Effect):
-    def __init__(self, name: str, ac_bonus: int, armor_slot: ArmorSlot):
+    def __init__(
+        self,
+        name: str,
+        ac: int,
+        armor_slot: ArmorSlot,
+        armor_type: Optional[ArmorType] = None,
+    ):
         super().__init__(name, -1)
-        self.ac_bonus = ac_bonus
+        self.ac = ac
         self.armor_slot: ArmorSlot = armor_slot
+        self.armor_type: Optional[ArmorType] = armor_type
 
         self.validate()
 
-    def wear(self, actor: Any):
-        debug(f"{actor.name} wears armor '{self.name}' with AC bonus {self.ac_bonus}.")
-        actor.ac += self.ac_bonus
-
-    def strip(self, actor: Any):
-        debug(f"{actor.name} strips armor '{self.name}' with AC bonus {self.ac_bonus}.")
-        actor.ac -= self.ac_bonus
-
     def validate(self) -> None:
-        assert self.ac_bonus >= 0, "Armor AC bonus must be a non-negative integer."
+        assert self.ac >= 0, "Armor AC bonus must be a non-negative integer."
         assert isinstance(
             self.armor_slot, ArmorSlot
         ), f"Armor slot '{self.armor_slot}' must be of type ArmorSlot."
+        # If armor type is specified, it must be of type ArmorType.
+        if self.armor_type is not None:
+            assert isinstance(
+                self.armor_type, ArmorType
+            ), f"Armor type '{self.armor_type}' must be of type ArmorType."
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "Armor",
-            "name": self.name,
-            "ac_bonus": self.ac_bonus,
-            "armor_slot": self.armor_slot.name,
-        }
+        data: dict[str, Any] = {}
+        data["type"] = "Armor"
+        data["name"] = self.name
+        data["ac"] = self.ac
+        data["armor_slot"] = self.armor_slot.name
+        if self.armor_type is not None:
+            data["armor_type"] = self.armor_type.name
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Armor":
         assert data is not None, "Data must not be None."
         return Armor(
             name=data["name"],
-            ac_bonus=data["ac_bonus"],
+            ac=data["ac"],
             armor_slot=ArmorSlot[data["armor_slot"]],
+            armor_type=ArmorType[data["armor_type"]] if "armor_type" in data else None,
         )
 
 

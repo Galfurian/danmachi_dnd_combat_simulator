@@ -74,10 +74,12 @@ class PromptToolkitCLI(PlayerInterface):
         # Create a completer for the action names (including "Cast a Spell" if present)
         completer = WordCompleter([a.name for a in actions], ignore_case=True)
         # Prompt the user for input.
-        answer = session.prompt(
-            prompt,
-            completer=completer,
-            complete_while_typing=True,
+        answer = str(
+            session.prompt(
+                prompt,
+                completer=completer,
+                complete_while_typing=True,
+            )
         )
         # If the user didn't type anything, return None.
         if not answer:
@@ -169,7 +171,7 @@ class PromptToolkitCLI(PlayerInterface):
                     str(i),
                     t.name,
                     str(t.hp),
-                    str(t.ac),
+                    str(t.AC),
                     "[green]✓[/]" if t in selected else "",
                 )
             tbl.add_row("0", "Done", "", "", "")
@@ -282,7 +284,7 @@ class PromptToolkitCLI(PlayerInterface):
                 str(i),
                 target.name,
                 str(target.hp),
-                str(target.ac),
+                str(target.AC),
             )
         return tbl
 

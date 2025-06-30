@@ -2,12 +2,12 @@ from enum import Enum, auto
 
 
 class BonusType(Enum):
-    HP_MAX = auto()
-    MIND_MAX = auto()
+    HP = auto()
+    MIND = auto()
     AC = auto()
-    ATTACK_BONUS = auto()
-    DAMAGE_BONUS = auto()
-    INITIATIVE_BONUS = auto()
+    ATTACK = auto()
+    DAMAGE = auto()
+    INITIATIVE = auto()
     # Add other bonus types as needed
 
 
@@ -66,3 +66,9 @@ class ArmorSlot(Enum):
     RING = auto()
     COMBAT_STYLE = auto()
     # etc., expand as needed
+
+
+class ArmorType(Enum):
+    HEAVY = auto()
+    MEDIUM = auto()
+    LIGHT = auto()

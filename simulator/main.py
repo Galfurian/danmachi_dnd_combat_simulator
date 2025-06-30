@@ -90,7 +90,7 @@ console.print(Rule("Loading Character Races", style="bold green"))
 # Load character races.
 races = load_character_races("data/character_races.json")
 for race_name, race_data in races.items():
-    print(f"    Loaded race: {race_name} (base_ac_bonus: {race_data.base_ac_bonus})")
+    print(f"    Loaded race: {race_name} (natural_ac: {race_data.natural_ac})")
 
 # =============================================================================
 
@@ -110,7 +110,7 @@ console.print(Rule("Loading Enemies", style="bold green"))
 # Load the enemies.
 enemies = load_characters("data/enemies_danmachi_f1_f10.json", registries)
 for enemy_name, enemy in enemies.items():
-    print(f"    Loaded enemy: {enemy_name} (hp: {enemy.hp}, ac: {enemy.ac})")
+    print(f"    Loaded enemy: {enemy_name} (hp: {enemy.hp}, ac: {enemy.AC})")
 
 # =============================================================================
 

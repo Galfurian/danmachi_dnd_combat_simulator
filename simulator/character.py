@@ -5,7 +5,7 @@ from rich.console import Console
 
 from constants import *
 from actions import BaseAction
-from effect import Effect
+from effect import Buff, Effect
 from utils import *
 
 
@@ -58,9 +58,9 @@ class CharacterClass:
 
 
 class CharacterRace:
-    def __init__(self, name: str, base_ac_bonus: int = 0):
+    def __init__(self, name: str, natural_ac: int = 0):
         self.name = name
-        self.base_ac_bonus = base_ac_bonus
+        self.natural_ac = natural_ac
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the CharacterRace instance to a dictionary.
@@ -70,7 +70,7 @@ class CharacterRace:
         """
         return {
             "name": self.name,
-            "base_ac_bonus": self.base_ac_bonus,
+            "natural_ac": self.natural_ac,
         }
 
     @staticmethod
@@ -85,7 +85,7 @@ class CharacterRace:
         """
         return CharacterRace(
             name=data["name"],
-            base_ac_bonus=data.get("base_ac_bonus", 0),
+            natural_ac=data.get("natural_ac", 0),
         )
 
 
@@ -120,23 +120,8 @@ class Character:
             "wisdom": wisdom,
             "charisma": charisma,
         }
-        # Set Armor CharacterClass and Initiative.
-        self.ac: int = 0
         # Spellcasting Ability.
         self.spellcasting_ability: Optional[str] = spellcasting_ability
-        # Calculate hp and mind based on class multipliers.
-        self.hp_max: int = 0
-        self.mind_max: int = 0
-        for cls, cls_level in levels.items():
-            # HP: base multiplier + modifier, minimum 1 per level
-            self.hp_max += max(1, (cls.hp_mult + self.CON)) * cls_level
-            # Mind: base multiplier + modifier, minimum 0 per level
-            self.mind_max += max(0, (cls.mind_mult + self.SPELLCASTING)) * cls_level
-
-        self.hp: int = self.hp_max
-        self.mind: int = self.mind_max
-        # Initiative bonuses.
-        self.initiative_bonus: int = 0
         # List of equipped weapons.
         self.equipped_weapons: list[Any] = []
         self.total_hands: int = 2
@@ -149,14 +134,37 @@ class Character:
         self.actions: dict[str, Any] = {}
         # List of spells
         self.spells: dict[str, Any] = {}
-        # Modifiers
-        self.attack_modifiers: dict[str, str] = {}
-        self.damage_modifiers: dict[str, str] = {}
         # Turn flags to track used actions.
         self.turn_flags: dict[str, bool] = {
             "standard_action_used": False,
             "bonus_action_used": False,
         }
+
+        # Maximum HP and Mind.
+        self.hp: int = self.HP_MAX
+        self.mind: int = self.MIND_MAX
+
+    @property
+    def HP_MAX(self) -> int:
+        """Returns the maximum HP of the character."""
+        hp_max: int = 0
+        # Add the class levels' HP multipliers to the max HP.
+        for cls, cls_level in self.levels.items():
+            hp_max += max(1, (cls.hp_mult + self.CON)) * cls_level
+        # Add the effect modifiers to the max HP.
+        hp_max += self.get_total_bonus_from_effects(BonusType.HP)
+        return hp_max
+
+    @property
+    def MIND_MAX(self) -> int:
+        """Returns the maximum Mind of the character."""
+        mind_max: int = 0
+        # Add the class levels' Mind multipliers to the max Mind.
+        for cls, cls_level in self.levels.items():
+            mind_max += max(0, (cls.mind_mult + self.SPELLCASTING)) * cls_level
+        # Add the effect modifiers to the max Mind.
+        mind_max += self.get_total_bonus_from_effects(BonusType.MIND)
+        return mind_max
 
     @property
     def STR(self):
@@ -196,9 +204,39 @@ class Character:
         return 0
 
     @property
-    def AC(self):
-        """Calculates the character's Armor CharacterClass (AC) based on equipped defences and active effects."""
-        return self.ac
+    def AC(self) -> int:
+        """
+        Calculates Armor Class (AC) using DnD 5e rules:
+        - If wearing body armor, AC = armor.base + DEX modifier (if allowed by type)
+        - Shields stack with body armor or base AC
+        - If no armor is worn, AC = 10 + DEX + race bonus
+        """
+        # Base AC is 10 + DEX modifier.
+        base_ac = 10 + self.DEX
+        armor_ac = None
+        shield_ac = 0
+        for armor in self.equipped_armor:
+            slot: ArmorSlot = getattr(armor, "armor_slot")
+            if slot == ArmorSlot.TORSO:
+                armor_type: ArmorType = getattr(armor, "armor_type")
+                assert (
+                    armor_type in ArmorType
+                ), f"Invalid armor type: {armor_type} for armor {armor.name}"
+                if armor_type == ArmorType.LIGHT:
+                    armor_ac = armor.ac + self.DEX
+                elif armor_type == ArmorType.MEDIUM:
+                    armor_ac = armor.ac + min(self.DEX, 2)
+                elif armor_type == ArmorType.HEAVY:
+                    armor_ac = armor.ac
+                else:
+                    armor_ac = armor.ac
+            elif slot == ArmorSlot.SHIELD:
+                shield_ac += armor.ac
+        # Determine final AC.
+        if armor_ac is not None:
+            return armor_ac + shield_ac
+        race_bonus = self.race.natural_ac if self.race else 0
+        return base_ac + race_bonus + shield_ac
 
     @property
     def INITIATIVE(self) -> int:
@@ -207,7 +245,11 @@ class Character:
         Returns:
             int: The total initiative value.
         """
-        return self.DEX + self.initiative_bonus
+        # Base initiative is DEX modifier.
+        initiative = self.DEX
+        # Add any initiative bonuses from active effects.
+        initiative += self.get_total_bonus_from_effects(BonusType.INITIATIVE)
+        return initiative
 
     def reset_turn_flags(self):
         """Resets the turn flags for the character."""
@@ -276,7 +318,7 @@ class Character:
             int: The actual amount healed, which may be less than the requested amount if it exceeds max_hp.
         """
         # Compute the actual amount we can heal.
-        amount = max(0, min(amount, self.hp_max - self.hp))
+        amount = max(0, min(amount, self.HP_MAX - self.hp))
         # Ensure we don't exceed the maximum hp.
         self.hp += amount
         # Return the actual amount healed.
@@ -392,14 +434,58 @@ class Character:
             if active.effect == effect:
                 return True
         return False
-    
+
+    def get_total_bonus_from_effects(self, bonus_type: BonusType) -> int:
+        """
+        Computes the total modifier from active effects for a given BonusType.
+        Args:
+            bonus_type (BonusType): The bonus type to compute.
+        Returns:
+            int: Total bonus or malus from all matching effects.
+        """
+        total = 0
+        assert bonus_type in [
+            BonusType.HP,
+            BonusType.MIND,
+            BonusType.AC,
+            BonusType.INITIATIVE,
+        ], f"Invalid bonus type: {bonus_type}"
+        for active in self.active_effects:
+            if isinstance(active.effect, Buff):
+                if bonus_type in active.effect.modifiers:
+                    total += evaluate_expression(
+                        active.effect.modifiers[bonus_type], self, active.mind_level
+                    )
+        return total
+
+    def get_all_melee_damage_bonuses(self) -> list[str]:
+        """
+        Returns a list of all melee damage bonuses from active effects.
+        This is used to apply additional damage to melee attacks.
+        """
+        bonus_list: list[str] = []
+        for active in self.active_effects:
+            if isinstance(active.effect, Buff):
+                if BonusType.DAMAGE in active.effect.modifiers:
+                    bonus_list.append(active.effect.modifiers[BonusType.DAMAGE])
+        return bonus_list
+
+    def get_all_bonuses_from_effects_of_type(self, bonus_type: BonusType) -> list[str]:
+        bonus_list: list[str] = []
+        for active in self.active_effects:
+            print(f"Checking effect: {active.effect.name} for bonus type: {bonus_type}")
+            if isinstance(active.effect, Buff):
+                if bonus_type in active.effect.modifiers:
+                    bonus_list.append(active.effect.modifiers[bonus_type])
+        return bonus_list
+
     def get_remaining_effect_duration(self, effect: Any) -> int:
         """
         Returns the remaining duration of a specific effect on the character.
-        
+
         Args:
             effect (Effect): The effect to check.
-        
+
         Returns:
             int: The remaining duration of the effect, or 0 if not found.
         """
@@ -499,8 +585,6 @@ class Character:
             debug(f"Equipping armor: {armor.name} for {self.name}")
             # Add the armor to the character's armor list.
             self.equipped_armor.append(armor)
-            # Apply the armor's effects to the character.
-            armor.wear(self)
             return True
         warning(
             f"{self.name} cannot equip {armor.name} because the armor slot is already occupied."
@@ -520,8 +604,6 @@ class Character:
             debug(f"Unequipping armor: {armor.name} from {self.name}")
             # Remove the armor from the character's armor list.
             self.equipped_armor.remove(armor)
-            # Revert the armor's effects on the character.
-            armor.strip(self)
             return True
         warning(f"{self.name} does not have {armor.name} equipped.")
         return False
@@ -556,8 +638,8 @@ class Character:
         )
         return (
             f"[bold]{self.name}[/] "
-            f"HP: [green]{self.hp}[/]/[bold green]{self.hp_max}[/] "
-            f"MIND: [blue]{self.mind}[/]/[bold blue]{self.mind_max}[/] "
+            f"HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] "
+            f"MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] "
             f"AC: [bold yellow]{self.AC}[/] "
             f"{f'Effects: {effects}' if effects else ''}"
         )

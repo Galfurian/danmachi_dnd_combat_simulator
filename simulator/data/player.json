@@ -19,19 +19,20 @@
         {
             "type": "Armor",
             "name": "Chainmail",
-            "ac_bonus": 16,
-            "armor_slot": "TORSO"
+            "ac": 16,
+            "armor_slot": "TORSO",
+            "armor_type": "MEDIUM"
         },
         {
             "type": "Armor",
             "name": "Steel Shield",
-            "ac_bonus": 2,
+            "ac": 2,
             "armor_slot": "SHIELD"
         },
         {
             "type": "Armor",
             "name": "Defense Style",
-            "ac_bonus": 1,
+            "ac": 1,
             "armor_slot": "COMBAT_STYLE"
         }
     ],
@@ -93,7 +94,7 @@
                 "mind": 1,
                 "max_duration": 3,
                 "modifiers": {
-                    "ATTACK_BONUS": "1D4"
+                    "attack": "1D4"
                 }
             }
         },
@@ -109,7 +110,7 @@
                 "mind": 1,
                 "max_duration": 10,
                 "modifiers": {
-                    "AC": "2"
+                    "ac": "2"
                 }
             }
         },
@@ -165,6 +166,25 @@
             "mind": 2,
             "damage_type": "THUNDER",
             "damage_roll": "3D8"
+        },
+        {
+            "class": "SpellBuff",
+            "name": "Divine Favor",
+            "type": "BONUS",
+            "level": 1,
+            "mind": 1,
+            "effect": {
+                "type": "Buff",
+                "name": "Divine Favor",
+                "mind": 1,
+                "max_duration": 10,
+                "modifiers": {
+                    "damage": {
+                        "roll": "1D6",
+                        "type": "RADIANT"
+                    }
+                }
+            }
         }
     ]
 }

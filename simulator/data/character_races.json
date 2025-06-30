@@ -1,74 +1,74 @@
 [
     {
         "name": "Human",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Elf",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Dwarf",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Amazoness",
-        "base_ac_bonus": 1
+        "natural_ac": 1
     },
     {
         "name": "Beastman",
-        "base_ac_bonus": 1
+        "natural_ac": 1
     },
     {
         "name": "Renard",
-        "base_ac_bonus": 1
+        "natural_ac": 1
     },
     {
         "name": "Pallum",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Half-Elf",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Half-Dwarf",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Half-Amazoness",
-        "base_ac_bonus": 1
+        "natural_ac": 1
     },
     {
         "name": "Aasimar",
-        "base_ac_bonus": 1
+        "natural_ac": 1
     },
     {
         "name": "Spirit",
-        "base_ac_bonus": 2
+        "natural_ac": 2
     },
     {
         "name": "Monster",
-        "base_ac_bonus": 2
+        "natural_ac": 2
     },
     {
         "name": "Dragonkin",
-        "base_ac_bonus": 3
+        "natural_ac": 3
     },
     {
         "name": "Insectoid",
-        "base_ac_bonus": 2
+        "natural_ac": 2
     },
     {
         "name": "Ooze",
-        "base_ac_bonus": 3
+        "natural_ac": 3
     },
     {
         "name": "Gnome",
-        "base_ac_bonus": 0
+        "natural_ac": 0
     },
     {
         "name": "Beast",
-        "base_ac_bonus": 2
+        "natural_ac": 2
     }
 ]
