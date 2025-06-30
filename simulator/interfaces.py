@@ -60,9 +60,3 @@ class PlayerInterface(Protocol):
             int: The chosen MIND level.
         """
         ...
-
-
-def to_ansi(s: str) -> str:
-    with console.capture() as capture:
-        console.print(s, markup=True, end="")
-    return capture.get()

@@ -175,8 +175,8 @@ class WeaponAttack(BaseAction):
                 )
 
             console.print(
-                f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled {attack_result} ({attack_roll_desc}) vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+                f"    🎯 {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
+                f"rolled ({attack_roll_desc}) {attack_result} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
                 markup=True,
             )
             console.print(
@@ -201,8 +201,8 @@ class WeaponAttack(BaseAction):
         # --- Outcome: MISS ---
         else:
             console.print(
-                f"    {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled [red]{attack_result}[/] ({attack_roll_desc}) vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                f"    ❌ {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
+                f"rolled ({attack_roll_desc}) [red]{attack_result}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
 
@@ -444,8 +444,8 @@ class SpellAttack(Spell):
             )
             applied_damage = target.take_damage(damage_roll, self.damage_type)
             console.print(
-                f"    {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-                f"rolled [white]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+                f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
+                f"rolled ({attack_desc}) [white]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
                 markup=True,
             )
             console.print(
@@ -467,8 +467,8 @@ class SpellAttack(Spell):
         # --- Miss logic ---
         else:
             console.print(
-                f"    {actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
-                f"rolled [red]{attack_roll}[/] ({attack_desc}) vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                f"    ❌ {actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
+                f"rolled ({attack_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
 
@@ -588,7 +588,7 @@ class SpellHeal(Spell):
         actual_healed = target.heal(heal_value)
 
         console.print(
-            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}: "
+            f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
             f"heals for [bold green]{actual_healed}[/] ([white]{heal_desc}[/]).",
             markup=True,
         )

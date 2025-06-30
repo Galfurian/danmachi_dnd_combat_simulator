@@ -103,6 +103,8 @@ class Character:
         charisma: int,
         spellcasting_ability: Optional[str] = None,
     ):
+        # Determines if the character is a player or an NPC.
+        self.is_player: bool = False
         # Determines if the character is an ally or an enemy.
         self.is_ally = False
         # Name of the character.
@@ -397,7 +399,7 @@ class Character:
             del self.spells[spell.name.lower()]
             debug(f"{self.name} unlearned {spell.name}!")
 
-    def add_effect(self, source: "Character", effect: Any, mind_level: int = 0):
+    def add_effect(self, source: "Character", effect: Effect, mind_level: int = 0):
         """Applies an effect to the character.
 
         Args:
@@ -409,20 +411,19 @@ class Character:
             debug(f"Adding effect: {effect.name} to {self.name} from {source.name}")
             self.active_effects.append(ActiveEffect(source, effect, mind_level))
 
-    def remove_effect(self, effect: ActiveEffect):
+    def remove_effect(self, active_effect: ActiveEffect):
         """Removes a specific effect from the character.
 
         Args:
             effect (ActiveEffect): The effect to remove.
         """
-        if self.has_effect(effect):
-            debug(f"Removing effect: {effect.effect.name} from {self.name}")
+        if self.has_effect(active_effect.effect):
             # Call the effect's remove method to revert its changes.
-            effect.effect.remove(effect.source, self)
+            active_effect.effect.remove(active_effect.source, self)
             # Remove the active effect from the list.
-            self.active_effects.remove(effect)
+            self.active_effects.remove(active_effect)
 
-    def has_effect(self, effect: Any) -> bool:
+    def has_effect(self, effect: Effect) -> bool:
         """
         Checks if the character has a specific active effect.
         Args:
@@ -430,8 +431,8 @@ class Character:
         Returns:
             bool: True if the effect is active, False otherwise.
         """
-        for active in self.active_effects:
-            if active.effect == effect:
+        for active_effect in self.active_effects:
+            if active_effect.effect == effect:
                 return True
         return False
 
@@ -473,7 +474,6 @@ class Character:
     def get_all_bonuses_from_effects_of_type(self, bonus_type: BonusType) -> list[str]:
         bonus_list: list[str] = []
         for active in self.active_effects:
-            print(f"Checking effect: {active.effect.name} for bonus type: {bonus_type}")
             if isinstance(active.effect, Buff):
                 if bonus_type in active.effect.modifiers:
                     bonus_list.append(active.effect.modifiers[bonus_type])
@@ -627,6 +627,13 @@ class Character:
         for active in effects_to_remove:
             self.remove_effect(active)
 
+    def get_character_icon(self) -> str:
+        if self.is_player:
+            return "👤"
+        if self.is_ally:
+            return "🤝"
+        return "💀"
+
     def get_status_line(self):
         """
         Returns a status line string for the character, including name, hp, mind, and AC.
@@ -636,7 +643,9 @@ class Character:
             if self.active_effects
             else ""
         )
+
         return (
+            f"{self.get_character_icon()} "
             f"[bold]{self.name}[/] "
             f"HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] "
             f"MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] "
@@ -783,4 +792,6 @@ def load_player_character(
     with open(file_path, "r") as f:
         player_data = json.load(f)
         player = Character.from_dict(player_data, registries)
+        # Mark the character as a player character.
+        player.is_player = True
         return player

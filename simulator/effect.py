@@ -192,7 +192,7 @@ class DoT(Effect):
         dot_value = target.take_damage(dot_value, self.damage_type)
         # If the damage value is positive, print the damage message.
         console.print(
-            f"    :fire: [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
+            f"    ☠️ [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
         )
         # If the target is defeated, print a message.
         if not target.is_alive() and not target.is_ally:
@@ -254,7 +254,7 @@ class HoT(Effect):
         hot_value = target.heal(hot_value)
         # If the heal value is positive, print the heal message.
         console.print(
-            f"    :heavy_plus_sign: [bold green]{target.name}[/] heals for {hot_value} ([white]{hot_desc}[/]) hp from [bold]{self.name}[/]."
+            f"    ✳️ [bold green]{target.name}[/] heals for {hot_value} ([white]{hot_desc}[/]) hp from [bold]{self.name}[/]."
         )
 
     def validate(self):

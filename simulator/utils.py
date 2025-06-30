@@ -170,15 +170,12 @@ def roll_and_describe(
     substituted = substitute_variables(expr, entity, mind)
     dice_terms = extract_dice_terms(substituted)
     breakdown = substituted
-
-    components: list[str] = []
     for term in dice_terms:
-        total, rolls = parse_and_roll_dice(term)
-        components.append(f"{term} = {'+'.join(map(str, rolls))}")
+        total, _ = parse_and_roll_dice(term)
         breakdown = breakdown.replace(term, str(total), 1)
     try:
         result = int(eval(breakdown, {"__builtins__": None}, math.__dict__))
-        comment = f"{original_expr} = {substituted} → {', '.join(components)}"
+        comment = f"{substituted} → {breakdown}"
         return result, comment
     except Exception as e:
         warning(f"Failed to evaluate '{breakdown}': {e}")

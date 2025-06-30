@@ -80,7 +80,12 @@
             "type": "BONUS",
             "level": 1,
             "mind": 1,
-            "heal_roll": "[MIND]D4+([CHA]*[MIND])"
+            "heal_roll": "[MIND]D4+([CHA]*[MIND])",
+            "upscale_choices": [
+                1,
+                2,
+                3
+            ]
         },
         {
             "class": "SpellBuff",
@@ -92,11 +97,17 @@
                 "type": "Buff",
                 "name": "Bless",
                 "mind": 1,
-                "max_duration": 3,
+                "max_duration": 10,
                 "modifiers": {
                     "attack": "1D4"
                 }
-            }
+            },
+            "multi_target_expr": "[MIND]",
+            "upscale_choices": [
+                1,
+                2,
+                3
+            ]
         },
         {
             "class": "SpellBuff",
@@ -151,21 +162,18 @@
         },
         {
             "class": "SpellAttack",
-            "name": "Firebolt",
-            "type": "STANDARD",
-            "level": 0,
-            "mind": 0,
-            "damage_type": "FIRE",
-            "damage_roll": "1D10"
-        },
-        {
-            "class": "SpellAttack",
             "name": "Shatter",
             "type": "STANDARD",
             "level": 2,
-            "mind": 2,
+            "mind": 3,
             "damage_type": "THUNDER",
-            "damage_roll": "3D8"
+            "damage_roll": "[MIND]D8",
+            "multi_target_expr": "[MIND]-3",
+            "upscale_choices": [
+                3,
+                4,
+                5
+            ]
         },
         {
             "class": "SpellBuff",

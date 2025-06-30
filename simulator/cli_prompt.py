@@ -1,22 +1,30 @@
 # cli_prompt.py
-from typing import List, Optional
+from typing import Any, List, Optional
 from rich.console import Console
 from rich.table import Table
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
-from actions import BaseAction, Spell
+from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from character import Character
 from prompt_toolkit import ANSI
 from colors import *
+from effect import Buff
 
 from constants import ActionType
-from interfaces import PlayerInterface, to_ansi
+from interfaces import PlayerInterface
+from utils import evaluate_expression
 
 
 # main console for everything else
 console = Console()
 # one session keeps history
 session = PromptSession(erase_when_done=True)
+
+
+def to_ansi(s: str) -> str:
+    with console.capture() as capture:
+        console.print(s, markup=True, end="")
+    return capture.get()
 
 
 def table_to_str(table: Table, *, colour: bool = True) -> str:
@@ -36,6 +44,21 @@ def table_to_str(table: Table, *, colour: bool = True) -> str:
         return tmp.export_text()  # plain string
 
 
+def show_prompt(
+    message: str,
+    completer: Optional[WordCompleter] = None,
+    complete_while_typing: bool = True,
+) -> str:
+    """
+    Show a prompt with the given message and return the user's input.
+    """
+    return session.prompt(
+        ANSI(message),
+        completer=completer,
+        complete_while_typing=complete_while_typing,
+    )
+
+
 class PromptToolkitCLI(PlayerInterface):
     """
     • Shows a Rich table of abilities each time.
@@ -47,20 +70,17 @@ class PromptToolkitCLI(PlayerInterface):
         pass
 
     def choose_action(self, actor: Character) -> Optional[BaseAction]:
-        # Turn the action dictionary into a list of actions.
-        actions = list(actor.actions.values()) + actor.equipped_weapons
-        # If the actor has no actions, return None.
-        if not actions:
-            return None
         # Filter actions based on the actor's available action types.
         has_standard_action = actor.has_action_type(ActionType.STANDARD)
         has_bonus_action = actor.has_action_type(ActionType.BONUS)
         actions = [
             action
-            for action in actions
+            for action in list(actor.actions.values()) + actor.equipped_weapons
             if (action.type == ActionType.STANDARD and has_standard_action)
             or (action.type == ActionType.BONUS and has_bonus_action)
         ]
+        if not actions:
+            return None
         # Generate a table of actions (including "Cast a Spell" if present)
         tbl = self._create_action_table(actions)
         if not tbl.rows:
@@ -70,36 +90,32 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row()
             tbl.add_row("0", "Cast a Spell", "", "")
         # Generate a prompt with the table and a question.
-        prompt = ANSI("\n" + table_to_str(tbl) + "\nAction > ")
+        prompt = "\n" + table_to_str(tbl) + "\nAction > "
         # Create a completer for the action names (including "Cast a Spell" if present)
         completer = WordCompleter([a.name for a in actions], ignore_case=True)
-        # Prompt the user for input.
-        answer = str(
-            session.prompt(
-                prompt,
-                completer=completer,
-                complete_while_typing=True,
+        while True:
+            # Prompt the user for input.
+            answer = show_prompt(prompt, completer, True)
+            # If the user didn't type anything, return None.
+            if not answer:
+                continue
+            # If the user typed a number, return the corresponding action.
+            if answer.isdigit() and 1 <= int(answer) <= len(actions):
+                return actions[int(answer) - 1]
+            # If the user typed "Cast a Spell", prompt for spell selection.
+            if answer.isdigit() and int(answer) == 0:
+                spell: Any = self._choose_spell(actor)
+                # If the user didn't select a spell, show the prompt again.
+                if not spell or isinstance(spell, int) and spell == 0:
+                    continue
+                return spell
+            # If the selection is not a number, check if it matches an action name.
+            action = next(
+                (a for a in actions if a.name.lower() == answer.lower()), None
             )
-        )
-        # If the user didn't type anything, return None.
-        if not answer:
-            return None
-        # If the user typed a number, return the corresponding action.
-        if answer.isdigit() and 1 <= int(answer) <= len(actions):
-            return actions[int(answer) - 1]
-        # If the user typed "Cast a Spell", prompt for spell selection.
-        if answer.isdigit() and int(answer) == 0:
-            spell = self._choose_spell(actor)
-            # If the user didn't select a spell, show the prompt again.
-            if isinstance(spell, int) and spell == 0:
-                return self.choose_action(actor)
-            return spell
-        # If the selection is not a number, check if it matches an action name.
-        action = next((a for a in actions if a.name.lower() == answer.lower()), None)
-        # If no valid action was selected, prompt again.
-        if not action:
-            return self.choose_action(actor)
-        return action
+            # If no valid action was selected, prompt again.
+            if isinstance(action, BaseAction):
+                return action
 
     def choose_target(
         self, actor: Character, targets: List[Character]
@@ -114,30 +130,27 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
-        prompt = ANSI("\n" + table_to_str(tbl) + "\nTarget > ")
+        prompt = "\n" + table_to_str(tbl) + "\nTarget > "
         # Create a completer for the target names.
         completer = WordCompleter([t.name for t in targets], ignore_case=True)
-        # Prompt the user for input.
-        answer = session.prompt(
-            prompt,
-            completer=completer,
-            complete_while_typing=True,
-        )
-        # If the user didn't type anything, return None.
-        if not answer:
-            return None
-        # If the user typed a number, return the corresponding target.
-        if answer.isdigit() and 1 <= int(answer) <= len(targets):
-            return targets[int(answer) - 1]
-        if int(answer) == 0:
-            return None
-        # Find the target with the matching name.
-        target = next((t for t in targets if t.name.lower() == answer.lower()), None)
-        # If no valid target was selected, prompt again.
-        if not target:
-            # Otherwise, prompt again for target selection.
-            return self.choose_target(actor, targets)
-        return target
+        while True:
+            # Prompt the user for input.
+            answer = show_prompt(prompt, completer, True)
+            # If the user didn't type anything, return None.
+            if not answer:
+                continue
+            # If the user typed a number, return the corresponding target.
+            if answer.isdigit() and 1 <= int(answer) <= len(targets):
+                return targets[int(answer) - 1]
+            if int(answer) == 0:
+                return None
+            # Find the target with the matching name.
+            target = next(
+                (t for t in targets if t.name.lower() == answer.lower()), None
+            )
+            # If a valid target was found, return it.
+            if isinstance(target, Character):
+                return target
 
     def choose_targets(
         self,
@@ -148,9 +161,10 @@ class PromptToolkitCLI(PlayerInterface):
         assert (
             max_targets and max_targets > 1
         ), "max_targets must be greater than 1 for multiple target selection"
-
+        completer = WordCompleter(
+            [str(i) for i in range(len(targets) + 1)], ignore_case=True
+        )
         selected: set[Character] = set()
-
         while True:
             tbl = Table(
                 title=(
@@ -165,7 +179,6 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_column("HP", justify="right")
             tbl.add_column("AC", justify="right")
             tbl.add_column("Selected", justify="center")
-
             for i, t in enumerate(targets, 1):
                 tbl.add_row(
                     str(i),
@@ -175,46 +188,34 @@ class PromptToolkitCLI(PlayerInterface):
                     "[green]✓[/]" if t in selected else "",
                 )
             tbl.add_row("0", "Done", "", "", "")
-
-            prompt = ANSI("\n" + table_to_str(tbl) + "\nSelect > ")
-            completer = WordCompleter(
-                [str(i) for i in range(len(targets) + 1)], ignore_case=True
-            )
-            answer: str = session.prompt(
-                prompt, completer=completer, complete_while_typing=True
-            )
-
+            # Prepare the prompt with the table.
+            prompt = "\n" + table_to_str(tbl) + "\nSelect > "
+            # Prompt the user for input.
+            answer = show_prompt(prompt, completer, True)
             # If the user didn't type anything, continue the loop.
             if not answer:
                 continue
-
             # If the user did not type a number, continue the loop.
             if not answer.isdigit():
                 continue
-
             # Transform the answer into an integer index.
             idx = int(answer)
-
             # If the user typed 0, return the selected targets or None if none were selected.
             if idx == 0:
                 return list(selected) if selected else None
-
             if 1 <= idx <= len(targets):
                 # Get the target at the index.
                 target = targets[idx - 1]
-
                 # Check if the target is already selected, in that case remove it.
                 if target in selected:
                     selected.remove(target)
                     continue
-
                 # If the target is not selected, add it to the selection.
                 if len(selected) >= max_targets:
                     console.print(
                         f"[yellow]You can only select up to {max_targets} target(s).[/]"
                     )
                     continue
-
                 # Select the target.
                 selected.add(target)
 
@@ -223,20 +224,52 @@ class PromptToolkitCLI(PlayerInterface):
         choices = spell.mind_choices()
         if len(choices) == 1:
             return choices[0]
-        prompt = ANSI(
-            to_ansi(
-                f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed. Choose MIND to spend: {choices}[/]: "
+        prompt = to_ansi(f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n")
+        for mind_level in choices:
+            max_targets = (
+                ""
+                if not spell.multi_target_expr
+                else f", Targets: {evaluate_expression(
+                spell.multi_target_expr, actor, mind_level
+            )}"
             )
-        )
+            if isinstance(spell, SpellHeal):
+                heal_roll = spell.heal_roll.replace("[MIND]", str(mind_level))
+                prompt += f"    {mind_level} → Heal: {heal_roll}"
+                prompt += max_targets + "\n"
+            elif isinstance(spell, SpellAttack):
+                attack_roll = spell.damage_roll.replace("[MIND]", str(mind_level))
+                prompt += f"    {mind_level} → Attack: {attack_roll}"
+                prompt += max_targets + "\n"
+            elif isinstance(spell, SpellBuff) and isinstance(spell.effect, Buff):
+                for modifier in spell.effect.modifiers.values():
+                    prompt += f"    {mind_level} → Buff: {modifier.replace('[MIND]', str(mind_level))}"
+                    prompt += max_targets + "\n"
+            elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Buff):
+                for modifier in spell.effect.modifiers.values():
+                    prompt += f"    {mind_level} → Debuff: {modifier.replace('[MIND]', str(mind_level))}"
+                    prompt += max_targets + "\n"
+        prompt += "    0 → Back\n"
+
         completer = WordCompleter([str(c) for c in choices], ignore_case=True)
         while True:
-            answer = session.prompt(prompt, completer=completer)
-            if answer.isdigit() and int(answer) in choices:
-                return int(answer)
-            console.print("[red]Invalid input. Choose a valid MIND cost.[/]")
+            answer = show_prompt(prompt, completer, True)
+            if answer.isdigit():
+                if int(answer) in choices:
+                    return int(answer)
+                if int(answer) == 0:
+                    return 0
 
-    def _choose_spell(self, actor: Character) -> Optional[Spell]:
-        spells = list(actor.spells.values())
+    def _choose_spell(self, actor: Character) -> Any:
+        # Get the, list of spells the actor can cast.
+        has_standard_action = actor.has_action_type(ActionType.STANDARD)
+        has_bonus_action = actor.has_action_type(ActionType.BONUS)
+        spells = [
+            spell
+            for spell in actor.spells.values()
+            if (spell.type == ActionType.STANDARD and has_standard_action)
+            or (spell.type == ActionType.BONUS and has_bonus_action)
+        ]
         # Generate a table of spells.
         tbl = self._create_action_table(spells)
         if not tbl.rows:
@@ -244,31 +277,25 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
-        prompt = ANSI("\n" + table_to_str(tbl) + "\nSpell > ")
+        prompt = "\n" + table_to_str(tbl) + "\nSpell > "
         # Create a completer for the spell names.
         completer = WordCompleter([s.name for s in spells], ignore_case=True)
-        # Initialize spell to None.
-        spell: Optional[Spell] = None
         while True:
             # Prompt the user for input.
-            answer = session.prompt(
-                prompt,
-                completer=completer,
-                complete_while_typing=True,
-            )
+            answer = show_prompt(prompt, completer, True)
             # If the user didn't type anything, return None.
             if not answer:
                 continue
+            # User wants to go back.
             if int(answer) == 0:
-                break
+                return 0
             # If the user typed a number, return the corresponding spell.
             if answer.isdigit() and 1 <= int(answer) <= len(spells):
                 return spells[int(answer) - 1]
             # Find the spell with the matching name.
             spell = next((s for s in spells if s.name.lower() == answer.lower()), None)
             if spell:
-                break
-        return spell
+                return spell
 
     def _create_target_list(self, targets: list[Character]) -> Table:
         """

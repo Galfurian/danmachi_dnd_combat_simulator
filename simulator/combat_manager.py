@@ -194,11 +194,10 @@ class CombatManager:
                 targets = []
                 # Ask for the [MIND] level to use for the spell.
                 mind_level = self.ui.choose_mind(self.player, action)
+                if mind_level == 0:
+                    continue
                 # Get the number of targets for the spell.
                 maximum_num_targets = action.target_count(self.player, mind_level)
-                print(
-                    f"{self.player.name} is casting {action.name} at mind level {mind_level} with a maximum of {maximum_num_targets} targets."
-                )
                 # If the action accepts just one target, we can ask for a single target.
                 if maximum_num_targets == 1:
                     # Ask for a single target.
@@ -297,7 +296,7 @@ class CombatManager:
         if buffing:
             for buffing_spell in buffing:
                 targets = self._get_buff_targets_for_npc(npc, allies, buffing_spell)
-                info(
+                debug(
                     f"Buff targets for {npc.name} using {buffing_spell.name}: {[t.name for t in targets]}"
                 )
 
@@ -307,7 +306,7 @@ class CombatManager:
                 targets = self._get_debuff_targets_for_npc(
                     npc, enemies, debuffing_spell
                 )
-                info(
+                debug(
                     f"Debuff targets for {npc.name} using {debuffing_spell.name}: {[t.name for t in targets]}"
                 )
 
@@ -317,7 +316,7 @@ class CombatManager:
                 targets = self._get_offensive_spell_targets_for_npc(
                     npc, enemies, offensive_spell
                 )
-                info(
+                debug(
                     f"Offensive spell targets for {npc.name} using {offensive_spell.name}: {[t.name for t in targets]}"
                 )
 
