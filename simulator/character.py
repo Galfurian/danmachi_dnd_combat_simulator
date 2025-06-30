@@ -667,17 +667,14 @@ class Character:
         )
 
         status = f"{self.get_character_icon()} [bold]{self.name:<10}[/] "
-
+        status += f"| AC: [bold yellow]{self.AC}[/] "
         hp_bar = self._make_bar(self.hp, self.HP_MAX, color="green")
-        status += f"HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] {hp_bar} "
+        status += f"| HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] {hp_bar} "
         if self.MIND_MAX > 0:
             mind_bar = self._make_bar(self.mind, self.MIND_MAX, color="blue")
-            status += (
-                f"MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] {mind_bar} "
-            )
-        status += f"AC: [bold yellow]{self.AC}[/] "
+            status += f"| MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] {mind_bar} "
         if effects:
-            status += f"Effects: {effects}"
+            status += f"| Effects: {effects}"
         return status
 
     def to_dict(self) -> dict[str, Any]:

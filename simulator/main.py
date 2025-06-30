@@ -37,43 +37,6 @@ console.print(
 
 # =============================================================================
 
-console.print(Rule("Loading Weapons", style="bold green"))
-
-# Load weapons.
-weapons = load_actions("data/weapon_data.json")
-for weapon_name, weapon in weapons.items():
-    print(f"    Loaded weapon: {weapon_name}")
-
-# =============================================================================
-
-console.print(Rule("Loading Armor", style="bold green"))
-
-# Load armor data.
-armors = load_effects("data/armor_data.json")
-for armor_name, armor in armors.items():
-    print(f"    Loaded armor: {armor_name}")
-
-# =============================================================================
-
-console.print(Rule("Loading Spells", style="bold green"))
-
-# Load spells.
-spells: dict[str, BaseAction] = {}
-
-# Load SpellAttack.
-spells.update(load_actions("data/spell_attack_data.json"))
-# Load SpellHeal.
-spells.update(load_actions("data/spell_heal_data.json"))
-# Load SpellBuff.
-spells.update(load_actions("data/spell_buff_data.json"))
-# Load SpellDebuff.
-spells.update(load_actions("data/spell_debuff_data.json"))
-
-for spell_name, spell in spells.items():
-    print(f"    Loaded spell {spell.type:<12}: {spell_name}")
-
-# =============================================================================
-
 console.print(Rule("Loading Character Classes", style="bold green"))
 
 # Load character classes.
@@ -95,12 +58,8 @@ for race_name, race_data in races.items():
 # =============================================================================
 
 registries: dict[str, Any] = {
-    "weapons": weapons,
-    "armors": armors,
-    "spells": spells,
     "classes": classes,
     "races": races,
-    "actions": {},
 }
 
 # =============================================================================
@@ -156,15 +115,16 @@ def make_opponents_names_unique():
 if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
-
     add_opponent("Goblin")
     add_opponent("Goblin")
     add_opponent("Goblin")
-
     make_opponents_names_unique()
 
     combat_manager = CombatManager(ui, player, opponents, [])
 
-    while not combat_manager.is_combat_over():
-
-        combat_manager.run_turn()
+    try:
+        while not combat_manager.is_combat_over():
+            combat_manager.run_turn()
+    except KeyboardInterrupt:
+        console.print("")
+        console.print(Rule("Combat Interrupted", style="bold red"))

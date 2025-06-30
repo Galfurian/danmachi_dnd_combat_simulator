@@ -198,7 +198,6 @@
                 "mind": 1,
                 "damage_type": "POISON",
                 "damage_roll": "[MIND]D4",
-                "multi_target_expr": null,
                 "upscale_choices": [
                     1,
                     2
