@@ -136,11 +136,6 @@ if __name__ == "__main__":
     make_names_unique(opponents)
     make_names_unique(allies)
 
-    for enemy in opponents:
-        enemy.is_ally = False
-    for ally in allies:
-        ally.is_ally = True
-
     combat_manager = CombatManager(ui, player, opponents, allies)
 
     try:

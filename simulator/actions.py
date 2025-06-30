@@ -190,7 +190,7 @@ class WeaponAttack(BaseAction):
                     markup=True,
                 )
 
-            if not target.is_alive() and not target.is_ally:
+            if not target.is_alive():
                 console.print(
                     f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
@@ -224,7 +224,7 @@ class WeaponAttack(BaseAction):
             return False
         if not actor.is_alive() or not target.is_alive():
             return False
-        if actor.is_ally == target.is_ally:
+        if not is_oponent(actor.type, target.type):
             return False
         return True
 
@@ -306,7 +306,7 @@ class Spell(BaseAction):
         Returns:
             int: The number of targets this ability can affect.
         """
-        if not self.is_single_target() and mind_level:
+        if self.multi_target_expr:
             # First, get the mind level to use.
             mind_level = mind_level if mind_level else self.mind
             # Evaluate the multi-target expression to get the number of targets.
@@ -447,7 +447,7 @@ class SpellAttack(Spell):
                     f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                     markup=True,
                 )
-            if not target.is_alive() and not target.is_ally:
+            if not target.is_alive():
                 console.print(
                     f"        [bold red]{target_str} has been defeated![/]",
                     markup=True,
@@ -480,7 +480,7 @@ class SpellAttack(Spell):
             return False
         if not actor.is_alive() or not target.is_alive():
             return False
-        if actor.is_ally == target.is_ally:
+        if not is_oponent(actor.type, target.type):
             return False
         return True
 
@@ -604,7 +604,7 @@ class SpellHeal(Spell):
         # - If the actor and the enemy are both allies or enemies.
         if not actor.is_alive() or not target.is_alive():
             return False
-        if actor.is_ally != target.is_ally:
+        if is_oponent(actor.type, target.type):
             return False
         return True
 
@@ -714,7 +714,7 @@ class SpellBuff(Spell):
         # - If the actor and the enemy are both allies or enemies.
         if not actor.is_alive() or not target.is_alive():
             return False
-        if actor.is_ally != target.is_ally:
+        if is_oponent(actor.type, target.type):
             return False
         return True
 
@@ -822,7 +822,7 @@ class SpellDebuff(Spell):
             return False
         if not actor.is_alive() or not target.is_alive():
             return False
-        if actor.is_ally == target.is_ally:
+        if not is_oponent(actor.type, target.type):
             return False
         return True
 

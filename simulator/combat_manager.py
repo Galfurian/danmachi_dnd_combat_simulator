@@ -192,7 +192,7 @@ class CombatManager:
                 targets = []
                 # Ask for the [MIND] level to use for the spell.
                 mind_level = self.ui.choose_mind(self.player, action)
-                if mind_level == 0:
+                if mind_level == -1:
                     continue
                 # Get the number of targets for the spell.
                 maximum_num_targets = action.target_count(self.player, mind_level)

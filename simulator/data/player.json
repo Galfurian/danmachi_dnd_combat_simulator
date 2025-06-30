@@ -1,6 +1,6 @@
 {
     "name": "Zephyros",
-    "is_ally": true,
+    "type": "PLAYER",
     "race": "Aasimar",
     "levels": {
         "Paladin": 3,
@@ -39,19 +39,6 @@
     "equipped_weapons": [
         {
             "class": "WeaponAttack",
-            "name": "Longsword",
-            "type": "STANDARD",
-            "hands_required": 1,
-            "attack_roll": "1D20+[STR]",
-            "damage_components": [
-                {
-                    "roll": "1D8+[STR]",
-                    "type": "SLASHING"
-                }
-            ]
-        },
-        {
-            "class": "WeaponAttack",
             "name": "Fine Shortsword",
             "type": "STANDARD",
             "hands_required": 1,
@@ -65,15 +52,6 @@
         }
     ],
     "spells": [
-        {
-            "class": "SpellAttack",
-            "name": "Sacred Flame",
-            "type": "STANDARD",
-            "level": 0,
-            "mind": 0,
-            "damage_type": "RADIANT",
-            "damage_roll": "1D8"
-        },
         {
             "class": "SpellHeal",
             "name": "Healing Word",

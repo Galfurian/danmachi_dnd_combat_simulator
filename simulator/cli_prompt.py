@@ -262,7 +262,7 @@ class PromptToolkitCLI(PlayerInterface):
                 if int(answer) in choices:
                     return int(answer)
                 if int(answer) == 0:
-                    return 0
+                    return -1
 
     def _choose_spell(self, actor: Character) -> Any:
         # Get the, list of spells the actor can cast.

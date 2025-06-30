@@ -1,7 +1,7 @@
 [
     {
         "name": "Naerin",
-        "is_player": false,
+        "type": "ALLY",
         "race": "Human",
         "levels": {
             "Warrior": 2

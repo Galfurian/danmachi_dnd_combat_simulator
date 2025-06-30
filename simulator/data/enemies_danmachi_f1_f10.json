@@ -1,7 +1,7 @@
 [
     {
         "name": "Goblin",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -33,7 +33,7 @@
     },
     {
         "name": "Kobold",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -65,7 +65,7 @@
     },
     {
         "name": "Dungeon Worm",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -97,7 +97,7 @@
     },
     {
         "name": "War Shadow",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 2
@@ -129,7 +129,7 @@
     },
     {
         "name": "Killer Ant",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Insectoid": 2
@@ -161,7 +161,7 @@
     },
     {
         "name": "Poison Jelly",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Ooze": 2
@@ -214,7 +214,7 @@
     },
     {
         "name": "Orc",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Brute": 2
@@ -246,7 +246,7 @@
     },
     {
         "name": "Ligerfang",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 3
@@ -291,7 +291,7 @@
     },
     {
         "name": "Silverback",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Brute": 4
@@ -323,7 +323,7 @@
     },
     {
         "name": "Infant Dragon",
-        "is_ally": false,
+        "type": "ENEMY",
         "race": "Dragonkin",
         "levels": {
             "Dragonkin": 3
