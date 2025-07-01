@@ -16,7 +16,7 @@ from constants import (
     get_action_type_color,
 )
 from interfaces import PlayerInterface
-from utils import evaluate_expression
+from utils import evaluate_expression, substitute_variables
 
 
 # main console for everything else
@@ -174,14 +174,7 @@ class PromptToolkitCLI(PlayerInterface):
         )
         selected: set[Character] = set()
         while True:
-            tbl = Table(
-                title=(
-                    f"Select Targets (toggle with number, max {max_targets}, ENTER when done)"
-                    if max_targets
-                    else "Select Targets (toggle with number, ENTER when done)"
-                ),
-                pad_edge=False,
-            )
+            tbl = Table(pad_edge=False)
             tbl.add_column("#", style="cyan", no_wrap=True)
             tbl.add_column("Name", style="bold")
             tbl.add_column("HP", justify="right")
@@ -197,7 +190,9 @@ class PromptToolkitCLI(PlayerInterface):
                 )
             tbl.add_row("0", "Done", "", "", "")
             # Prepare the prompt with the table.
-            prompt = "\n" + table_to_str(tbl) + "\nSelect > "
+            prompt = "\n"
+            prompt += f"Select up to {max_targets} targets\n"
+            prompt += table_to_str(tbl) + "\nSelect > "
             # Prompt the user for input.
             answer = show_prompt(prompt, completer, True)
             # If the user didn't type anything, continue the loop.
@@ -242,20 +237,20 @@ class PromptToolkitCLI(PlayerInterface):
             )}"
             )
             if isinstance(spell, SpellHeal):
-                heal_roll = spell.heal_roll.replace("[MIND]", str(mind_level))
+                heal_roll = substitute_variables(spell.heal_roll, actor, mind_level)
                 prompt += f"    {mind_level} → Heal: {heal_roll}"
                 prompt += max_targets + "\n"
             elif isinstance(spell, SpellAttack):
-                attack_roll = spell.damage_roll.replace("[MIND]", str(mind_level))
+                attack_roll = substitute_variables(spell.damage_roll, actor, mind_level)
                 prompt += f"    {mind_level} → Attack: {attack_roll}"
                 prompt += max_targets + "\n"
             elif isinstance(spell, SpellBuff) and isinstance(spell.effect, Buff):
                 for modifier in spell.effect.modifiers.values():
-                    prompt += f"    {mind_level} → Buff: {modifier.replace('[MIND]', str(mind_level))}"
+                    prompt += f"    {mind_level} → Buff: {substitute_variables(modifier, actor, mind_level)}"
                     prompt += max_targets + "\n"
             elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Buff):
                 for modifier in spell.effect.modifiers.values():
-                    prompt += f"    {mind_level} → Debuff: {modifier.replace('[MIND]', str(mind_level))}"
+                    prompt += f"    {mind_level} → Debuff: {substitute_variables(modifier, actor, mind_level)}"
                     prompt += max_targets + "\n"
         prompt += "    0 → Back\nMind > "
 

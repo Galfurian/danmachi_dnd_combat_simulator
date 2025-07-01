@@ -54,11 +54,24 @@
     "spells": [
         {
             "class": "SpellHeal",
+            "name": "Cure Wounds",
+            "type": "STANDARD",
+            "level": 1,
+            "mind": 1,
+            "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]",
+            "upscale_choices": [
+                1,
+                2,
+                3
+            ]
+        },
+        {
+            "class": "SpellHeal",
             "name": "Healing Word",
             "type": "BONUS",
             "level": 1,
             "mind": 1,
-            "heal_roll": "[MIND]D4+([CHA]*[MIND])",
+            "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]",
             "upscale_choices": [
                 1,
                 2,
@@ -102,14 +115,6 @@
                     "ac": "2"
                 }
             }
-        },
-        {
-            "class": "SpellHeal",
-            "name": "Cure Wounds",
-            "type": "STANDARD",
-            "level": 1,
-            "mind": 1,
-            "heal_roll": "[MIND]D8+([CHA]*[MIND])"
         },
         {
             "class": "SpellAttack",

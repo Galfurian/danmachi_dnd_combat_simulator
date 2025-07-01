@@ -129,9 +129,11 @@ def make_names_unique(in_list: list[Character]):
 if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
-    add_to_list(enemies, opponents, "Goblin")
-    add_to_list(enemies, opponents, "Goblin")
-    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Infant Dragon")
+    # add_to_list(enemies, opponents, "Orc")
+    # add_to_list(enemies, opponents, "Goblin")
+    # add_to_list(enemies, opponents, "Goblin")
+    # add_to_list(enemies, opponents, "Goblin")
     add_to_list(characters, allies, "Naerin")
     make_names_unique(opponents)
     make_names_unique(allies)
@@ -139,9 +141,9 @@ if __name__ == "__main__":
     try:
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
+        combat_manager.post_combat_healing_phase()
+        combat_manager.final_report()
+        console.print(Rule("Combat Finished", style="bold green"))
     except KeyboardInterrupt:
         console.print("")
         console.print(Rule("Combat Interrupted", style="bold red"))
-    combat_manager.post_combat_healing_phase()
-    combat_manager.final_report()
-    console.print(Rule("Combat Finished", style="bold green"))

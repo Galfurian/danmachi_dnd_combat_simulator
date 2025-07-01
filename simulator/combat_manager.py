@@ -173,6 +173,8 @@ class CombatManager:
         """
         Handles player input for choosing an action and target during their turn.
         """
+        if not self.get_alive_opponents(self.player):
+            return
         allowed_actions = (
             list(self.player.actions.values()) + self.player.equipped_weapons
         )

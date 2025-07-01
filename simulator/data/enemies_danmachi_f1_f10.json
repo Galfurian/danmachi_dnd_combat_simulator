@@ -7,9 +7,9 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 10,
-            "dexterity": 14,
-            "constitution": 10,
+            "strength": 8,
+            "dexterity": 12,
+            "constitution": 6,
             "intelligence": 8,
             "wisdom": 8,
             "charisma": 6
@@ -39,9 +39,9 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 12,
-            "dexterity": 12,
-            "constitution": 10,
+            "strength": 10,
+            "dexterity": 10,
+            "constitution": 8,
             "intelligence": 6,
             "wisdom": 6,
             "charisma": 6
@@ -71,8 +71,8 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 11,
-            "dexterity": 10,
+            "strength": 12,
+            "dexterity": 8,
             "constitution": 12,
             "intelligence": 2,
             "wisdom": 6,
@@ -136,7 +136,7 @@
         },
         "stats": {
             "strength": 14,
-            "dexterity": 10,
+            "dexterity": 8,
             "constitution": 14,
             "intelligence": 2,
             "wisdom": 8,
@@ -221,8 +221,8 @@
         },
         "stats": {
             "strength": 16,
-            "dexterity": 10,
-            "constitution": 14,
+            "dexterity": 6,
+            "constitution": 16,
             "intelligence": 6,
             "wisdom": 8,
             "charisma": 6
@@ -331,11 +331,12 @@
         "stats": {
             "strength": 16,
             "dexterity": 12,
-            "constitution": 14,
-            "intelligence": 10,
+            "constitution": 16,
+            "intelligence": 14,
             "wisdom": 12,
             "charisma": 8
         },
+        "spellcasting_ability": "intelligence",
         "actions": [
             {
                 "class": "WeaponAttack",
@@ -384,7 +385,7 @@
                     "name": "Burning",
                     "max_duration": 3,
                     "damage_type": "FIRE",
-                    "damage_per_turn": "[MIND]D6"
+                    "damage_per_turn": "1D6"
                 }
             }
         ]
