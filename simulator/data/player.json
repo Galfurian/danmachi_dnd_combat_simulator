@@ -43,10 +43,10 @@
             "type": "STANDARD",
             "hands_required": 1,
             "attack_roll": "1D20+[DEX]+1",
-            "damage_components": [
+            "damage": [
                 {
-                    "roll": "1D6+[DEX]+1",
-                    "type": "PIERCING"
+                    "damage_roll": "1D6+[DEX]+1",
+                    "damage_type": "PIERCING"
                 }
             ]
         }
@@ -57,59 +57,56 @@
             "name": "Cure Wounds",
             "type": "STANDARD",
             "level": 1,
-            "mind": 1,
-            "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]",
-            "upscale_choices": [
+            "mind_cost": [
                 1,
                 2,
                 3
-            ]
+            ],
+            "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]"
         },
         {
             "class": "SpellHeal",
             "name": "Healing Word",
             "type": "BONUS",
             "level": 1,
-            "mind": 1,
-            "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]",
-            "upscale_choices": [
+            "mind_cost": [
                 1,
                 2,
                 3
-            ]
+            ],
+            "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]"
         },
         {
             "class": "SpellBuff",
             "name": "Bless",
             "type": "STANDARD",
             "level": 1,
-            "mind": 1,
+            "mind_cost": [
+                1,
+                2,
+                3
+            ],
+            "multi_target_expr": "1+[MIND]",
             "effect": {
                 "type": "Buff",
                 "name": "Bless",
-                "mind": 1,
                 "max_duration": 10,
                 "modifiers": {
                     "attack": "1D4"
                 }
-            },
-            "multi_target_expr": "1+[MIND]",
-            "upscale_choices": [
-                1,
-                2,
-                3
-            ]
+            }
         },
         {
             "class": "SpellBuff",
             "name": "Shield of Faith",
             "type": "BONUS",
             "level": 1,
-            "mind": 1,
+            "mind_cost": [
+                1
+            ],
             "effect": {
                 "type": "Buff",
                 "name": "Shield of Faith",
-                "mind": 1,
                 "max_duration": 10,
                 "modifiers": {
                     "ac": "2"
@@ -121,41 +118,55 @@
             "name": "Searing Smite",
             "type": "BONUS",
             "level": 1,
-            "mind": 1,
-            "damage_type": "FIRE",
-            "damage_roll": "1D6"
+            "mind_cost": [
+                1,
+                2,
+                3
+            ],
+            "damage": [
+                {
+                    "damage_type": "FIRE",
+                    "damage_roll": "[MIND]D6"
+                }
+            ],
+            "effect": {
+                "type": "DoT",
+                "name": "Burning",
+                "max_duration": 3,
+                "damage_type": "FIRE",
+                "damage_per_turn": "1D6"
+            }
         },
         {
             "class": "SpellAttack",
             "name": "Wrathful Smite",
             "type": "BONUS",
             "level": 1,
-            "mind": 1,
-            "damage_type": "PSYCHIC",
-            "damage_roll": "1D6"
+            "mind_cost": [
+                1
+            ],
+            "damage": [
+                {
+                    "damage_type": "PSYCHIC",
+                    "damage_roll": "[MIND]D6"
+                }
+            ]
         },
         {
             "class": "SpellAttack",
             "name": "Divine Smite",
             "type": "STANDARD",
             "level": 1,
-            "mind": 1,
-            "damage_type": "RADIANT",
-            "damage_roll": "2D8"
-        },
-        {
-            "class": "SpellAttack",
-            "name": "Shatter",
-            "type": "STANDARD",
-            "level": 2,
-            "mind": 3,
-            "damage_type": "LIGHTNING",
-            "damage_roll": "[MIND]D8",
-            "multi_target_expr": "[MIND]-1",
-            "upscale_choices": [
-                3,
-                4,
-                5
+            "mind_cost": [
+                1,
+                2,
+                3
+            ],
+            "damage": [
+                {
+                    "damage_type": "RADIANT",
+                    "damage_roll": "1D8 + [MIND]D8"
+                }
             ]
         },
         {
@@ -163,19 +174,36 @@
             "name": "Divine Favor",
             "type": "BONUS",
             "level": 1,
-            "mind": 1,
+            "mind_cost": 1,
             "effect": {
                 "type": "Buff",
                 "name": "Divine Favor",
-                "mind": 1,
                 "max_duration": 10,
                 "modifiers": {
                     "damage": {
-                        "roll": "1D6",
-                        "type": "RADIANT"
+                        "damage_roll": "1D6",
+                        "damage_type": "RADIANT"
                     }
                 }
             }
+        },
+        {
+            "class": "SpellAttack",
+            "name": "Shatter",
+            "type": "STANDARD",
+            "level": 2,
+            "mind_cost": [
+                2,
+                4,
+                6
+            ],
+            "multi_target_expr": "4",
+            "damage": [
+                {
+                    "damage_type": "LIGHTNING",
+                    "damage_roll": "[MIND]D8"
+                }
+            ]
         }
     ]
 }

@@ -21,10 +21,10 @@
                 "type": "STANDARD",
                 "hands_required": 1,
                 "attack_roll": "1D20+[DEX]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6+[DEX]",
-                        "type": "PIERCING"
+                        "damage_roll": "1D6+[DEX]",
+                        "damage_type": "PIERCING"
                     }
                 ]
             }

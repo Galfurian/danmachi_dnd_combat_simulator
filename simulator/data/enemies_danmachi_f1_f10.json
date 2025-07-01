@@ -21,10 +21,10 @@
                 "type": "STANDARD",
                 "hands_required": 1,
                 "attack_roll": "1D20+[DEX]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D4+[DEX]",
-                        "type": "PIERCING"
+                        "damage_roll": "1D4+[DEX]",
+                        "damage_type": "PIERCING"
                     }
                 ]
             }
@@ -53,10 +53,10 @@
                 "type": "STANDARD",
                 "hands_required": 2,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6+[STR]",
-                        "type": "SLASHING"
+                        "damage_roll": "1D6+[STR]",
+                        "damage_type": "SLASHING"
                     }
                 ]
             }
@@ -85,10 +85,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6+[STR]",
-                        "type": "PIERCING"
+                        "damage_roll": "1D6+[STR]",
+                        "damage_type": "PIERCING"
                     }
                 ]
             }
@@ -117,10 +117,10 @@
                 "type": "STANDARD",
                 "hands_required": 2,
                 "attack_roll": "1D20+[DEX]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6+[DEX]",
-                        "type": "SLASHING"
+                        "damage_roll": "1D6+[DEX]",
+                        "damage_type": "SLASHING"
                     }
                 ]
             }
@@ -149,10 +149,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D8+[STR]",
-                        "type": "PIERCING"
+                        "damage_roll": "1D8+[STR]",
+                        "damage_type": "PIERCING"
                     }
                 ]
             }
@@ -181,10 +181,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6",
-                        "type": "ACID"
+                        "damage_roll": "1D6",
+                        "damage_type": "ACID"
                     }
                 ]
             }
@@ -195,19 +195,23 @@
                 "name": "Poison Spit",
                 "type": "STANDARD",
                 "level": 1,
-                "mind": 1,
-                "damage_type": "POISON",
-                "damage_roll": "[MIND]D4",
-                "upscale_choices": [
+                "mind_cost": [
                     1,
-                    2
+                    2,
+                    3
+                ],
+                "damage": [
+                    {
+                        "damage_roll": "[MIND]D6",
+                        "damage_type": "POISON"
+                    }
                 ],
                 "effect": {
                     "type": "DoT",
                     "name": "Poisoned",
                     "max_duration": 3,
                     "damage_type": "POISON",
-                    "damage_per_turn": "[MIND]D4"
+                    "damage_per_turn": "1D4"
                 }
             }
         ]
@@ -234,10 +238,10 @@
                 "type": "STANDARD",
                 "hands_required": 2,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D10+[STR]",
-                        "type": "BLUDGEONING"
+                        "damage_roll": "1D10+[STR]",
+                        "damage_type": "BLUDGEONING"
                     }
                 ]
             }
@@ -266,10 +270,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D8+[STR]",
-                        "type": "PIERCING"
+                        "damage_roll": "1D8+[STR]",
+                        "damage_type": "PIERCING"
                     }
                 ]
             },
@@ -279,10 +283,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D6+[STR]",
-                        "type": "BLUDGEONING"
+                        "damage_roll": "1D6+[STR]",
+                        "damage_type": "BLUDGEONING"
                     }
                 ]
             }
@@ -311,10 +315,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D12+[STR]",
-                        "type": "BLUDGEONING"
+                        "damage_roll": "1D12+[STR]",
+                        "damage_type": "BLUDGEONING"
                     }
                 ]
             }
@@ -344,10 +348,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D8+[STR]",
-                        "type": "SLASHING"
+                        "damage_roll": "1D8+[STR]",
+                        "damage_type": "SLASHING"
                     }
                 ]
             },
@@ -357,10 +361,10 @@
                 "type": "STANDARD",
                 "hands_required": 0,
                 "attack_roll": "1D20+[STR]",
-                "damage_components": [
+                "damage": [
                     {
-                        "roll": "1D10+[STR]",
-                        "type": "BLUDGEONING"
+                        "damage_roll": "1D10+[STR]",
+                        "damage_type": "BLUDGEONING"
                     }
                 ]
             }
@@ -371,14 +375,17 @@
                 "name": "Fire Breath",
                 "type": "STANDARD",
                 "level": 2,
-                "mind": 2,
-                "damage_type": "FIRE",
-                "damage_roll": "[MIND]D10",
+                "mind_cost": [
+                    4,
+                    6,
+                    8
+                ],
                 "multi_target_expr": "3",
-                "upscale_choices": [
-                    2,
-                    3,
-                    4
+                "damage": [
+                    {
+                        "damage_roll": "[MIND]D6",
+                        "damage_type": "FIRE"
+                    }
                 ],
                 "effect": {
                     "type": "DoT",

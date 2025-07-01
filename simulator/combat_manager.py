@@ -5,6 +5,7 @@ import random
 from typing import Tuple
 
 from rich.console import Console
+from rich.panel import Panel
 from rich.rule import Rule
 
 from character import *
@@ -208,7 +209,9 @@ class CombatManager:
                 # If the action accepts just one target, we can ask for a single target.
                 if maximum_num_targets == 1:
                     # Ask for a single target.
-                    targets = [self.ui.choose_target(self.player, valid_targets)]
+                    targets = [
+                        self.ui.choose_target(self.player, valid_targets, action)
+                    ]
                 # If the action accepts multiple targets, we can ask for multiple targets.
                 elif maximum_num_targets > 1:
                     # Ask for multiple targets.
@@ -229,7 +232,7 @@ class CombatManager:
                 self.player.use_action_type(action.type)
             else:
                 # Get the target for the action.
-                target = self.ui.choose_target(self.player, valid_targets)
+                target = self.ui.choose_target(self.player, valid_targets, action)
                 # If the target is not valid, skip this action.
                 if not isinstance(target, Character):
                     continue

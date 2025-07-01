@@ -6,7 +6,7 @@ from actions import *
 
 
 def _can_cast_spell(character: Character, spell: Spell, mind_level: int = -1) -> bool:
-    mind_level = spell.mind if mind_level == -1 else mind_level
+    mind_level = mind_level if mind_level >= 0 else spell.mind_cost[0]
     return character.mind >= mind_level
 
 
@@ -33,16 +33,14 @@ def _ideal_heal_mind(caster: Character, target: Character, spell: SpellHeal) -> 
     # Bail early if the base level is unaffordable
     if not _can_cast_spell(caster, spell):
         return -1
-    # No up-casting, use base cost.
-    best_affordable = spell.mind
-    # Ensure upscale_choices is ascending once; then scan
-    for level in sorted(spell.upscale_choices if spell.upscale_choices else []):
-        if _can_cast_spell(caster, spell, level):
-            heal = get_max_roll(spell.heal_roll, caster, level)
+    best_affordable = -1
+    for mind_level in spell.mind_cost:
+        if _can_cast_spell(caster, spell, mind_level):
+            heal = get_max_roll(spell.heal_roll, caster, mind_level)
             if target.hp <= heal:
-                return level
+                return mind_level
             # Remember highest we can pay.
-            best_affordable = level
+            best_affordable = mind_level
     return best_affordable
 
 
@@ -65,15 +63,14 @@ def _ideal_group_heal_mind(
     # Largest single deficit drives the requirement
     max_missing = max(t.HP_MAX - t.hp for t in injured)
     # Candidate Mind levels, ascending (base cost first)
-    levels = [spell.mind] + sorted(spell.upscale_choices or [])
     best_affordable = -1
-    for level in levels:
-        if not _can_cast_spell(caster, spell, level):
+    for mind_level in spell.mind_cost:
+        if not _can_cast_spell(caster, spell, mind_level):
             continue  # can’t pay this one
-        best_affordable = level  # remember latest
-        heal_amt = get_max_roll(spell.heal_roll, caster, level)
+        best_affordable = mind_level  # remember latest
+        heal_amt = get_max_roll(spell.heal_roll, caster, mind_level)
         if heal_amt >= max_missing:  # ✔ covers everybody
-            return level
+            return mind_level
     return best_affordable  # strongest we can afford
 
 

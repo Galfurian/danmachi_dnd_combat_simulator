@@ -143,6 +143,7 @@ class ModifierEffect(Effect):
                     BonusType[k.upper()]: v for k, v in data["modifiers"].items()
                 },
             )
+        raise ValueError(f"Unknown modifier effect type: {data.get('type')}")
 
 
 class Buff(ModifierEffect):

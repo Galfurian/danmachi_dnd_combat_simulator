@@ -2,9 +2,20 @@
 from typing import Any, List, Optional
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
+from rich.text import Text
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
-from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions import (
+    BaseAction,
+    Spell,
+    SpellAttack,
+    SpellBuff,
+    SpellDebuff,
+    SpellHeal,
+    WeaponAttack,
+)
 from character import Character
 from prompt_toolkit import ANSI
 from effect import Buff, Debuff
@@ -13,7 +24,9 @@ from constants import (
     ActionCategory,
     ActionType,
     get_action_category_color,
+    get_action_category_emoji,
     get_action_type_color,
+    get_damage_emoji,
 )
 from interfaces import PlayerInterface
 from utils import evaluate_expression, substitute_variables
@@ -25,9 +38,9 @@ console = Console()
 session = PromptSession(erase_when_done=True)
 
 
-def to_ansi(s: str) -> str:
+def to_ansi(content: Any) -> str:
     with console.capture() as capture:
-        console.print(s, markup=True, end="")
+        console.print(content, markup=True, end="")
     return capture.get()
 
 
@@ -126,7 +139,10 @@ class PromptToolkitCLI(PlayerInterface):
                 return action
 
     def choose_target(
-        self, actor: Character, targets: List[Character]
+        self,
+        actor: Character,
+        targets: List[Character],
+        action: Optional[BaseAction] = None,
     ) -> Optional[Character]:
         # Get the list of targets.
         targets = sorted(targets, key=lambda t: t.name)
@@ -138,7 +154,8 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
-        prompt = "\n" + table_to_str(tbl) + "\nTarget > "
+        prompt = "\n"
+        prompt += table_to_str(tbl) + "\nTarget > "
         # Create a completer for the target names.
         completer = WordCompleter([t.name for t in targets], ignore_case=True)
         while True:
@@ -165,6 +182,7 @@ class PromptToolkitCLI(PlayerInterface):
         actor: Character,
         targets: List[Character],
         max_targets: int,
+        action: Optional[BaseAction] = None,
     ) -> Optional[List[Character]]:
         assert (
             max_targets and max_targets > 1
@@ -224,11 +242,11 @@ class PromptToolkitCLI(PlayerInterface):
 
     def choose_mind(self, actor: Character, spell: Spell) -> int:
         """Prompts the user to select the amount of MIND to spend on a spell (if upcast is allowed)."""
-        choices = spell.mind_choices()
-        if len(choices) == 1:
-            return choices[0]
+        if len(spell.mind_cost) == 1:
+            return spell.mind_cost[0]
+        prompt = "\n"
         prompt = to_ansi(f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n")
-        for mind_level in choices:
+        for mind_level in spell.mind_cost:
             max_targets = (
                 ""
                 if not spell.multi_target_expr
@@ -246,21 +264,29 @@ class PromptToolkitCLI(PlayerInterface):
                 prompt += f"Damage: {spell.get_damage_expr(actor, mind_level)} "
                 prompt += f"[{spell.get_min_damage(actor, mind_level):>3}-{spell.get_max_damage(actor, mind_level):<3}]"
                 prompt += max_targets + "\n"
-            elif isinstance(spell, SpellBuff) and isinstance(spell.effect, Buff):
-                for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
-                    prompt += f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
+            elif isinstance(spell, SpellBuff):
+                for bonus, modifier in spell.get_modifier_expressions(
+                    actor, mind_level
+                ).items():
+                    prompt += (
+                        f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
+                    )
                     prompt += max_targets + "\n"
-            elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Debuff):
-                for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
-                    prompt += f"    {mind_level} → Debuff: {modifier} to {bonus.name.title()}"
+            elif isinstance(spell, SpellDebuff):
+                for bonus, modifier in spell.get_modifier_expressions(
+                    actor, mind_level
+                ).items():
+                    prompt += (
+                        f"    {mind_level} → Debuff: {modifier} to {bonus.name.title()}"
+                    )
                     prompt += max_targets + "\n"
         prompt += "    0 → Back\nMind > "
 
-        completer = WordCompleter([str(c) for c in choices], ignore_case=True)
+        completer = WordCompleter([str(c) for c in spell.mind_cost], ignore_case=True)
         while True:
             answer = show_prompt(prompt, completer, True)
             if answer.isdigit():
-                if int(answer) in choices:
+                if int(answer) in spell.mind_cost:
                     return int(answer)
                 if int(answer) == 0:
                     return -1
@@ -301,6 +327,59 @@ class PromptToolkitCLI(PlayerInterface):
             spell = next((s for s in spells if s.name.lower() == answer.lower()), None)
             if spell:
                 return spell
+
+    def generate_action_card(self, actor: Character, action: BaseAction) -> str:
+        """Generates a card representation of the action.
+        Args:
+            action (BaseAction): The action to represent.
+        Returns:
+            str: A string representation of the action card.
+        """
+        type_color = get_action_type_color(action.type)
+        category_color = get_action_category_color(action.category)
+
+        description = Text()
+
+        # Add the header.
+        if isinstance(action, Spell):
+            description.append(
+                f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/], Lvl: {action.level}, Mind Cost: {action.mind_cost}\n"
+            )
+        elif isinstance(action, WeaponAttack):
+            description.append(
+                f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/]\n"
+            )
+
+        # Add the specific details of the action.
+        if isinstance(action, WeaponAttack):
+            for damage in action.damage:
+                description.append(
+                    f"    Damage: {action.get_damage_expr(actor)} {damage.damage_type.name}\n"
+                )
+        if isinstance(action, SpellAttack):
+            for damage in action.damage:
+                for mind_cost in action.mind_cost:
+                    description.append(
+                        f"    {mind_cost} mind, damage: {action.get_damage_expr(actor, mind_cost)} {damage.damage_type.name}\n"
+                    )
+            if action.multi_target_expr:
+                description.append(f"    Targets: {action.multi_target_expr}\n")
+        if isinstance(action, SpellHeal):
+            for mind_cost in action.mind_cost:
+                description.append(
+                    f"    {mind_cost} mind, Healing: {action.get_heal_expr(actor, mind_cost)}\n"
+                )
+            if action.multi_target_expr:
+                description.append(f"    Targets: {action.multi_target_expr}\n")
+        if isinstance(action, (SpellBuff, SpellDebuff)):
+            for k, v in action.effect.modifiers.items():
+                description.append(f"{k.name.title()} Modifier: {v}\n")
+            if action.multi_target_expr:
+                description.append(f"    Targets: {action.multi_target_expr}\n")
+        # Capture the panel output to a string.
+        with console.capture() as capture:
+            console.print(description, markup=True)
+        return capture.get()
 
     def _create_target_list(self, targets: list[Character]) -> Table:
         """
@@ -394,7 +473,7 @@ class PromptToolkitCLI(PlayerInterface):
                 spell.name,
                 self._color_action_type(spell.type),
                 self._color_action_category(spell.category),
-                str(spell.mind),
+                str(spell.mind_cost if spell.mind_cost else "N/A"),
             )
         return tbl
 
