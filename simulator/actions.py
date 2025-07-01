@@ -53,7 +53,7 @@ class BaseAction:
         actor: Any,
         target: Any,
         effect: "Effect",
-        mind_level: int = 0,
+        mind_level: Optional[int] = 0,
     ):
         """Applies an effect to a target character.
 
@@ -67,7 +67,7 @@ class BaseAction:
         # Apply the effect to the target.
         effect.apply(actor, target, mind_level)
         # Add the effect to the target's effects list.
-        target.add_effect(actor, effect, mind_level)
+        target.effect_manager.add_effect(actor, effect, mind_level)
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
         """Checks if the target is valid for the action.
@@ -141,7 +141,7 @@ class WeaponAttack(BaseAction):
 
         # --- Build & resolve attack roll ---
         attack_expr = self.attack_roll
-        for bonus_expr in actor.get_all_bonuses_from_effects_of_type(BonusType.ATTACK):
+        for bonus_expr in actor.effect_manager.get_modifier(BonusType.ATTACK):
             attack_expr += f"+{bonus_expr}"
         attack_roll, attack_roll_desc = roll_and_describe(attack_expr, actor)
 
@@ -161,9 +161,9 @@ class WeaponAttack(BaseAction):
                     f"{applied_damage} {get_damage_emoji(component.damage_type)} ({damage_expr})"
                 )
             # Then roll any additional damage from effects.
-            for bonus in actor.get_all_melee_damage_bonuses():
-                roll_str = bonus["roll"]
-                damage_type = DamageType[bonus["type"]]
+            for bonus in actor.effect_manager.get_modifier(BonusType.DAMAGE):
+                roll_str = bonus["damage_roll"]
+                damage_type = DamageType[bonus["damage_type"]]
                 damage_expr = substitute_variables(roll_str, actor)
                 damage_amount = roll_expression(damage_expr, actor)
                 applied_damage = target.take_damage(damage_amount, damage_type)
@@ -436,7 +436,7 @@ class SpellAttack(Spell):
 
         # --- Build and roll attack expression ---
         attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
-        for bonus_expr in actor.get_all_bonuses_from_effects_of_type(BonusType.ATTACK):
+        for bonus_expr in actor.effect_manager.get_modifier(BonusType.ATTACK):
             attack_expr += f"+{bonus_expr}"
         attack_roll, attack_desc = roll_and_describe(attack_expr, actor, mind_level)
 
@@ -454,8 +454,8 @@ class SpellAttack(Spell):
         damage_details: list[str] = []
         # First roll the attack damage from the weapon.
         for component in self.damage:
-            damage_expr = substitute_variables(component.damage_roll, actor)
-            damage_amount = roll_expression(damage_expr, actor)
+            damage_expr = substitute_variables(component.damage_roll, actor, mind_level)
+            damage_amount = roll_expression(damage_expr, actor, mind_level)
             applied_damage = target.take_damage(damage_amount, component.damage_type)
             total_damage += applied_damage
             damage_details.append(
@@ -472,7 +472,7 @@ class SpellAttack(Spell):
             markup=True,
         )
         if self.effect and target.is_alive():
-            self.apply_effect(actor, target, self.effect)
+            self.apply_effect(actor, target, self.effect, mind_level)
             console.print(
                 f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                 markup=True,
@@ -642,7 +642,7 @@ class SpellHeal(Spell):
             markup=True,
         )
         if self.effect:
-            self.apply_effect(actor, target, self.effect)
+            self.apply_effect(actor, target, self.effect, mind_level)
             console.print(
                 f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                 markup=True,
@@ -777,7 +777,7 @@ class SpellBuff(Spell):
 
         # Apply the effect
         if self.effect:
-            self.apply_effect(actor, target, self.effect)
+            self.apply_effect(actor, target, self.effect, mind_level)
             console.print(
                 f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                 markup=True,
@@ -841,7 +841,7 @@ class SpellBuff(Spell):
             type=ActionType[data["type"]],
             level=data["level"],
             mind_cost=data["mind_cost"],
-            effect=Effect.from_dict(data["effect"]),
+            effect=Buff.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", ""),
         )
 
@@ -889,7 +889,7 @@ class SpellDebuff(Spell):
 
         # Apply the debuff effect
         if self.effect:
-            self.apply_effect(actor, target, self.effect)
+            self.apply_effect(actor, target, self.effect, mind_level)
             console.print(
                 f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
                 markup=True,
@@ -955,7 +955,7 @@ class SpellDebuff(Spell):
             type=ActionType[data["type"]],
             level=data["level"],
             mind_cost=data["mind_cost"],
-            effect=Effect.from_dict(data["effect"]),
+            effect=Debuff.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", ""),
         )
 

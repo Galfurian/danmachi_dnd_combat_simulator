@@ -1,25 +1,16 @@
 import json
 from logging import debug, warning
-from typing import Any
+from typing import Any, Tuple
 from rich.console import Console
 
 from constants import *
-from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellHeal, WeaponAttack
-from effect import ModifierEffect, DoT, Effect, HoT
+from actions import *
+from effect_manager import *
+from effect import *
 from utils import *
 
 
 console = Console()
-
-
-class ActiveEffect:
-    def __init__(self, source: "Character", effect: "Effect", mind_level: int) -> None:
-        self.source: "Character" = source
-        self.effect: "Effect" = effect
-        self.mind_level: int = mind_level
-        self.duration: int = effect.max_duration
-
-        assert self.duration > 0, "ActiveEffect duration must be greater than 0."
 
 
 class CharacterClass:
@@ -128,8 +119,8 @@ class Character:
         self.hands_used: int = 0
         # List of equipped armor.
         self.equipped_armor: list[Any] = []
-        # List of active effects.
-        self.active_effects: list[ActiveEffect] = []
+        # Manages active effects on the character.
+        self.effect_manager: EffectManager = EffectManager(self)
         # List of actions.
         self.actions: dict[str, BaseAction] = {}
         # List of spells
@@ -152,7 +143,7 @@ class Character:
         for cls, cls_level in self.levels.items():
             hp_max += max(1, (cls.hp_mult + self.CON)) * cls_level
         # Add the effect modifiers to the max HP.
-        hp_max += self.get_total_bonus_from_effects(BonusType.HP)
+        hp_max += self.effect_manager.get_modifier(BonusType.HP)
         return hp_max
 
     @property
@@ -163,7 +154,7 @@ class Character:
         for cls, cls_level in self.levels.items():
             mind_max += max(0, (cls.mind_mult + self.SPELLCASTING)) * cls_level
         # Add the effect modifiers to the max Mind.
-        mind_max += self.get_total_bonus_from_effects(BonusType.MIND)
+        mind_max += self.effect_manager.get_modifier(BonusType.MIND)
         return mind_max
 
     @property
@@ -236,7 +227,7 @@ class Character:
                 shield_ac += armor.ac
 
         # Add effect bonuses to AC.
-        effect_ac = self.get_total_bonus_from_effects(BonusType.AC)
+        effect_ac = self.effect_manager.get_modifier(BonusType.AC)
 
         # Determine final AC.
         if armor_ac is not None:
@@ -254,7 +245,7 @@ class Character:
         # Base initiative is DEX modifier.
         initiative = self.DEX
         # Add any initiative bonuses from active effects.
-        initiative += self.get_total_bonus_from_effects(BonusType.INITIATIVE)
+        initiative += self.effect_manager.get_modifier(BonusType.INITIATIVE)
         return initiative
 
     def reset_turn_flags(self):
@@ -403,132 +394,6 @@ class Character:
             del self.spells[spell.name.lower()]
             debug(f"{self.name} unlearned {spell.name}!")
 
-    def add_effect(self, source: "Character", effect: Effect, mind_level: int = 0):
-        """Applies an effect to the character.
-
-        Args:
-            source (Character): The character that applied the effect.
-            effect (Any): The effect to apply.
-            mind_level (int, optional): The mind level required to maintain the effect. Defaults to 0.
-        """
-        if not self.has_effect(effect):
-            debug(f"Adding effect: {effect.name} to {self.name} from {source.name}")
-            self.active_effects.append(ActiveEffect(source, effect, mind_level))
-
-    def remove_effect(self, active_effect: ActiveEffect):
-        """Removes a specific effect from the character.
-
-        Args:
-            effect (ActiveEffect): The effect to remove.
-        """
-        if self.has_effect(active_effect.effect):
-            # Call the effect's remove method to revert its changes.
-            active_effect.effect.remove(active_effect.source, self)
-            # Remove the active effect from the list.
-            self.active_effects.remove(active_effect)
-
-    def has_effect(self, effect: Effect) -> bool:
-        """
-        Checks if the character has a specific active effect.
-        Args:
-            effect (Effect): The effect to check.
-        Returns:
-            bool: True if the effect is active, False otherwise.
-        """
-        for active_effect in self.active_effects:
-            if active_effect.effect == effect:
-                return True
-        return False
-
-    def get_all_effects_of_type(self, effect_type: type[Effect]) -> list[ActiveEffect]:
-        """
-        Returns a list of all active effects of a specific type.
-        Args:
-            effect_type (type[Effect]): The type of effect to filter by.
-        Returns:
-            list[ActiveEffect]: A list of active effects of the specified type.
-        """
-        return [
-            active
-            for active in self.active_effects
-            if isinstance(active.effect, effect_type)
-        ]
-
-    def get_total_bonus_from_effects(self, bonus_type: BonusType) -> int:
-        """
-        Computes the total modifier from active effects for a given BonusType.
-        Args:
-            bonus_type (BonusType): The bonus type to compute.
-        Returns:
-            int: Total bonus or malus from all matching effects.
-        """
-        total = 0
-        assert bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ], f"Invalid bonus type: {bonus_type}"
-        for active in self.active_effects:
-            if isinstance(active.effect, ModifierEffect):
-                if bonus_type in active.effect.modifiers:
-                    total += evaluate_expression(
-                        active.effect.modifiers[bonus_type], self, active.mind_level
-                    )
-        return total
-
-    def get_effect_usefulness_index(self, effect: Effect) -> int:
-        """Computes how much the character needs a specific effect.
-
-        Args:
-            effect (Effect): The effect to check.
-
-        Returns:
-            int: The index of the effect in the active effects list, or -1 if not found.
-        """
-        usefulness_index = 0
-        for existing_effect in self.get_all_effects_of_type(effect.__class__):
-            usefulness_index += existing_effect.duration < effect.max_duration
-            # If the target already has the buff, we don't need to buff them.
-            if effect.is_stronger_than(existing_effect.effect):
-                usefulness_index += 1
-        return usefulness_index
-
-    def get_all_melee_damage_bonuses(self) -> list[str]:
-        """
-        Returns a list of all melee damage bonuses from active effects.
-        This is used to apply additional damage to melee attacks.
-        """
-        bonus_list: list[str] = []
-        for active in self.active_effects:
-            if isinstance(active.effect, ModifierEffect):
-                if BonusType.DAMAGE in active.effect.modifiers:
-                    bonus_list.append(active.effect.modifiers[BonusType.DAMAGE])
-        return bonus_list
-
-    def get_all_bonuses_from_effects_of_type(self, bonus_type: BonusType) -> list[str]:
-        bonus_list: list[str] = []
-        for active in self.active_effects:
-            if isinstance(active.effect, ModifierEffect):
-                if bonus_type in active.effect.modifiers:
-                    bonus_list.append(active.effect.modifiers[bonus_type])
-        return bonus_list
-
-    def get_remaining_effect_duration(self, effect: Any) -> int:
-        """
-        Returns the remaining duration of a specific effect on the character.
-
-        Args:
-            effect (Effect): The effect to check.
-
-        Returns:
-            int: The remaining duration of the effect, or 0 if not found.
-        """
-        for active in self.active_effects:
-            if active.effect == effect:
-                return active.duration
-        return 0
-
     def can_equip_weapon(self, weapon: Any) -> bool:
         """
         Checks if the character can equip a specific weapon.
@@ -648,19 +513,7 @@ class Character:
         Updates the duration of all active effects. Removes expired effects.
         This should be called at the end of a character's turn or a round.
         """
-        effects_to_remove: list[ActiveEffect] = []
-        for active in self.active_effects:
-            active.effect.turn_update(active.source, self, active.mind_level)
-            # Decrease the duration of the effect.
-            active.duration -= 1
-            # If the duration is less than or equal to zero, remove the effect.
-            if active.duration <= 0:
-                console.print(
-                    f"    :hourglass_done: [bold yellow]{active.effect.name}[/] has expired on [bold]{self.name}[/]."
-                )
-                effects_to_remove.append(active)
-        for active in effects_to_remove:
-            self.remove_effect(active)
+        self.effect_manager.turn_update()
 
     def get_status_line(self):
         effects = (
@@ -668,9 +521,9 @@ class Character:
                 f"[{get_effect_color(e.effect)}]"
                 + e.effect.name
                 + f"[/] ({e.duration})"
-                for e in self.active_effects
+                for e in self.effect_manager.active_effects
             )
-            if self.active_effects
+            if self.effect_manager.active_effects
             else ""
         )
         hp_bar = make_bar(self.hp, self.HP_MAX, color="green")
@@ -829,82 +682,3 @@ def load_player_character(
         # Mark the character as a player character.
         player.type = CharacterType.PLAYER
         return player
-
-
-def sort_for_weapon_attack(
-    actor: Character, action: WeaponAttack, targets: list[Character]
-) -> list[Character]:
-    """
-    Compares two characters based on their offensive capabilities.
-    Returns True if char1 is more offensive than char2, False otherwise.
-    """
-    return sorted(
-        targets,
-        key=lambda c: (
-            c.AC,
-            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-            (
-                len(c.get_all_effects_of_type(DoT))
-                if isinstance(action.effect, DoT)
-                else 1
-            ),
-        ),
-    )
-
-
-def sort_for_spell_heal(
-    actor: Character, action: SpellHeal, targets: list[Character]
-) -> list[Character]:
-    """
-    Compares two characters based on their need for healing, or healing effects.
-    """
-    # Filter out targets who are already at full HP or already affected by the heal's effect.
-    targets = [target for target in targets if target.hp < target.HP_MAX]
-    return sorted(
-        targets,
-        key=lambda c: (
-            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-            (
-                len(c.get_all_effects_of_type(HoT))
-                if isinstance(action.effect, HoT)
-                else 1
-            ),
-        ),
-    )
-
-
-def sort_for_spell_attack(
-    actor: Character, action: SpellAttack, targets: list[Character]
-) -> list[Character]:
-    """
-    Compares two characters based on their need for offensive spells.
-    """
-    return sorted(
-        targets,
-        key=lambda c: (
-            c.AC,
-            c.hp / c.HP_MAX if c.HP_MAX > 0 else 1,
-            (
-                len(c.get_all_effects_of_type(DoT))
-                if isinstance(action.effect, DoT)
-                else 1
-            ),
-        ),
-    )
-
-
-def sort_for_spell_buff(
-    actor: Character, action: SpellBuff, targets: list[Character]
-) -> list[Character]:
-    """
-    Compares two characters based on their need for defensive spells.
-    """
-    # Compute a numerical value that identifies how much a character needs a buff.
-    usefulness_index: dict[Character, int] = {}
-    for target in targets:
-        usefulness_index[target] = target.get_effect_usefulness_index(action.effect)
-    # Sort based on the need for the buff.
-    return sorted(
-        targets,
-        key=lambda c: (usefulness_index.get(c, 0)),
-    )

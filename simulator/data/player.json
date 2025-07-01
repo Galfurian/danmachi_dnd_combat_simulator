@@ -134,7 +134,7 @@
                 "name": "Burning",
                 "max_duration": 3,
                 "damage_type": "FIRE",
-                "damage_per_turn": "1D6"
+                "damage_per_turn": "[MIND]D6"
             }
         },
         {
@@ -174,7 +174,9 @@
             "name": "Divine Favor",
             "type": "BONUS",
             "level": 1,
-            "mind_cost": 1,
+            "mind_cost": [
+                1
+            ],
             "effect": {
                 "type": "Buff",
                 "name": "Divine Favor",
