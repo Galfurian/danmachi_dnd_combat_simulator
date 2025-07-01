@@ -158,7 +158,7 @@ class WeaponAttack(BaseAction):
                 )
                 total_damage += applied_damage
                 damage_details.append(
-                    f"{applied_damage} {component.damage_type.name.lower()} ({damage_expr})"
+                    f"{applied_damage} {get_damage_emoji(component.damage_type)} ({damage_expr})"
                 )
             # Then roll any additional damage from effects.
             for bonus in actor.get_all_melee_damage_bonuses():
@@ -178,7 +178,7 @@ class WeaponAttack(BaseAction):
                 markup=True,
             )
             console.print(
-                f"        🗡️ [bold magenta]damage:[/] {total_damage} total — "
+                f"        [bold magenta]Damage:[/] {total_damage} total → "
                 + " + ".join(damage_details),
                 markup=True,
             )

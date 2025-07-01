@@ -61,7 +61,7 @@ def extract_dice_terms(expr: str) -> list[str]:
     return re.findall(r"\b\d*D\d+\b", expr)
 
 
-def parse_and_roll_dice(term: str) -> tuple[int, list[int]]:
+def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
     """Parses a dice term and rolls the dice.
 
     Args:
@@ -90,6 +90,33 @@ def parse_and_roll_dice(term: str) -> tuple[int, list[int]]:
     return sum(rolls), rolls
 
 
+def parse_term_and_assume_max_dice(term: str) -> tuple[int, list[int]]:
+    """Parses a dice term and assumes the maximum roll for each die.
+
+    Args:
+        term (str): The dice term to parse (e.g., '2d6').
+
+    Returns:
+        tuple[int, list[int]]: The total assuming max rolls and individual max rolls.
+    """
+    if not term:
+        return 0, []
+    term = term.upper().strip()
+    if term == "":
+        return 0, []
+    if term.isdigit():
+        return int(term), [int(term)]
+    match = dice_pattern.match(term)
+    if not match:
+        warning(f"Invalid dice string: '{term}'")
+        return 0, []
+    num_str, sides_str = match.groups()
+    num = int(num_str) if num_str else 1
+    sides = int(sides_str)
+    rolls = [sides] * num
+    return sum(rolls), rolls
+
+
 def roll_dice(term: str) -> int:
     """Rolls a dice term and returns the total.
 
@@ -106,7 +133,7 @@ def roll_dice(term: str) -> int:
         return 0
     if term.isdigit():
         return int(term)
-    total, _ = parse_and_roll_dice(term)
+    total, _ = parse_term_and_roll_dice(term)
     return total
 
 
@@ -130,13 +157,35 @@ def roll_dice_expression(expr: str) -> int:
     rolled_expr = expr
 
     for term in dice_terms:
-        rolled, _ = parse_and_roll_dice(term)
+        rolled, _ = parse_term_and_roll_dice(term)
         rolled_expr = re.sub(term, str(rolled), rolled_expr, count=1)
         debug(f"Rolled {term} → {rolled} ({rolled_expr})")
     try:
         return int(eval(rolled_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
         warning(f"Failed to evaluate '{rolled_expr}': {e}")
+        return 0
+
+
+def parse_expr_and_assume_max_roll(expr: str) -> int:
+    """
+    Assumes the maximum roll for all dice terms in the expression.
+    """
+    if not expr:
+        return 0
+    expr = expr.upper().strip()
+    if expr == "":
+        return 0
+    if expr.isdigit():
+        return int(expr)
+    dice_terms = extract_dice_terms(expr)
+    for term in dice_terms:
+        total, _ = parse_term_and_roll_dice(term)
+        expr = expr.replace(term, str(total), 1)
+    try:
+        return int(eval(expr, {"__builtins__": None}, math.__dict__))
+    except Exception as e:
+        warning(f"Failed to evaluate '{expr}': {e}")
         return 0
 
 
@@ -156,6 +205,21 @@ def roll_expression(
     return roll_dice_expression(substituted)
 
 
+def get_max_roll(
+    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
+) -> int:
+    if not expr:
+        return 0
+    expr = expr.upper().strip()
+    if expr == "":
+        return 0
+    if expr.isdigit():
+        return int(expr)
+    substituted = substitute_variables(expr, entity, mind)
+    debug(f"Substituted expression for max roll: {substituted}")
+    return parse_expr_and_assume_max_roll(substituted)
+
+
 def roll_and_describe(
     expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
 ) -> tuple[int, str]:
@@ -171,7 +235,7 @@ def roll_and_describe(
     dice_terms = extract_dice_terms(substituted)
     breakdown = substituted
     for term in dice_terms:
-        total, _ = parse_and_roll_dice(term)
+        total, _ = parse_term_and_roll_dice(term)
         breakdown = breakdown.replace(term, str(total), 1)
     try:
         result = int(eval(breakdown, {"__builtins__": None}, math.__dict__))

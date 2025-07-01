@@ -4,7 +4,7 @@ from typing import Any
 from rich.console import Console
 
 from constants import *
-from actions import BaseAction, SpellAttack, SpellBuff, SpellHeal, WeaponAttack
+from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellHeal, WeaponAttack
 from effect import Buff, DoT, Effect, HoT
 from utils import *
 
@@ -131,9 +131,9 @@ class Character:
         # List of active effects.
         self.active_effects: list[ActiveEffect] = []
         # List of actions.
-        self.actions: dict[str, Any] = {}
+        self.actions: dict[str, BaseAction] = {}
         # List of spells
-        self.spells: dict[str, Any] = {}
+        self.spells: dict[str, Spell] = {}
         # Turn flags to track used actions.
         self.turn_flags: dict[str, bool] = {
             "standard_action_used": False,
@@ -213,6 +213,8 @@ class Character:
         """
         # Base AC is 10 + DEX modifier.
         base_ac = 10 + self.DEX
+
+        # Add armor and shield AC.
         armor_ac = None
         shield_ac = 0
         for armor in self.equipped_armor:
@@ -232,11 +234,15 @@ class Character:
                     armor_ac = armor.ac
             elif slot == ArmorSlot.SHIELD:
                 shield_ac += armor.ac
+
+        # Add effect bonuses to AC.
+        effect_ac = self.get_total_bonus_from_effects(BonusType.AC)
+
         # Determine final AC.
         if armor_ac is not None:
-            return armor_ac + shield_ac
+            return armor_ac + shield_ac + effect_ac
         race_bonus = self.race.natural_ac if self.race else 0
-        return base_ac + race_bonus + shield_ac
+        return base_ac + race_bonus + shield_ac + effect_ac
 
     @property
     def INITIATIVE(self) -> int:
@@ -658,7 +664,10 @@ class Character:
 
     def get_status_line(self):
         effects = (
-            ", ".join(get_effect_color(e.effect) for e in self.active_effects)
+            ", ".join(
+                f"[{get_effect_color(e.effect)}]" + e.effect.name + "[/]"
+                for e in self.active_effects
+            )
             if self.active_effects
             else ""
         )
