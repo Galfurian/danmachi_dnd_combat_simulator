@@ -173,9 +173,14 @@ class CombatManager:
         """
         Handles player input for choosing an action and target during their turn.
         """
+        allowed_actions = (
+            list(self.player.actions.values()) + self.player.equipped_weapons
+        )
         while not self.player.turn_done():
             # Get the action.
-            action: Optional[BaseAction] = self.ui.choose_action(self.player)
+            action: Optional[BaseAction] = self.ui.choose_action(
+                self.player, allowed_actions
+            )
             if not action:
                 break
             # Get the legal targets for the chosen action.
@@ -497,6 +502,84 @@ class CombatManager:
                 selected_targets = targets[:num_targets]
         # Return the selected mind level and targets.
         return selected_mind_level, selected_targets
+
+    # -- Post-combat only the player is allowed to keep acting and ONLY with SpellHeal --
+    def post_combat_healing_phase(self) -> None:
+        console.print(Rule("🏥  Post-Combat Healing", style="green"))
+        # Stop now if there are no friendly character that needs healing.
+        if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+            console.print("[yellow]No friendly characters to heal.[/]")
+            return
+        # Gather viable healing spells.
+        heals: list[Spell] = [
+            s for s in self.player.spells.values() if isinstance(s, SpellHeal)
+        ]
+        if not heals:
+            console.print("[yellow]No healing spells known.[/]")
+            return
+        # Otherwise, allow to perform healing actions.
+        while True:
+            for ally in self.get_alive_friendlies(self.player):
+                console.print(ally.get_status_line(), markup=True)
+            # let the UI list ONLY those spells plus an 'End' sentinel.
+            spell: Optional[Spell] = self.ui.choose_spell(self.player, heals)
+            if spell is None:
+                break
+            # Gather here the actual targets.
+            targets = []
+            # Ask for the [MIND] level to use for the spell.
+            mind_level = self.ui.choose_mind(self.player, spell)
+            if mind_level == -1:
+                continue
+            # Get the legal targets for the spell.
+            targets = self._get_legal_targets(self.player, spell)
+            # Filter those that are fully healed.
+            targets = [t for t in targets if t.hp < t.HP_MAX and t.is_alive()]
+            # Get the number of targets for the spell.
+            maximum_num_targets = spell.target_count(self.player, mind_level)
+            # There is no point in asking for more targets than we have valid targets.
+            maximum_num_targets = min(maximum_num_targets, len(targets))
+            # If the action accepts just one target, we can ask for a single target.
+            if maximum_num_targets == 1:
+                # Ask for a single target.
+                targets = [self.ui.choose_target(self.player, targets)]
+            # If the action accepts multiple targets, we can ask for multiple targets.
+            elif maximum_num_targets > 1:
+                # Ask for multiple targets.
+                targets = self.ui.choose_targets(
+                    self.player, targets, maximum_num_targets
+                )
+            # Check if the targets are valid.
+            if not isinstance(targets, list):
+                continue
+            if not all(isinstance(t, Character) for t in targets):
+                continue
+            for target in targets:
+                # Perform the action on the target.
+                spell.cast_spell(self.player, target, mind_level)
+            # Remove the MIND cost from the player.
+            self.player.mind -= mind_level
+
+    def final_report(self) -> None:
+        console.print(Rule("📊  Final Battle Report", style="bold blue"))
+        # Player
+        console.print(self.player.get_status_line(), markup=True)
+        # Allies
+        for ally in self.get_alive_friendlies(self.player):
+            if ally != self.player:
+                console.print(ally.get_status_line(), markup=True)
+        # Fallen foes
+        defeated = [
+            c
+            for c in self.participants
+            if not c.is_alive() and c.type == CharacterType.ENEMY
+        ]
+        if defeated:
+            console.print(
+                f"[bold magenta]Defeated Enemies ({len(defeated)}):[/] "
+                + ", ".join(d.name for d in defeated)
+            )
+        console.print("")  # blank line
 
     def is_combat_over(self) -> bool:
         """

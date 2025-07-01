@@ -9,11 +9,14 @@ console = Console()
 
 class PlayerInterface(Protocol):
 
-    def choose_action(self, actor: Character) -> Optional[BaseAction]:
+    def choose_action(
+        self, actor: Character, allowed: List[BaseAction]
+    ) -> Optional[BaseAction]:
         """Choose an action for the actor.
 
         Args:
             actor (Character): The character for whom to choose an action.
+            allowed (List[BaseAction]): The list of allowed actions.
 
         Returns:
             Optional[BaseAction]: The chosen action, or None if no action is selected.
@@ -46,6 +49,18 @@ class PlayerInterface(Protocol):
 
         Returns:
             Optional[List[Character]]: The chosen targets, or None if no targets are selected.
+        """
+        ...
+
+    def choose_spell(self, actor: Character, allowed: list[Spell]) -> Optional[Spell]:
+        """Choose a spell for the actor.
+
+        Args:
+            actor (Character): The character for whom to choose a spell.
+            allowed (list[Spell]): The list of allowed spells.
+
+        Returns:
+            Optional[Spell]: The chosen spell, or None if no spell is selected.
         """
         ...
 

@@ -73,13 +73,15 @@ class PromptToolkitCLI(PlayerInterface):
     def __init__(self) -> None:
         pass
 
-    def choose_action(self, actor: Character) -> Optional[BaseAction]:
+    def choose_action(
+        self, actor: Character, allowed: List[BaseAction]
+    ) -> Optional[BaseAction]:
         # Filter actions based on the actor's available action types.
         has_standard_action = actor.has_action_type(ActionType.STANDARD)
         has_bonus_action = actor.has_action_type(ActionType.BONUS)
         actions = [
             action
-            for action in list(actor.actions.values()) + actor.equipped_weapons
+            for action in allowed
             if (action.type == ActionType.STANDARD and has_standard_action)
             or (action.type == ActionType.BONUS and has_bonus_action)
         ]
@@ -108,9 +110,11 @@ class PromptToolkitCLI(PlayerInterface):
                 return actions[int(answer) - 1]
             # If the user typed "Cast a Spell", prompt for spell selection.
             if answer.isdigit() and int(answer) == 0:
-                spell: Any = self._choose_spell(actor)
+                spell: Optional[Spell] = self.choose_spell(
+                    actor, list(actor.spells.values())
+                )
                 # If the user didn't select a spell, show the prompt again.
-                if not spell or isinstance(spell, int) and spell == 0:
+                if not spell:
                     continue
                 return spell
             # If the selection is not a number, check if it matches an action name.
@@ -253,7 +257,7 @@ class PromptToolkitCLI(PlayerInterface):
                 for modifier in spell.effect.modifiers.values():
                     prompt += f"    {mind_level} → Debuff: {modifier.replace('[MIND]', str(mind_level))}"
                     prompt += max_targets + "\n"
-        prompt += "    0 → Back\n"
+        prompt += "    0 → Back\nMind > "
 
         completer = WordCompleter([str(c) for c in choices], ignore_case=True)
         while True:
@@ -264,22 +268,22 @@ class PromptToolkitCLI(PlayerInterface):
                 if int(answer) == 0:
                     return -1
 
-    def _choose_spell(self, actor: Character) -> Any:
+    def choose_spell(self, actor: Character, allowed: list[Spell]) -> Optional[Spell]:
         # Get the, list of spells the actor can cast.
         has_standard_action = actor.has_action_type(ActionType.STANDARD)
         has_bonus_action = actor.has_action_type(ActionType.BONUS)
-        spells = [
+        spells: list[Spell] = [
             spell
-            for spell in actor.spells.values()
+            for spell in allowed
             if (spell.type == ActionType.STANDARD and has_standard_action)
             or (spell.type == ActionType.BONUS and has_bonus_action)
         ]
         # Generate a table of spells.
-        tbl = self._create_action_table(spells)
+        tbl = self._create_spell_table(spells)
         if not tbl.rows:
             return None
         tbl.add_row()
-        tbl.add_row("0", "Back", "", "")
+        tbl.add_row("0", "Exit", "", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(tbl) + "\nSpell > "
         # Create a completer for the spell names.
@@ -292,7 +296,7 @@ class PromptToolkitCLI(PlayerInterface):
                 continue
             # User wants to go back.
             if int(answer) == 0:
-                return 0
+                return None
             # If the user typed a number, return the corresponding spell.
             if answer.isdigit() and 1 <= int(answer) <= len(spells):
                 return spells[int(answer) - 1]
@@ -308,13 +312,13 @@ class PromptToolkitCLI(PlayerInterface):
         tbl = Table(title="Targets", pad_edge=False)
         tbl.add_column("#", style="cyan", no_wrap=True)
         tbl.add_column("Name", style="bold")
-        tbl.add_column("HP", justify="right")
+        tbl.add_column("HP", justify="center")
         tbl.add_column("AC", justify="right")
         for i, target in enumerate(targets, 1):
             tbl.add_row(
                 str(i),
                 target.name,
-                str(target.hp),
+                f"{target.hp:>3}/{target.HP_MAX:<3}",
                 str(target.AC),
             )
         return tbl
@@ -336,10 +340,10 @@ class PromptToolkitCLI(PlayerInterface):
         }
         # Sort actions by ActionType (then by name for stability)
         actions.sort(
-            key=lambda a: (
-                type_priority.get(a.type, 99),
-                category_priority.get(a.category, 99),
-                a.name.lower(),
+            key=lambda action: (
+                type_priority.get(action.type, 99),
+                category_priority.get(action.category, 99),
+                action.name.lower(),
             )
         )
         # Create a Rich table of actions for the player to choose from.
@@ -348,14 +352,52 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_column("Name", style="bold")
         tbl.add_column("Type", style="magenta")
         tbl.add_column("Category", style="blue")
-        tbl.add_column("Mind Cost", justify="center")
         for i, action in enumerate(actions, 1):
             tbl.add_row(
                 str(i),
                 action.name,
                 self._color_action_type(action.type),
                 self._color_action_category(action.category),
-                str(getattr(action, "mind", 0)),
+            )
+        return tbl
+
+    def _create_spell_table(self, spells: list[Spell]) -> Table:
+        # Optional: define sort priority if you want custom order
+        type_priority = {
+            ActionType.STANDARD: 0,
+            ActionType.BONUS: 1,
+            ActionType.FREE: 2,
+        }
+        category_priority = {
+            ActionCategory.OFFENSIVE: 0,
+            ActionCategory.HEALING: 1,
+            ActionCategory.BUFF: 2,
+            ActionCategory.DEBUFF: 3,
+            ActionCategory.UTILITY: 4,
+            ActionCategory.DEBUG: 5,
+        }
+        # Sort actions by ActionType (then by name for stability)
+        spells.sort(
+            key=lambda spell: (
+                type_priority.get(spell.type, 99),
+                category_priority.get(spell.category, 99),
+                spell.name.lower(),
+            )
+        )
+        # Create a Rich table of spells for the player to choose from.
+        tbl = Table(title="Spells", pad_edge=False)
+        tbl.add_column("#", style="cyan", no_wrap=True)
+        tbl.add_column("Name", style="bold")
+        tbl.add_column("Type", style="magenta")
+        tbl.add_column("Category", style="blue")
+        tbl.add_column("Mind", justify="center")
+        for i, spell in enumerate(spells, 1):
+            tbl.add_row(
+                str(i),
+                spell.name,
+                self._color_action_type(spell.type),
+                self._color_action_category(spell.category),
+                str(spell.mind),
             )
         return tbl
 

@@ -67,7 +67,9 @@ registries: dict[str, Any] = {
 console.print(Rule("Loading Enemies", style="bold green"))
 
 # Load the enemies.
-enemies = load_characters("data/enemies_danmachi_f1_f10.json", registries)
+enemies: dict[str, Character] = load_characters(
+    "data/enemies_danmachi_f1_f10.json", registries
+)
 for enemy_name, enemy in enemies.items():
     print(f"    Loaded enemy: {enemy_name} (hp: {enemy.hp}, ac: {enemy.AC})")
 
@@ -76,7 +78,7 @@ for enemy_name, enemy in enemies.items():
 console.print(Rule("Loading Characters", style="bold green"))
 
 # Load the characters.
-characters = load_characters("data/characters.json", registries)
+characters: dict[str, Character] = load_characters("data/characters.json", registries)
 for character_name, character in characters.items():
     print(
         f"    Loaded character: {character_name} (hp: {character.hp}, ac: {character.AC})"
@@ -99,12 +101,12 @@ opponents: list[Character] = []
 allies: list[Character] = []
 
 
-def add_to_list(from_list: list[Character], to_list: list[Character], name: str):
+def add_to_list(from_group: dict[str, Character], to_list: list[Character], name: str):
     """
     Adds an opponent to the combat.
     """
-    if name in from_list:
-        to_list.append(deepcopy(from_list[name]))
+    if name in from_group:
+        to_list.append(deepcopy(from_group[name]))
     else:
         warning(f"Opponent '{name}' not found in enemies data.")
 
@@ -130,17 +132,16 @@ if __name__ == "__main__":
     add_to_list(enemies, opponents, "Goblin")
     add_to_list(enemies, opponents, "Goblin")
     add_to_list(enemies, opponents, "Goblin")
-
     add_to_list(characters, allies, "Naerin")
-
     make_names_unique(opponents)
     make_names_unique(allies)
-
     combat_manager = CombatManager(ui, player, opponents, allies)
-
     try:
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
     except KeyboardInterrupt:
         console.print("")
         console.print(Rule("Combat Interrupted", style="bold red"))
+    combat_manager.post_combat_healing_phase()
+    combat_manager.final_report()
+    console.print(Rule("Combat Finished", style="bold green"))

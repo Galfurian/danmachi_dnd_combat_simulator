@@ -675,10 +675,12 @@ class Character:
 
         status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<10}[/] "
         status += f"| AC: [bold yellow]{self.AC}[/] "
-        status += f"| HP: [green]{self.hp}[/]/[bold green]{self.HP_MAX}[/] {hp_bar} "
+        status += (
+            f"| HP: [green]{self.hp:>3}[/]/[bold green]{self.HP_MAX:<3}[/] {hp_bar} "
+        )
         if self.MIND_MAX > 0:
             mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue")
-            status += f"| MIND: [blue]{self.mind}[/]/[bold blue]{self.MIND_MAX}[/] {mind_bar} "
+            status += f"| MIND: [blue]{self.mind:>3}[/]/[bold blue]{self.MIND_MAX:<3}[/] {mind_bar} "
         if effects:
             status += f"| Effects: {effects}"
         return status
