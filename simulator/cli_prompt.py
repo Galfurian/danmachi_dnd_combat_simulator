@@ -237,20 +237,22 @@ class PromptToolkitCLI(PlayerInterface):
             )}"
             )
             if isinstance(spell, SpellHeal):
-                heal_roll = substitute_variables(spell.heal_roll, actor, mind_level)
-                prompt += f"    {mind_level} → Heal: {heal_roll}"
+                prompt += f"    {mind_level} → "
+                prompt += f"Heal: {spell.get_heal_expr(actor, mind_level)} "
+                prompt += f"[{spell.get_min_heal(actor, mind_level):>3}-{spell.get_max_heal(actor, mind_level):<3}]"
                 prompt += max_targets + "\n"
             elif isinstance(spell, SpellAttack):
-                attack_roll = substitute_variables(spell.damage_roll, actor, mind_level)
-                prompt += f"    {mind_level} → Attack: {attack_roll}"
+                prompt += f"    {mind_level} → "
+                prompt += f"Damage: {spell.get_damage_expr(actor, mind_level)} "
+                prompt += f"[{spell.get_min_damage(actor, mind_level):>3}-{spell.get_max_damage(actor, mind_level):<3}]"
                 prompt += max_targets + "\n"
             elif isinstance(spell, SpellBuff) and isinstance(spell.effect, Buff):
-                for modifier in spell.effect.modifiers.values():
-                    prompt += f"    {mind_level} → Buff: {substitute_variables(modifier, actor, mind_level)}"
+                for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
+                    prompt += f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
                     prompt += max_targets + "\n"
             elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Buff):
-                for modifier in spell.effect.modifiers.values():
-                    prompt += f"    {mind_level} → Debuff: {substitute_variables(modifier, actor, mind_level)}"
+                for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
+                    prompt += f"    {mind_level} → Debuff: {modifier} to {bonus.name.title()}"
                     prompt += max_targets + "\n"
         prompt += "    0 → Back\nMind > "
 

@@ -68,7 +68,7 @@ class CombatManager:
         console.print("[bold yellow]Turn Order:[/]")
         for participant in self.participants:
             console.print(
-                f"  {self.initiatives[participant]:3} - {participant.name:<20} - {participant.get_status_line()}",
+                f"    🎲 {self.initiatives[participant]:3}  {participant.get_status_line()}",
                 markup=True,
             )
 

@@ -2,7 +2,7 @@ import re
 import random
 import math
 from logging import debug, warning
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 
 
 dice_pattern = re.compile(r"^(\d*)[dD](\d+)$")
@@ -49,7 +49,7 @@ def substitute_variables(
 # ---- Dice Parsing ----
 def extract_dice_terms(expr: str) -> list[str]:
     """
-    Extracts all dice terms like '1d8', '2D6', or 'd4' from an expression.
+    Extracsts all dice terms like '1d8', '2D6', or 'd4' from an expression.
     """
     if not expr:
         return []
@@ -61,14 +61,18 @@ def extract_dice_terms(expr: str) -> list[str]:
     return re.findall(r"\b\d*D\d+\b", expr)
 
 
-def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
-    """Parses a dice term and rolls the dice.
+def _parse_term_and_process_dice(
+    term: str, dice_action: Callable[[int, int], list[int]]
+) -> tuple[int, list[int]]:
+    """Parses a dice term and processes the dice based on the provided action.
 
     Args:
-        term (str): The dice term to roll (e.g., '2d6').
+        term (str): The dice term to process (e.g., '2d6').
+        dice_action (Callable[[int, int], list[int]]): A function that takes
+            (num_dice, sides) and returns a list of individual dice results.
 
     Returns:
-        tuple[int, list[int]]: The total and individual rolls.
+        tuple[int, list[int]]: The total and individual processed rolls.
     """
     if not term:
         return 0, []
@@ -86,46 +90,42 @@ def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
     num = int(num_str) if num_str else 1
     sides = int(sides_str)
 
-    rolls = [random.randint(1, sides) for _ in range(num)]
+    rolls = dice_action(num, sides)
     return sum(rolls), rolls
+
+
+def _roll_individual_dice(num: int, sides: int) -> list[int]:
+    """Helper function to roll individual dice."""
+    return [random.randint(1, sides) for _ in range(num)]
+
+
+def _assume_min_individual_dice(num: int, sides: int) -> list[int]:
+    """Helper function to assume min for individual dice."""
+    return [1] * num  # The minimum roll for any die is always 1
+
+
+def _assume_max_individual_dice(num: int, sides: int) -> list[int]:
+    """Helper function to assume max for individual dice."""
+    return [sides] * num
+
+
+def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
+    """Parses a dice term and rolls the dice."""
+    return _parse_term_and_process_dice(term, _roll_individual_dice)
+
+
+def parse_term_and_assume_min_dice(term: str) -> tuple[int, list[int]]:
+    """Parses a dice term and assumes the minimum roll (1) for each die."""
+    return _parse_term_and_process_dice(term, _assume_min_individual_dice)
 
 
 def parse_term_and_assume_max_dice(term: str) -> tuple[int, list[int]]:
-    """Parses a dice term and assumes the maximum roll for each die.
-
-    Args:
-        term (str): The dice term to parse (e.g., '2d6').
-
-    Returns:
-        tuple[int, list[int]]: The total assuming max rolls and individual max rolls.
-    """
-    if not term:
-        return 0, []
-    term = term.upper().strip()
-    if term == "":
-        return 0, []
-    if term.isdigit():
-        return int(term), [int(term)]
-    match = dice_pattern.match(term)
-    if not match:
-        warning(f"Invalid dice string: '{term}'")
-        return 0, []
-    num_str, sides_str = match.groups()
-    num = int(num_str) if num_str else 1
-    sides = int(sides_str)
-    rolls = [sides] * num
-    return sum(rolls), rolls
+    """Parses a dice term and assumes the maximum roll for each die."""
+    return _parse_term_and_process_dice(term, _assume_max_individual_dice)
 
 
 def roll_dice(term: str) -> int:
-    """Rolls a dice term and returns the total.
-
-    Args:
-        term (str): The dice term to roll (e.g., '2d6').
-
-    Returns:
-        int: The total result of the rolled dice term.
-    """
+    """Rolls a dice term and returns the total."""
     if not term:
         return 0
     term = term.upper().strip()
@@ -137,14 +137,18 @@ def roll_dice(term: str) -> int:
     return total
 
 
-def roll_dice_expression(expr: str) -> int:
-    """Rolls a dice expression and returns the total.
+def _process_dice_expression(
+    expr: str, term_processor: Callable[[str], tuple[int, list[int]]]
+) -> int:
+    """Processes a dice expression by replacing dice terms with their processed values.
 
     Args:
-        expr (str): The dice expression to roll.
+        expr (str): The dice expression to process.
+        term_processor (Callable[[str], tuple[int, list[int]]]): A function
+            that takes a dice term and returns its total and individual rolls.
 
     Returns:
-        int: The total result of the rolled dice expression.
+        int: The total result of the processed dice expression.
     """
     if not expr:
         return 0
@@ -153,40 +157,39 @@ def roll_dice_expression(expr: str) -> int:
         return 0
     if expr.isdigit():
         return int(expr)
+
     dice_terms = extract_dice_terms(expr)
-    rolled_expr = expr
+    processed_expr = expr
 
     for term in dice_terms:
-        rolled, _ = parse_term_and_roll_dice(term)
-        rolled_expr = re.sub(term, str(rolled), rolled_expr, count=1)
-        debug(f"Rolled {term} → {rolled} ({rolled_expr})")
+        total, _ = term_processor(term)
+        # Use re.sub to replace only the first occurrence of the term to avoid issues
+        # if the same term appears multiple times and is meant to represent distinct rolls.
+        processed_expr = re.sub(
+            r"\b" + re.escape(term) + r"\b", str(total), processed_expr, count=1
+        )
+        debug(f"Processed {term} → {total} ({processed_expr})")
+
     try:
-        return int(eval(rolled_expr, {"__builtins__": None}, math.__dict__))
+        return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        warning(f"Failed to evaluate '{rolled_expr}': {e}")
+        warning(f"Failed to evaluate '{processed_expr}': {e}")
         return 0
+
+
+def roll_dice_expression(expr: str) -> int:
+    """Rolls a dice expression and returns the total."""
+    return _process_dice_expression(expr, parse_term_and_roll_dice)
+
+
+def parse_expr_and_assume_min_roll(expr: str) -> int:
+    """Assumes the minimum roll (1) for all dice terms in the expression."""
+    return _process_dice_expression(expr, parse_term_and_assume_min_dice)
 
 
 def parse_expr_and_assume_max_roll(expr: str) -> int:
-    """
-    Assumes the maximum roll for all dice terms in the expression.
-    """
-    if not expr:
-        return 0
-    expr = expr.upper().strip()
-    if expr == "":
-        return 0
-    if expr.isdigit():
-        return int(expr)
-    dice_terms = extract_dice_terms(expr)
-    for term in dice_terms:
-        total, _ = parse_term_and_roll_dice(term)
-        expr = expr.replace(term, str(total), 1)
-    try:
-        return int(eval(expr, {"__builtins__": None}, math.__dict__))
-    except Exception as e:
-        warning(f"Failed to evaluate '{expr}': {e}")
-        return 0
+    """Assumes the maximum roll for all dice terms in the expression."""
+    return _process_dice_expression(expr, parse_term_and_assume_max_dice)
 
 
 # ---- Public API ----

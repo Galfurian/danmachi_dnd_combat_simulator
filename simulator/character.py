@@ -665,7 +665,9 @@ class Character:
     def get_status_line(self):
         effects = (
             ", ".join(
-                f"[{get_effect_color(e.effect)}]" + e.effect.name + "[/]"
+                f"[{get_effect_color(e.effect)}]"
+                + e.effect.name
+                + f"[/] ({e.duration})"
                 for e in self.active_effects
             )
             if self.active_effects
@@ -673,7 +675,7 @@ class Character:
         )
         hp_bar = make_bar(self.hp, self.HP_MAX, color="green")
 
-        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<10}[/] "
+        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<14}[/] "
         status += f"| AC: [bold yellow]{self.AC}[/] "
         status += (
             f"| HP: [green]{self.hp:>3}[/]/[bold green]{self.HP_MAX:<3}[/] {hp_bar} "
