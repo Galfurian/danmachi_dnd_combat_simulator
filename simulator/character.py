@@ -5,7 +5,7 @@ from rich.console import Console
 
 from constants import *
 from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellHeal, WeaponAttack
-from effect import Buff, DoT, Effect, HoT
+from effect import ModifierEffect, DoT, Effect, HoT
 from utils import *
 
 
@@ -470,7 +470,7 @@ class Character:
             BonusType.INITIATIVE,
         ], f"Invalid bonus type: {bonus_type}"
         for active in self.active_effects:
-            if isinstance(active.effect, Buff):
+            if isinstance(active.effect, ModifierEffect):
                 if bonus_type in active.effect.modifiers:
                     total += evaluate_expression(
                         active.effect.modifiers[bonus_type], self, active.mind_level
@@ -487,7 +487,7 @@ class Character:
             int: The index of the effect in the active effects list, or -1 if not found.
         """
         usefulness_index = 0
-        for existing_effect in self.get_all_effects_of_type(Buff):
+        for existing_effect in self.get_all_effects_of_type(effect.__class__):
             usefulness_index += existing_effect.duration < effect.max_duration
             # If the target already has the buff, we don't need to buff them.
             if effect.is_stronger_than(existing_effect.effect):
@@ -501,7 +501,7 @@ class Character:
         """
         bonus_list: list[str] = []
         for active in self.active_effects:
-            if isinstance(active.effect, Buff):
+            if isinstance(active.effect, ModifierEffect):
                 if BonusType.DAMAGE in active.effect.modifiers:
                     bonus_list.append(active.effect.modifiers[BonusType.DAMAGE])
         return bonus_list
@@ -509,7 +509,7 @@ class Character:
     def get_all_bonuses_from_effects_of_type(self, bonus_type: BonusType) -> list[str]:
         bonus_list: list[str] = []
         for active in self.active_effects:
-            if isinstance(active.effect, Buff):
+            if isinstance(active.effect, ModifierEffect):
                 if bonus_type in active.effect.modifiers:
                     bonus_list.append(active.effect.modifiers[bonus_type])
         return bonus_list

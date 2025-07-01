@@ -74,6 +74,8 @@ class Effect:
         assert data is not None, "Data must not be None."
         if data.get("type") == "Buff":
             return Buff.from_dict(data)
+        if data.get("type") == "Debuff":
+            return Debuff.from_dict(data)
         if data.get("type") == "Armor":
             return Armor.from_dict(data)
         if data.get("type") == "DoT":
@@ -83,29 +85,80 @@ class Effect:
         raise ValueError(f"Unknown effect type: {data.get('type')}")
 
 
-class Buff(Effect):
+class ModifierEffect(Effect):
     def __init__(self, name: str, max_duration: int, modifiers: dict[BonusType, str]):
         super().__init__(name, max_duration)
 
         self.modifiers: dict[BonusType, Any] = modifiers
 
+        self.validate()
+
     def validate(self):
         super().validate()
-        assert self.max_duration > 0, "Buff duration must be greater than 0."
+        assert self.max_duration > 0, "ModifierEffect duration must be greater than 0."
         assert isinstance(self.modifiers, dict), "Modifiers must be a dictionary."
-        for key in self.modifiers.keys():
+        for key, _ in self.modifiers.items():
             assert isinstance(
                 key, BonusType
-            ), f"Bonus key '{key}' must be of type BonusType."
-            assert isinstance(
-                self.modifiers[key], str
-            ), f"Modifier value for '{key}' must be a string expression."
+            ), f"Modifier key '{key}' must be of type BonusType."
+            if key in [
+                BonusType.HP,
+                BonusType.MIND,
+                BonusType.AC,
+                BonusType.ATTACK,
+                BonusType.INITIATIVE,
+            ]:
+                assert isinstance(
+                    self.modifiers[key], str
+                ), f"Modifier value for '{key}' must be an integer."
+            elif key in [BonusType.DAMAGE]:
+                assert isinstance(
+                    self.modifiers[key], dict
+                ), f"Modifier value for '{key}' must be a dictionary."
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "type": self.__class__.__name__,
+            "name": self.name,
+            "max_duration": self.max_duration,
+            "modifiers": {k.name.lower(): v for k, v in self.modifiers.items()},
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "ModifierEffect":
+        assert data is not None, "Data must not be None."
+        if data.get("type") == "Buff":
+            return Buff(
+                name=data["name"],
+                max_duration=data["max_duration"],
+                modifiers={
+                    BonusType[k.upper()]: v for k, v in data["modifiers"].items()
+                },
+            )
+        if data.get("type") == "Debuff":
+            return Debuff(
+                name=data["name"],
+                max_duration=data["max_duration"],
+                modifiers={
+                    BonusType[k.upper()]: v for k, v in data["modifiers"].items()
+                },
+            )
+
+
+class Buff(ModifierEffect):
+    def __init__(
+        self,
+        name: str,
+        max_duration: int,
+        modifiers: dict[BonusType, str],
+    ):
+        super().__init__(name, max_duration, modifiers)
 
     def is_stronger_than(self, other: "Buff") -> bool:
         """Check if this buff is stronger than another buff in terms of comparable modifiers.
 
         Args:
-            other (Buff): The other buff to compare against.
+            other (ModifierEffect): The other buff to compare against.
 
         Returns:
             bool: True if this buff is stronger, False otherwise.
@@ -118,23 +171,32 @@ class Buff(Effect):
             return len(self.modifiers) > len(other.modifiers)
         return overall_difference > 0
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "Buff",
-            "name": self.name,
-            "max_duration": self.max_duration,
-            "modifiers": {k.name.lower(): v for k, v in self.modifiers.items()},
-        }
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Buff":
-        assert data is not None, "Data must not be None."
-        modifiers = {BonusType[k.upper()]: v for k, v in data["modifiers"].items()}
-        return Buff(
-            name=data["name"],
-            max_duration=data["max_duration"],
-            modifiers=modifiers,
-        )
+class Debuff(ModifierEffect):
+    def __init__(
+        self,
+        name: str,
+        max_duration: int,
+        modifiers: dict[BonusType, str],
+    ):
+        super().__init__(name, max_duration, modifiers)
+
+    def is_stronger_than(self, other: "Debuff") -> bool:
+        """Check if this debuff is stronger than another debuff in terms of comparable modifiers.
+
+        Args:
+            other (Debuff): The other debuff to compare against.
+
+        Returns:
+            bool: True if this debuff is stronger, False otherwise.
+        """
+        overall_difference = 0
+        for key, value in self.modifiers.items():
+            if key in other.modifiers:
+                overall_difference += value - other.modifiers[key]
+        if overall_difference == 0:
+            return len(self.modifiers) > len(other.modifiers)
+        return overall_difference < 0
 
 
 class Armor(Effect):

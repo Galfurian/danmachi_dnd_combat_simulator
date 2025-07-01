@@ -4,9 +4,7 @@ from typing import Any
 
 
 class CharacterType(Enum):
-    """
-    Defines the type of character in the game.
-    """
+    """Defines the type of character in the game."""
 
     PLAYER = auto()
     ENEMY = auto()
@@ -14,18 +12,18 @@ class CharacterType(Enum):
 
 
 class BonusType(Enum):
+    """Defines the types of bonuses that can be applied to characters."""
+
     HP = auto()
     MIND = auto()
     AC = auto()
     ATTACK = auto()
-    DAMAGE = auto()
     INITIATIVE = auto()
+    DAMAGE = auto()
 
 
 class ActionType(Enum):
-    """
-    Defines the type of action that can be performed.
-    """
+    """Defines the type of action that can be performed."""
 
     STANDARD = auto()
     BONUS = auto()
@@ -33,9 +31,7 @@ class ActionType(Enum):
 
 
 class DamageType(Enum):
-    """
-    Defines various types of damage that can be inflicted.
-    """
+    """Defines various types of damage that can be inflicted."""
 
     PIERCING = auto()
     SLASHING = auto()
@@ -52,9 +48,7 @@ class DamageType(Enum):
 
 
 class ActionCategory(Enum):
-    """
-    Defines the primary purpose or effect category of an action or spell.
-    """
+    """Defines the primary purpose or effect category of an action or spell."""
 
     OFFENSIVE = auto()
     HEALING = auto()
@@ -65,6 +59,8 @@ class ActionCategory(Enum):
 
 
 class ArmorSlot(Enum):
+    """Defines the slots where armor can be equipped."""
+
     HEAD = auto()
     TORSO = auto()
     SHIELD = auto()
@@ -76,29 +72,42 @@ class ArmorSlot(Enum):
 
 
 class ArmorType(Enum):
+    """Defines the type of armor that can be equipped."""
+
     HEAVY = auto()
     MEDIUM = auto()
     LIGHT = auto()
 
 
-def is_oponent(character1: CharacterType, character2: CharacterType) -> bool:
-    """
-    Determines if two characters are opponents based on their types.
+def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
+    """Determines if char2 is an opponent of char1.
+
+    Args:
+        char1 (CharacterType): The first character type.
+        char2 (CharacterType): The second character type.
+
+    Returns:
+        bool: True if char2 is an opponent of char1, False otherwise.
     """
     group1 = [CharacterType.PLAYER, CharacterType.ALLY]
     group2 = [CharacterType.ENEMY]
-    if character1 == character2:
+    if char1 == char2:
         return False
-    if character1 in group1 and character2 in group1:
+    if char1 in group1 and char2 in group1:
         return False
-    if character1 in group2 and character2 in group2:
+    if char1 in group2 and char2 in group2:
         return False
     return True
 
 
 def get_character_type_color(character_type: CharacterType) -> str:
-    """
-    Returns a color string based on the character type.
+    """Returns a color string based on the character type.
+
+    Args:
+        character_type (CharacterType): The character type.
+
+    Returns:
+        str: The color string associated with the character type.
     """
     color_map = {
         CharacterType.PLAYER: "bold blue",
@@ -109,6 +118,14 @@ def get_character_type_color(character_type: CharacterType) -> str:
 
 
 def get_character_type_emoji(character_type: CharacterType) -> str:
+    """Returns an emoji representation based on the character type.
+
+    Args:
+        character_type (CharacterType): The character type.
+
+    Returns:
+        str: The emoji associated with the character type.
+    """
     emoji_map = {
         CharacterType.PLAYER: "👤",
         CharacterType.ENEMY: "💀",
@@ -118,6 +135,14 @@ def get_character_type_emoji(character_type: CharacterType) -> str:
 
 
 def get_damage_emoji(damage_type: DamageType) -> str:
+    """Returns an emoji representation based on the damage type.
+
+    Args:
+        damage_type (DamageType): The damage type.
+
+    Returns:
+        str: The emoji associated with the damage type.
+    """
     emoji_map = {
         DamageType.PIERCING: "🗡️",
         DamageType.SLASHING: "🪓",
@@ -173,6 +198,14 @@ def get_action_category_color(category: ActionCategory) -> str:
 
 
 def get_action_category_emoji(category: ActionCategory) -> str:
+    """Returns an emoji representation based on the action category.
+
+    Args:
+        category (ActionCategory): The action category.
+
+    Returns:
+        str: The emoji associated with the action category.
+    """
     emoji_map = {
         ActionCategory.OFFENSIVE: "⚔️",
         ActionCategory.HEALING: "✳️",
@@ -185,6 +218,14 @@ def get_action_category_emoji(category: ActionCategory) -> str:
 
 
 def get_armor_emoji(armor_type: ArmorType) -> str:
+    """Returns an emoji representation based on the armor type.
+
+    Args:
+        armor_type (ArmorType): The armor type.
+
+    Returns:
+        str: The emoji associated with the armor type.
+    """
     emoji_map = {
         ArmorType.LIGHT: "🧥",
         ArmorType.MEDIUM: "🥋",
@@ -194,9 +235,17 @@ def get_armor_emoji(armor_type: ArmorType) -> str:
 
 
 def get_effect_color(effect: Any) -> str:
+    """Returns a color string based on the effect type.
+
+    Args:
+        effect (Any): The effect instance.
+
+    Returns:
+        str: The color string associated with the effect type.
+    """
     color_map = {
         "Buff": "bold green",
-        "DebuffSpell": "bold red",
+        "Debuff": "bold red",
         "DoT": "magenta",
         "HoT": "cyan",
         "Armor": "yellow",

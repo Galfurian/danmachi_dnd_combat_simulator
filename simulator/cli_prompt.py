@@ -7,7 +7,7 @@ from prompt_toolkit.completion import WordCompleter
 from actions import BaseAction, Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from character import Character
 from prompt_toolkit import ANSI
-from effect import Buff
+from effect import Buff, Debuff
 
 from constants import (
     ActionCategory,
@@ -250,7 +250,7 @@ class PromptToolkitCLI(PlayerInterface):
                 for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
                     prompt += f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
                     prompt += max_targets + "\n"
-            elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Buff):
+            elif isinstance(spell, SpellDebuff) and isinstance(spell.effect, Debuff):
                 for bonus, modifier in spell.get_modifier_expressions(actor, mind_level).items():
                     prompt += f"    {mind_level} → Debuff: {modifier} to {bonus.name.title()}"
                     prompt += max_targets + "\n"

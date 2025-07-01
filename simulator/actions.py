@@ -841,7 +841,7 @@ class SpellDebuff(Spell):
         type: ActionType,
         level: int,
         mind: int,
-        effect: Buff,
+        effect: Debuff,
         multi_target_expr: str = "",
         upscale_choices: Optional[list[int]] = None,
     ):
@@ -854,7 +854,7 @@ class SpellDebuff(Spell):
             multi_target_expr,
             upscale_choices,
         )
-        self.effect: Buff = effect
+        self.effect: Debuff = effect
         # Ensure the effect is provided.
         assert self.effect is not None, "Effect must be provided for SpellDebuff."
 
