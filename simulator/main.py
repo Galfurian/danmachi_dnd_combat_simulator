@@ -129,9 +129,9 @@ def make_names_unique(in_list: list[Character]):
 if __name__ == "__main__":
 
     ui = PromptToolkitCLI()
-    add_to_list(enemies, opponents, "Infant Dragon")
+    # add_to_list(enemies, opponents, "Infant Dragon")
     # add_to_list(enemies, opponents, "Orc")
-    #add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
     #add_to_list(enemies, opponents, "Goblin")
     #add_to_list(enemies, opponents, "Goblin")
     #add_to_list(enemies, opponents, "Goblin")

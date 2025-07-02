@@ -111,32 +111,31 @@ class PromptToolkitCLI(PlayerInterface):
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(tbl) + "\nAction > "
         # Create a completer for the action names (including "Cast a Spell" if present)
-        completer = WordCompleter([a.name for a in actions], ignore_case=True)
+        completer = WordCompleter(
+            [a.name for a in actions] + ["Cast a Spell"], ignore_case=True
+        )
         while True:
             # Prompt the user for input.
-            answer = show_prompt(prompt, completer, True)
+            answer = show_prompt(prompt, completer, True).lower()
             # If the user didn't type anything, return None.
             if not answer:
                 continue
-            # If the user typed a number, return the corresponding action.
-            if answer.isdigit() and 1 <= int(answer) <= len(actions):
-                return actions[int(answer) - 1]
-            # If the user typed "Cast a Spell", prompt for spell selection.
-            if answer.isdigit() and int(answer) == 0:
-                spell: Optional[Spell] = self.choose_spell(
-                    actor, list(actor.spells.values())
-                )
+            if answer.isdigit() and int(answer) == 0 or answer == "cast a spell":
+                # If the user wants to cast a spell, prompt for a spell.
+                spell = self.choose_spell(actor, list(actor.spells.values()))
                 # If the user didn't select a spell, show the prompt again.
-                if not spell:
-                    continue
-                return spell
-            # If the selection is not a number, check if it matches an action name.
-            action = next(
-                (a for a in actions if a.name.lower() == answer.lower()), None
-            )
-            # If no valid action was selected, prompt again.
-            if isinstance(action, BaseAction):
-                return action
+                if spell:
+                    return spell
+            # If the user typed a number, return the corresponding action.
+            if answer.isdigit():
+                if 1 <= int(answer) <= len(actions):
+                    return actions[int(answer) - 1]
+            else:
+                # If the selection is not a number, check if it matches an action name.
+                action = next((a for a in actions if a.name.lower() == answer), None)
+                # If no valid action was selected, prompt again.
+                if isinstance(action, BaseAction):
+                    return action
 
     def choose_target(
         self,
@@ -157,25 +156,29 @@ class PromptToolkitCLI(PlayerInterface):
         prompt = "\n"
         prompt += table_to_str(tbl) + "\nTarget > "
         # Create a completer for the target names.
-        completer = WordCompleter([t.name for t in targets], ignore_case=True)
+        completer = WordCompleter(
+            [t.name for t in targets] + ["Back"], ignore_case=True
+        )
         while True:
             # Prompt the user for input.
-            answer = show_prompt(prompt, completer, True)
+            answer = show_prompt(prompt, completer, True).lower()
             # If the user didn't type anything, return None.
             if not answer:
                 continue
             # If the user typed a number, return the corresponding target.
-            if answer.isdigit() and 1 <= int(answer) <= len(targets):
-                return targets[int(answer) - 1]
-            if int(answer) == 0:
-                return None
-            # Find the target with the matching name.
-            target = next(
-                (t for t in targets if t.name.lower() == answer.lower()), None
-            )
-            # If a valid target was found, return it.
-            if isinstance(target, Character):
-                return target
+            if answer.isdigit():
+                if 1 <= int(answer) <= len(targets):
+                    return targets[int(answer) - 1]
+                if int(answer) == 0:
+                    return None
+            else:
+                if answer == "back":
+                    return None
+                # Find the target with the matching name.
+                target = next((t for t in targets if t.name.lower() == answer), None)
+                # If a valid target was found, return it.
+                if isinstance(target, Character):
+                    return target
 
     def choose_targets(
         self,
@@ -282,7 +285,9 @@ class PromptToolkitCLI(PlayerInterface):
                     prompt += max_targets + "\n"
         prompt += "    0 → Back\nMind > "
 
-        completer = WordCompleter([str(c) for c in spell.mind_cost], ignore_case=True)
+        completer = WordCompleter(
+            [str(c) for c in spell.mind_cost] + ["Back"], ignore_case=True
+        )
         while True:
             answer = show_prompt(prompt, completer, True)
             if answer.isdigit():
@@ -290,6 +295,8 @@ class PromptToolkitCLI(PlayerInterface):
                     return int(answer)
                 if int(answer) == 0:
                     return -1
+            elif answer.lower() == "back":
+                return -1
 
     def choose_spell(self, actor: Character, allowed: list[Spell]) -> Optional[Spell]:
         # Get the, list of spells the actor can cast.
@@ -310,23 +317,28 @@ class PromptToolkitCLI(PlayerInterface):
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(tbl) + "\nSpell > "
         # Create a completer for the spell names.
-        completer = WordCompleter([s.name for s in spells], ignore_case=True)
+        completer = WordCompleter([s.name for s in spells] + ["Exit"], ignore_case=True)
         while True:
             # Prompt the user for input.
-            answer = show_prompt(prompt, completer, True)
+            answer = show_prompt(prompt, completer, True).lower()
             # If the user didn't type anything, return None.
             if not answer:
                 continue
-            # User wants to go back.
-            if int(answer) == 0:
-                return None
-            # If the user typed a number, return the corresponding spell.
-            if answer.isdigit() and 1 <= int(answer) <= len(spells):
-                return spells[int(answer) - 1]
-            # Find the spell with the matching name.
-            spell = next((s for s in spells if s.name.lower() == answer.lower()), None)
-            if spell:
-                return spell
+            # Check if the user typed a number or a spell name.
+            if answer.isdigit():
+                # If the user typed a number, return the corresponding spell.
+                if 1 <= int(answer) <= len(spells):
+                    return spells[int(answer) - 1]
+                # User wants to go back.
+                if int(answer) == 0:
+                    return None
+            else:
+                if answer == "exit":
+                    return None
+                # Find the spell with the matching name.
+                spell = next((s for s in spells if s.name.lower() == answer), None)
+                if spell:
+                    return spell
 
     def generate_action_card(self, actor: Character, action: BaseAction) -> str:
         """Generates a card representation of the action.
@@ -473,7 +485,9 @@ class PromptToolkitCLI(PlayerInterface):
                 spell.name,
                 self._color_action_type(spell.type),
                 self._color_action_category(spell.category),
-                str(spell.mind_cost if spell.mind_cost else "N/A"),
+                str(
+                    spell.mind_cost[0] if len(spell.mind_cost) == 1 else spell.mind_cost
+                ),
             )
         return tbl
 

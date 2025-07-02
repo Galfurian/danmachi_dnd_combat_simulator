@@ -4,7 +4,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Beast": 1
+            "Beast": 10
         },
         "stats": {
             "strength": 8,
