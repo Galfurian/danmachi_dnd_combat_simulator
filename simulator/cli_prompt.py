@@ -20,14 +20,7 @@ from character import Character
 from prompt_toolkit import ANSI
 from effect import Buff, Debuff
 
-from constants import (
-    ActionCategory,
-    ActionType,
-    get_action_category_color,
-    get_action_category_emoji,
-    get_action_type_color,
-    get_damage_emoji,
-)
+from constants import *
 from interfaces import PlayerInterface
 from utils import evaluate_expression, substitute_variables
 
@@ -444,8 +437,8 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row(
                 str(i),
                 action.name,
-                self._color_action_type(action.type),
-                self._color_action_category(action.category),
+                apply_action_type_color(action.type, action.name),
+                apply_action_category_color(action.category, action.category.name.title()),
             )
         return tbl
 
@@ -483,16 +476,10 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row(
                 str(i),
                 spell.name,
-                self._color_action_type(spell.type),
-                self._color_action_category(spell.category),
+                apply_action_type_color(spell.type, spell.name),
+                apply_action_category_color(spell.category, spell.category.name.title()),
                 str(
                     spell.mind_cost[0] if len(spell.mind_cost) == 1 else spell.mind_cost
                 ),
             )
         return tbl
-
-    def _color_action_type(self, action_type: ActionType) -> str:
-        return f"[{get_action_type_color(action_type)}]{action_type.name.title()}[/]"
-
-    def _color_action_category(self, category: ActionCategory) -> str:
-        return f"[{get_action_category_color(category)}]{category.name.title()}[/]"

@@ -117,47 +117,38 @@ def get_character_type_color(character_type: CharacterType) -> str:
     return color_map.get(character_type, "dim white")
 
 
-def get_character_type_emoji(character_type: CharacterType) -> str:
-    """Returns an emoji representation based on the character type.
-
-    Args:
-        character_type (CharacterType): The character type.
-
-    Returns:
-        str: The emoji associated with the character type.
-    """
-    emoji_map = {
-        CharacterType.PLAYER: "👤",
-        CharacterType.ENEMY: "💀",
-        CharacterType.ALLY: "🤝",
-    }
-    return emoji_map.get(character_type, "❔")
+def apply_character_type_color(character_type: CharacterType, message: str) -> str:
+    return f"[{get_character_type_color(character_type)}]{message}[/]"
 
 
-def get_damage_emoji(damage_type: DamageType) -> str:
-    """Returns an emoji representation based on the damage type.
+def get_damage_type_color(damage_type: DamageType) -> str:
+    """Returns a color string based on the damage type.
 
     Args:
         damage_type (DamageType): The damage type.
 
     Returns:
-        str: The emoji associated with the damage type.
+        str: The color string associated with the damage type.
     """
-    emoji_map = {
-        DamageType.PIERCING: "🗡️",
-        DamageType.SLASHING: "🪓",
-        DamageType.BLUDGEONING: "🔨",
-        DamageType.FIRE: "🔥",
-        DamageType.COLD: "❄️",
-        DamageType.LIGHTNING: "⚡",
-        DamageType.POISON: "☠️",
-        DamageType.NECROTIC: "💀",
-        DamageType.RADIANT: "✨",
-        DamageType.PSYCHIC: "💫",
-        DamageType.FORCE: "🌀",
-        DamageType.ACID: "🧪",
+    color_map = {
+        DamageType.PIERCING: "bold magenta",
+        DamageType.SLASHING: "bold yellow",
+        DamageType.BLUDGEONING: "bold red",
+        DamageType.FIRE: "bold red",
+        DamageType.COLD: "bold cyan",
+        DamageType.LIGHTNING: "bold blue",
+        DamageType.POISON: "bold green",
+        DamageType.NECROTIC: "dim white",
+        DamageType.RADIANT: "bold white",
+        DamageType.PSYCHIC: "magenta",
+        DamageType.FORCE: "cyan",
+        DamageType.ACID: "green",
     }
-    return emoji_map.get(damage_type, "❔")
+    return color_map.get(damage_type, "dim white")
+
+
+def apply_damage_type_color(damage_type: DamageType, message: str) -> str:
+    return f"[{get_damage_type_color(damage_type)}]{message}[/]"
 
 
 def get_action_type_color(action_type: ActionType) -> str:
@@ -175,6 +166,10 @@ def get_action_type_color(action_type: ActionType) -> str:
         ActionType.FREE: "bold cyan",
     }
     return color_map.get(action_type, "dim white")
+
+
+def apply_action_type_color(action_type: ActionType, message: str) -> str:
+    return f"[{get_action_type_color(action_type)}]{message}[/]"
 
 
 def get_action_category_color(category: ActionCategory) -> str:
@@ -197,6 +192,84 @@ def get_action_category_color(category: ActionCategory) -> str:
     return color_map.get(category, "dim white")
 
 
+def apply_action_category_color(category: ActionCategory, message: str) -> str:
+    return f"[{get_action_category_color(category)}]{message}[/]"
+
+
+def get_effect_color(effect: Any) -> str:
+    """Returns a color string based on the effect type.
+
+    Args:
+        effect (Any): The effect instance.
+
+    Returns:
+        str: The color string associated with the effect type.
+    """
+    color_map = {
+        "Buff": "bold cyan",
+        "Debuff": "bold red",
+        "DoT": "bold magenta",
+        "HoT": "bold green",
+        "Armor": "bold yellow",
+    }
+    return color_map.get(type(effect).__name__, "dim white")
+
+
+def apply_effect_color(effect: Any, message: str) -> str:
+    """Returns a colored string representation of the effect.
+
+    Args:
+        effect (Any): The effect instance.
+
+    Returns:
+        str: The colored string associated with the effect type.
+    """
+    return f"[{get_effect_color(effect)}]{message}[/]"
+
+
+def get_character_type_emoji(character_type: CharacterType) -> str:
+    """Returns an emoji representation based on the character type.
+
+    Args:
+        character_type (CharacterType): The character type.
+
+    Returns:
+        str: The emoji associated with the character type.
+    """
+    emoji_map = {
+        CharacterType.PLAYER: "👤",
+        CharacterType.ENEMY: "👹",
+        CharacterType.ALLY: "🤝",
+    }
+    return emoji_map.get(character_type, "❔")
+
+
+def get_damage_type_emoji(damage_type: DamageType) -> str:
+    """Returns an emoji representation based on the damage type.
+
+    Args:
+        damage_type (DamageType): The damage type.
+
+    Returns:
+        str: The emoji associated with the damage type.
+    """
+    emoji_map = {
+        DamageType.PIERCING: "🗡️",
+        DamageType.SLASHING: "🪓",
+        DamageType.BLUDGEONING: "🔨",
+        DamageType.FIRE: "🔥",
+        DamageType.COLD: "❄️",
+        DamageType.LIGHTNING: "⚡",
+        DamageType.POISON: "☠️",
+        DamageType.NECROTIC: "🖤",
+        DamageType.RADIANT: "✨",
+        DamageType.PSYCHIC: "💫",
+        DamageType.FORCE: "🌀",
+        DamageType.ACID: "🧪",
+    }
+    return emoji_map.get(damage_type, "❔")
+
+
 def get_action_category_emoji(category: ActionCategory) -> str:
     """Returns an emoji representation based on the action category.
 
@@ -208,16 +281,16 @@ def get_action_category_emoji(category: ActionCategory) -> str:
     """
     emoji_map = {
         ActionCategory.OFFENSIVE: "⚔️",
-        ActionCategory.HEALING: "✳️",
-        ActionCategory.BUFF: "🛡️",
-        ActionCategory.DEBUFF: "💀",
+        ActionCategory.HEALING: "💚",
+        ActionCategory.BUFF: "💪",
+        ActionCategory.DEBUFF: "😈",
         ActionCategory.UTILITY: "🔧",
         ActionCategory.DEBUG: "🐞",
     }
     return emoji_map.get(category, "❔")
 
 
-def get_armor_emoji(armor_type: ArmorType) -> str:
+def get_armor_type_emoji(armor_type: ArmorType) -> str:
     """Returns an emoji representation based on the armor type.
 
     Args:
@@ -234,20 +307,20 @@ def get_armor_emoji(armor_type: ArmorType) -> str:
     return emoji_map.get(armor_type, "❔")
 
 
-def get_effect_color(effect: Any) -> str:
-    """Returns a color string based on the effect type.
+def get_effect_emoji(effect: Any) -> str:
+    """Returns an emoji representation based on the effect type.
 
     Args:
         effect (Any): The effect instance.
 
     Returns:
-        str: The color string associated with the effect type.
+        str: The emoji associated with the effect type.
     """
-    color_map = {
-        "Buff": "bold green",
-        "Debuff": "bold red",
-        "DoT": "magenta",
-        "HoT": "cyan",
-        "Armor": "yellow",
+    emoji_map = {
+        "Buff": "💫",
+        "Debuff": "☠️",
+        "DoT": "❣️",
+        "HoT": "💚",
+        "Armor": "🛡️",
     }
-    return color_map.get(type(effect).__name__, "dim white")
+    return emoji_map.get(type(effect).__name__, "❔")

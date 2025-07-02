@@ -134,8 +134,8 @@ class WeaponAttack(BaseAction):
         self.effect: Optional[Effect] = effect
 
     def execute(self, actor: Any, target: Any):
-        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
-        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
+        actor_str = apply_character_type_color(actor.type, actor.name)
+        target_str = apply_character_type_color(target.type, target.name)
 
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
 
@@ -145,62 +145,68 @@ class WeaponAttack(BaseAction):
             attack_expr += f"+{bonus_expr}"
         attack_roll, attack_roll_desc = roll_and_describe(attack_expr, actor)
 
-        # --- Outcome: HIT ---
-        if attack_roll >= target.AC:
-            total_damage: int = 0
-            damage_details: list[str] = []
-            # First roll the attack damage from the weapon.
-            for component in self.damage:
-                damage_expr = substitute_variables(component.damage_roll, actor)
-                damage_amount = roll_expression(damage_expr, actor)
-                applied_damage = target.take_damage(
-                    damage_amount, component.damage_type
-                )
-                total_damage += applied_damage
-                damage_details.append(
-                    f"{applied_damage} {get_damage_emoji(component.damage_type)} ({damage_expr})"
-                )
-            # Then roll any additional damage from effects.
-            for bonus in actor.effect_manager.get_modifier(BonusType.DAMAGE):
-                roll_str = bonus["damage_roll"]
-                damage_type = DamageType[bonus["damage_type"]]
-                damage_expr = substitute_variables(roll_str, actor)
-                damage_amount = roll_expression(damage_expr, actor)
-                applied_damage = target.take_damage(damage_amount, damage_type)
-                total_damage += applied_damage
-                damage_details.append(
-                    f"{applied_damage} {get_damage_emoji(damage_type)} ({damage_expr})"
-                )
-
-            console.print(
-                f"    🎯 {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) {attack_roll} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
-                markup=True,
-            )
-            console.print(
-                f"        [bold magenta]Damage:[/] {total_damage} total → "
-                + " + ".join(damage_details),
-                markup=True,
-            )
-
-            if self.effect and target.is_alive():
-                self.apply_effect(actor, target, self.effect)
-                console.print(
-                    f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
-                    markup=True,
-                )
-
-            if not target.is_alive():
-                console.print(
-                    f"        [bold red]{target_str} has been defeated![/]",
-                    markup=True,
-                )
-
         # --- Outcome: MISS ---
-        else:
+        if attack_roll < target.AC:
             console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [cyan]{self.name}[/]: "
+                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
                 f"rolled ({attack_roll_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                markup=True,
+            )
+            return True
+
+        # --- Outcome: HIT ---
+        total_damage: int = 0
+        damage_details: list[str] = []
+
+        # First roll the attack damage from the weapon.
+        for component in self.damage:
+            damage_expr = substitute_variables(component.damage_roll, actor)
+            damage_amount = roll_expression(damage_expr, actor)
+            applied_damage = target.take_damage(damage_amount, component.damage_type)
+            total_damage += applied_damage
+            damage_str = apply_damage_type_color(
+                component.damage_type,
+                f"{applied_damage} {get_damage_type_emoji(component.damage_type)} ",
+            )
+            damage_str += f"({damage_expr})"
+            damage_details.append(damage_str)
+
+        # Then roll any additional damage from effects.
+        for bonus in actor.effect_manager.get_modifier(BonusType.DAMAGE):
+            roll_str = bonus["damage_roll"]
+            damage_type = DamageType[bonus["damage_type"]]
+            damage_expr = substitute_variables(roll_str, actor)
+            damage_amount = roll_expression(damage_expr, actor)
+            applied_damage = target.take_damage(damage_amount, damage_type)
+            total_damage += applied_damage
+            damage_str = apply_damage_type_color(
+                damage_type,
+                f"{applied_damage} {get_damage_type_emoji(damage_type)} ",
+            )
+            damage_str += f"({damage_expr})"
+            damage_details.append(damage_str)
+
+        console.print(
+            f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
+            f"rolled ({attack_roll_desc}) {attack_roll} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+            markup=True,
+        )
+        console.print(
+            f"        {actor_str} deals {total_damage} total damage to {target_str} → "
+            + " + ".join(damage_details),
+            markup=True,
+        )
+
+        if self.effect and target.is_alive():
+            self.apply_effect(actor, target, self.effect)
+            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
+            effect_msg += apply_effect_color(self.effect, self.effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
+
+        if not target.is_alive():
+            console.print(
+                f"        [bold red]{target_str} has been defeated![/]",
                 markup=True,
             )
 
@@ -443,7 +449,7 @@ class SpellAttack(Spell):
         # --- Miss logic ---
         if attack_roll < target.AC:
             console.print(
-                f"    ❌ {actor_str} casts [bold magenta]{self.name}[/] on {target_str}: "
+                f"    ❌ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
                 f"rolled ({attack_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
@@ -458,25 +464,28 @@ class SpellAttack(Spell):
             damage_amount = roll_expression(damage_expr, actor, mind_level)
             applied_damage = target.take_damage(damage_amount, component.damage_type)
             total_damage += applied_damage
-            damage_details.append(
-                f"{applied_damage} {get_damage_emoji(component.damage_type)} ({damage_expr})"
+            damage_str = apply_damage_type_color(
+                component.damage_type,
+                f"{applied_damage} {get_damage_type_emoji(component.damage_type)} ",
             )
+            damage_str += f"({damage_expr})"
+            damage_details.append(damage_str)
         console.print(
             f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
             f"rolled ({attack_desc}) [white]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
             markup=True,
         )
         console.print(
-            f"        [bold magenta]Damage:[/] {total_damage} total → "
+            f"        {actor_str} deals {total_damage} total damage to {target_str} → "
             + " + ".join(damage_details),
             markup=True,
         )
         if self.effect and target.is_alive():
             self.apply_effect(actor, target, self.effect, mind_level)
-            console.print(
-                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
-                markup=True,
-            )
+            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
+            effect_msg += apply_effect_color(self.effect, self.effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
         if not target.is_alive():
             console.print(
                 f"        [bold red]{target_str} has been defeated![/]",
@@ -643,10 +652,10 @@ class SpellHeal(Spell):
         )
         if self.effect:
             self.apply_effect(actor, target, self.effect, mind_level)
-            console.print(
-                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
-                markup=True,
-            )
+            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
+            effect_msg += apply_effect_color(self.effect, self.effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
 
         return True
 
@@ -778,10 +787,10 @@ class SpellBuff(Spell):
         # Apply the effect
         if self.effect:
             self.apply_effect(actor, target, self.effect, mind_level)
-            console.print(
-                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
-                markup=True,
-            )
+            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
+            effect_msg += apply_effect_color(self.effect, self.effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
 
         return True
 
@@ -890,10 +899,10 @@ class SpellDebuff(Spell):
         # Apply the debuff effect
         if self.effect:
             self.apply_effect(actor, target, self.effect, mind_level)
-            console.print(
-                f"        ✨ [yellow]Effect [bold]{self.effect.name}[/] applied to {target_str}[/]",
-                markup=True,
-            )
+            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
+            effect_msg += apply_effect_color(self.effect, self.effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
 
         return True
 

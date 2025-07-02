@@ -246,9 +246,13 @@ class DoT(Effect):
         # Apply the damage to the target.
         dot_value = target.take_damage(dot_value, self.damage_type)
         # If the damage value is positive, print the damage message.
-        console.print(
-            f"    {get_damage_emoji(self.damage_type)} [bold]{target.name}[/] takes {dot_value} ([white]{dot_desc}[/]) [bold]{self.damage_type.name.lower()}[/] damage from [bold]{self.name}[/]."
-        )
+        message = f"    {get_effect_emoji(self)} "
+        message += apply_character_type_color(target.type, target.name) + " takes "
+        message += apply_damage_type_color(self.damage_type, dot_value) + " "
+        message += get_damage_type_emoji(self.damage_type) + " "
+        message += f"([white]{dot_desc}[/]) hp from "
+        message += apply_effect_color(self, self.name) + "."
+        console.print(message, markup=True)
         # If the target is defeated, print a message.
         if not target.is_alive():
             console.print(
@@ -308,9 +312,11 @@ class HoT(Effect):
         # Apply the heal to the target.
         hot_value = target.heal(hot_value)
         # If the heal value is positive, print the heal message.
-        console.print(
-            f"    ✳️ [bold green]{target.name}[/] heals for {hot_value} ([white]{hot_desc}[/]) hp from [bold]{self.name}[/]."
-        )
+        message = f"    {get_effect_emoji(self)} "
+        message += apply_character_type_color(target.type, target.name)
+        message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
+        message += apply_effect_color(self, self.name) + "."
+        console.print(message, markup=True)
 
     def validate(self):
         super().validate()

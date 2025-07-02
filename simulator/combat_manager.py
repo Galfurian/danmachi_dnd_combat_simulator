@@ -333,6 +333,9 @@ class CombatManager:
         while True:
             for ally in self.get_alive_friendlies(self.player):
                 console.print(ally.get_status_line(), markup=True)
+            if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+                console.print("[yellow]No friendly characters needs more healing.[/]")
+                return
             # let the UI list ONLY those spells plus an 'End' sentinel.
             spell: Optional[Spell] = self.ui.choose_spell(self.player, heals)
             if spell is None:
