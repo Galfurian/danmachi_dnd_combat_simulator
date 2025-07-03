@@ -130,7 +130,9 @@ class Character:
             "standard_action_used": False,
             "bonus_action_used": False,
         }
-
+        # Resistances and vulnerabilities to damage types.
+        self.resistances: set[DamageType] = set()
+        self.vulnerabilities: set[DamageType] = set()
         # Maximum HP and Mind.
         self.hp: int = self.HP_MAX
         self.mind: int = self.MIND_MAX
@@ -287,23 +289,27 @@ class Character:
         else:
             return self.turn_flags["standard_action_used"]
 
-    def take_damage(self, amount: int, damage_type: DamageType):
-        """Reduces the character's hp by the given amount, applying damage reduction if applicable.
+    def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
+        """
+        Applies damage to the character, factoring in resistances and vulnerabilities.
 
         Args:
-            amount (int): The amount of damage to deal.
+            amount (int): The raw base damage.
             damage_type (DamageType): The type of damage being dealt.
 
         Returns:
-            int: The actual amount of damage taken.
+            Tuple[int, int, int]: (base_damage, adjusted_damage, damage_taken)
         """
-        # Ensure the amount is non-negative.
-        amount = max(amount, 0)
-        # Apply damage reduction from armor or effects.
-        # Remove the amount of damage from the character's hp.
-        self.hp = max(self.hp - amount, 0)
-        # Return the actual damage we removed.
-        return amount
+        base = amount
+        adjusted = base
+        if damage_type in self.resistances:
+            adjusted = adjusted // 2
+        elif damage_type in self.vulnerabilities:
+            adjusted = adjusted * 2
+        adjusted = max(adjusted, 0)
+        actual = min(adjusted, self.hp)
+        self.hp = max(self.hp - adjusted, 0)
+        return base, adjusted, actual
 
     def heal(self, amount: int) -> int:
         """Increases the character's hp by the given amount, up to max_hp.
@@ -583,6 +589,24 @@ class Character:
             charisma=data["stats"]["charisma"],
             spellcasting_ability=data.get("spellcasting_ability", None),
         )
+
+        # Load resistances and vulnerabilities if present in the data.
+        if "resistances" in data:
+            for res in data["resistances"]:
+                try:
+                    char.resistances.add(DamageType[res.upper()])
+                except KeyError:
+                    warning(
+                        f"Invalid damage type '{res}' in resistances for {char.name}."
+                    )
+        if "vulnerabilities" in data:
+            for vuln in data["vulnerabilities"]:
+                try:
+                    char.vulnerabilities.add(DamageType[vuln.upper()])
+                except KeyError:
+                    warning(
+                        f"Invalid damage type '{vuln}' in vulnerabilities for {char.name}."
+                    )
 
         # Set the character as a player if specified.
         char.type = CharacterType[data.get("type", "ENEMY").upper()]

@@ -4,6 +4,7 @@ from rich.console import Console
 from utils import *
 from typing import Any
 from constants import *
+from damage import *
 
 console = Console()
 
@@ -103,14 +104,8 @@ class ModifierEffect(Effect):
             ), f"Modifier key '{k}' must be of type BonusType."
             if k == BonusType.DAMAGE:
                 assert isinstance(
-                    v, dict
-                ), f"Modifier value for '{k}' must be a dictionary."
-                assert (
-                    "damage_roll" in v
-                ), f"Modifier value for '{k}' must contain 'damage_roll'."
-                assert (
-                    "damage_type" in v
-                ), f"Modifier value for '{k}' must contain 'damage_type'."
+                    v, DamageComponent
+                ), f"Modifier value for '{k}' must be a DamageComponent."
             elif k == BonusType.ATTACK:
                 assert isinstance(
                     v, str
@@ -149,10 +144,24 @@ class Buff(ModifierEffect):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Buff":
         assert data is not None, "Data must not be None."
+        modifiers: dict[BonusType, Any] = {}
+        for k, v in data["modifiers"].items():
+            key = BonusType[k.upper()]
+            if key in [
+                BonusType.HP,
+                BonusType.MIND,
+                BonusType.AC,
+                BonusType.INITIATIVE,
+            ]:
+                modifiers[key] = int(v)
+            elif key == BonusType.DAMAGE:
+                modifiers[key] = DamageComponent.from_dict(v)
+            elif key == BonusType.ATTACK:
+                modifiers[key] = str(v)
         return Buff(
             name=data["name"],
             max_duration=data["max_duration"],
-            modifiers={BonusType[k.upper()]: v for k, v in data["modifiers"].items()},
+            modifiers=modifiers,
         )
 
 
@@ -168,10 +177,24 @@ class Debuff(ModifierEffect):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Debuff":
         assert data is not None, "Data must not be None."
+        modifiers: dict[BonusType, Any] = {}
+        for k, v in data["modifiers"].items():
+            key = BonusType[k.upper()]
+            if key in [
+                BonusType.HP,
+                BonusType.MIND,
+                BonusType.AC,
+                BonusType.INITIATIVE,
+            ]:
+                modifiers[key] = int(v)
+            elif key == BonusType.DAMAGE:
+                modifiers[key] = DamageComponent.from_dict(v)
+            elif key == BonusType.ATTACK:
+                modifiers[key] = str(v)
         return Debuff(
             name=data["name"],
             max_duration=data["max_duration"],
-            modifiers={BonusType[k.upper()]: v for k, v in data["modifiers"].items()},
+            modifiers=modifiers,
         )
 
 

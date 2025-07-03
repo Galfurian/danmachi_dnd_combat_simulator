@@ -4,30 +4,13 @@ from logging import debug, error
 from rich.console import Console
 from typing import Any, Optional
 
+from damage import *
 from effect import *
 from utils import *
 from constants import *
+from damage import *
 
 console = Console()
-
-
-class DamageComponent:
-    def __init__(self, damage_roll: str, damage_type: DamageType):
-        self.damage_roll: str = damage_roll
-        self.damage_type: DamageType = damage_type
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "damage_roll": self.damage_roll,
-            "damage_type": self.damage_type.name,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "DamageComponent":
-        return DamageComponent(
-            damage_roll=data["damage_roll"],
-            damage_type=DamageType[data["damage_type"]],
-        )
 
 
 class BaseAction:
@@ -68,6 +51,25 @@ class BaseAction:
         effect.apply(actor, target, mind_level)
         # Add the effect to the target's effects list.
         target.effect_manager.add_effect(actor, effect, mind_level)
+
+    def apply_effect_and_log(
+        self,
+        actor: Any,
+        target: Any,
+        effect: Effect,
+        mind_level: int = 0,
+    ) -> None:
+        """
+        Applies the effect to the target if alive, adds it to their effect manager,
+        and logs the application message with color and emoji.
+        """
+        if target.is_alive():
+            self.apply_effect(actor, target, effect, mind_level)
+            target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
+            effect_msg = f"        {get_effect_emoji(effect)} Effect "
+            effect_msg += apply_effect_color(effect, effect.name)
+            effect_msg += f" applied to {target_str}."
+            console.print(effect_msg, markup=True)
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
         """Checks if the target is valid for the action.
@@ -155,36 +157,20 @@ class WeaponAttack(BaseAction):
             return True
 
         # --- Outcome: HIT ---
-        total_damage: int = 0
-        damage_details: list[str] = []
 
         # First roll the attack damage from the weapon.
-        for component in self.damage:
-            damage_expr = substitute_variables(component.damage_roll, actor)
-            damage_amount = roll_expression(damage_expr, actor)
-            applied_damage = target.take_damage(damage_amount, component.damage_type)
-            total_damage += applied_damage
-            damage_str = apply_damage_type_color(
-                component.damage_type,
-                f"{applied_damage} {get_damage_type_emoji(component.damage_type)} ",
-            )
-            damage_str += f"({damage_expr})"
-            damage_details.append(damage_str)
+        total_damage, damage_details = roll_damage_components(
+            actor, target, self.damage
+        )
 
         # Then roll any additional damage from effects.
-        for bonus in actor.effect_manager.get_modifier(BonusType.DAMAGE):
-            roll_str = bonus["damage_roll"]
-            damage_type = DamageType[bonus["damage_type"]]
-            damage_expr = substitute_variables(roll_str, actor)
-            damage_amount = roll_expression(damage_expr, actor)
-            applied_damage = target.take_damage(damage_amount, damage_type)
-            total_damage += applied_damage
-            damage_str = apply_damage_type_color(
-                damage_type,
-                f"{applied_damage} {get_damage_type_emoji(damage_type)} ",
-            )
-            damage_str += f"({damage_expr})"
-            damage_details.append(damage_str)
+        bonus_total_damage, bonus_damage_details = roll_damage_components(
+            actor, target, actor.effect_manager.get_modifier(BonusType.DAMAGE)
+        )
+
+        # Add bonus damage to the total damage and details.
+        total_damage += bonus_total_damage
+        damage_details.extend(bonus_damage_details)
 
         console.print(
             f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
@@ -197,12 +183,8 @@ class WeaponAttack(BaseAction):
             markup=True,
         )
 
-        if self.effect and target.is_alive():
-            self.apply_effect(actor, target, self.effect)
-            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
-            effect_msg += apply_effect_color(self.effect, self.effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+        # Apply any effect.
+        self.apply_effect_and_log(actor, target, self.effect)
 
         if not target.is_alive():
             console.print(
@@ -441,12 +423,14 @@ class SpellAttack(Spell):
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # --- Build and roll attack expression ---
+
         attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
         for bonus_expr in actor.effect_manager.get_modifier(BonusType.ATTACK):
             attack_expr += f"+{bonus_expr}"
         attack_roll, attack_desc = roll_and_describe(attack_expr, actor, mind_level)
 
         # --- Miss logic ---
+
         if attack_roll < target.AC:
             console.print(
                 f"    ❌ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
@@ -456,20 +440,13 @@ class SpellAttack(Spell):
             return True
 
         # --- Hit logic ---
-        total_damage: int = 0
-        damage_details: list[str] = []
+
         # First roll the attack damage from the weapon.
-        for component in self.damage:
-            damage_expr = substitute_variables(component.damage_roll, actor, mind_level)
-            damage_amount = roll_expression(damage_expr, actor, mind_level)
-            applied_damage = target.take_damage(damage_amount, component.damage_type)
-            total_damage += applied_damage
-            damage_str = apply_damage_type_color(
-                component.damage_type,
-                f"{applied_damage} {get_damage_type_emoji(component.damage_type)} ",
-            )
-            damage_str += f"({damage_expr})"
-            damage_details.append(damage_str)
+        total_damage, damage_details = roll_damage_components(
+            actor, target, self.damage, mind_level
+        )
+
+        # Print the damage breakdown.
         console.print(
             f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
             f"rolled ({attack_desc}) [white]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
@@ -480,12 +457,10 @@ class SpellAttack(Spell):
             + " + ".join(damage_details),
             markup=True,
         )
-        if self.effect and target.is_alive():
-            self.apply_effect(actor, target, self.effect, mind_level)
-            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
-            effect_msg += apply_effect_color(self.effect, self.effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+
+        # Apply any effect.
+        self.apply_effect_and_log(actor, target, self.effect)
+
         if not target.is_alive():
             console.print(
                 f"        [bold red]{target_str} has been defeated![/]",
@@ -650,12 +625,9 @@ class SpellHeal(Spell):
             f"heals for [bold green]{actual_healed}[/] ([white]{heal_desc}[/]).",
             markup=True,
         )
-        if self.effect:
-            self.apply_effect(actor, target, self.effect, mind_level)
-            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
-            effect_msg += apply_effect_color(self.effect, self.effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+
+        # Apply any effect.
+        self.apply_effect_and_log(actor, target, self.effect, mind_level)
 
         return True
 
@@ -784,13 +756,8 @@ class SpellBuff(Spell):
             markup=True,
         )
 
-        # Apply the effect
-        if self.effect:
-            self.apply_effect(actor, target, self.effect, mind_level)
-            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
-            effect_msg += apply_effect_color(self.effect, self.effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+        # Apply any effect.
+        self.apply_effect_and_log(actor, target, self.effect, mind_level)
 
         return True
 
@@ -890,19 +857,13 @@ class SpellDebuff(Spell):
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
-        # Informational log
         console.print(
             f"    {actor_str} casts [bold]{self.name}[/] on {target_str}.",
             markup=True,
         )
 
-        # Apply the debuff effect
-        if self.effect:
-            self.apply_effect(actor, target, self.effect, mind_level)
-            effect_msg = f"        " + get_effect_emoji(self.effect) + " Effect "
-            effect_msg += apply_effect_color(self.effect, self.effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+        # Apply any effect.
+        self.apply_effect_and_log(actor, target, self.effect, mind_level)
 
         return True
 

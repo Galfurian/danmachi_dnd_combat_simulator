@@ -340,6 +340,9 @@
             "wisdom": 12,
             "charisma": 8
         },
+        "resistances": [
+            "FIRE"
+        ],
         "spellcasting_ability": "intelligence",
         "actions": [
             {

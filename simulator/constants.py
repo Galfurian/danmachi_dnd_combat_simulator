@@ -17,8 +17,8 @@ class BonusType(Enum):
     HP = auto()
     MIND = auto()
     AC = auto()
-    ATTACK = auto()
     INITIATIVE = auto()
+    ATTACK = auto()
     DAMAGE = auto()
 
 
