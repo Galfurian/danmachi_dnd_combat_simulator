@@ -160,18 +160,18 @@ class WeaponAttack(BaseAction):
         # --- Outcome: HIT ---
 
         # First roll the attack damage from the weapon.
-        total_damage, damage_details = roll_damage_components(
+        total_damage, damage_details = roll_damage_components_no_mind(
             actor, target, self.damage
         )
 
         # Then roll any additional damage from effects.
-        bonus_total_damage, bonus_damage_details = roll_damage_components(
-            actor, target, actor.effect_manager.get_modifier(BonusType.DAMAGE)
+        bonus_damage, bonus_details = roll_damage_components(
+            actor, target, actor.effect_manager.get_damage_modifiers()
         )
 
-        # Add bonus damage to the total damage and details.
-        total_damage += bonus_total_damage
-        damage_details.extend(bonus_damage_details)
+        # Extend the total damage and details with bonus damage.
+        total_damage += bonus_damage
+        damage_details.extend(bonus_details)
 
         console.print(
             f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
@@ -442,9 +442,12 @@ class SpellAttack(Spell):
 
         # --- Hit logic ---
 
+        # Create a list of tuples with damage components and mind levels.
+        damage_components = [(component, mind_level) for component in self.damage]
+
         # First roll the attack damage from the weapon.
         total_damage, damage_details = roll_damage_components(
-            actor, target, self.damage, mind_level
+            actor, target, damage_components
         )
 
         # Print the damage breakdown.
@@ -793,13 +796,16 @@ class SpellBuff(Spell):
             dict[BonusType, str]: A dictionary mapping BonusType to expressions with variables substituted.
         """
         expressions: dict[BonusType, str] = {}
-        for bonus_type, expr in self.effect.modifiers.items():
-            if bonus_type == BonusType.DAMAGE:
+        for bonus_type, value in self.effect.modifiers.items():
+            if isinstance(value, DamageComponent):
                 expressions[bonus_type] = substitute_variables(
-                    expr["damage_roll"], actor, mind_level
+                    value.damage_roll, actor, mind_level
                 )
+            elif isinstance(value, str):
+                # If the value is a string, substitute variables directly.
+                expressions[bonus_type] = substitute_variables(value, actor, mind_level)
             else:
-                expressions[bonus_type] = substitute_variables(expr, actor, mind_level)
+                expressions[bonus_type] = value
         return expressions
 
     def to_dict(self):

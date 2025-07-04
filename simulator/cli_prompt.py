@@ -439,7 +439,7 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row(
                 str(i),
                 action.name,
-                apply_action_type_color(action.type, action.name),
+                apply_action_type_color(action.type, action.type.name.title()),
                 apply_action_category_color(
                     action.category, action.category.name.title()
                 ),

@@ -1,4 +1,4 @@
-from typing import Any, Iterator
+from typing import Any, Generator, Iterator
 from effect import *
 from constants import *
 
@@ -59,26 +59,25 @@ class EffectManager:
                 modifier for modifier, _ in self._iterate_modifiers_by_type(bonus_type)
             ]
         if bonus_type == BonusType.DAMAGE:
-            consume_on_hit: list[dict[str, str]] = []
-            best_by_type: dict[DamageType, dict[str, str]] = {}
+            consume_on_hit: list[DamageComponent] = []
+            best_by_type: dict[DamageType, DamageComponent] = {}
             for modifier, ae in self._iterate_melee_damage_modifiers():
-                # Get the damage type and roll from the bonus.
-                dmg_type, dmg_roll = modifier["damage_type"], modifier["damage_roll"]
-
                 # Consume on hit effects are handled separately.
                 if ae.consume_on_hit:
                     consume_on_hit.append(modifier)
                     ae.consume_on_hit = False
                     continue
-
-                # If the damage type is not in the best_by_type, add it.
-                new_max = get_max_roll(dmg_roll, self, 1)
-                current = best_by_type.get(dmg_type)
+                # Compute the maximum roll for the modifier.
+                new_max = get_max_roll(modifier.damage_roll, self, 1)
+                # Get the current best modifier for this damage type.
+                current = best_by_type.get(modifier.damage_type)
+                # Compute the maximum roll for the current best modifier.
                 current_max = (
-                    get_max_roll(current["damage_roll"], self, 1) if current else -1
+                    get_max_roll(current.damage_roll, self, 1) if current else -1
                 )
+                # If the new modifier is better, update the best_by_type dictionary.
                 if new_max > current_max:
-                    best_by_type[dmg_type] = modifier
+                    best_by_type[modifier.damage_type] = modifier
             return list(best_by_type.values()) + consume_on_hit
         raise ValueError(f"Unknown bonus type: {bonus_type}")
 
@@ -130,6 +129,31 @@ class EffectManager:
 
         return False
 
+    def get_damage_modifiers(self) -> list[Tuple[DamageComponent, int]]:
+        """Returns a list of all damage modifiers plus the mind used to apply them."""
+        consume_on_hit: list[Tuple[DamageComponent, int]] = []
+        best_by_type: dict[DamageType, Tuple[DamageComponent, int]] = {}
+        for modifier, ae in self._iterate_melee_damage_modifiers():
+            # Consume on hit effects are handled separately.
+            if ae.consume_on_hit:
+                consume_on_hit.append((modifier, ae.mind_level))
+                ae.consume_on_hit = False
+                continue
+            # Compute the maximum roll for the modifier.
+            new_max = get_max_roll(modifier.damage_roll, self, 1)
+            # Get the current best modifier for this damage type.
+            current = best_by_type.get(modifier.damage_type)
+            # Compute the maximum roll for the current best modifier.
+            current_max = (
+                get_max_roll(current[0].damage_roll, self, current[1])
+                if current
+                else -1
+            )
+            # If the new modifier is better, update the best_by_type dictionary.
+            if new_max > current_max:
+                best_by_type[modifier.damage_type] = (modifier, ae.mind_level)
+        return list(best_by_type.values()) + consume_on_hit
+
     def turn_update(self):
         """Updates the active effects at the end of each turn."""
         for ae in self.active_effects:
@@ -165,15 +189,22 @@ class EffectManager:
             ):
                 yield ae
 
-    def _iterate_modifiers_by_type(self, bonus_type: BonusType):
+    def _iterate_modifiers_by_type(
+        self, bonus_type: BonusType
+    ) -> Generator[tuple[Any, ActiveEffect], Any, None]:
         for ae in self._iterate_active_modifiers_effects(bonus_type):
+            assert isinstance(ae.effect, ModifierEffect)
             yield ae.effect.modifiers[bonus_type], ae
 
-    def _iterate_melee_damage_modifiers(self):
+    def _iterate_melee_damage_modifiers(
+        self,
+    ) -> Generator[tuple[DamageComponent, ActiveEffect], Any, None]:
         for modifier, ae in self._iterate_modifiers_by_type(BonusType.DAMAGE):
             yield modifier, ae
 
-    def _iterate_consume_on_hit_modifiers(self):
+    def _iterate_consume_on_hit_modifiers(
+        self,
+    ) -> Generator[tuple[DamageComponent, ActiveEffect], Any, None]:
         """Yield (modifier_dict, active_effect) for one-shot damage riders."""
         for modifier, ae in self._iterate_melee_damage_modifiers():
             if ae.consume_on_hit:
