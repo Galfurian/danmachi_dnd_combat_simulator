@@ -42,10 +42,10 @@
             "name": "Fine Shortsword",
             "type": "STANDARD",
             "hands_required": 1,
-            "attack_roll": "1D20+[DEX]+1",
+            "attack_roll": "[DEX] + 1",
             "damage": [
                 {
-                    "damage_roll": "1D6+[DEX]+1",
+                    "damage_roll": "1D6 + [DEX] + 1",
                     "damage_type": "PIERCING"
                 }
             ]

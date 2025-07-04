@@ -225,28 +225,40 @@ def get_max_roll(
 
 def roll_and_describe(
     expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
-) -> tuple[int, str]:
+) -> tuple[int, str, list[int]]:
+    """Rolls a dice expression and returns the total, a description, and the individual rolls.
+
+    Args:
+        expr (str): The dice expression to roll.
+        entity (Optional[Any], optional): The entity rolling the dice. Defaults to None.
+        mind (Optional[int], optional): The mind level to use for the roll. Defaults to 1.
+
+    Returns:
+        tuple[int, str, list[int]]: The total roll, a description of the roll, and the individual rolls.
+    """
     if not expr:
-        return 0, ""
+        return 0, "", []
     expr = expr.upper().strip()
     if expr == "":
-        return 0, ""
+        return 0, "", []
     if expr.isdigit():
-        return int(expr), f"{expr} = {expr}"
+        return int(expr), f"{expr} = {expr}", []
     original_expr = expr
     substituted = substitute_variables(expr, entity, mind)
     dice_terms = extract_dice_terms(substituted)
+    dice_rolls: list[int] = []
     breakdown = substituted
     for term in dice_terms:
         total, _ = parse_term_and_roll_dice(term)
         breakdown = breakdown.replace(term, str(total), 1)
+        dice_rolls.append(total)
     try:
         result = int(eval(breakdown, {"__builtins__": None}, math.__dict__))
         comment = f"{substituted} → {breakdown}"
-        return result, comment
+        return result, comment, dice_rolls
     except Exception as e:
         warning(f"Failed to evaluate '{breakdown}': {e}")
-        return 0, f"{original_expr} = ERROR"
+        return 0, f"{original_expr} = ERROR", []
 
 
 def evaluate_expression(
