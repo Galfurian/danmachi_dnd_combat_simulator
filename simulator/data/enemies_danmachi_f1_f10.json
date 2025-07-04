@@ -20,10 +20,10 @@
                 "name": "Rusty Dagger",
                 "type": "STANDARD",
                 "hands_required": 1,
-                "attack_roll": "1D20+[DEX]",
+                "attack_roll": "+ [DEX]",
                 "damage": [
                     {
-                        "damage_roll": "1D4+[DEX]",
+                        "damage_roll": "1D4 + [DEX]",
                         "damage_type": "PIERCING"
                     }
                 ]
@@ -52,10 +52,10 @@
                 "name": "Clawed Gauntlets",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D6+[STR]",
+                        "damage_roll": "1D6 + [STR]",
                         "damage_type": "SLASHING"
                     }
                 ]
@@ -84,10 +84,10 @@
                 "name": "Bite",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D6+[STR]",
+                        "damage_roll": "1D6 + [STR]",
                         "damage_type": "PIERCING"
                     }
                 ]
@@ -116,10 +116,10 @@
                 "name": "Shadow Claws",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "1D20+[DEX]",
+                "attack_roll": "+ [DEX]",
                 "damage": [
                     {
-                        "damage_roll": "1D6+[DEX]",
+                        "damage_roll": "1D6 + [DEX]",
                         "damage_type": "SLASHING"
                     }
                 ]
@@ -148,10 +148,10 @@
                 "name": "Mandibles",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D8+[STR]",
+                        "damage_roll": "1D8 + [STR]",
                         "damage_type": "PIERCING"
                     }
                 ]
@@ -180,7 +180,7 @@
                 "name": "Acidic Touch",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
                         "damage_roll": "1D6",
@@ -237,10 +237,10 @@
                 "name": "Greatclub",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D10+[STR]",
+                        "damage_roll": "1D10 + [STR]",
                         "damage_type": "BLUDGEONING"
                     }
                 ]
@@ -269,10 +269,10 @@
                 "name": "Fangs",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D8+[STR]",
+                        "damage_roll": "1D8 + [STR]",
                         "damage_type": "PIERCING"
                     }
                 ]
@@ -282,10 +282,10 @@
                 "name": "Pounce",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D6+[STR]",
+                        "damage_roll": "1D6 + [STR]",
                         "damage_type": "BLUDGEONING"
                     }
                 ]
@@ -314,10 +314,10 @@
                 "name": "Massive Fists",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D12+[STR]",
+                        "damage_roll": "1D12 + [STR]",
                         "damage_type": "BLUDGEONING"
                     }
                 ]
@@ -350,10 +350,10 @@
                 "name": "Claws",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D8+[STR]",
+                        "damage_roll": "1D8 + [STR]",
                         "damage_type": "SLASHING"
                     }
                 ]
@@ -363,10 +363,10 @@
                 "name": "Tail Whip",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "1D20+[STR]",
+                "attack_roll": "+ [STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D10+[STR]",
+                        "damage_roll": "1D10 + [STR]",
                         "damage_type": "BLUDGEONING"
                     }
                 ]

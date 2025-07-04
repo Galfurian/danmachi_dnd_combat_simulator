@@ -72,6 +72,17 @@ class BaseAction:
             effect_msg += f" applied to {target_str}."
             console.print(effect_msg, markup=True)
 
+    def roll_attack_with_crit(
+        self, actor, attack_bonus_expr: str, bonus_list: list[str]
+    ) -> Tuple[int, str, int]:
+        expr = "1D20"
+        if attack_bonus_expr:
+            expr += f" + {attack_bonus_expr}"
+        for bonus in bonus_list:
+            expr += f" + {bonus}"
+        total, desc, rolls = roll_and_describe(expr, actor)
+        return total, desc, rolls[0] if rolls else 0
+
     def is_valid_target(self, actor: Any, target: Any) -> bool:
         """Checks if the target is valid for the action.
 
@@ -143,16 +154,32 @@ class WeaponAttack(BaseAction):
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
 
         # --- Build & resolve attack roll ---
-        attack_expr = self.attack_roll
-        for bonus_expr in actor.effect_manager.get_modifier(BonusType.ATTACK):
-            attack_expr += f"+{bonus_expr}"
-        attack_roll, attack_roll_desc = roll_and_describe(attack_expr, actor)
+
+        # Roll the attack.
+        attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
+            actor,
+            self.attack_roll,
+            actor.effect_manager.get_modifier(BonusType.ATTACK),
+        )
+
+        # Detect crit and fumble.
+        is_crit = d20_roll > 15
+        is_fumble = d20_roll == 1
 
         # --- Outcome: MISS ---
-        if attack_roll < target.AC:
+
+        if is_fumble:
             console.print(
                 f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]fumble![/]",
+                markup=True,
+            )
+            return True
+
+        if attack_total < target.AC and not is_crit:
+            console.print(
+                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
+                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
                 markup=True,
             )
             return True
@@ -160,22 +187,31 @@ class WeaponAttack(BaseAction):
         # --- Outcome: HIT ---
 
         # First roll the attack damage from the weapon.
-        total_damage, damage_details = roll_damage_components_no_mind(
+        base_damage, base_damage_details = roll_damage_components_no_mind(
             actor, target, self.damage
         )
 
+        # If it's a crit, double the base damage.
+        if is_crit:
+            base_damage *= 2
+
         # Then roll any additional damage from effects.
-        bonus_damage, bonus_details = roll_damage_components(
+        bonus_damage, bonus_damage_details = roll_damage_components(
             actor, target, actor.effect_manager.get_damage_modifiers()
         )
 
         # Extend the total damage and details with bonus damage.
-        total_damage += bonus_damage
-        damage_details.extend(bonus_details)
+        total_damage = base_damage + bonus_damage
+        damage_details = base_damage_details + bonus_damage_details
 
         console.print(
-            f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-            f"rolled ({attack_roll_desc}) {attack_roll} vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+            (
+                f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
+                f"rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] — "
+                f"[magenta]crit![/]"
+                if is_crit
+                else "[green]hit![/]"
+            ),
             markup=True,
         )
         console.print(
@@ -425,22 +461,38 @@ class SpellAttack(Spell):
 
         # --- Build and roll attack expression ---
 
-        attack_expr = "1D20 + " + str(actor.get_spell_attack_bonus(self.level))
-        for bonus_expr in actor.effect_manager.get_modifier(BonusType.ATTACK):
-            attack_expr += f"+{bonus_expr}"
-        attack_roll, attack_desc = roll_and_describe(attack_expr, actor, mind_level)
+        # Roll the attack.
+        attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
+            actor,
+            actor.get_spell_attack_bonus(self.level),
+            actor.effect_manager.get_modifier(BonusType.ATTACK),
+        )
 
-        # --- Miss logic ---
+        # Detect crit and fumble.
+        is_crit = d20_roll == 20
+        is_fumble = d20_roll == 1
 
-        if attack_roll < target.AC:
+        # --- Outcome: FUMBLE ---
+
+        if is_fumble:
             console.print(
-                f"    ❌ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-                f"rolled ({attack_desc}) [red]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
+                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]fumble![/]",
                 markup=True,
             )
             return True
 
-        # --- Hit logic ---
+        # --- Outcome: MISS ---
+
+        if attack_total < target.AC and not is_crit:
+            console.print(
+                f"    ❌ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
+                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
+                markup=True,
+            )
+            return True
+
+        # --- Outcome: HIT ---
 
         # Create a list of tuples with damage components and mind levels.
         damage_components = [(component, mind_level) for component in self.damage]
@@ -453,7 +505,7 @@ class SpellAttack(Spell):
         # Print the damage breakdown.
         console.print(
             f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-            f"rolled ({attack_desc}) [white]{attack_roll}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
+            f"rolled ({attack_roll_desc}) [white]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
             markup=True,
         )
         console.print(
@@ -619,7 +671,7 @@ class SpellHeal(Spell):
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Compute the healing based on the mind_cost spent and roll
-        heal_value, heal_desc = roll_and_describe(self.heal_roll, actor, mind_level)
+        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, actor, mind_level)
 
         # Apply healing to the target
         actual_healed = target.heal(heal_value)

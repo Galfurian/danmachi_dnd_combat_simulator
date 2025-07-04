@@ -41,7 +41,7 @@ def roll_damage_component(
         Tuple[int, str]: The damage dealt and a description string.
     """
     # Substitute variables in the damage roll expression.
-    dmg_value, dmg_desc = roll_and_describe(
+    dmg_value, dmg_desc, _ = roll_and_describe(
         damage_component[0].damage_roll, actor, damage_component[1]
     )
     assert (
