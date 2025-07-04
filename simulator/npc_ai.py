@@ -163,6 +163,10 @@ def choose_best_weapon_action(
     best_target = None
 
     for weapon in weapons:
+
+        if npc.is_on_cooldown(weapon):
+            continue
+
         sorted_targets = _sort_for_weapon_attack(npc, weapon, enemies)
 
         for target in sorted_targets:
@@ -212,6 +216,9 @@ def choose_best_attack_spell_action(
 
     for spell in spells:
         if not spell.mind_cost:
+            continue
+
+        if npc.is_on_cooldown(spell):
             continue
 
         sorted_targets = _sort_for_spell_attack(npc, spell, enemies)
@@ -271,6 +278,9 @@ def choose_best_healing_spell_action(
         if not spell.mind_cost:
             continue
 
+        if npc.is_on_cooldown(spell):
+            continue
+
         sorted_targets = _sort_for_spell_heal(npc, spell, allies)
 
         for mind_level in spell.mind_cost:
@@ -328,6 +338,9 @@ def choose_best_buff_spell_action(
         if not spell.mind_cost:
             continue
 
+        if npc.is_on_cooldown(spell):
+            continue
+
         sorted_targets = _sort_for_spell_buff(npc, spell, allies)
 
         for mind_level in spell.mind_cost:
@@ -380,6 +393,9 @@ def choose_best_debuff_spell_action(
 
     for spell in spells:
         if not spell.mind_cost:
+            continue
+
+        if npc.is_on_cooldown(spell):
             continue
 
         sorted_targets = _sort_for_spell_debuff(npc, spell, enemies)

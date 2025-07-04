@@ -133,6 +133,8 @@ class Character:
         # Resistances and vulnerabilities to damage types.
         self.resistances: set[DamageType] = set()
         self.vulnerabilities: set[DamageType] = set()
+        # Keep track of abilitiies cooldown.
+        self.cooldowns: dict[str, int] = {}
         # Maximum HP and Mind.
         self.hp: int = self.HP_MAX
         self.mind: int = self.MIND_MAX
@@ -515,11 +517,39 @@ class Character:
         return False
 
     def turn_update(self):
-        """
-        Updates the duration of all active effects. Removes expired effects.
-        This should be called at the end of a character's turn or a round.
-        """
+        """Updates the duration of all active effects, and cooldowns. Removes
+        expired effects. This should be called at the end of a character's turn
+        or a round."""
         self.effect_manager.turn_update()
+        # Iterate the cooldowns and decrement them.
+        for action_name in list(self.cooldowns.keys()):
+            if self.cooldowns[action_name] > 0:
+                self.cooldowns[action_name] -= 1
+        # Clear expired cooldowns.
+        self.cooldowns = {
+            action_name: cd for action_name, cd in self.cooldowns.items() if cd > 0
+        }
+
+    def add_cooldown(self, action: BaseAction, duration: int):
+        """Adds a cooldown to an action.
+
+        Args:
+            action_name (BaseAction): The action to add a cooldown to.
+            duration (int): The duration of the cooldown in turns.
+        """
+        if action.name not in self.cooldowns:
+            self.cooldowns[action.name] = duration
+
+    def is_on_cooldown(self, action: BaseAction) -> bool:
+        """Checks if an action is currently on cooldown.
+
+        Args:
+            action (BaseAction): The action to check.
+
+        Returns:
+            bool: True if the action is on cooldown, False otherwise.
+        """
+        return self.cooldowns.get(action.name, 0) > 0
 
     def get_status_line(self):
         effects = (

@@ -88,8 +88,13 @@ class PromptToolkitCLI(PlayerInterface):
         actions = [
             action
             for action in allowed
-            if (action.type == ActionType.STANDARD and has_standard_action)
-            or (action.type == ActionType.BONUS and has_bonus_action)
+            if (
+                action.type == ActionType.STANDARD
+                and has_standard_action
+                or action.type == ActionType.BONUS
+                and has_bonus_action
+            )
+            and not actor.is_on_cooldown(action)
         ]
         if not actions:
             return None
@@ -300,8 +305,13 @@ class PromptToolkitCLI(PlayerInterface):
         spells: list[Spell] = [
             spell
             for spell in allowed
-            if (spell.type == ActionType.STANDARD and has_standard_action)
-            or (spell.type == ActionType.BONUS and has_bonus_action)
+            if (
+                spell.type == ActionType.STANDARD
+                and has_standard_action
+                or spell.type == ActionType.BONUS
+                and has_bonus_action
+            )
+            and not actor.is_on_cooldown(spell)
         ]
         # Generate a table of spells.
         tbl = self._create_spell_table(spells)

@@ -200,6 +200,7 @@
             "name": "Shatter",
             "type": "STANDARD",
             "level": 2,
+            "cooldown": 2,
             "mind_cost": [
                 2,
                 4,

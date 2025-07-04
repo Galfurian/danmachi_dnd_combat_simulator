@@ -14,10 +14,13 @@ console = Console()
 
 
 class BaseAction:
-    def __init__(self, name: str, type: ActionType, category: ActionCategory):
+    def __init__(
+        self, name: str, type: ActionType, category: ActionCategory, cooldown: int
+    ):
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
+        self.cooldown: int = cooldown
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Abstract method for executables.
@@ -95,6 +98,7 @@ class BaseAction:
             "name": self.name,
             "type": self.type.name,
             "category": self.category.name,
+            "cooldown": self.cooldown,
         }
 
     @staticmethod
@@ -125,12 +129,13 @@ class WeaponAttack(BaseAction):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
     ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE)
+        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown)
         self.hands_required: int = hands_required
         self.attack_roll: str = attack_roll
         self.damage: list[DamageComponent] = damage
@@ -141,6 +146,11 @@ class WeaponAttack(BaseAction):
         target_str = apply_character_type_color(target.type, target.name)
 
         debug(f"{actor.name} attempts a {self.name} on {target.name}.")
+
+        # If the action has a cooldown, add it to the actor's cooldowns.
+        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+        if self.cooldown > 0:
+            actor.add_cooldown(self, self.cooldown)
 
         # --- Build & resolve attack roll ---
         attack_expr = self.attack_roll
@@ -287,6 +297,7 @@ class WeaponAttack(BaseAction):
         return WeaponAttack(
             name=data["name"],
             type=ActionType[data["type"]],
+            cooldown=data.get("cooldown", 0),
             hands_required=data["hands_required"],
             attack_roll=data["attack_roll"],
             damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
@@ -299,12 +310,13 @@ class Spell(BaseAction):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         level: int,
         mind_cost: list[int],
         category: ActionCategory,
         multi_target_expr: str = "",
     ):
-        super().__init__(name, type, category)
+        super().__init__(name, type, category, cooldown)
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
         self.multi_target_expr: str = multi_target_expr
@@ -394,6 +406,7 @@ class SpellAttack(Spell):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         level: int,
         mind_cost: list[int],
         damage: list[DamageComponent],
@@ -403,6 +416,7 @@ class SpellAttack(Spell):
         super().__init__(
             name,
             type,
+            cooldown,
             level,
             mind_cost,
             ActionCategory.OFFENSIVE,
@@ -416,9 +430,15 @@ class SpellAttack(Spell):
         Executes a spell attack from the actor to the target with breakdown logs.
         """
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
+
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
             return False
+
+        # If the action has a cooldown, add it to the actor's cooldowns.
+        assert not actor.is_on_cooldown(self), "Action is on cooldown."
+        if self.cooldown > 0:
+            actor.add_cooldown(self, self.cooldown)
 
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
@@ -563,6 +583,7 @@ class SpellAttack(Spell):
         return SpellAttack(
             name=data["name"],
             type=ActionType[data["type"]],
+            cooldown=data.get("cooldown", 0),
             level=data["level"],
             mind_cost=data["mind_cost"],
             damage=[
@@ -578,6 +599,7 @@ class SpellHeal(Spell):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         level: int,
         mind_cost: list[int],
         heal_roll: str,
@@ -585,7 +607,13 @@ class SpellHeal(Spell):
         multi_target_expr: str = "",
     ):
         super().__init__(
-            name, type, level, mind_cost, ActionCategory.HEALING, multi_target_expr
+            name,
+            type,
+            cooldown,
+            level,
+            mind_cost,
+            ActionCategory.HEALING,
+            multi_target_expr,
         )
         self.heal_roll: str = heal_roll
         self.effect: Optional[Effect] = effect
@@ -610,6 +638,11 @@ class SpellHeal(Spell):
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
             return False
+
+        # If the action has a cooldown, add it to the actor's cooldowns.
+        assert not actor.is_on_cooldown(self), "Action is on cooldown."
+        if self.cooldown > 0:
+            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
@@ -708,6 +741,7 @@ class SpellHeal(Spell):
         return SpellHeal(
             name=data["name"],
             type=ActionType[data["type"]],
+            cooldown=data.get("cooldown", 0),
             level=data["level"],
             mind_cost=data["mind_cost"],
             heal_roll=data["heal_roll"],
@@ -721,13 +755,20 @@ class SpellBuff(Spell):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         level: int,
         mind_cost: list[int],
         effect: Buff,
         multi_target_expr: str = "",
     ):
         super().__init__(
-            name, type, level, mind_cost, ActionCategory.BUFF, multi_target_expr
+            name,
+            type,
+            cooldown,
+            level,
+            mind_cost,
+            ActionCategory.BUFF,
+            multi_target_expr,
         )
         self.effect: Buff = effect
         # Ensure the effect is provided.
@@ -746,6 +787,11 @@ class SpellBuff(Spell):
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
             return False
+
+        # If the action has a cooldown, add it to the actor's cooldowns.
+        assert not actor.is_on_cooldown(self), "Action is on cooldown."
+        if self.cooldown > 0:
+            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
@@ -821,6 +867,7 @@ class SpellBuff(Spell):
         return SpellBuff(
             name=data["name"],
             type=ActionType[data["type"]],
+            cooldown=data.get("cooldown", 0),
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Buff.from_dict(data["effect"]),
@@ -833,13 +880,20 @@ class SpellDebuff(Spell):
         self,
         name: str,
         type: ActionType,
+        cooldown: int,
         level: int,
         mind_cost: list[int],
         effect: Debuff,
         multi_target_expr: str = "",
     ):
         super().__init__(
-            name, type, level, mind_cost, ActionCategory.DEBUFF, multi_target_expr
+            name,
+            type,
+            cooldown,
+            level,
+            mind_cost,
+            ActionCategory.DEBUFF,
+            multi_target_expr,
         )
         self.effect: Debuff = effect
         # Ensure the effect is provided.
@@ -858,6 +912,11 @@ class SpellDebuff(Spell):
         if actor.mind < mind_level:
             error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
             return False
+
+        # If the action has a cooldown, add it to the actor's cooldowns.
+        assert not actor.is_on_cooldown(self), "Action is on cooldown."
+        if self.cooldown > 0:
+            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
@@ -929,6 +988,7 @@ class SpellDebuff(Spell):
         return SpellDebuff(
             name=data["name"],
             type=ActionType[data["type"]],
+            cooldown=data.get("cooldown", 0),
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Debuff.from_dict(data["effect"]),
