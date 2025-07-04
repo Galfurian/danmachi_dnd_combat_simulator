@@ -163,7 +163,7 @@ class WeaponAttack(BaseAction):
         )
 
         # Detect crit and fumble.
-        is_crit = d20_roll > 15
+        is_crit = d20_roll == 20
         is_fumble = d20_roll == 1
 
         # --- Outcome: MISS ---
