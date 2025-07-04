@@ -35,7 +35,7 @@ class BaseAction:
         self,
         actor: Any,
         target: Any,
-        effect: "Effect",
+        effect: Optional[Effect],
         mind_level: Optional[int] = 0,
     ):
         """Applies an effect to a target character.
@@ -46,24 +46,25 @@ class BaseAction:
             effect (Effect): The effect to apply.
             mind_level (int, optional): The mind_cost level to use for the effect. Defaults to 0.
         """
-        debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
-        # Apply the effect to the target.
-        effect.apply(actor, target, mind_level)
-        # Add the effect to the target's effects list.
-        target.effect_manager.add_effect(actor, effect, mind_level)
+        if effect:
+            debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
+            # Apply the effect to the target.
+            effect.apply(actor, target, mind_level)
+            # Add the effect to the target's effects list.
+            target.effect_manager.add_effect(actor, effect, mind_level)
 
     def apply_effect_and_log(
         self,
         actor: Any,
         target: Any,
-        effect: Effect,
-        mind_level: int = 0,
+        effect: Optional[Effect],
+        mind_level: Optional[int] = 0,
     ) -> None:
         """
         Applies the effect to the target if alive, adds it to their effect manager,
         and logs the application message with color and emoji.
         """
-        if target.is_alive():
+        if effect and target.is_alive():
             self.apply_effect(actor, target, effect, mind_level)
             target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
             effect_msg = f"        {get_effect_emoji(effect)} Effect "
@@ -459,7 +460,7 @@ class SpellAttack(Spell):
         )
 
         # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect)
+        self.apply_effect_and_log(actor, target, self.effect, mind_level)
 
         if not target.is_alive():
             console.print(
@@ -793,7 +794,12 @@ class SpellBuff(Spell):
         """
         expressions: dict[BonusType, str] = {}
         for bonus_type, expr in self.effect.modifiers.items():
-            expressions[bonus_type] = substitute_variables(expr, actor, mind_level)
+            if bonus_type == BonusType.DAMAGE:
+                expressions[bonus_type] = substitute_variables(
+                    expr["damage_roll"], actor, mind_level
+                )
+            else:
+                expressions[bonus_type] = substitute_variables(expr, actor, mind_level)
         return expressions
 
     def to_dict(self):

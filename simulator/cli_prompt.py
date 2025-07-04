@@ -267,6 +267,8 @@ class PromptToolkitCLI(PlayerInterface):
                     prompt += (
                         f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
                     )
+                    if spell.effect.consume_on_hit:
+                        prompt += " (one-shot)"
                     prompt += max_targets + "\n"
             elif isinstance(spell, SpellDebuff):
                 for bonus, modifier in spell.get_modifier_expressions(
@@ -438,7 +440,9 @@ class PromptToolkitCLI(PlayerInterface):
                 str(i),
                 action.name,
                 apply_action_type_color(action.type, action.name),
-                apply_action_category_color(action.category, action.category.name.title()),
+                apply_action_category_color(
+                    action.category, action.category.name.title()
+                ),
             )
         return tbl
 
@@ -476,8 +480,10 @@ class PromptToolkitCLI(PlayerInterface):
             tbl.add_row(
                 str(i),
                 spell.name,
-                apply_action_type_color(spell.type, spell.name),
-                apply_action_category_color(spell.category, spell.category.name.title()),
+                apply_action_type_color(spell.type, spell.type.name.title()),
+                apply_action_category_color(
+                    spell.category, spell.category.name.title()
+                ),
                 str(
                     spell.mind_cost[0] if len(spell.mind_cost) == 1 else spell.mind_cost
                 ),

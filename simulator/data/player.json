@@ -114,6 +114,49 @@
             }
         },
         {
+            "class": "SpellBuff",
+            "name": "Divine Favor",
+            "type": "BONUS",
+            "level": 1,
+            "mind_cost": [
+                1
+            ],
+            "effect": {
+                "type": "Buff",
+                "name": "Divine Favor",
+                "max_duration": 10,
+                "modifiers": {
+                    "damage": {
+                        "damage_roll": "1D6",
+                        "damage_type": "RADIANT"
+                    }
+                }
+            }
+        },
+        {
+            "class": "SpellBuff",
+            "name": "Divine Smite",
+            "type": "BONUS",
+            "level": 1,
+            "mind_cost": [
+                1,
+                2,
+                3
+            ],
+            "effect": {
+                "type": "Buff",
+                "name": "Divine Smite",
+                "max_duration": 0,
+                "consume_on_hit": true,
+                "modifiers": {
+                    "damage": {
+                        "damage_roll": "1D8 + [MIND]D8",
+                        "damage_type": "RADIANT"
+                    }
+                }
+            }
+        },
+        {
             "class": "SpellAttack",
             "name": "Searing Smite",
             "type": "BONUS",
@@ -151,43 +194,6 @@
                     "damage_roll": "[MIND]D6"
                 }
             ]
-        },
-        {
-            "class": "SpellAttack",
-            "name": "Divine Smite",
-            "type": "STANDARD",
-            "level": 1,
-            "mind_cost": [
-                1,
-                2,
-                3
-            ],
-            "damage": [
-                {
-                    "damage_type": "RADIANT",
-                    "damage_roll": "1D8 + [MIND]D8"
-                }
-            ]
-        },
-        {
-            "class": "SpellBuff",
-            "name": "Divine Favor",
-            "type": "BONUS",
-            "level": 1,
-            "mind_cost": [
-                1
-            ],
-            "effect": {
-                "type": "Buff",
-                "name": "Divine Favor",
-                "max_duration": 10,
-                "modifiers": {
-                    "damage": {
-                        "damage_roll": "1D6",
-                        "damage_type": "RADIANT"
-                    }
-                }
-            }
         },
         {
             "class": "SpellAttack",

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Iterator
 from effect import *
 from constants import *
 
@@ -9,8 +9,7 @@ class ActiveEffect:
         self.effect: Effect = effect
         self.mind_level: int = mind_level
         self.duration: int = effect.max_duration
-
-        assert self.duration > 0, "ActiveEffect duration must be greater than 0."
+        self.consume_on_hit: bool = getattr(effect, "consume_on_hit", False)
 
 
 class EffectManager:
@@ -44,48 +43,43 @@ class EffectManager:
     def get_modifier(self, bonus_type: BonusType) -> Any:
         if bonus_type in [BonusType.HP, BonusType.MIND]:
             return sum(
-                int(ae.effect.modifiers[bonus_type])
-                for ae in self.active_effects
-                if isinstance(ae.effect, ModifierEffect)
-                if bonus_type in ae.effect.modifiers
+                int(modifier)
+                for modifier, _ in self._iterate_modifiers_by_type(bonus_type)
             )
         if bonus_type in [BonusType.AC, BonusType.INITIATIVE]:
             return max(
                 (
-                    int(ae.effect.modifiers[bonus_type])
-                    for ae in self.active_effects
-                    if isinstance(ae.effect, ModifierEffect)
-                    if bonus_type in ae.effect.modifiers
+                    int(modifier)
+                    for modifier, _ in self._iterate_modifiers_by_type(bonus_type)
                 ),
                 default=0,
             )
         if bonus_type == BonusType.ATTACK:
             return [
-                ae.effect.modifiers[bonus_type]
-                for ae in self.active_effects
-                if isinstance(ae.effect, ModifierEffect)
-                if bonus_type in ae.effect.modifiers
+                modifier for modifier, _ in self._iterate_modifiers_by_type(bonus_type)
             ]
         if bonus_type == BonusType.DAMAGE:
+            consume_on_hit: list[dict[str, str]] = []
             best_by_type: dict[DamageType, dict[str, str]] = {}
-            for ae in self.active_effects:
-                if not isinstance(ae.effect, ModifierEffect):
+            for modifier, ae in self._iterate_melee_damage_modifiers():
+                # Get the damage type and roll from the bonus.
+                dmg_type, dmg_roll = modifier["damage_type"], modifier["damage_roll"]
+
+                # Consume on hit effects are handled separately.
+                if ae.consume_on_hit:
+                    consume_on_hit.append(modifier)
+                    ae.consume_on_hit = False
                     continue
-                if bonus_type not in ae.effect.modifiers:
-                    continue
-                dmg_type = ae.effect.modifiers[BonusType.DAMAGE]["damage_type"]
-                dmg_roll = ae.effect.modifiers[BonusType.DAMAGE]["damage_roll"]
+
+                # If the damage type is not in the best_by_type, add it.
                 new_max = get_max_roll(dmg_roll, self, 1)
                 current = best_by_type.get(dmg_type)
                 current_max = (
                     get_max_roll(current["damage_roll"], self, 1) if current else -1
                 )
                 if new_max > current_max:
-                    best_by_type[dmg_type] = {
-                        "damage_type": dmg_type,
-                        "damage_roll": dmg_roll,
-                    }
-            return list(best_by_type.values())
+                    best_by_type[dmg_type] = modifier
+            return list(best_by_type.values()) + consume_on_hit
         raise ValueError(f"Unknown bonus type: {bonus_type}")
 
     def would_be_useful(self, effect: Effect, entity: Any, mind_level: int) -> bool:
@@ -139,6 +133,9 @@ class EffectManager:
     def turn_update(self):
         """Updates the active effects at the end of each turn."""
         for ae in self.active_effects:
+            if ae.consume_on_hit:
+                continue
+            # Call the turn_update method of the effect.
             ae.effect.turn_update(ae.source, self.owner, ae.mind_level)
             # Decrease the duration of the effect.
             ae.duration -= 1
@@ -147,4 +144,37 @@ class EffectManager:
                 console.print(
                     f"    :hourglass_done: [bold yellow]{ae.effect.name}[/] has expired on [bold]{self.owner.name}[/]."
                 )
-        self.active_effects = [ae for ae in self.active_effects if ae.duration > 0]
+        self.active_effects = [
+            ae for ae in self.active_effects if ae.duration > 0 or ae.consume_on_hit
+        ]
+
+    def _iterate_active_modifiers_effects(
+        self, bonus_type: Optional[BonusType] = None
+    ) -> Iterator[ActiveEffect]:
+        """Yield all active effects that are ModifierEffects.
+
+        Args:
+            bonus_type (Optional[BonusType], optional): The type of bonus to filter by. Defaults to None.
+
+        Yields:
+            Iterator[ActiveEffect]: An iterator over active effects that are ModifierEffects, optionally filtered by bonus_type.
+        """
+        for ae in self.active_effects:
+            if isinstance(ae.effect, ModifierEffect) and (
+                bonus_type is None or bonus_type in ae.effect.modifiers
+            ):
+                yield ae
+
+    def _iterate_modifiers_by_type(self, bonus_type: BonusType):
+        for ae in self._iterate_active_modifiers_effects(bonus_type):
+            yield ae.effect.modifiers[bonus_type], ae
+
+    def _iterate_melee_damage_modifiers(self):
+        for modifier, ae in self._iterate_modifiers_by_type(BonusType.DAMAGE):
+            yield modifier, ae
+
+    def _iterate_consume_on_hit_modifiers(self):
+        """Yield (modifier_dict, active_effect) for one-shot damage riders."""
+        for modifier, ae in self._iterate_melee_damage_modifiers():
+            if ae.consume_on_hit:
+                yield modifier, ae

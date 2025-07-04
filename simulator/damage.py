@@ -40,11 +40,14 @@ def roll_damage_components(
     damage_details: list[str] = []
     for component in damage_components:
         # Substitute variables in the damage roll expression.
-        damage_expr = substitute_variables(component.damage_roll, actor, mind_level)
-        # Roll the damage expression.
-        damage_amount = roll_expression(damage_expr, actor, mind_level)
+        dmg_value, dmg_desc = roll_and_describe(
+            component.damage_roll, actor, mind_level
+        )
+        assert (
+            isinstance(dmg_value, int) and dmg_value >= 0
+        ), f"Damange must have a non-negative integer damage value, got {dmg_value}."
         # Apply the damage to the target, taking into account resistances.
-        base, adjusted, taken = target.take_damage(damage_amount, component.damage_type)
+        base, adjusted, taken = target.take_damage(dmg_value, component.damage_type)
         # Accumulate the total damage taken by the target.
         total_damage += taken
         # Create a damage string for display.
@@ -55,9 +58,9 @@ def roll_damage_components(
         # If the base damage differs from the adjusted damage (due to resistances),
         # include the original and adjusted values in the damage string.
         if base != adjusted:
-            dmg_str += f"[dim]({base} → {adjusted})[/]"
+            dmg_str += f"[dim](reduced: {base} → {adjusted})[/]"
         # Append the rolled damage expression to the damage string.
-        dmg_str += f"({damage_expr})"
+        dmg_str += f"({dmg_desc})"
         # Add the damage string to the list of damage details.
         damage_details.append(dmg_str)
     return total_damage, damage_details

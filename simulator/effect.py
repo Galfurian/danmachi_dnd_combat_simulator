@@ -96,7 +96,6 @@ class ModifierEffect(Effect):
 
     def validate(self):
         super().validate()
-        assert self.max_duration > 0, "ModifierEffect duration must be greater than 0."
         assert isinstance(self.modifiers, dict), "Modifiers must be a dictionary."
         for k, v in self.modifiers.items():
             assert isinstance(
@@ -138,8 +137,15 @@ class Buff(ModifierEffect):
         name: str,
         max_duration: int,
         modifiers: dict[BonusType, str],
+        consume_on_hit: bool = False,
     ):
         super().__init__(name, max_duration, modifiers)
+        self.consume_on_hit: bool = consume_on_hit
+
+    def to_dict(self) -> dict[str, Any]:
+        data = super().to_dict()
+        data["consume_on_hit"] = self.consume_on_hit
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Buff":
@@ -162,6 +168,7 @@ class Buff(ModifierEffect):
             name=data["name"],
             max_duration=data["max_duration"],
             modifiers=modifiers,
+            consume_on_hit=data.get("consume_on_hit", False),
         )
 
 
@@ -267,15 +274,23 @@ class DoT(Effect):
             isinstance(dot_value, int) and dot_value >= 0
         ), f"DoT '{self.name}' must have a non-negative integer damage value, got {dot_value}."
         # Apply the damage to the target.
-        dot_value = target.take_damage(dot_value, self.damage_type)
+        base, adjusted, taken = target.take_damage(dot_value, self.damage_type)
         # If the damage value is positive, print the damage message.
-        message = f"    {get_effect_emoji(self)} "
-        message += apply_character_type_color(target.type, target.name) + " takes "
-        message += apply_damage_type_color(self.damage_type, dot_value) + " "
-        message += get_damage_type_emoji(self.damage_type) + " "
-        message += f"([white]{dot_desc}[/]) hp from "
-        message += apply_effect_color(self, self.name) + "."
-        console.print(message, markup=True)
+        dot_str = f"    {get_effect_emoji(self)} "
+        dot_str += apply_character_type_color(target.type, target.name) + " takes "
+        # Create a damage string for display.
+        dot_str += apply_damage_type_color(
+            self.damage_type,
+            f"{taken} {get_damage_type_emoji(self.damage_type)} ",
+        )
+        # If the base damage differs from the adjusted damage (due to resistances),
+        # include the original and adjusted values in the damage string.
+        if base != adjusted:
+            dot_str += f"[dim](reduced: {base} → {adjusted})[/] "
+        # Append the rolled damage expression to the damage string.
+        dot_str += f"({dot_desc})"
+        # Add the damage string to the list of damage details.
+        console.print(dot_str, markup=True)
         # If the target is defeated, print a message.
         if not target.is_alive():
             console.print(
