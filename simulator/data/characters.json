@@ -20,7 +20,7 @@
                 "name": "Shortsword",
                 "type": "STANDARD",
                 "hands_required": 1,
-                "attack_roll": "1D20+[DEX]",
+                "attack_roll": "[DEX]",
                 "damage": [
                     {
                         "damage_roll": "1D6+[DEX]",

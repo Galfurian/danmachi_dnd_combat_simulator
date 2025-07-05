@@ -20,7 +20,7 @@
                 "name": "Rusty Dagger",
                 "type": "STANDARD",
                 "hands_required": 1,
-                "attack_roll": "+ [DEX]",
+                "attack_roll": "[DEX]",
                 "damage": [
                     {
                         "damage_roll": "1D4 + [DEX]",
@@ -52,7 +52,7 @@
                 "name": "Clawed Gauntlets",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D6 + [STR]",
@@ -84,7 +84,7 @@
                 "name": "Bite",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D6 + [STR]",
@@ -116,7 +116,7 @@
                 "name": "Shadow Claws",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "+ [DEX]",
+                "attack_roll": "[DEX]",
                 "damage": [
                     {
                         "damage_roll": "1D6 + [DEX]",
@@ -148,7 +148,7 @@
                 "name": "Mandibles",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D8 + [STR]",
@@ -180,7 +180,7 @@
                 "name": "Acidic Touch",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D6",
@@ -237,7 +237,7 @@
                 "name": "Greatclub",
                 "type": "STANDARD",
                 "hands_required": 2,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D10 + [STR]",
@@ -269,7 +269,7 @@
                 "name": "Fangs",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D8 + [STR]",
@@ -282,7 +282,7 @@
                 "name": "Pounce",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D6 + [STR]",
@@ -314,7 +314,7 @@
                 "name": "Massive Fists",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D12 + [STR]",
@@ -350,7 +350,7 @@
                 "name": "Claws",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D8 + [STR]",
@@ -363,7 +363,7 @@
                 "name": "Tail Whip",
                 "type": "STANDARD",
                 "hands_required": 0,
-                "attack_roll": "+ [STR]",
+                "attack_roll": "[STR]",
                 "damage": [
                     {
                         "damage_roll": "1D10 + [STR]",
