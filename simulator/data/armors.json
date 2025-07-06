@@ -1,0 +1,44 @@
+[
+    {
+        "type": "Armor",
+        "name": "Plate Armor",
+        "ac": 18,
+        "armor_slot": "TORSO",
+        "armor_type": "HEAVY"
+    },
+    {
+        "type": "Armor",
+        "name": "Chainmail",
+        "ac": 16,
+        "armor_slot": "TORSO",
+        "armor_type": "MEDIUM"
+    },
+    {
+        "type": "Armor",
+        "name": "Brigandine Armor",
+        "ac": 14,
+        "armor_slot": "TORSO",
+        "armor_type": "MEDIUM"
+    },
+    {
+        "type": "Armor",
+        "name": "Leather Armor",
+        "ac": 12,
+        "armor_slot": "TORSO",
+        "armor_type": "LIGHT"
+    },
+    {
+        "type": "Armor",
+        "name": "Steel Shield",
+        "ac": 2,
+        "armor_slot": "SHIELD",
+        "armor_type": "HEAVY"
+    },
+    {
+        "type": "Armor",
+        "name": "Defense Style",
+        "ac": 1,
+        "armor_slot": "COMBAT_STYLE",
+        "armor_type": "OTHER"
+    }
+]

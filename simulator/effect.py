@@ -1,5 +1,6 @@
 import json
 from rich.console import Console
+from pathlib import Path
 
 from utils import *
 from typing import Any
@@ -211,12 +212,12 @@ class Armor(Effect):
         name: str,
         ac: int,
         armor_slot: ArmorSlot,
-        armor_type: Optional[ArmorType] = None,
+        armor_type: ArmorType,
     ):
         super().__init__(name, -1)
         self.ac = ac
         self.armor_slot: ArmorSlot = armor_slot
-        self.armor_type: Optional[ArmorType] = armor_type
+        self.armor_type: ArmorType = armor_type
 
         self.validate()
 
@@ -226,10 +227,9 @@ class Armor(Effect):
             self.armor_slot, ArmorSlot
         ), f"Armor slot '{self.armor_slot}' must be of type ArmorSlot."
         # If armor type is specified, it must be of type ArmorType.
-        if self.armor_type is not None:
-            assert isinstance(
-                self.armor_type, ArmorType
-            ), f"Armor type '{self.armor_type}' must be of type ArmorType."
+        assert isinstance(
+            self.armor_type, ArmorType
+        ), f"Armor type '{self.armor_type}' must be of type ArmorType."
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
@@ -237,8 +237,7 @@ class Armor(Effect):
         data["name"] = self.name
         data["ac"] = self.ac
         data["armor_slot"] = self.armor_slot.name
-        if self.armor_type is not None:
-            data["armor_type"] = self.armor_type.name
+        data["armor_type"] = self.armor_type.name
         return data
 
     @staticmethod
@@ -248,7 +247,7 @@ class Armor(Effect):
             name=data["name"],
             ac=data["ac"],
             armor_slot=ArmorSlot[data["armor_slot"]],
-            armor_type=ArmorType[data["armor_type"]] if "armor_type" in data else None,
+            armor_type=ArmorType[data["armor_type"]],
         )
 
 
@@ -268,7 +267,9 @@ class DoT(Effect):
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
         # Calculate the damage amount using the provided expression.
-        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, actor, mind_level)
+        dot_value, dot_desc, _ = roll_and_describe(
+            self.damage_per_turn, actor, mind_level
+        )
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
@@ -342,7 +343,9 @@ class HoT(Effect):
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
         # Calculate the heal amount using the provided expression.
-        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, actor, mind_level)
+        hot_value, hot_desc, _ = roll_and_describe(
+            self.heal_per_turn, actor, mind_level
+        )
         # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0
@@ -379,21 +382,3 @@ class HoT(Effect):
             max_duration=data["max_duration"],
             heal_per_turn=data["heal_per_turn"],
         )
-
-
-def load_effects(filename: str) -> dict[str, Effect]:
-    """Loads an effect from a dictionary.
-
-    Args:
-        data (dict): The dictionary containing the effect data.
-
-    Returns:
-        Effect: The loaded effect.
-    """
-    effects: dict[str, Effect] = {}
-    with open(filename, "r") as f:
-        effect_data = json.load(f)
-        for effect_data in effect_data:
-            effect = Effect.from_dict(effect_data)
-            effects[effect.name] = effect
-    return effects

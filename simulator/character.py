@@ -8,76 +8,11 @@ from actions import *
 from effect_manager import *
 from effect import *
 from utils import *
-
+from character_class import *
+from character_race import *
+from content import ContentRepository
 
 console = Console()
-
-
-class CharacterClass:
-    def __init__(self, name: str, hp_mult: int, mind_mult: int):
-        self.name: str = name
-        self.hp_mult: int = hp_mult
-        self.mind_mult: int = mind_mult
-
-    def to_dict(self) -> dict[str, Any]:
-        """Converts the CharacterClass instance to a dictionary.
-
-        Returns:
-            dict[str, Any]: The dictionary representation of the CharacterClass instance.
-        """
-        return {
-            "name": self.name,
-            "hp_mult": self.hp_mult,
-            "mind_mult": self.mind_mult,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "CharacterClass":
-        """Creates a CharacterClass instance from a dictionary.
-
-        Args:
-            data (dict): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        return CharacterClass(
-            name=data["name"],
-            hp_mult=data.get("hp_mult", 0),
-            mind_mult=data.get("mind_mult", 0),
-        )
-
-
-class CharacterRace:
-    def __init__(self, name: str, natural_ac: int = 0):
-        self.name = name
-        self.natural_ac = natural_ac
-
-    def to_dict(self) -> dict[str, Any]:
-        """Converts the CharacterRace instance to a dictionary.
-
-        Returns:
-            dict[str, Any]: The dictionary representation of the CharacterRace instance.
-        """
-        return {
-            "name": self.name,
-            "natural_ac": self.natural_ac,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "CharacterRace":
-        """Creates a CharacterRace instance from a dictionary.
-
-        Args:
-            data (dict): The dictionary representation of the CharacterRace.
-
-        Returns:
-            CharacterRace: The CharacterRace instance.
-        """
-        return CharacterRace(
-            name=data["name"],
-            natural_ac=data.get("natural_ac", 0),
-        )
 
 
 class Character:
@@ -114,11 +49,11 @@ class Character:
         # Spellcasting Ability.
         self.spellcasting_ability: Optional[str] = spellcasting_ability
         # List of equipped weapons.
-        self.equipped_weapons: list[Any] = []
+        self.equipped_weapons: list[WeaponAttack] = []
         self.total_hands: int = 2
         self.hands_used: int = 0
         # List of equipped armor.
-        self.equipped_armor: list[Any] = []
+        self.equipped_armor: list[Armor] = []
         # Manages active effects on the character.
         self.effect_manager: EffectManager = EffectManager(self)
         # List of actions.
@@ -591,20 +526,27 @@ class Character:
         }
 
     @staticmethod
-    def from_dict(data: dict[str, Any], registries: dict[str, Any]) -> "Character":
-        cls_registry = registries["classes"]
-        race_registry = registries["races"]
+    def from_dict(data: dict[str, Any]) -> "Character | None":
+
+        # Get the content repositories.
+        repo = ContentRepository()
 
         # Load the race from the races registry.
-        race = race_registry[data["race"]]
+        race = repo.get_character_race(data["race"])
+        if race is None:
+            warning(f"Invalid race '{data['race']}' for character {data['name']}.")
+            return None
 
         # Load the levels from the class registry.
         levels: dict[CharacterClass, int] = {}
         for cls_name, cls_level in data["levels"].items():
-            if cls_name not in cls_registry:
-                warning(f"CharacterClass {cls_name} not found in registry.")
-                continue
-            levels[cls_registry[cls_name]] = cls_level
+            # Get the class from the class registry.
+            character_class = repo.get_character_class(cls_name)
+            if character_class is None:
+                warning(f"Invalid class '{cls_name}' for character {data['name']}.")
+                return None
+            # Add the class and its level to the levels dictionary.
+            levels[character_class] = cls_level
 
         # Create the character instance.
         char = Character(
@@ -642,62 +584,37 @@ class Character:
         char.type = CharacterType[data.get("type", "ENEMY").upper()]
 
         # Load the weapons.
-        for equipped_weapon_data in data.get("equipped_weapons", []):
-            char.equip_weapon(BaseAction.from_dict(equipped_weapon_data))
+        for equipped_weapon in data.get("equipped_weapons", []):
+            equipped_weapon = repo.get_weapon_attack(equipped_weapon)
+            if equipped_weapon is None:
+                warning(
+                    f"Invalid weapon '{equipped_weapon}' for character {data['name']}."
+                )
+                continue
+            char.equip_weapon(equipped_weapon)
 
         # Load the armor.
-        for equipped_armor_data in data.get("equipped_armor", []):
-            char.add_armor(Effect.from_dict(equipped_armor_data))
-
-        # Load the actions.
-        for action_data in data.get("actions", []):
-            char.learn_action(BaseAction.from_dict(action_data))
+        for equipped_armor in data.get("equipped_armor", []):
+            equipped_armor = repo.get_armor(equipped_armor)
+            if equipped_armor is None:
+                warning(
+                    f"Invalid armor '{equipped_armor}' for character {data['name']}."
+                )
+                continue
+            char.add_armor(equipped_armor)
 
         # Load the spells.
         for spell_data in data.get("spells", []):
-            char.learn_spell(BaseAction.from_dict(spell_data))
+            spell = repo.get_spell(spell_data)
+            if spell is None:
+                warning(f"Invalid spell '{spell_data}' for character {data['name']}.")
+                continue
+            char.learn_spell(spell)
 
         return char
 
 
-def load_character_classes(file_path: str) -> dict[str, CharacterClass]:
-    """
-    Loads character classes from a JSON file.
-
-    Args:
-        file_path (str): The path to the JSON file containing character classes.
-
-    Returns:
-        dict[str, CharacterClass]: A dictionary mapping class names to CharacterClass instances.
-    """
-    classes: dict[str, CharacterClass] = {}
-    with open(file_path, "r") as f:
-        class_data = json.load(f)
-        for entry in class_data:
-            character_class = CharacterClass.from_dict(entry)
-            classes[character_class.name] = character_class
-    return classes
-
-
-def load_character_races(file_path: str) -> dict[str, CharacterRace]:
-    """Loads character races from a JSON file.
-
-    Args:
-        file_path (str): The path to the JSON file containing character races.
-
-    Returns:
-        dict[str, CharacterRace]: A dictionary mapping race names to CharacterRace instances.
-    """
-    races: dict[str, CharacterRace] = {}
-    with open(file_path, "r") as f:
-        race_data = json.load(f)
-        for entry in race_data:
-            character_race = CharacterRace.from_dict(entry)
-            races[character_race.name] = character_race
-    return races
-
-
-def load_characters(file_path: str, registries: dict[str, Any]) -> dict[str, Character]:
+def load_characters(file_path: str) -> dict[str, Character]:
     """
     Loads characters from a JSON file.
 
@@ -712,14 +629,13 @@ def load_characters(file_path: str, registries: dict[str, Any]) -> dict[str, Cha
     with open(file_path, "r") as f:
         character_data = json.load(f)
         for entry in character_data:
-            character = Character.from_dict(entry, registries)
-            characters[character.name] = character
+            character = Character.from_dict(entry)
+            if character is not None:
+                characters[character.name] = character
     return characters
 
 
-def load_player_character(
-    file_path: str, registries: dict[str, Any]
-) -> Character | None:
+def load_player_character(file_path: str) -> Character | None:
     """
     Loads the player character from a JSON file.
 
@@ -732,7 +648,52 @@ def load_player_character(
     """
     with open(file_path, "r") as f:
         player_data = json.load(f)
-        player = Character.from_dict(player_data, registries)
+        player = Character.from_dict(player_data)
+        if player is None:
+            warning(f"Failed to load player character from {file_path}.")
+            return None
         # Mark the character as a player character.
         player.type = CharacterType.PLAYER
         return player
+
+
+def print_character_details(char: Character):
+    """Prints the details of a character in a formatted way."""
+
+    console.print(
+        f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], [blue]{char.race.name}[/], {', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])}, hp: {char.hp}, ac: {char.AC}"
+    )
+    console.print(
+        f"  {', '.join([f'{stat}: {value}' for stat, value in char.stats.items()])}"
+    )
+    if char.equipped_armor:
+        console.print(f"  Armor:")
+        for armor in char.equipped_armor:
+            console.print(
+                f"    - [blue]{armor.name}[/], {get_armor_type_emoji(armor.armor_type)}, {armor.ac}"
+            )
+    if char.equipped_weapons:
+        console.print(f"  Weapons:")
+        for weapon in char.equipped_weapons:
+            console.print(
+                f"    - [green]{weapon.name}[/], [blue]1D20+{weapon.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in weapon.damage])}[/])"
+            )
+    if char.actions:
+        console.print(f"  Actions:")
+        for action in char.actions.values():
+            console.print(f"    - [green]{action.name}[/], [{get_action_type_color(action.type)}]{action.type.name}[/]")
+    if char.spells:
+        console.print(f"  Spellcasting ability: {char.spellcasting_ability}")
+        console.print(f"  Spells:")
+        for spell in char.spells.values():
+            console.print(
+                f"    - [green]{spell.name}[/], lv {spell.level}, [{get_action_type_color(spell.type)}]{spell.type.name}[/]"
+            )
+    if char.resistances:
+        console.print(
+            f"  Resistances: {', '.join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])}"
+        )
+    if char.vulnerabilities:
+        console.print(
+            f"  Vulnerabilities: {', '.join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])}"
+        )

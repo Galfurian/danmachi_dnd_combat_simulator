@@ -77,6 +77,7 @@ class ArmorType(Enum):
     HEAVY = auto()
     MEDIUM = auto()
     LIGHT = auto()
+    OTHER = auto()
 
 
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
@@ -303,6 +304,7 @@ def get_armor_type_emoji(armor_type: ArmorType) -> str:
         ArmorType.LIGHT: "🧥",
         ArmorType.MEDIUM: "🥋",
         ArmorType.HEAVY: "🛡️",
+        ArmorType.OTHER: "🎭",
     }
     return emoji_map.get(armor_type, "❔")
 

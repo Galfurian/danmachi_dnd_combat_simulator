@@ -8,6 +8,20 @@ from typing import Any, Optional, Callable
 dice_pattern = re.compile(r"^(\d*)[dD](\d+)$")
 
 
+# ---- Singleton Metaclass ----
+
+
+class Singleton(type):
+    """Metaclass that returns the same instance every time."""
+
+    _inst = None
+
+    def __call__(cls, *a, **kw):
+        if cls._inst is None:
+            cls._inst = super().__call__(*a, **kw)
+        return cls._inst
+
+
 # ---- Stat Modifier ----
 def get_stat_modifier(score: int) -> int:
     return (score - 10) // 2

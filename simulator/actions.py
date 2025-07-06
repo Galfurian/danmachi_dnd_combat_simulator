@@ -3,6 +3,7 @@ import json
 from logging import debug, error
 from rich.console import Console
 from typing import Any, Optional
+from pathlib import Path
 
 from damage import *
 from effect import *
@@ -1052,21 +1053,3 @@ class SpellDebuff(Spell):
             effect=Debuff.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", ""),
         )
-
-
-def load_actions(filename: str) -> dict[str, BaseAction]:
-    """Loads an action from a dictionary.
-
-    Args:
-        data (dict): The dictionary containing the action data.
-
-    Returns:
-        BaseAction: The loaded action.
-    """
-    actions: dict[str, BaseAction] = {}
-    with open(filename, "r") as f:
-        action_data = json.load(f)
-        for action_data in action_data:
-            action = BaseAction.from_dict(action_data)
-            actions[action.name] = action
-    return actions

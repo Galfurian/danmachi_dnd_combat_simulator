@@ -1,0 +1,223 @@
+{
+    "weapons": [
+        {
+            "class": "WeaponAttack",
+            "name": "Longsword",
+            "type": "STANDARD",
+            "hands_required": 1,
+            "attack_roll": "[STR] + 1",
+            "damage": [
+                {
+                    "damage_roll": "1D8 + [STR] + 1",
+                    "damage_type": "SLASHING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Shortsword",
+            "type": "STANDARD",
+            "hands_required": 1,
+            "attack_roll": "[DEX]",
+            "damage": [
+                {
+                    "damage_roll": "1D6 + [DEX]",
+                    "damage_type": "PIERCING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Dagger",
+            "type": "STANDARD",
+            "hands_required": 1,
+            "attack_roll": "[DEX]",
+            "damage": [
+                {
+                    "damage_roll": "1D4 + [DEX]",
+                    "damage_type": "PIERCING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Clawed Gauntlets",
+            "type": "STANDARD",
+            "hands_required": 2,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D6 + [STR]",
+                    "damage_type": "SLASHING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Bite",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D6 + [STR]",
+                    "damage_type": "PIERCING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Claws",
+            "type": "STANDARD",
+            "hands_required": 2,
+            "attack_roll": "[DEX]",
+            "damage": [
+                {
+                    "damage_roll": "1D6 + [DEX]",
+                    "damage_type": "SLASHING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Mandibles",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D8 + [STR]",
+                    "damage_type": "PIERCING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Acidic Touch",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D6",
+                    "damage_type": "ACID"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Greatclub",
+            "type": "STANDARD",
+            "hands_required": 2,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D10 + [STR]",
+                    "damage_type": "BLUDGEONING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Fangs",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D8 + [STR]",
+                    "damage_type": "PIERCING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Pounce",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D6 + [STR]",
+                    "damage_type": "BLUDGEONING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Fists",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D12 + [STR]",
+                    "damage_type": "BLUDGEONING"
+                }
+            ]
+        },
+        {
+            "class": "WeaponAttack",
+            "name": "Tail Whip",
+            "type": "STANDARD",
+            "hands_required": 0,
+            "attack_roll": "[STR]",
+            "damage": [
+                {
+                    "damage_roll": "1D10 + [STR]",
+                    "damage_type": "BLUDGEONING"
+                }
+            ]
+        }
+    ],
+    "variants": [
+        {
+            "base": "Longsword",
+            "name": "Fine Longsword",
+            "delta": {
+                "attack_roll_mod": "+1",
+                "damage_roll_mod": "+1"
+            }
+        },
+        {
+            "base": "Shortsword",
+            "name": "Fine Shortsword",
+            "delta": {
+                "attack_roll_mod": "+1",
+                "damage_roll_mod": "+1"
+            }
+        },
+        {
+            "base": "Dagger",
+            "name": "Rusty Dagger",
+            "delta": {
+                "attack_roll_mod": "-1",
+                "damage_roll_mod": "-1"
+            }
+        },
+        {
+            "base": "Clawed Gauntlets",
+            "name": "Rusty Clawed Gauntlets",
+            "delta": {
+                "attack_roll_mod": "-1",
+                "damage_roll_mod": "-1"
+            }
+        },
+        {
+            "base": "Bite",
+            "name": "Worm Bite"
+        },
+        {
+            "base": "Claws",
+            "name": "Shadow Claws"
+        },
+        {
+            "base": "Fists",
+            "name": "Massive Fists",
+            "delta": {
+                "attack_roll_mod": "+2",
+                "damage_roll_mod": "+2"
+            }
+        }
+    ]
+}

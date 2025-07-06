@@ -1,0 +1,336 @@
+from pathlib import Path
+from rich.console import Console
+from rich.rule import Rule
+
+from character_class import CharacterClass
+from character_race import CharacterRace
+from actions import *
+from utils import *
+
+import copy
+
+DATA = Path(__file__).with_suffix("").parent / "data"
+
+console = Console()
+
+
+class ContentRepository(metaclass=Singleton):
+    """
+    One-stop registry for every game-asset that needs fast by-name access.
+    Usage:
+        repo = ContentRepository()
+        magic_missile = repo.spells["Magic Missile"]
+        longsword = repo.weapons["Longsword"]
+    """
+
+    # Character-related attributes.
+    classes: dict[str, CharacterClass]
+    races: dict[str, CharacterRace]
+    # Item-related attributes.
+    weapons: dict[str, WeaponAttack]
+    armors: dict[str, Armor]
+    # Action-related attributes.
+    spells: dict[str, BaseAction]
+    actions: dict[str, BaseAction]
+
+    def __init__(self, data_dir: Path = DATA):
+        self.reload(data_dir)
+
+    def reload(self, data_dir: Path | str | None = None) -> None:
+        """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
+
+        console.print(Rule("Reloading Database", style="bold green"))
+
+        root = Path(data_dir) if data_dir else DATA
+
+        console.print(f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow")
+
+        console.print("Loading character classes...", style="bold yellow")
+
+        # Load the character classes.
+        with open(root / "character_classes.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(
+                    f"Expected a list in {root / 'character_classes.json'}"
+                )
+            self.classes = self._load_character_classes(data)
+
+        console.print("Loading character races...", style="bold yellow")
+
+        # Load the character races.
+        with open(root / "character_races.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'character_races.json'}")
+            self.races = self._load_character_races(data)
+
+        console.print("Loading weapons...", style="bold yellow")
+
+        # Load the weapons.
+        with open(root / "weapons.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                raise ValueError(f"Expected a dict in {root / 'weapons.json'}")
+            if "weapons" not in data:
+                raise ValueError(f"No 'weapons' key found in {root / 'weapons.json'}")
+            if "variants" not in data:
+                raise ValueError(f"No 'variants' key found in {root / 'weapons.json'}")
+            # First, load the base weapons.
+            self.weapons = self._load_weapons(data["weapons"])
+            # Then, load the weapon variants.
+            weapon_variants = self._load_weapon_variants(data["variants"], self.weapons)
+            # Add the variants to the weapons dictionary.
+            self.weapons.update(weapon_variants)
+
+        console.print("Loading armors...", style="bold yellow")
+
+        # Load the armors.
+        with open(root / "armors.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'armors.json'}")
+            self.armors = self._load_armors(data)
+
+        console.print("Loading spells...", style="bold yellow")
+
+        # Load the spells and actions.
+        with open(root / "spells.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'spells.json'}")
+            self.spells = self._load_actions(data)
+
+        console.print("Loading actions...", style="bold yellow")
+
+        with open(root / "actions.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'actions.json'}")
+            self.actions = self._load_actions(data)
+
+        console.print("Content loaded successfully!\n", style="bold green")
+
+    def get_character_class(self, name: str) -> CharacterClass | None:
+        """Get a character class by name, or None if not found.
+
+        Args:
+            name (str): The name of the character class.
+
+        Returns:
+            CharacterClass | None: The character class instance or None.
+        """
+        entry = self.classes.get(name)
+        if entry and isinstance(entry, CharacterClass):
+            return entry
+        return None
+
+    def get_character_race(self, name: str) -> CharacterRace | None:
+        """Get a character race by name, or None if not found.
+
+        Args:
+            name (str): The name of the character race.
+
+        Returns:
+            CharacterRace | None: The character race instance or None.
+        """
+        entry = self.races.get(name)
+        if entry and isinstance(entry, CharacterRace):
+            return entry
+        return None
+
+    def get_armor(self, name: str) -> Armor | None:
+        """Get an armor effect by name, or None if not found.
+
+        Args:
+            name (str): The name of the armor effect.
+
+        Returns:
+            Effect | None: The armor effect instance or None.
+        """
+        entry = self.armors.get(name)
+        if entry and isinstance(entry, Armor):
+            return entry
+        return None
+
+    def get_action(self, name: str) -> BaseAction | None:
+        """Get an action by name, or None if not found.
+
+        Args:
+            name (str): The name of the action.
+
+        Returns:
+            BaseAction | None: The action instance or None.
+        """
+        entry = self.actions.get(name)
+        if entry and isinstance(entry, BaseAction):
+            return entry
+        return None
+
+    def get_weapon_attack(self, name: str) -> WeaponAttack | None:
+        """Get a weapon attack by name, or None if not found.
+
+        Args:
+            name (str): The name of the weapon attack.
+
+        Returns:
+            WeaponAttack | None: The weapon attack instance or None.
+        """
+        entry = self.weapons.get(name)
+        if entry and isinstance(entry, WeaponAttack):
+            return entry
+        return None
+
+    def get_spell(self, name: str) -> BaseAction | None:
+        """Get a spell by name, or None if not found.
+
+        Args:
+            name (str): The name of the spell.
+
+        Returns:
+            BaseAction | None: The spell instance or None.
+        """
+        entry = self.spells.get(name)
+        if entry and isinstance(entry, BaseAction):
+            return entry
+        return None
+
+    def get_spell_attack(self, name: str) -> SpellAttack | None:
+        """Get a spell attack by name, or None if not found.
+
+        Args:
+            name (str): The name of the spell attack.
+
+        Returns:
+            SpellAttack | None: The spell attack instance or None.
+        """
+        entry = self.spells.get(name)
+        if entry and isinstance(entry, SpellAttack):
+            return entry
+        return None
+
+    def get_spell_heal(self, name: str) -> SpellHeal | None:
+        """Get a spell heal by name, or None if not found.
+
+        Args:
+            name (str): The name of the spell heal.
+
+        Returns:
+            SpellHeal | None: The spell heal instance or None.
+        """
+        entry = self.spells.get(name)
+        if entry and isinstance(entry, SpellHeal):
+            return entry
+        return None
+
+    def get_spell_buff(self, name: str) -> SpellBuff | None:
+        """Get a spell buff by name, or None if not found.
+
+        Args:
+            name (str): The name of the spell buff.
+
+        Returns:
+            SpellBuff | None: The spell buff instance or None.
+        """
+        entry = self.spells.get(name)
+        if entry and isinstance(entry, SpellBuff):
+            return entry
+        return None
+
+    def get_spell_debuff(self, name: str) -> SpellDebuff | None:
+        """Get a spell debuff by name, or None if not found.
+
+        Args:
+            name (str): The name of the spell debuff.
+
+        Returns:
+            SpellDebuff | None: The spell debuff instance or None.
+        """
+        entry = self.spells.get(name)
+        if entry and isinstance(entry, SpellDebuff):
+            return entry
+        return None
+
+    @staticmethod
+    def _load_character_classes(data) -> dict[str, CharacterClass]:
+        classes = {}
+        for class_data in data:
+            character_class = CharacterClass.from_dict(class_data)
+            if character_class.name in classes:
+                raise ValueError(f"Duplicate class name: {character_class.name}")
+            classes[character_class.name] = character_class
+        return classes
+
+    @staticmethod
+    def _load_character_races(data) -> dict[str, CharacterRace]:
+        races = {}
+        for race_data in data:
+            character_race = CharacterRace.from_dict(race_data)
+            if character_race.name in races:
+                raise ValueError(f"Duplicate race name: {character_race.name}")
+            races[character_race.name] = character_race
+        return races
+
+    @staticmethod
+    def _load_armors(data) -> dict[str, Armor]:
+        armors = {}
+        for armor_data in data:
+            armor = Armor.from_dict(armor_data)
+            if armor.name in armors:
+                raise ValueError(f"Duplicate armor name: {armor.name}")
+            armors[armor.name] = armor
+        return armors
+
+    @staticmethod
+    def _load_actions(data) -> dict[str, BaseAction]:
+        actions = {}
+        for action_data in data:
+            action = BaseAction.from_dict(action_data)
+            if action.name in actions:
+                raise ValueError(f"Duplicate action name: {action.name}")
+            actions[action.name] = action
+        return actions
+
+    @staticmethod
+    def _load_weapons(data) -> dict[str, WeaponAttack]:
+        weapons: dict[str, WeaponAttack] = {}
+        # Load weapon attacks.
+        for weapon_data in data:
+            weapon = WeaponAttack.from_dict(weapon_data)
+            if weapon.name in weapons:
+                raise ValueError(f"Duplicate weapon name: {weapon.name}")
+            weapons[weapon.name] = weapon
+        return weapons
+
+    @staticmethod
+    def _load_weapon_variants(
+        data, base_weapons: dict[str, WeaponAttack]
+    ) -> dict[str, WeaponAttack]:
+        variants: dict[str, WeaponAttack] = {}
+        for variant_data in data:
+            base_weapon = base_weapons.get(variant_data["base"])
+            if not base_weapon:
+                raise ValueError(
+                    f"Base weapon '{variant_data['base']}' not found in weapons."
+                )
+            # Generate the variant.
+            variant = copy.deepcopy(base_weapon)
+            # Set the variant name and apply deltas.
+            variant.name = variant_data["name"]
+            if mod := variant_data.get("attack_roll_mod"):
+                variant.attack_roll += (
+                    f"{mod:+}" if not mod.startswith(("+", "-")) else mod
+                )
+            if mod := variant_data.get("damage_roll_mod"):
+                for comp in variant.damage:
+                    comp.damage_roll += (
+                        f"{mod:+}" if not mod.startswith(("+", "-")) else mod
+                    )
+            # blanket overrides / additions
+            for k, v in variant_data.get("delta", {}).items():
+                if k not in ("attack_roll_mod", "damage_roll_mod"):
+                    setattr(variant, k, v)
+            if variant.name in base_weapons:
+                raise ValueError(f"Duplicate weapon variant name: {variant.name}")
+            variants[variant.name] = variant
+        return variants

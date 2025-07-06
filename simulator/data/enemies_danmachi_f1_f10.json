@@ -14,22 +14,9 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Rusty Dagger",
-                "type": "STANDARD",
-                "hands_required": 1,
-                "attack_roll": "[DEX]",
-                "damage": [
-                    {
-                        "damage_roll": "1D4 + [DEX]",
-                        "damage_type": "PIERCING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Rusty Dagger"
+        ]
     },
     {
         "name": "Kobold",
@@ -46,22 +33,9 @@
             "wisdom": 6,
             "charisma": 6
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Clawed Gauntlets",
-                "type": "STANDARD",
-                "hands_required": 2,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D6 + [STR]",
-                        "damage_type": "SLASHING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Rusty Clawed Gauntlets"
+        ]
     },
     {
         "name": "Dungeon Worm",
@@ -78,22 +52,9 @@
             "wisdom": 6,
             "charisma": 1
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Bite",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D6 + [STR]",
-                        "damage_type": "PIERCING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Bite"
+        ]
     },
     {
         "name": "War Shadow",
@@ -110,22 +71,9 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Shadow Claws",
-                "type": "STANDARD",
-                "hands_required": 2,
-                "attack_roll": "[DEX]",
-                "damage": [
-                    {
-                        "damage_roll": "1D6 + [DEX]",
-                        "damage_type": "SLASHING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Shadow Claws"
+        ]
     },
     {
         "name": "Killer Ant",
@@ -142,22 +90,9 @@
             "wisdom": 8,
             "charisma": 2
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Mandibles",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D8 + [STR]",
-                        "damage_type": "PIERCING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Mandibles"
+        ]
     },
     {
         "name": "Poison Jelly",
@@ -174,46 +109,11 @@
             "wisdom": 8,
             "charisma": 1
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Acidic Touch",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D6",
-                        "damage_type": "ACID"
-                    }
-                ]
-            }
+        "equipped_weapons": [
+            "Acidic Touch"
         ],
         "spells": [
-            {
-                "class": "SpellAttack",
-                "name": "Poison Spit",
-                "type": "STANDARD",
-                "level": 1,
-                "mind_cost": [
-                    1,
-                    2,
-                    3
-                ],
-                "damage": [
-                    {
-                        "damage_roll": "[MIND]D6",
-                        "damage_type": "POISON"
-                    }
-                ],
-                "effect": {
-                    "type": "DoT",
-                    "name": "Poisoned",
-                    "max_duration": 3,
-                    "damage_type": "POISON",
-                    "damage_per_turn": "1D4"
-                }
-            }
+            "Poison Spit"
         ]
     },
     {
@@ -231,22 +131,9 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Greatclub",
-                "type": "STANDARD",
-                "hands_required": 2,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D10 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Greatclub"
+        ]
     },
     {
         "name": "Ligerfang",
@@ -263,35 +150,10 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Fangs",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D8 + [STR]",
-                        "damage_type": "PIERCING"
-                    }
-                ]
-            },
-            {
-                "class": "WeaponAttack",
-                "name": "Pounce",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D6 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Fangs",
+            "Pounce"
+        ]
     },
     {
         "name": "Silverback",
@@ -308,22 +170,9 @@
             "wisdom": 10,
             "charisma": 5
         },
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Massive Fists",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D12 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
-        ],
-        "spells": []
+        "equipped_weapons": [
+            "Massive Fists"
+        ]
     },
     {
         "name": "Infant Dragon",
@@ -344,61 +193,13 @@
             "FIRE"
         ],
         "spellcasting_ability": "intelligence",
-        "actions": [
-            {
-                "class": "WeaponAttack",
-                "name": "Claws",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D8 + [STR]",
-                        "damage_type": "SLASHING"
-                    }
-                ]
-            },
-            {
-                "class": "WeaponAttack",
-                "name": "Tail Whip",
-                "type": "STANDARD",
-                "hands_required": 0,
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "1D10 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
+        "equipped_weapons": [
+            "Claws",
+            "Tail Whip"
         ],
-        "spells": [
-            {
-                "class": "SpellAttack",
-                "name": "Fire Breath",
-                "type": "STANDARD",
-                "level": 2,
-                "cooldown": 2,
-                "mind_cost": [
-                    4,
-                    6,
-                    8
-                ],
-                "multi_target_expr": "3",
-                "damage": [
-                    {
-                        "damage_roll": "[MIND]D6",
-                        "damage_type": "FIRE"
-                    }
-                ],
-                "effect": {
-                    "type": "DoT",
-                    "name": "Burning",
-                    "max_duration": 3,
-                    "damage_type": "FIRE",
-                    "damage_per_turn": "1D6"
-                }
-            }
+        "actions": [
+            "Fire Breath",
+            "Wing Buffet"
         ]
     }
 ]

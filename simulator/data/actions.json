@@ -1,0 +1,47 @@
+[
+    {
+        "class": "SpellAttack",
+        "name": "Fire Breath",
+        "type": "STANDARD",
+        "level": 2,
+        "cooldown": 2,
+        "mind_cost": [
+            4,
+            6,
+            8
+        ],
+        "multi_target_expr": "3",
+        "damage": [
+            {
+                "damage_roll": "[MIND]D6",
+                "damage_type": "FIRE"
+            }
+        ],
+        "effect": {
+            "type": "DoT",
+            "name": "Burning",
+            "max_duration": 3,
+            "damage_type": "FIRE",
+            "damage_per_turn": "1D6"
+        }
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Wing Buffet",
+        "type": "STANDARD",
+        "level": 2,
+        "cooldown": 2,
+        "mind_cost": [
+            2,
+            4,
+            6
+        ],
+        "multi_target_expr": "2",
+        "damage": [
+            {
+                "damage_roll": "[MIND]D6",
+                "damage_type": "BLUDGEONING"
+            }
+        ]
+    }
+]
