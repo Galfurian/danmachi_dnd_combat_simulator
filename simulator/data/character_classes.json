@@ -2,7 +2,19 @@
     {
         "name": "Paladin",
         "hp_mult": 8,
-        "mind_mult": 2
+        "mind_mult": 2,
+        "levels": {
+            "1": [
+                {
+                    "action": "Divine Smite",
+                    "is_default": true
+                },
+                {
+                    "action": "Healing Word",
+                    "is_default": true
+                }
+            ]
+        }
     },
     {
         "name": "Sorcerer",

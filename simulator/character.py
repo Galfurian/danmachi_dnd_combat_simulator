@@ -681,7 +681,9 @@ def print_character_details(char: Character):
     if char.actions:
         console.print(f"  Actions:")
         for action in char.actions.values():
-            console.print(f"    - [green]{action.name}[/], [{get_action_type_color(action.type)}]{action.type.name}[/]")
+            console.print(
+                f"    - [green]{action.name}[/], [{get_action_type_color(action.type)}]{action.type.name}[/]"
+            )
     if char.spells:
         console.print(f"  Spellcasting ability: {char.spellcasting_ability}")
         console.print(f"  Spells:")
