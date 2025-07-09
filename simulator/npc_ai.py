@@ -124,11 +124,11 @@ def _sort_for_spell_debuff(
 
 
 def get_all_combat_actions(npc: Character) -> list[BaseAction]:
-    return list(npc.actions.values()) + list(npc.spells.values()) + npc.equipped_weapons
+    return list(npc.actions.values()) + list(npc.spells.values()) + npc.attacks
 
 
-def get_weapon_attacks(actions: list[BaseAction]) -> list[WeaponAttack]:
-    return [a for a in actions if isinstance(a, WeaponAttack)]
+def get_full_attacks(actions: list[BaseAction]) -> list[FullAttack]:
+    return [a for a in actions if isinstance(a, FullAttack)]
 
 
 def get_spell_attacks(actions: list[BaseAction]) -> list[SpellAttack]:
@@ -197,6 +197,33 @@ def choose_best_weapon_action(
     if best_weapon and best_target:
         return best_weapon, best_target
 
+    return None
+
+
+def choose_best_full_attack_action(
+    npc: Character,
+    enemies: list[Character],
+    full_attacks: list[FullAttack],
+) -> tuple[FullAttack, list[tuple[WeaponAttack, Character]]] | None:
+    """It selects the best FullAttack, and it returns the association between the WeaponAttack of the FullAttack and their targets.
+
+    Args:
+        npc (Character): The NPC character making the attack.
+        enemies (list[Character]): The list of enemy characters to attack.
+        full_attacks (list[FullAttack]): The list of FullAttack actions available to the NPC.
+
+    Returns:
+        tuple[FullAttack, list[tuple[WeaponAttack, Character]]] | None: The best FullAttack and a list of tuples associating each WeaponAttack with its target, or None if no viable FullAttack is found.
+    """
+    for full_attack in full_attacks:
+        available_associations = []
+        for weapon_attack in full_attack.attacks:
+            result = choose_best_weapon_action(npc, enemies, [weapon_attack])
+            if result:
+                _, target = result
+                available_associations.append((weapon_attack, target))
+        if available_associations:
+            return full_attack, available_associations
     return None
 
 

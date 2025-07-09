@@ -28,13 +28,13 @@ def get_stat_modifier(score: int) -> int:
 
 
 # ---- Variable Substitution ----
-def substitute_variables(expr: str, resources: Optional[dict[str, int]] = None) -> str:
+def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) -> str:
     """Substitutes variables in the expression with their corresponding values.
 
     Args:
         expr (str): The expression to substitute variables in.
         entity (Optional[Any], optional): The entity to get variable values from. Defaults to None.
-        resources (Optional[dict], optional): The resources values to use for substitution. Defaults to None.
+        variables (Optional[dict], optional): The variables values to use for substitution. Defaults to None.
 
     Returns:
         str: The expression with variables substituted.
@@ -47,7 +47,7 @@ def substitute_variables(expr: str, resources: Optional[dict[str, int]] = None) 
     if expr.isdigit():
         return str(expr)
     # Replace [MIND] with the mind value.
-    for key, value in resources.items() if resources else {}:
+    for key, value in variables.items() if variables else {}:
         if key.upper() in expr:
             expr = expr.replace(f"[{key.upper()}]", str(value))
     return expr
@@ -200,7 +200,7 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 
 
 # ---- Public API ----
-def roll_expression(expr: str, resources: Optional[dict[str, int]] = None) -> int:
+def roll_expression(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -208,12 +208,12 @@ def roll_expression(expr: str, resources: Optional[dict[str, int]] = None) -> in
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, resources)
+    substituted = substitute_variables(expr, variables)
     debug(f"Substituted expression: {substituted}")
     return roll_dice_expression(substituted)
 
 
-def get_max_roll(expr: str, resources: Optional[dict[str, int]] = None) -> int:
+def get_max_roll(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -221,13 +221,13 @@ def get_max_roll(expr: str, resources: Optional[dict[str, int]] = None) -> int:
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, resources)
+    substituted = substitute_variables(expr, variables)
     debug(f"Substituted expression for max roll: {substituted}")
     return parse_expr_and_assume_max_roll(substituted)
 
 
 def roll_and_describe(
-    expr: str, resources: Optional[dict[str, int]] = None
+    expr: str, variables: Optional[dict[str, int]] = None
 ) -> tuple[int, str, list[int]]:
     """Rolls a dice expression and returns the total, a description, and the individual rolls.
 
@@ -247,7 +247,7 @@ def roll_and_describe(
     if expr.isdigit():
         return int(expr), f"{expr} = {expr}", []
     original_expr = expr
-    substituted = substitute_variables(expr, resources)
+    substituted = substitute_variables(expr, variables)
     dice_terms = extract_dice_terms(substituted)
     dice_rolls: list[int] = []
     breakdown = substituted
@@ -264,7 +264,7 @@ def roll_and_describe(
         return 0, f"{original_expr} = ERROR", []
 
 
-def evaluate_expression(expr: str, resources: Optional[dict[str, int]] = None) -> int:
+def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -272,7 +272,7 @@ def evaluate_expression(expr: str, resources: Optional[dict[str, int]] = None) -
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, resources)
+    substituted = substitute_variables(expr, variables)
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:

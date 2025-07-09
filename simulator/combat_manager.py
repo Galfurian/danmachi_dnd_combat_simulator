@@ -168,9 +168,7 @@ class CombatManager:
         """
         if not self.get_alive_opponents(self.player):
             return
-        allowed_actions = (
-            list(self.player.actions.values()) + self.player.equipped_weapons
-        )
+        allowed_actions = list(self.player.actions.values()) + self.player.attacks
         while not self.player.turn_done():
             # Get the action.
             action: Optional[BaseAction] = self.ui.choose_action(
@@ -222,6 +220,25 @@ class CombatManager:
                 self.player.mind -= mind_level
                 # Mark the action type as used.
                 self.player.use_action_type(action.type)
+            elif isinstance(action, FullAttack):
+                for attack in action.attacks:
+                    # Get the legal targets for the attack.
+                    valid_targets = self._get_legal_targets(self.player, attack)
+                    # If there are no valid targets, skip this attack.
+                    if not valid_targets:
+                        warning(
+                            f"{self.player.name} has no valid targets for {attack.name}. Skipping attack."
+                        )
+                        continue
+                    # Get the target for the attack.
+                    target = self.ui.choose_target(self.player, valid_targets, attack)
+                    # If the target is not valid, skip this attack.
+                    if not isinstance(target, Character):
+                        continue
+                    # Perform the attack on the target.
+                    attack.execute(self.player, target)
+                # Mark the action type as used.
+                self.player.use_action_type(action.type)
             else:
                 # Get the target for the action.
                 target = self.ui.choose_target(self.player, valid_targets, action)
@@ -250,7 +267,7 @@ class CombatManager:
         # Get all actions available to the NPC.
         actions: list[BaseAction] = get_all_combat_actions(npc)
         # Get all actions by cathegory.
-        weapon_attacks: list[WeaponAttack] = get_weapon_attacks(actions)
+        full_attacks: list[FullAttack] = get_full_attacks(actions)
         spell_attacks: list[SpellAttack] = get_spell_attacks(actions)
         spell_heals: list[SpellHeal] = get_spell_heals(actions)
         spell_buffs: list[SpellBuff] = get_spell_buffs(actions)
@@ -288,11 +305,13 @@ class CombatManager:
                     spell.cast_spell(npc, target, mind_level)
                 npc.mind -= mind_level
                 return
-        if weapon_attacks:
-            result = choose_best_weapon_action(npc, enemies, weapon_attacks)
+        if full_attacks:
+            result = choose_best_full_attack_action(npc, enemies, full_attacks)
             if result:
-                weapon, target = result
-                weapon.execute(npc, target)
+                _, associations = result
+                for weapon, target in associations:
+                    # Perform the attack on the target.
+                    weapon.execute(npc, target)
                 return
 
         warning(f"SKIP: {npc.name} has no usable action or valid targets.")

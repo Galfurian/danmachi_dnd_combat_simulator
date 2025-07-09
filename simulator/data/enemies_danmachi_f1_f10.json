@@ -14,7 +14,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "attacks": [
             "Rusty Dagger"
         ]
     },
@@ -33,7 +33,7 @@
             "wisdom": 6,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "attacks": [
             "Rusty Clawed Gauntlets"
         ]
     },
@@ -52,7 +52,7 @@
             "wisdom": 6,
             "charisma": 1
         },
-        "equipped_weapons": [
+        "attacks": [
             "Bite"
         ]
     },
@@ -71,7 +71,7 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "attacks": [
             "Shadow Claws"
         ]
     },
@@ -90,7 +90,7 @@
             "wisdom": 8,
             "charisma": 2
         },
-        "equipped_weapons": [
+        "attacks": [
             "Mandibles"
         ]
     },
@@ -109,7 +109,7 @@
             "wisdom": 8,
             "charisma": 1
         },
-        "equipped_weapons": [
+        "attacks": [
             "Acidic Touch"
         ],
         "spells": [
@@ -131,7 +131,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "attacks": [
             "Greatclub"
         ]
     },
@@ -150,7 +150,7 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "attacks": [
             "Fangs",
             "Pounce"
         ]
@@ -170,8 +170,16 @@
             "wisdom": 10,
             "charisma": 5
         },
-        "equipped_weapons": [
-            "Massive Fists"
+        "attacks": [
+            {
+                "class": "FullAttack",
+                "name": "Barrage",
+                "type": "STANDARD",
+                "attacks": [
+                    "Massive Fist",
+                    "Massive Fist"
+                ]
+            }
         ]
     },
     {
@@ -193,9 +201,17 @@
             "FIRE"
         ],
         "spellcasting_ability": "intelligence",
-        "equipped_weapons": [
-            "Claws",
-            "Tail Whip"
+        "attacks": [
+            {
+                "class": "FullAttack",
+                "name": "Full attack",
+                "type": "STANDARD",
+                "attacks": [
+                    "Claw",
+                    "Claw",
+                    "Tail Whip"
+                ]
+            }
         ],
         "actions": [
             "Fire Breath",

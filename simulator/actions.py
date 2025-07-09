@@ -125,6 +125,8 @@ class BaseAction:
         """
         if data.get("class") == "WeaponAttack":
             return WeaponAttack.from_dict(data)
+        if data.get("class") == "FullAttack":
+            return FullAttack.from_dict(data, weapons={})
         if data.get("class") == "SpellAttack":
             return SpellAttack.from_dict(data)
         if data.get("class") == "SpellHeal":
@@ -339,6 +341,61 @@ class WeaponAttack(BaseAction):
             attack_roll=data["attack_roll"],
             damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
+        )
+
+
+class FullAttack(BaseAction):
+    def __init__(
+        self, name: str, type: ActionType, cooldown: int, attacks: list[WeaponAttack]
+    ):
+        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown)
+        self.attacks: list[WeaponAttack] = attacks
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Checks if the target is valid for the action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The character targeted by the action.
+
+        Returns:
+            bool: True if the target is valid, False otherwise.
+        """
+        # A target is valid if:
+        # - It is not the actor itself.
+        # - Both actor and target are alive.
+        # - If the actor and the enemy are not both allies or enemies.
+        if target == actor:
+            return False
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        if not is_oponent(actor.type, target.type):
+            return False
+        return True
+
+    def to_dict(self) -> dict[str, Any]:
+        # Get the base dictionary representation.
+        data = super().to_dict()
+        # Add specific fields for WeaponAttack.
+        data["attacks"] = [attack.name for attack in self.attacks]
+        return data
+
+    @staticmethod
+    def from_dict(
+        data: dict[str, Any], weapons: dict[str, WeaponAttack]
+    ) -> "FullAttack":
+        """
+        Creates a FullAttack instance from a dictionary.
+        Args:
+            data (dict): Dictionary containing the action data.
+        Returns:
+            FullAttack: An instance of FullAttack.
+        """
+        return FullAttack(
+            name=data["name"],
+            type=ActionType[data.get("type", ActionType.STANDARD)],
+            cooldown=data.get("cooldown", 0),
+            attacks=[weapons[attack] for attack in data["attacks"]],
         )
 
 

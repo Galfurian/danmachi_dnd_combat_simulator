@@ -119,6 +119,7 @@ if __name__ == "__main__":
     # add_to_list(characters, allies, "Naerin")
     make_names_unique(opponents)
     make_names_unique(allies)
+
     combat_manager = CombatManager(ui, player, opponents, allies)
     try:
         while not combat_manager.is_combat_over():

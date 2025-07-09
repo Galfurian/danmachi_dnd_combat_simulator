@@ -49,7 +49,7 @@ class Character:
         # Spellcasting Ability.
         self.spellcasting_ability: Optional[str] = spellcasting_ability
         # List of equipped weapons.
-        self.equipped_weapons: list[WeaponAttack] = []
+        self.attacks: list[FullAttack] = []
         self.total_hands: int = 2
         self.hands_used: int = 0
         # List of equipped armor.
@@ -353,22 +353,18 @@ class Character:
             del self.spells[spell.name.lower()]
             debug(f"{self.name} unlearned {spell.name}!")
 
-    def can_equip_weapon(self, weapon: Any) -> bool:
+    def can_add_attack(self, full_attack: FullAttack) -> bool:
         """
-        Checks if the character can equip a specific weapon.
+        Checks if the character can add a specific full_attack.
 
         Args:
-            weapon (Weapon): The weapon to check.
+            full_attack (FullAttack): The full_attack to check.
 
         Returns:
-            bool: True if the weapon can be equipped, False otherwise.
+            bool: True if the full_attack can be added, False otherwise.
         """
-        if not hasattr(weapon, "hands_required"):
-            warning(
-                f"{self.name} cannot equip {weapon.name} because it is not a valid weapon."
-            )
-            return False
-        return (self.hands_used + weapon.hands_required) <= self.total_hands
+        hands_required = sum(attack.hands_required for attack in full_attack.attacks)
+        return (self.hands_used + hands_required) <= self.total_hands
 
     def can_equip_armor(self, armor: Any) -> bool:
         """Checks if the character can equip a specific armor.
@@ -394,41 +390,37 @@ class Character:
         # If the armor slot is not occupied, we can equip it.
         return True
 
-    def equip_weapon(self, weapon: Any) -> bool:
-        """Equips a weapon to the character's weapon slots.
+    def add_attack(self, full_attack: FullAttack) -> bool:
+        """Adds an attack to the character's equipped attacks.
 
         Args:
-            weapon (Weapon): The weapon to equip.
+            full_attack (FullAttack): The attack to add.
         """
-        if not hasattr(weapon, "hands_required"):
-            warning(
-                f"{self.name} cannot equip {weapon.name} because it is not a valid weapon."
+        if self.can_add_attack(full_attack):
+            self.attacks.append(full_attack)
+            self.hands_used += sum(
+                attack.hands_required for attack in full_attack.attacks
             )
-            return False
-        if self.can_equip_weapon(weapon):
-            self.equipped_weapons.append(weapon)
-            self.hands_used += weapon.hands_required
             return True
-        warning(f"{self.name} does not have enough free hands to equip {weapon.name}.")
+        warning(
+            f"{self.name} does not have enough free hands to equip {full_attack.name}."
+        )
         return False
 
-    def remove_weapon(self, weapon: Any) -> bool:
-        """Removes a weapon from the character's equipped weapons.
+    def remove_attack(self, full_attack: FullAttack) -> bool:
+        """Removes an attack from the character's equipped attacks.
 
         Args:
-            weapon (Weapon): The weapon to remove.
+            full_attack (FullAttack): The attack to remove.
         """
-        if not hasattr(weapon, "hands_required"):
-            warning(
-                f"{self.name} cannot remove {weapon.name} because it is not a valid weapon."
+        if full_attack in self.attacks:
+            debug(f"Unequipping attack: {full_attack.name} from {self.name}")
+            self.attacks.remove(full_attack)
+            self.hands_used -= sum(
+                attack.hands_required for attack in full_attack.attacks
             )
-            return False
-        if weapon in self.equipped_weapons:
-            debug(f"Unequipping weapon: {weapon.name} from {self.name}")
-            self.equipped_weapons.remove(weapon)
-            self.hands_used -= weapon.hands_required
             return True
-        warning(f"{self.name} does not have {weapon.name} equipped.")
+        warning(f"{self.name} does not have {full_attack.name} equipped.")
         return False
 
     def add_armor(self, armor: Any) -> bool:
@@ -535,7 +527,7 @@ class Character:
             "levels": {cls.name: lvl for cls, lvl in self.levels.items()},
             "stats": self.stats,
             "spellcasting_ability": self.spellcasting_ability,
-            "equipped_weapons": [w.name for w in self.equipped_weapons],
+            "attacks": [w.name for w in self.attacks],
             "equipped_armor": [a.name for a in self.equipped_armor],
             "actions": list(self.actions.keys()),
             "spells": list(self.spells.keys()),
@@ -600,14 +592,28 @@ class Character:
         char.type = CharacterType[data.get("type", "ENEMY").upper()]
 
         # Load the weapons.
-        for equipped_weapon in data.get("equipped_weapons", []):
-            equipped_weapon = repo.get_weapon_attack(equipped_weapon)
-            if equipped_weapon is None:
-                warning(
-                    f"Invalid weapon '{equipped_weapon}' for character {data['name']}."
+        for attack in data.get("attacks", []):
+            if isinstance(attack, str):
+                weapon_attack = repo.get_weapon_attack(attack)
+                if weapon_attack is None:
+                    warning(f"Invalid weapon '{attack}' for character {char.name}.")
+                    continue
+                char.add_attack(
+                    FullAttack(
+                        name=weapon_attack.name,
+                        type=ActionType.STANDARD,
+                        cooldown=weapon_attack.cooldown,
+                        attacks=[weapon_attack],
+                    )
                 )
-                continue
-            char.equip_weapon(equipped_weapon)
+            elif isinstance(attack, dict) and attack.get("class") == "FullAttack":
+                full_attack = FullAttack.from_dict(attack, weapons=repo.attacks)
+                if full_attack is None:
+                    warning(
+                        f"Invalid full attack '{attack}' for character {char.name}."
+                    )
+                    continue
+                char.add_attack(full_attack)
 
         # Load the armor.
         for equipped_armor in data.get("equipped_armor", []):
@@ -688,12 +694,22 @@ def print_character_details(char: Character):
             console.print(
                 f"    - [blue]{armor.name}[/], {get_armor_type_emoji(armor.armor_type)}, {armor.ac}"
             )
-    if char.equipped_weapons:
-        console.print(f"  Weapons:")
-        for weapon in char.equipped_weapons:
-            console.print(
-                f"    - [green]{weapon.name}[/], [blue]1D20+{weapon.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in weapon.damage])}[/])"
-            )
+    if char.attacks:
+        console.print(f"  Attacks:")
+        for full_attack in char.attacks:
+            if len(full_attack.attacks) == 1:
+                attack = full_attack.attacks[0]
+                console.print(
+                    f"    - [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
+                )
+            else:
+                console.print(
+                    f"    - [green]{full_attack.name}[/], [{get_action_type_color(full_attack.type)}]{full_attack.type.name}[/], cooldown: {full_attack.cooldown}, attacks:"
+                )
+                for i, attack in enumerate(full_attack.attacks, start=1):
+                    console.print(
+                        f"      {i}. [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
+                    )
     if char.actions:
         console.print(f"  Actions:")
         for action in char.actions.values():

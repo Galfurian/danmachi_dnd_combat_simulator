@@ -1,5 +1,5 @@
 {
-    "weapons": [
+    "attacks": [
         {
             "class": "WeaponAttack",
             "name": "Longsword",
@@ -67,9 +67,9 @@
         },
         {
             "class": "WeaponAttack",
-            "name": "Claws",
+            "name": "Claw",
             "type": "STANDARD",
-            "hands_required": 2,
+            "hands_required": 0,
             "attack_roll": "[DEX]",
             "damage": [
                 {
@@ -80,7 +80,7 @@
         },
         {
             "class": "WeaponAttack",
-            "name": "Mandibles",
+            "name": "Mandible",
             "type": "STANDARD",
             "hands_required": 0,
             "attack_roll": "[STR]",
@@ -145,7 +145,7 @@
         },
         {
             "class": "WeaponAttack",
-            "name": "Fists",
+            "name": "Fist",
             "type": "STANDARD",
             "hands_required": 0,
             "attack_roll": "[STR]",
@@ -208,12 +208,12 @@
             "name": "Worm Bite"
         },
         {
-            "base": "Claws",
-            "name": "Shadow Claws"
+            "base": "Claw",
+            "name": "Shadow Claw"
         },
         {
-            "base": "Fists",
-            "name": "Massive Fists",
+            "base": "Fist",
+            "name": "Massive Fist",
             "delta": {
                 "attack_roll_mod": "+2",
                 "damage_roll_mod": "+2"
