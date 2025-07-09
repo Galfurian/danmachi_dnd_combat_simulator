@@ -70,6 +70,8 @@ class Character:
         self.vulnerabilities: set[DamageType] = set()
         # Keep track of abilitiies cooldown.
         self.cooldowns: dict[str, int] = {}
+        # Keep track of the uses of abilities.
+        self.uses: dict[str, int] = {}
         # Maximum HP and Mind.
         self.hp: int = self.HP_MAX
         self.mind: int = self.MIND_MAX
@@ -79,8 +81,8 @@ class Character:
         """Returns the maximum HP of the character."""
         hp_max: int = 0
         # Add the class levels' HP multipliers to the max HP.
-        for cls, cls_level in self.levels.items():
-            hp_max += max(1, (cls.hp_mult + self.CON)) * cls_level
+        for cls, lvl in self.levels.items():
+            hp_max += lvl * (cls.hp_mult + self.CON)
         # Add the effect modifiers to the max HP.
         hp_max += self.effect_manager.get_modifier(BonusType.HP)
         return hp_max
@@ -90,8 +92,8 @@ class Character:
         """Returns the maximum Mind of the character."""
         mind_max: int = 0
         # Add the class levels' Mind multipliers to the max Mind.
-        for cls, cls_level in self.levels.items():
-            mind_max += max(0, (cls.mind_mult + self.SPELLCASTING)) * cls_level
+        for cls, lvl in self.levels.items():
+            mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
         # Add the effect modifiers to the max Mind.
         mind_max += self.effect_manager.get_modifier(BonusType.MIND)
         return mind_max
@@ -222,6 +224,32 @@ class Character:
         elif action_type == ActionType.BONUS:
             return not self.turn_flags["bonus_action_used"]
         return True
+
+    def get_available_attacks(self) -> list[FullAttack]:
+        """Returns a list of attacks that the character can use this turn."""
+        available_attacks = []
+        for attack in self.attacks:
+            if not self.is_on_cooldown(attack) and self.has_action_type(attack.type):
+                available_attacks.append(attack)
+        return available_attacks
+
+    def get_available_actions(self) -> list[BaseAction]:
+        """Returns a list of actions that the character can use this turn."""
+        available_actions = []
+        for action in self.actions.values():
+            if not self.is_on_cooldown(action) and self.has_action_type(action.type):
+                available_actions.append(action)
+        return available_actions
+
+    def get_available_spells(self) -> list[Spell]:
+        """Returns a list of spells that the character can use this turn."""
+        available_spells = []
+        for spell in self.spells.values():
+            if not self.is_on_cooldown(spell) and self.has_action_type(spell.type):
+                # Check if the character has enough mind points to cast the spell.
+                if self.mind >= (spell.mind_cost[0] if spell.mind_cost else 0):
+                    available_spells.append(spell)
+        return available_spells
 
     def turn_done(self) -> bool:
         """
@@ -494,6 +522,46 @@ class Character:
         """
         return self.cooldowns.get(action.name, 0) > 0
 
+    def initialize_uses(self, action: BaseAction):
+        """Initializes the uses of an action to its maximum uses.
+
+        Args:
+            action (BaseAction): The action to initialize uses for.
+        """
+        if action.name not in self.uses:
+            self.uses[action.name] = action.maximum_uses
+            debug(
+                f"{self.name} initialized {action.name} with {action.maximum_uses} uses."
+            )
+
+    def get_remaining_uses(self, action: BaseAction) -> int:
+        """Returns the remaining uses of an action.
+
+        Args:
+            action (BaseAction): The action to check.
+
+        Returns:
+            int: The remaining uses of the action.
+        """
+        return self.uses.get(action.name, 0)
+
+    def decrement_uses(self, action: BaseAction):
+        """Decrements the uses of an action by 1.
+
+        Args:
+            action (BaseAction): The action to decrement uses for.
+        """
+        if action.name in self.uses:
+            if self.uses[action.name] > 0:
+                self.uses[action.name] -= 1
+                debug(
+                    f"{self.name} used {action.name}. Remaining uses: {self.uses[action.name]}"
+                )
+            else:
+                warning(f"{self.name} has no remaining uses for {action.name}.")
+        else:
+            warning(f"{self.name} does not have {action.name} in their uses.")
+
     def get_status_line(self):
         effects = (
             ", ".join(
@@ -603,6 +671,7 @@ class Character:
                         name=base_attack.name,
                         type=ActionType.STANDARD,
                         cooldown=base_attack.cooldown,
+                        maximum_uses=base_attack.maximum_uses,
                         attacks=[base_attack],
                     )
                 )
@@ -691,7 +760,7 @@ def print_character_details(char: Character):
     """Prints the details of a character in a formatted way."""
 
     console.print(
-        f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], [blue]{char.race.name}[/], {', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])}, hp: {char.hp}, ac: {char.AC}"
+        f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], [blue]{char.race.name}[/], {', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])}, hp: {char.hp}/{char.HP_MAX}, ac: {char.AC}"
     )
     console.print(
         f"  {', '.join([f'{stat}: {value}' for stat, value in char.stats.items()])}"

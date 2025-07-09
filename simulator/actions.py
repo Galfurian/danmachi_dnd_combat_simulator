@@ -16,12 +16,18 @@ console = Console()
 
 class BaseAction:
     def __init__(
-        self, name: str, type: ActionType, category: ActionCategory, cooldown: int
+        self,
+        name: str,
+        type: ActionType,
+        category: ActionCategory,
+        cooldown: int,
+        maximum_uses: int,
     ):
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
         self.cooldown: int = cooldown
+        self.maximum_uses: int = maximum_uses
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Abstract method for executables.
@@ -111,6 +117,7 @@ class BaseAction:
             "type": self.type.name,
             "category": self.category.name,
             "cooldown": self.cooldown,
+            "maximum_uses": self.maximum_uses,
         }
 
     @staticmethod
@@ -144,12 +151,13 @@ class BaseAttack(BaseAction):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
     ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown)
+        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
         self.hands_required: int = hands_required
         self.attack_roll: str = attack_roll
         self.damage: list[DamageComponent] = damage
@@ -337,6 +345,7 @@ class BaseAttack(BaseAction):
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             hands_required=data["hands_required"],
             attack_roll=data["attack_roll"],
             damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
@@ -346,9 +355,14 @@ class BaseAttack(BaseAction):
 
 class FullAttack(BaseAction):
     def __init__(
-        self, name: str, type: ActionType, cooldown: int, attacks: list[BaseAttack]
+        self,
+        name: str,
+        type: ActionType,
+        cooldown: int,
+        maximum_uses: int,
+        attacks: list[BaseAttack],
     ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown)
+        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
         self.attacks: list[BaseAttack] = attacks
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
@@ -395,6 +409,7 @@ class FullAttack(BaseAction):
             name=data["name"],
             type=ActionType[data.get("type", ActionType.STANDARD)],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             attacks=[base_attacks[attack] for attack in data["attacks"]],
         )
 
@@ -405,12 +420,13 @@ class Spell(BaseAction):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         level: int,
         mind_cost: list[int],
         category: ActionCategory,
         multi_target_expr: str = "",
     ):
-        super().__init__(name, type, category, cooldown)
+        super().__init__(name, type, category, cooldown, maximum_uses)
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
         self.multi_target_expr: str = multi_target_expr
@@ -503,6 +519,7 @@ class SpellAttack(Spell):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         level: int,
         mind_cost: list[int],
         damage: list[DamageComponent],
@@ -513,6 +530,7 @@ class SpellAttack(Spell):
             name,
             type,
             cooldown,
+            maximum_uses,
             level,
             mind_cost,
             ActionCategory.OFFENSIVE,
@@ -708,6 +726,7 @@ class SpellAttack(Spell):
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
             damage=[
@@ -724,6 +743,7 @@ class SpellHeal(Spell):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         level: int,
         mind_cost: list[int],
         heal_roll: str,
@@ -734,6 +754,7 @@ class SpellHeal(Spell):
             name,
             type,
             cooldown,
+            maximum_uses,
             level,
             mind_cost,
             ActionCategory.HEALING,
@@ -874,6 +895,7 @@ class SpellHeal(Spell):
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
             heal_roll=data["heal_roll"],
@@ -888,6 +910,7 @@ class SpellBuff(Spell):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         level: int,
         mind_cost: list[int],
         effect: Buff,
@@ -897,6 +920,7 @@ class SpellBuff(Spell):
             name,
             type,
             cooldown,
+            maximum_uses,
             level,
             mind_cost,
             ActionCategory.BUFF,
@@ -1005,6 +1029,7 @@ class SpellBuff(Spell):
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Buff.from_dict(data["effect"]),
@@ -1018,6 +1043,7 @@ class SpellDebuff(Spell):
         name: str,
         type: ActionType,
         cooldown: int,
+        maximum_uses: int,
         level: int,
         mind_cost: list[int],
         effect: Debuff,
@@ -1027,6 +1053,7 @@ class SpellDebuff(Spell):
             name,
             type,
             cooldown,
+            maximum_uses,
             level,
             mind_cost,
             ActionCategory.DEBUFF,
@@ -1128,6 +1155,7 @@ class SpellDebuff(Spell):
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Debuff.from_dict(data["effect"]),

@@ -124,7 +124,11 @@ def _sort_for_spell_debuff(
 
 
 def get_all_combat_actions(npc: Character) -> list[BaseAction]:
-    return list(npc.actions.values()) + list(npc.spells.values()) + npc.attacks
+    return (
+        npc.get_available_attacks()
+        + npc.get_available_actions()
+        + npc.get_available_spells()
+    )
 
 
 def get_full_attacks(actions: list[BaseAction]) -> list[FullAttack]:

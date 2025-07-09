@@ -25,6 +25,7 @@ class BonusType(Enum):
 class ActionType(Enum):
     """Defines the type of action that can be performed."""
 
+    NONE = auto()
     STANDARD = auto()
     BONUS = auto()
     FREE = auto()
@@ -55,6 +56,7 @@ class ActionCategory(Enum):
     BUFF = auto()
     DEBUFF = auto()
     UTILITY = auto()
+    SUBMENU = auto()
     DEBUG = auto()
 
 

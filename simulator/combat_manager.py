@@ -17,6 +17,10 @@ from npc_ai import *
 console = Console()
 
 
+CAST_SPELL = BaseAction("Cast a Spell", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
+BACK = BaseAction("Back", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
+
+
 class CombatManager:
     def __init__(
         self,
@@ -168,24 +172,24 @@ class CombatManager:
         """
         if not self.get_alive_opponents(self.player):
             return
-        allowed_actions = list(self.player.actions.values()) + self.player.attacks
+
         while not self.player.turn_done():
+            allowed_actions = (
+                self.player.get_available_attacks()
+                + self.player.get_available_actions()
+                + [CAST_SPELL]
+            )
             # Get the action.
             action: Optional[BaseAction] = self.ui.choose_action(
                 self.player, allowed_actions
             )
-            if not action:
-                break
-            # Get the legal targets for the chosen action.
-            valid_targets = self._get_legal_targets(self.player, action)
-            # If there are no valid targets, skip this action.
-            if not valid_targets:
-                warning(
-                    f"{self.player.name} has no valid targets for {action.name}. Skipping action."
-                )
-                continue
             # If the action is a Spell, we need to handle it differently.
-            if isinstance(action, Spell):
+            if action == CAST_SPELL:
+                action = self.ui.choose_spell(
+                    self.player, self.player.get_available_spells()
+                )
+                if not action:
+                    break
                 # Gather here the actual targets.
                 targets = []
                 # Ask for the [MIND] level to use for the spell.

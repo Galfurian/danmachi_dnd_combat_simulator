@@ -61,7 +61,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Beast": 2
+            "Beast": 1
         },
         "stats": {
             "strength": 12,
@@ -72,7 +72,7 @@
             "charisma": 6
         },
         "attacks": [
-            "Shadow Claws"
+            "Shadow Claw"
         ]
     },
     {
@@ -80,7 +80,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Insectoid": 2
+            "Insectoid": 1
         },
         "stats": {
             "strength": 14,
@@ -91,7 +91,7 @@
             "charisma": 2
         },
         "attacks": [
-            "Mandibles"
+            "Mandible"
         ]
     },
     {
@@ -99,7 +99,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Ooze": 2
+            "Ooze": 1
         },
         "stats": {
             "strength": 8,
@@ -121,7 +121,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Brute": 2
+            "Brute": 1
         },
         "stats": {
             "strength": 16,
@@ -140,7 +140,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Beast": 3
+            "Beast": 1
         },
         "stats": {
             "strength": 16,
@@ -160,7 +160,7 @@
         "type": "ENEMY",
         "race": "Monster",
         "levels": {
-            "Brute": 4
+            "Brute": 2
         },
         "stats": {
             "strength": 18,
@@ -187,7 +187,7 @@
         "type": "ENEMY",
         "race": "Dragonkin",
         "levels": {
-            "Dragonkin": 3
+            "Dragonkin": 2
         },
         "stats": {
             "strength": 16,

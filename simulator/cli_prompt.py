@@ -1,5 +1,5 @@
 # cli_prompt.py
-from typing import Any, List, Optional
+from typing import Any, Generator, List, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -82,55 +82,41 @@ class PromptToolkitCLI(PlayerInterface):
     def choose_action(
         self, actor: Character, allowed: List[BaseAction]
     ) -> Optional[BaseAction]:
-        # Filter actions based on the actor's available action types.
-        has_standard_action = actor.has_action_type(ActionType.STANDARD)
-        has_bonus_action = actor.has_action_type(ActionType.BONUS)
-        actions = [
-            action
-            for action in allowed
-            if (
-                action.type == ActionType.STANDARD
-                and has_standard_action
-                or action.type == ActionType.BONUS
-                and has_bonus_action
-            )
-            and not actor.is_on_cooldown(action)
-        ]
-        if not actions:
-            return None
+        assert allowed, "No actions available for the actor"
         # Generate a table of actions (including "Cast a Spell" if present)
-        tbl = self._create_action_table(actions)
+        tbl = self._create_action_table(allowed)
         if not tbl.rows:
             return None
-        # If the actor has spells, add "Cast a Spell" as an option.
-        if actor.spells:
-            tbl.add_row()
-            tbl.add_row("0", "Cast a Spell", "", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(tbl) + "\nAction > "
         # Create a completer for the action names (including "Cast a Spell" if present)
-        completer = WordCompleter(
-            [a.name for a in actions] + ["Cast a Spell"], ignore_case=True
-        )
+        completer = WordCompleter([a.name for a in allowed], ignore_case=True)
         while True:
             # Prompt the user for input.
             answer = show_prompt(prompt, completer, True).lower()
             # If the user didn't type anything, return None.
             if not answer:
                 continue
-            if answer.isdigit() and int(answer) == 0 or answer == "cast a spell":
-                # If the user wants to cast a spell, prompt for a spell.
-                spell = self.choose_spell(actor, list(actor.spells.values()))
-                # If the user didn't select a spell, show the prompt again.
-                if spell:
-                    return spell
             # If the user typed a number, return the corresponding action.
             if answer.isdigit():
-                if 1 <= int(answer) <= len(actions):
-                    return actions[int(answer) - 1]
+                if 1 <= int(answer) <= len(allowed):
+                    return allowed[int(answer) - 1]
+            elif answer.isalpha():
+                # If the user typed a letter, check if it matches a submenu.
+                action = next(
+                    (
+                        a
+                        for letter, a in self._get_submenu_actions(allowed)
+                        if letter == answer
+                    ),
+                    None,
+                )
+                # If no valid action was selected, prompt again.
+                if isinstance(action, BaseAction):
+                    return action
             else:
                 # If the selection is not a number, check if it matches an action name.
-                action = next((a for a in actions if a.name.lower() == answer), None)
+                action = next((a for a in allowed if a.name.lower() == answer), None)
                 # If no valid action was selected, prompt again.
                 if isinstance(action, BaseAction):
                     return action
@@ -448,9 +434,18 @@ class PromptToolkitCLI(PlayerInterface):
         tbl.add_column("Name", style="bold")
         tbl.add_column("Type", style="magenta")
         tbl.add_column("Category", style="blue")
-        for i, action in enumerate(actions, 1):
+        for i, action in self._get_non_submenu_actions(actions):
             tbl.add_row(
                 str(i),
+                action.name,
+                apply_action_type_color(action.type, action.type.name.title()),
+                apply_action_category_color(
+                    action.category, action.category.name.title()
+                ),
+            )
+        for i, action in self._get_submenu_actions(actions):
+            tbl.add_row(
+                chr(i),
                 action.name,
                 apply_action_type_color(action.type, action.type.name.title()),
                 apply_action_category_color(
@@ -502,3 +497,27 @@ class PromptToolkitCLI(PlayerInterface):
                 ),
             )
         return tbl
+
+    def _get_submenu_actions(
+        self, actions: list[BaseAction]
+    ) -> list[tuple[int, BaseAction]]:
+        """Iterates over submenu actions and yields their index and action."""
+        index = 0
+        result: list[tuple[int, BaseAction]] = []
+        for action in actions:
+            if action.category == ActionCategory.SUBMENU:
+                result.append((97 + index, action))
+                index += 1
+        return result
+
+    def _get_non_submenu_actions(
+        self, actions: list[BaseAction]
+    ) -> list[tuple[int, BaseAction]]:
+        """Iterates over non-submenu actions and yields their index and action."""
+        index: int = 1
+        result: list[tuple[int, BaseAction]] = []
+        for action in actions:
+            if action.category != ActionCategory.SUBMENU:
+                result.append((index, action))
+                index += 1
+        return result

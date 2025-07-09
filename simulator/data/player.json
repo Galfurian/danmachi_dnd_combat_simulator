@@ -3,7 +3,7 @@
     "type": "PLAYER",
     "race": "Aasimar",
     "levels": {
-        "Paladin": 3,
+        "Paladin": 4,
         "Sorcerer": 4
     },
     "stats": {

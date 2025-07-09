@@ -5,6 +5,7 @@
         "type": "STANDARD",
         "level": 2,
         "cooldown": 3,
+        "maximum_uses": 2,
         "mind_cost": [
             4,
             6,
