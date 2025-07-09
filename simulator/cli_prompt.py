@@ -14,7 +14,7 @@ from actions import (
     SpellBuff,
     SpellDebuff,
     SpellHeal,
-    WeaponAttack,
+    BaseAttack,
 )
 from character import Character
 from prompt_toolkit import ANSI
@@ -365,13 +365,13 @@ class PromptToolkitCLI(PlayerInterface):
             description.append(
                 f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/], Lvl: {action.level}, Mind Cost: {action.mind_cost}\n"
             )
-        elif isinstance(action, WeaponAttack):
+        elif isinstance(action, BaseAttack):
             description.append(
                 f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/]\n"
             )
 
         # Add the specific details of the action.
-        if isinstance(action, WeaponAttack):
+        if isinstance(action, BaseAttack):
             for damage in action.damage:
                 description.append(
                     f"    Damage: {action.get_damage_expr(actor)} {damage.damage_type.name}\n"

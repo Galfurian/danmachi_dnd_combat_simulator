@@ -1,7 +1,7 @@
 {
     "attacks": [
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Longsword",
             "type": "STANDARD",
             "hands_required": 1,
@@ -14,7 +14,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Shortsword",
             "type": "STANDARD",
             "hands_required": 1,
@@ -27,7 +27,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Dagger",
             "type": "STANDARD",
             "hands_required": 1,
@@ -40,7 +40,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Clawed Gauntlets",
             "type": "STANDARD",
             "hands_required": 2,
@@ -53,7 +53,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Bite",
             "type": "STANDARD",
             "hands_required": 0,
@@ -66,7 +66,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Claw",
             "type": "STANDARD",
             "hands_required": 0,
@@ -79,7 +79,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Mandible",
             "type": "STANDARD",
             "hands_required": 0,
@@ -92,7 +92,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Acidic Touch",
             "type": "STANDARD",
             "hands_required": 0,
@@ -105,7 +105,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Greatclub",
             "type": "STANDARD",
             "hands_required": 2,
@@ -118,7 +118,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Fangs",
             "type": "STANDARD",
             "hands_required": 0,
@@ -131,7 +131,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Pounce",
             "type": "STANDARD",
             "hands_required": 0,
@@ -144,7 +144,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Fist",
             "type": "STANDARD",
             "hands_required": 0,
@@ -157,7 +157,7 @@
             ]
         },
         {
-            "class": "WeaponAttack",
+            "class": "BaseAttack",
             "name": "Tail Whip",
             "type": "STANDARD",
             "hands_required": 0,

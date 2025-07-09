@@ -48,7 +48,7 @@ class Character:
         }
         # Spellcasting Ability.
         self.spellcasting_ability: Optional[str] = spellcasting_ability
-        # List of equipped weapons.
+        # List of available attacks.
         self.attacks: list[FullAttack] = []
         self.total_hands: int = 2
         self.hands_used: int = 0
@@ -481,7 +481,7 @@ class Character:
             duration (int): The duration of the cooldown in turns.
         """
         if action.name not in self.cooldowns:
-            self.cooldowns[action.name] = duration
+            self.cooldowns[action.name] = duration + 1
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.
@@ -591,23 +591,23 @@ class Character:
         # Set the character as a player if specified.
         char.type = CharacterType[data.get("type", "ENEMY").upper()]
 
-        # Load the weapons.
+        # Load the attacks.
         for attack in data.get("attacks", []):
             if isinstance(attack, str):
-                weapon_attack = repo.get_weapon_attack(attack)
-                if weapon_attack is None:
-                    warning(f"Invalid weapon '{attack}' for character {char.name}.")
+                base_attack = repo.get_base_attack(attack)
+                if base_attack is None:
+                    warning(f"Invalid attack '{attack}' for character {char.name}.")
                     continue
                 char.add_attack(
                     FullAttack(
-                        name=weapon_attack.name,
+                        name=base_attack.name,
                         type=ActionType.STANDARD,
-                        cooldown=weapon_attack.cooldown,
-                        attacks=[weapon_attack],
+                        cooldown=base_attack.cooldown,
+                        attacks=[base_attack],
                     )
                 )
             elif isinstance(attack, dict) and attack.get("class") == "FullAttack":
-                full_attack = FullAttack.from_dict(attack, weapons=repo.attacks)
+                full_attack = FullAttack.from_dict(attack, repo.attacks)
                 if full_attack is None:
                     warning(
                         f"Invalid full attack '{attack}' for character {char.name}."
@@ -624,6 +624,14 @@ class Character:
                 )
                 continue
             char.add_armor(equipped_armor)
+
+        # Load the actions.
+        for action_name in data.get("actions", []):
+            action = repo.get_action(action_name)
+            if action is None:
+                warning(f"Invalid action '{action_name}' for character {data['name']}.")
+                continue
+            char.learn_action(action)
 
         # Load the spells.
         for spell_data in data.get("spells", []):

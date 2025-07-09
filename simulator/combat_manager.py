@@ -309,9 +309,9 @@ class CombatManager:
             result = choose_best_full_attack_action(npc, enemies, full_attacks)
             if result:
                 _, associations = result
-                for weapon, target in associations:
+                for attack, target in associations:
                     # Perform the attack on the target.
-                    weapon.execute(npc, target)
+                    attack.execute(npc, target)
                 return
 
         warning(f"SKIP: {npc.name} has no usable action or valid targets.")

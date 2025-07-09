@@ -4,7 +4,7 @@
         "name": "Fire Breath",
         "type": "STANDARD",
         "level": 2,
-        "cooldown": 2,
+        "cooldown": 3,
         "mind_cost": [
             4,
             6,
@@ -30,7 +30,7 @@
         "name": "Wing Buffet",
         "type": "STANDARD",
         "level": 2,
-        "cooldown": 2,
+        "cooldown": 3,
         "mind_cost": [
             2,
             4,

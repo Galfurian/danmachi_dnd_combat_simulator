@@ -27,7 +27,7 @@ class ContentRepository(metaclass=Singleton):
     classes: dict[str, CharacterClass]
     races: dict[str, CharacterRace]
     # Item-related attributes.
-    attacks: dict[str, WeaponAttack]
+    attacks: dict[str, BaseAttack]
     armors: dict[str, Armor]
     # Action-related attributes.
     spells: dict[str, BaseAction]
@@ -43,7 +43,9 @@ class ContentRepository(metaclass=Singleton):
 
         root = Path(data_dir) if data_dir else DATA
 
-        console.print(f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow")
+        console.print(
+            f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow"
+        )
 
         console.print("Loading character classes...", style="bold yellow")
 
@@ -77,11 +79,11 @@ class ContentRepository(metaclass=Singleton):
             if "variants" not in data:
                 raise ValueError(f"No 'variants' key found in {root / 'attacks.json'}")
             # First, load the base attacks.
-            self.attacks = self._load_attacks(data["attacks"])
-            # Then, load the weapon variants.
-            weapon_variants = self._load_weapon_variants(data["variants"], self.attacks)
+            self.attacks = self._load_base_attacks(data["attacks"])
+            # Then, load the attack variants.
+            attack_variants = self._load_attack_variants(data["variants"], self.attacks)
             # Add the variants to the attacks dictionary.
-            self.attacks.update(weapon_variants)
+            self.attacks.update(attack_variants)
 
         console.print("Loading armors...", style="bold yellow")
 
@@ -167,17 +169,17 @@ class ContentRepository(metaclass=Singleton):
             return entry
         return None
 
-    def get_weapon_attack(self, name: str) -> WeaponAttack | None:
-        """Get a weapon attack by name, or None if not found.
+    def get_base_attack(self, name: str) -> BaseAttack | None:
+        """Get a base attack by name, or None if not found.
 
         Args:
-            name (str): The name of the weapon attack.
+            name (str): The name of the base attack.
 
         Returns:
-            WeaponAttack | None: The weapon attack instance or None.
+            BaseAttack | None: The base attack instance or None.
         """
         entry = self.attacks.get(name)
-        if entry and isinstance(entry, WeaponAttack):
+        if entry and isinstance(entry, BaseAttack):
             return entry
         return None
 
@@ -292,29 +294,29 @@ class ContentRepository(metaclass=Singleton):
         return actions
 
     @staticmethod
-    def _load_attacks(data) -> dict[str, WeaponAttack]:
-        attacks: dict[str, WeaponAttack] = {}
-        # Load weapon attacks.
-        for weapon_data in data:
-            weapon = WeaponAttack.from_dict(weapon_data)
-            if weapon.name in attacks:
-                raise ValueError(f"Duplicate weapon name: {weapon.name}")
-            attacks[weapon.name] = weapon
+    def _load_base_attacks(data) -> dict[str, BaseAttack]:
+        attacks: dict[str, BaseAttack] = {}
+        # Load base attacks.
+        for attack_data in data:
+            base_attack = BaseAttack.from_dict(attack_data)
+            if base_attack.name in attacks:
+                raise ValueError(f"Duplicate attack name: {base_attack.name}")
+            attacks[base_attack.name] = base_attack
         return attacks
 
     @staticmethod
-    def _load_weapon_variants(
-        data, base_attacks: dict[str, WeaponAttack]
-    ) -> dict[str, WeaponAttack]:
-        variants: dict[str, WeaponAttack] = {}
+    def _load_attack_variants(
+        data, base_attacks: dict[str, BaseAttack]
+    ) -> dict[str, BaseAttack]:
+        variants: dict[str, BaseAttack] = {}
         for variant_data in data:
-            base_weapon = base_attacks.get(variant_data["base"])
-            if not base_weapon:
+            base_attack = base_attacks.get(variant_data["base"])
+            if not base_attack:
                 raise ValueError(
-                    f"Base weapon '{variant_data['base']}' not found in attacks."
+                    f"Base attack '{variant_data['base']}' not found in attacks."
                 )
             # Generate the variant.
-            variant = copy.deepcopy(base_weapon)
+            variant = copy.deepcopy(base_attack)
             # Set the variant name and apply deltas.
             variant.name = variant_data["name"]
             if mod := variant_data.get("attack_roll_mod"):
@@ -331,6 +333,6 @@ class ContentRepository(metaclass=Singleton):
                 if k not in ("attack_roll_mod", "damage_roll_mod"):
                     setattr(variant, k, v)
             if variant.name in base_attacks:
-                raise ValueError(f"Duplicate weapon variant name: {variant.name}")
+                raise ValueError(f"Duplicate attack variant name: {variant.name}")
             variants[variant.name] = variant
         return variants

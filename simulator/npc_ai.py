@@ -7,11 +7,11 @@ from actions import *
 # =============================================================================
 
 
-def _sort_for_weapon_attack(
-    actor: Character, action: WeaponAttack, targets: list[Character]
+def _sort_for_base_attack(
+    actor: Character, action: BaseAttack, targets: list[Character]
 ) -> list[Character]:
     """
-    Prioritizes targets for melee weapon attacks.
+    Prioritizes targets for base attacks.
     - Lower HP gets higher priority.
     - Effects (if any) are considered via `would_be_useful`.
     """
@@ -147,55 +147,49 @@ def get_spell_debuffs(actions: list[BaseAction]) -> list[SpellDebuff]:
     return [a for a in actions if isinstance(a, SpellDebuff)]
 
 
-def choose_best_weapon_action(
+def choose_best_base_attack_action(
     npc: Character,
     enemies: list[Character],
-    weapons: list[WeaponAttack],
-) -> tuple[WeaponAttack, Character] | None:
+    base_attacks: list[BaseAttack],
+) -> tuple[BaseAttack, Character] | None:
     """
-    Chooses the best weapon and target combo based on:
-    - Usefulness of the weapon’s effect (if any)
+    Chooses the best attack and target combo based on:
+    - Usefulness of the attack’s effect (if any)
     - Target vulnerability (low HP)
     - Number of damage components
     """
-    best_score = -1
-    best_weapon = None
-    best_target = None
+    best_score: float = -1
+    best_attack: BaseAttack = None
+    best_target: Character = None
 
-    for weapon in weapons:
-
-        if npc.is_on_cooldown(weapon):
+    for attack in base_attacks:
+        # Skip if the attack is not available (e.g., on cooldown).
+        if npc.is_on_cooldown(attack):
             continue
-
-        sorted_targets = _sort_for_weapon_attack(npc, weapon, enemies)
-
+        # Sort targets based on their vulnerability to the attack.
+        sorted_targets = _sort_for_base_attack(npc, attack, enemies)
+        # Iterate through sorted targets to find the best one.
         for target in sorted_targets:
             # Score based on how much the effect helps and how close the target is to death
             effect_score = 0
-            if weapon.effect:
-                if target.effect_manager.would_be_useful(
-                    weapon.effect, target, mind_level=0
-                ):
+            if attack.effect:
+                if target.effect_manager.would_be_useful(attack.effect, target, 0):
                     effect_score += 10
-
             # HP-based vulnerability (lower is better)
             hp_ratio = target.hp / target.HP_MAX if target.HP_MAX > 0 else 1
             vulnerability_score = (1 - hp_ratio) * 10
-
             # Damage component count (e.g., bonus fire + necrotic)
-            damage_bonus = len(weapon.damage)
-
+            damage_bonus = len(attack.damage)
+            # Compute the total score.
             score = effect_score + vulnerability_score + damage_bonus
-
+            # If the score is better than the current best, update.
             if score > best_score:
                 best_score = score
-                best_weapon = weapon
+                best_attack = attack
                 best_target = target
 
-            break  # only consider the top target for each weapon
-
-    if best_weapon and best_target:
-        return best_weapon, best_target
+    if best_attack and best_target:
+        return best_attack, best_target
 
     return None
 
@@ -204,8 +198,8 @@ def choose_best_full_attack_action(
     npc: Character,
     enemies: list[Character],
     full_attacks: list[FullAttack],
-) -> tuple[FullAttack, list[tuple[WeaponAttack, Character]]] | None:
-    """It selects the best FullAttack, and it returns the association between the WeaponAttack of the FullAttack and their targets.
+) -> tuple[FullAttack, list[tuple[BaseAttack, Character]]] | None:
+    """It selects the best FullAttack, and it returns the association between the BaseAttack of the FullAttack and their targets.
 
     Args:
         npc (Character): The NPC character making the attack.
@@ -213,15 +207,15 @@ def choose_best_full_attack_action(
         full_attacks (list[FullAttack]): The list of FullAttack actions available to the NPC.
 
     Returns:
-        tuple[FullAttack, list[tuple[WeaponAttack, Character]]] | None: The best FullAttack and a list of tuples associating each WeaponAttack with its target, or None if no viable FullAttack is found.
+        tuple[FullAttack, list[tuple[BaseAttack, Character]]] | None: The best FullAttack and a list of tuples associating each BaseAttack with its target, or None if no viable FullAttack is found.
     """
     for full_attack in full_attacks:
         available_associations = []
-        for weapon_attack in full_attack.attacks:
-            result = choose_best_weapon_action(npc, enemies, [weapon_attack])
+        for attack in full_attack.attacks:
+            result = choose_best_base_attack_action(npc, enemies, [attack])
             if result:
                 _, target = result
-                available_associations.append((weapon_attack, target))
+                available_associations.append((attack, target))
         if available_associations:
             return full_attack, available_associations
     return None

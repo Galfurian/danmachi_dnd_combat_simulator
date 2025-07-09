@@ -123,10 +123,10 @@ class BaseAction:
         Returns:
             Executable: An instance of the executable.
         """
-        if data.get("class") == "WeaponAttack":
-            return WeaponAttack.from_dict(data)
+        if data.get("class") == "BaseAttack":
+            return BaseAttack.from_dict(data)
         if data.get("class") == "FullAttack":
-            return FullAttack.from_dict(data, weapons={})
+            return FullAttack.from_dict(data, {})
         if data.get("class") == "SpellAttack":
             return SpellAttack.from_dict(data)
         if data.get("class") == "SpellHeal":
@@ -138,7 +138,7 @@ class BaseAction:
         raise ValueError(f"Unknown action class: {data.get('class')}")
 
 
-class WeaponAttack(BaseAction):
+class BaseAttack(BaseAction):
     def __init__(
         self,
         name: str,
@@ -199,7 +199,7 @@ class WeaponAttack(BaseAction):
 
         # --- Outcome: HIT ---
 
-        # First roll the attack damage from the weapon.
+        # First roll the attack damage from the attack.
         base_damage, base_damage_details = roll_damage_components_no_mind(
             actor, target, self.damage
         )
@@ -315,7 +315,7 @@ class WeaponAttack(BaseAction):
     def to_dict(self) -> dict[str, Any]:
         # Get the base dictionary representation.
         data = super().to_dict()
-        # Add specific fields for WeaponAttack
+        # Add specific fields for BaseAttack
         data["hands_required"] = self.hands_required
         data["attack_roll"] = self.attack_roll
         data["damage"] = [component.to_dict() for component in self.damage]
@@ -325,15 +325,15 @@ class WeaponAttack(BaseAction):
         return data
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "WeaponAttack":
+    def from_dict(data: dict[str, Any]) -> "BaseAttack":
         """
-        Creates a WeaponAttack instance from a dictionary.
+        Creates a BaseAttack instance from a dictionary.
         Args:
             data (dict): Dictionary containing the action data.
         Returns:
-            WeaponAttack: An instance of WeaponAttack.
+            BaseAttack: An instance of BaseAttack.
         """
-        return WeaponAttack(
+        return BaseAttack(
             name=data["name"],
             type=ActionType[data["type"]],
             cooldown=data.get("cooldown", 0),
@@ -346,10 +346,10 @@ class WeaponAttack(BaseAction):
 
 class FullAttack(BaseAction):
     def __init__(
-        self, name: str, type: ActionType, cooldown: int, attacks: list[WeaponAttack]
+        self, name: str, type: ActionType, cooldown: int, attacks: list[BaseAttack]
     ):
         super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown)
-        self.attacks: list[WeaponAttack] = attacks
+        self.attacks: list[BaseAttack] = attacks
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
         """Checks if the target is valid for the action.
@@ -376,13 +376,13 @@ class FullAttack(BaseAction):
     def to_dict(self) -> dict[str, Any]:
         # Get the base dictionary representation.
         data = super().to_dict()
-        # Add specific fields for WeaponAttack.
+        # Add specific fields for BaseAttack.
         data["attacks"] = [attack.name for attack in self.attacks]
         return data
 
     @staticmethod
     def from_dict(
-        data: dict[str, Any], weapons: dict[str, WeaponAttack]
+        data: dict[str, Any], base_attacks: dict[str, BaseAttack]
     ) -> "FullAttack":
         """
         Creates a FullAttack instance from a dictionary.
@@ -395,7 +395,7 @@ class FullAttack(BaseAction):
             name=data["name"],
             type=ActionType[data.get("type", ActionType.STANDARD)],
             cooldown=data.get("cooldown", 0),
-            attacks=[weapons[attack] for attack in data["attacks"]],
+            attacks=[base_attacks[attack] for attack in data["attacks"]],
         )
 
 
@@ -577,7 +577,7 @@ class SpellAttack(Spell):
         # Create a list of tuples with damage components and mind levels.
         damage_components = [(component, mind_level) for component in self.damage]
 
-        # First roll the attack damage from the weapon.
+        # First roll the attack damage from the attack.
         total_damage, damage_details = roll_damage_components(
             actor, target, damage_components
         )
