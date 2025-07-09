@@ -84,7 +84,7 @@ class BaseAction:
             expr += f" + {attack_bonus_expr}"
         for bonus in bonus_list:
             expr += f" + {bonus}"
-        total, desc, rolls = roll_and_describe(expr, actor)
+        total, desc, rolls = roll_and_describe(expr, actor.get_expression_modifiers())
         return total, desc, rolls[0] if rolls else 0
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
@@ -377,8 +377,10 @@ class Spell(BaseAction):
             int: The number of targets this ability can affect.
         """
         if self.multi_target_expr:
+            modifiers = actor.get_expression_modifiers()
+            modifiers["MIND"] = mind_level
             # Evaluate the multi-target expression to get the number of targets.
-            return evaluate_expression(self.multi_target_expr, actor, mind_level)
+            return evaluate_expression(self.multi_target_expr, modifiers)
         return 1
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -567,51 +569,60 @@ class SpellAttack(Spell):
             return False
         return True
 
-    def get_damage_expr(self, actor: Any, mind_level: Optional[int] = None) -> str:
+    def get_damage_expr(self, actor: Any, mind_level: Optional[int] = 1) -> str:
         """Returns the damage expression with variables substituted.
 
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
 
         Returns:
             str: The damage expression with variables substituted.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         return " + ".join(
-            substitute_variables(component.damage_roll, actor, mind_level)
+            substitute_variables(component.damage_roll, modifiers)
             for component in self.damage
         )
 
-    def get_min_damage(self, actor: Any, mind_level: Optional[int] = None) -> int:
+    def get_min_damage(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the minimum damage value for the spell.
 
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
 
         Returns:
             int: The minimum damage value for the spell.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         return sum(
             parse_expr_and_assume_min_roll(
-                substitute_variables(component.damage_roll, actor, mind_level)
+                substitute_variables(
+                    component.damage_roll,
+                    modifiers,
+                )
             )
             for component in self.damage
         )
 
-    def get_max_damage(self, actor: Any, mind_level: Optional[int] = None) -> int:
+    def get_max_damage(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the maximum damage value for the spell.
 
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
 
         Returns:
             int: The maximum damage value for the spell.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         return sum(
             parse_expr_and_assume_max_roll(
-                substitute_variables(component.damage_roll, actor, mind_level)
+                substitute_variables(component.damage_roll, modifiers)
             )
             for component in self.damage
         )
@@ -675,7 +686,7 @@ class SpellHeal(Spell):
         self.effect: Optional[Effect] = effect
 
     def cast_spell(
-        self, actor: Any, target: Any, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = 1
     ) -> bool:
         """Casts a healing spell from the actor to the target.
 
@@ -705,7 +716,9 @@ class SpellHeal(Spell):
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Compute the healing based on the mind_cost spent and roll
-        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, actor, mind_level)
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
+        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, modifiers)
 
         # Apply healing to the target
         actual_healed = target.heal(heal_value)
@@ -741,38 +754,44 @@ class SpellHeal(Spell):
             return False
         return True
 
-    def get_heal_expr(self, actor: Any, mind_level: Optional[int] = None) -> str:
+    def get_heal_expr(self, actor: Any, mind_level: Optional[int] = 1) -> str:
         """Returns the healing expression with variables substituted.
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
         Returns:
             str: The healing expression with variables substituted.
         """
-        return substitute_variables(self.heal_roll, actor, mind_level)
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
+        return substitute_variables(self.heal_roll, modifiers)
 
-    def get_min_heal(self, actor: Any, mind_level: Optional[int] = None) -> int:
+    def get_min_heal(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the minimum healing value for the spell.
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
         Returns:
             int: The minimum healing value for the spell.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         return parse_expr_and_assume_min_roll(
-            substitute_variables(self.heal_roll, actor, mind_level)
+            substitute_variables(self.heal_roll, modifiers)
         )
 
-    def get_max_heal(self, actor: Any, mind_level: Optional[int] = None) -> int:
+    def get_max_heal(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the maximum healing value for the spell.
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
         Returns:
             int: The maximum healing value for the spell.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         return parse_expr_and_assume_max_roll(
-            substitute_variables(self.heal_roll, actor, mind_level)
+            substitute_variables(self.heal_roll, modifiers)
         )
 
     def to_dict(self):
@@ -831,7 +850,7 @@ class SpellBuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellBuff."
 
     def cast_spell(
-        self, actor: Any, target: Any, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = 1
     ) -> bool:
         """
         Executes a buff spell, applying a beneficial effect to the target.
@@ -885,24 +904,26 @@ class SpellBuff(Spell):
         return True
 
     def get_modifier_expressions(
-        self, actor: Any, mind_level: Optional[int] = None
+        self, actor: Any, mind_level: Optional[int] = 1
     ) -> dict[BonusType, str]:
         """Returns the dictionary of modifier expressions for the buff.
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
         Returns:
             dict[BonusType, str]: A dictionary mapping BonusType to expressions with variables substituted.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
         for bonus_type, value in self.effect.modifiers.items():
             if isinstance(value, DamageComponent):
                 expressions[bonus_type] = substitute_variables(
-                    value.damage_roll, actor, mind_level
+                    value.damage_roll, modifiers
                 )
             elif isinstance(value, str):
                 # If the value is a string, substitute variables directly.
-                expressions[bonus_type] = substitute_variables(value, actor, mind_level)
+                expressions[bonus_type] = substitute_variables(value, modifiers)
             else:
                 expressions[bonus_type] = value
         return expressions
@@ -959,7 +980,7 @@ class SpellDebuff(Spell):
         assert self.effect is not None, "Effect must be provided for SpellDebuff."
 
     def cast_spell(
-        self, actor: Any, target: Any, mind_level: Optional[int] = None
+        self, actor: Any, target: Any, mind_level: Optional[int] = 1
     ) -> bool:
         """
         Executes a debuff spell, applying a detrimental effect to the target.
@@ -1014,18 +1035,20 @@ class SpellDebuff(Spell):
         return True
 
     def get_modifier_expressions(
-        self, actor: Any, mind_level: Optional[int] = None
+        self, actor: Any, mind_level: Optional[int] = 1
     ) -> dict[BonusType, str]:
         """Returns the dictionary of modifier expressions for the buff.
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to None.
+            mind_level (int, optional): The mind_cost level to use for evaluation. Defaults to 1.
         Returns:
             dict[BonusType, str]: A dictionary mapping BonusType to expressions with variables substituted.
         """
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
         for bonus_type, expr in self.effect.modifiers.items():
-            expressions[bonus_type] = substitute_variables(expr, actor, mind_level)
+            expressions[bonus_type] = substitute_variables(expr, modifiers)
         return expressions
 
     def to_dict(self):

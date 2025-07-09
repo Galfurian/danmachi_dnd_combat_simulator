@@ -40,9 +40,11 @@ def roll_damage_component(
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
     """
+    modifiers = actor.get_expression_modifiers()
+    modifiers["MIND"] = damage_component[1]
     # Substitute variables in the damage roll expression.
     dmg_value, dmg_desc, _ = roll_and_describe(
-        damage_component[0].damage_roll, actor, damage_component[1]
+        damage_component[0].damage_roll, modifiers
     )
     assert (
         isinstance(dmg_value, int) and dmg_value >= 0

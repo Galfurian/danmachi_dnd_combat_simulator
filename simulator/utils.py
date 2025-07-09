@@ -28,15 +28,13 @@ def get_stat_modifier(score: int) -> int:
 
 
 # ---- Variable Substitution ----
-def substitute_variables(
-    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
-) -> str:
+def substitute_variables(expr: str, resources: Optional[dict[str, int]] = None) -> str:
     """Substitutes variables in the expression with their corresponding values.
 
     Args:
         expr (str): The expression to substitute variables in.
         entity (Optional[Any], optional): The entity to get variable values from. Defaults to None.
-        mind (Optional[int], optional): The mind value to use for substitution. Defaults to 1.
+        resources (Optional[dict], optional): The resources values to use for substitution. Defaults to None.
 
     Returns:
         str: The expression with variables substituted.
@@ -49,14 +47,9 @@ def substitute_variables(
     if expr.isdigit():
         return str(expr)
     # Replace [MIND] with the mind value.
-    expr = expr.replace("[MIND]", str(mind))
-    # Replace [SPELLCASTING] with the spellcasting value.
-    spellcasting = getattr(entity, "SPELLCASTING", 0) if entity else 0
-    expr = expr.replace("[SPELLCASTING]", str(spellcasting))
-    # Replace the entity's stats with their values using square brackets only.
-    for key in ["STR", "DEX", "CON", "INT", "WIS", "CHA"]:
-        value = getattr(entity, key, 0) if entity else 0
-        expr = expr.replace(f"[{key}]", str(value))
+    for key, value in resources.items() if resources else {}:
+        if key.upper() in expr:
+            expr = expr.replace(f"[{key.upper()}]", str(value))
     return expr
 
 
@@ -207,9 +200,7 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 
 
 # ---- Public API ----
-def roll_expression(
-    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
-) -> int:
+def roll_expression(expr: str, resources: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -217,14 +208,12 @@ def roll_expression(
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, entity, mind)
+    substituted = substitute_variables(expr, resources)
     debug(f"Substituted expression: {substituted}")
     return roll_dice_expression(substituted)
 
 
-def get_max_roll(
-    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
-) -> int:
+def get_max_roll(expr: str, resources: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -232,13 +221,13 @@ def get_max_roll(
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, entity, mind)
+    substituted = substitute_variables(expr, resources)
     debug(f"Substituted expression for max roll: {substituted}")
     return parse_expr_and_assume_max_roll(substituted)
 
 
 def roll_and_describe(
-    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
+    expr: str, resources: Optional[dict[str, int]] = None
 ) -> tuple[int, str, list[int]]:
     """Rolls a dice expression and returns the total, a description, and the individual rolls.
 
@@ -258,7 +247,7 @@ def roll_and_describe(
     if expr.isdigit():
         return int(expr), f"{expr} = {expr}", []
     original_expr = expr
-    substituted = substitute_variables(expr, entity, mind)
+    substituted = substitute_variables(expr, resources)
     dice_terms = extract_dice_terms(substituted)
     dice_rolls: list[int] = []
     breakdown = substituted
@@ -275,9 +264,7 @@ def roll_and_describe(
         return 0, f"{original_expr} = ERROR", []
 
 
-def evaluate_expression(
-    expr: str, entity: Optional[Any] = None, mind: Optional[int] = 1
-) -> int:
+def evaluate_expression(expr: str, resources: Optional[dict[str, int]] = None) -> int:
     if not expr:
         return 0
     expr = expr.upper().strip()
@@ -285,7 +272,7 @@ def evaluate_expression(
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, entity, mind)
+    substituted = substitute_variables(expr, resources)
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:

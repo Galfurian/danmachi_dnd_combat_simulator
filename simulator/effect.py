@@ -265,11 +265,11 @@ class DoT(Effect):
 
         self.validate()
 
-    def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
+    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         # Calculate the damage amount using the provided expression.
-        dot_value, dot_desc, _ = roll_and_describe(
-            self.damage_per_turn, actor, mind_level
-        )
+        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, modifiers)
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
@@ -341,11 +341,11 @@ class HoT(Effect):
 
         self.validate()
 
-    def turn_update(self, actor: Any, target: Any, mind_level: int = 0):
+    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
+        modifiers = actor.get_expression_modifiers()
+        modifiers["MIND"] = mind_level
         # Calculate the heal amount using the provided expression.
-        hot_value, hot_desc, _ = roll_and_describe(
-            self.heal_per_turn, actor, mind_level
-        )
+        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, modifiers)
         # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0

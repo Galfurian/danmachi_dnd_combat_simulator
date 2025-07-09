@@ -187,6 +187,22 @@ class Character:
         initiative += self.effect_manager.get_modifier(BonusType.INITIATIVE)
         return initiative
 
+    def get_expression_modifiers(self) -> dict[str, int]:
+        """Returns a dictionary of the character's modifiers.
+
+        Returns:
+            dict[str, int]: A dictionary containing the character's modifiers.
+        """
+        return {
+            "SPELLCASTING": self.SPELLCASTING,
+            "STR": self.STR,
+            "DEX": self.DEX,
+            "CON": self.CON,
+            "INT": self.INT,
+            "WIS": self.WIS,
+            "CHA": self.CHA,
+        }
+
     def reset_turn_flags(self):
         """Resets the turn flags for the character."""
         self.turn_flags["standard_action_used"] = False

@@ -245,14 +245,17 @@ class PromptToolkitCLI(PlayerInterface):
         """Prompts the user to select the amount of MIND to spend on a spell (if upcast is allowed)."""
         if len(spell.mind_cost) == 1:
             return spell.mind_cost[0]
+        # Get the resources for the prompt.
+        resources = actor.get_expression_modifiers()
         prompt = "\n"
         prompt = to_ansi(f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n")
         for mind_level in spell.mind_cost:
+            resources["MIND"] = mind_level
             max_targets = (
                 ""
                 if not spell.multi_target_expr
                 else f", Targets: {evaluate_expression(
-                spell.multi_target_expr, actor, mind_level
+                spell.multi_target_expr, resources
             )}"
             )
             if isinstance(spell, SpellHeal):
