@@ -12,7 +12,6 @@ from content import ContentRepository
 
 import logging
 
-
 """Sets up basic logging configuration."""
 logging.basicConfig(
     level=logging.INFO,  # Set the minimum level of messages to be handled
@@ -20,6 +19,8 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
+# Get the path to the data folder.
+data_dir = Path(__file__).with_suffix("").parent / "../data"
 
 console = Console()
 
@@ -36,15 +37,21 @@ console.print(
     style="bold blue",
 )
 
+# =============================================================================
 
-repo = ContentRepository()
+console.print(Rule("Loading Repository", style="bold green"))
+
+# Load the repository of content.
+repo = ContentRepository(data_dir)
 
 # =============================================================================
 
 console.print(Rule("Loading Enemies", style="bold green"))
 
 # Load the enemies.
-enemies: dict[str, Character] = load_characters("data/enemies_danmachi_f1_f10.json")
+enemies: dict[str, Character] = load_characters(
+    data_dir / "enemies_danmachi_f1_f10.json"
+)
 print("Enemies loaded:")
 for enemy in enemies.values():
     print_character_details(enemy)
@@ -56,7 +63,7 @@ for enemy in enemies.values():
 console.print(Rule("Loading Characters", style="bold green"))
 
 # Load the characters.
-characters: dict[str, Character] = load_characters("data/characters.json")
+characters: dict[str, Character] = load_characters(data_dir / "characters.json")
 for character in characters.values():
     print_character_details(character)
     console.print("\n")
@@ -66,7 +73,7 @@ for character in characters.values():
 console.print(Rule("Loading Player Character", style="bold green"))
 
 # Load the player character.
-player = load_player_character("data/player.json")
+player = load_player_character(data_dir / "player.json")
 if player is None:
     error("Failed to load player character. Please check the data file.")
     exit(1)
