@@ -301,28 +301,12 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
 def simplify_expression(expr: str, variables: Optional[dict[str, int]] = None) -> str:
     if not expr:
         return ""
-
     # Step 1: Substitute variables
     substituted = substitute_variables(expr, variables)
-
-    # Step 2: Extract and replace dice terms with placeholders
-    dice_terms = DICE_PATTERN.findall(substituted)
-    placeholder_map = {}
-    for i, term in enumerate(dice_terms):
-        placeholder = f"__DICE_{i}__"
-        placeholder_map[placeholder] = term
-        print(f"Replacing {term} with placeholder {placeholder}")
-        substituted = substituted.replace(term, placeholder)
-
-    # Step 3: Evaluate entire expression safely.
+    # Step 2: Evaluate entire expression safely.
     substituted = re.sub(
         r"\b(\d+\s*[\+\-\*\/]\s*\d+)\b", lambda m: _safe_eval(m.group(0)), substituted
     )
-
-    # Step 4: Replace placeholders back to dice terms
-    for placeholder, dice_term in placeholder_map.items():
-        substituted = substituted.replace(placeholder, dice_term)
-
     return substituted
 
 

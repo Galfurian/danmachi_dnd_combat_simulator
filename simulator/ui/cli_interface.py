@@ -57,11 +57,20 @@ class PlayerInterface:
     def choose_action(
         self, actions: List[BaseAction], submenus: list[str] = []
     ) -> Optional[BaseAction | str]:
+        """Choose an action from a list of available actions.
+
+        Args:
+            actions (List[BaseAction]): The list of available actions to choose from.
+            submenus (list[str], optional): A list of submenu options. Defaults to [].
+
+        Returns:
+            Optional[BaseAction | str]: The selected action, "Skip", or a submenu option.
+        """
         if not actions:
             return None
+        submenus = [*sorted(submenus, key=lambda s: s.lower()), "Skip"]
         # Sort targets and submenus for consistent display.
         actions_sorted = self.sort_actions(actions)
-        submenus_sorted = sorted(submenus, key=lambda s: s.lower())
         # Create a table of actions.
         table = Table(title=f"Actions", pad_edge=False)
         table.add_column("#", style="cyan")
@@ -76,10 +85,9 @@ class PlayerInterface:
                 action.category.name.title(),
             )
         # Add the submenu actions if any.
-        if submenus:
-            table.add_row()
-            for i, submenu in enumerate(submenus, 0):
-                table.add_row(chr(97 + i), submenu, "Submenu", "")
+        table.add_row()
+        for i, submenu in enumerate(submenus, 0):
+            table.add_row(chr(97 + i), submenu, "Submenu", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(table) + "\nAction > "
         while True:
@@ -97,20 +105,33 @@ class PlayerInterface:
 
             # If the user typed a letter, return the corresponding submenu.
             index = self.get_alpha_choice(answer)
-            if 0 <= index < len(submenus_sorted):
-                return submenus_sorted[index]
+            if 0 <= index < len(submenus):
+                return submenus[index]
 
     def choose_target(
         self,
         targets: List[Character],
         submenus: list[str] = [],
+        show_back: bool = True,
     ) -> Optional[Character | str]:
+        """Choose a target from a list of characters.
+
+        Args:
+            targets (List[Character]): The list of target characters to choose from.
+            submenus (list[str], optional): A list of submenu options. Defaults to [].
+
+        Returns:
+            Optional[Character | str]: The selected target character, "Back", or a submenu option.
+        """
         # If there are no targets, return None.
         if not targets:
             return None
+        # Add "Back" to the submenus if requested.
+        sorted_submenus = sorted(submenus, key=lambda s: s.lower())
+        if show_back:
+            sorted_submenus.append("Back")
         # Sort targets and submenus for consistent display.
         sorted_targets = sorted(targets, key=lambda t: t.name.lower())
-        sorted_submenus = sorted(submenus, key=lambda s: s.lower())
         # Create a table of targets.
         table = Table(title=f"Targets", pad_edge=False)
         table.add_column("#", style="cyan", no_wrap=True)
@@ -153,24 +174,37 @@ class PlayerInterface:
         max_targets: int,
         submenus: list[str] = [],
     ) -> Optional[List[Character] | str]:
+        """Choose multiple targets from a list of characters.
+
+        Args:
+            targets (List[Character]): The list of target characters to choose from.
+            max_targets (int): The maximum number of targets that can be selected.
+            submenus (list[str], optional): A list of submenu options. Defaults to [].
+
+        Returns:
+            Optional[List[Character] | str]: The list of selected characters, "Back", or a submenu option.
+        """
         if not targets:
             return None
         if max_targets <= 0:
             return None
+        sorted_submenus = [
+            "Confirm",
+            *sorted(submenus, key=lambda s: s.lower()),
+            "Back",
+        ]
         # Sort targets and submenus for consistent display.
         sorted_targets = sorted(targets, key=lambda t: t.name.lower())
-        sorted_submenus = sorted(submenus, key=lambda s: s.lower())
         # Prepare a set of selected targets.
         selected: set[Character] = set()
-        # Create the table.
-        table = Table(pad_edge=False)
-        table.add_column("#", style="cyan", no_wrap=True)
-        table.add_column("Name", style="bold")
-        table.add_column("HP", justify="right")
-        table.add_column("AC", justify="right")
-        table.add_column("Selected", justify="center")
         while True:
-            table.rows.clear()
+            # Create the table.
+            table = Table(pad_edge=False)
+            table.add_column("#", style="cyan", no_wrap=True)
+            table.add_column("Name", style="bold")
+            table.add_column("HP", justify="right")
+            table.add_column("AC", justify="right")
+            table.add_column("Selected", justify="center")
             # Add the targets to the table.
             for i, t in enumerate(sorted_targets, 1):
                 table.add_row(
@@ -183,8 +217,8 @@ class PlayerInterface:
             # Add the submenu actions if any.
             if sorted_submenus:
                 table.add_row()
-                for i, submenu in enumerate(sorted_submenus, 0):
-                    table.add_row(chr(97 + i), submenu, "Submenu", "", "")
+                for i, submenu in enumerate(sorted_submenus, 1):
+                    table.add_row(chr(96 + i), submenu, "Submenu", "", "")
             # Prepare the prompt with the table.
             prompt = "\n" + table_to_str(table) + "\nSelect > "
             # Prompt the user for input.
@@ -212,6 +246,8 @@ class PlayerInterface:
             # If the user typed a letter, return the corresponding submenu.
             index = self.get_alpha_choice(answer)
             if 0 <= index < len(sorted_submenus):
+                if sorted_submenus[index] == "Confirm":
+                    return list(selected) if selected else None
                 # If the user selected a submenu, return it.
                 return sorted_submenus[index]
 
@@ -220,9 +256,20 @@ class PlayerInterface:
         spells: list[Spell],
         submenus: list[str] = [],
     ) -> Optional[Spell | str]:
+        """Choose a spell from a list of available spells.
+
+        Args:
+            spells (list[Spell]): The list of available spells to choose from.
+            submenus (list[str], optional): A list of submenus to display. Defaults to [].
+
+        Returns:
+            Optional[Spell | str]: The selected spell, "Back", or submenu.
+        """
+        # Add "Back" to the submenus if requested.
+        sorted_submenus = sorted(submenus, key=lambda s: s.lower())
+        sorted_submenus.append("Back")
         # Sort targets and submenus for consistent display.
         sorted_spells = self.sort_actions(spells)
-        sorted_submenus = sorted(submenus, key=lambda s: s.lower())
         # Generate a table of spells.
         table = Table(title=f"Spells", pad_edge=False)
         table.add_column("#", style="cyan")

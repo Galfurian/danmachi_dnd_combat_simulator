@@ -42,9 +42,6 @@ class CombatManager:
         # This will now represent the "Round Number"
         self.turn_number: int = 0
 
-        # Call the new initialize method.
-        self.initialize()
-
     def initialize(self) -> None:
         """Initializes the combat by sorting participants by initiative."""
         # Ensure each character has an 'initiative' attribute (e.g., random.randint(1, 20) + char.DEX)
@@ -178,20 +175,16 @@ class CombatManager:
             submenus = []
             if spells:
                 submenus.append("Cast a Spell")
-            submenus.append("Skip Action")
 
             # Player selects an action or submenu option.
             choice = self.ui.choose_action(attacks + actions, submenus)
-            if choice is None or choice == "Skip Action":
+            if choice is None or isinstance(choice, str) and choice == "Skip":
                 break
-
             # If the action is a Spell, we need to handle it differently.
             if isinstance(choice, FullAttack):
                 self.ask_for_player_full_attack(choice)
             elif choice == "Cast a Spell":
                 self.ask_for_player_spell_cast(spells)
-            elif choice == "Skip Action":
-                break
 
     def ask_for_player_full_attack(self, full_attack: FullAttack) -> None:
         """Asks the player to choose targets for a full attack action."""
@@ -203,17 +196,13 @@ class CombatManager:
             if not valid_targets:
                 warning(f"No valid targets for {attack.name}.")
                 continue
-            # If this is the first attack, we allow to cancel the action.
-            if is_first_attack:
-                submenus = ["Back"]
-                is_first_attack = False
-            else:
-                submenus = []
             # Ask the player to choose a target.
-            target = self.ui.choose_target(valid_targets, submenus)
+            target = self.ui.choose_target(valid_targets, show_back=is_first_attack)
             # If the player chose to go back, we stop asking for targets.
             if isinstance(target, str) and target == "Back":
                 return
+            # If this is the first attack, we allow to cancel the action.
+            is_first_attack = False
             # If the target is not valid, skip this attack.
             if not isinstance(target, Character):
                 continue
@@ -255,6 +244,8 @@ class CombatManager:
                 self.player.mind -= mind_level
                 # Mark the action type as used.
                 self.player.use_action_type(spell.type)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
                 return
 
     def ask_for_player_spell_and_mind(
@@ -265,10 +256,9 @@ class CombatManager:
         Returns:
             Optional[tuple[Spell, int]]: The chosen spell and mind level, or None if no spell was selected.
         """
-        submenus: list[str] = ["Back"]
         while True:
             # Let the player choose a spell.
-            spell = self.ui.choose_spell(spells, submenus)
+            spell = self.ui.choose_spell(spells)
             if spell is None:
                 break
             if isinstance(spell, str):
@@ -295,7 +285,7 @@ class CombatManager:
             warning(f"No valid targets for {action.name}.")
             return None
         # Ask the player to choose a target.
-        return self.ui.choose_target(valid_targets, ["Back"])
+        return self.ui.choose_target(valid_targets)
 
     def ask_for_player_targets(
         self, action: BaseAction, max_targets: int
@@ -326,7 +316,7 @@ class CombatManager:
                 return target
             return [target]
         # Ask the player to choose multiple targets.
-        return self.ui.choose_targets(valid_targets, max_targets, ["Back"])
+        return self.ui.choose_targets(valid_targets, max_targets)
 
     def execute_npc_action(self, npc: Character):
         """
@@ -355,32 +345,48 @@ class CombatManager:
             result = choose_best_healing_spell_action(npc, allies, spell_heals)
             if result:
                 spell, mind_level, targets = result
+                # Cast the healing spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_buffs:
             result = choose_best_buff_spell_action(npc, allies, spell_buffs)
             if result:
                 spell, mind_level, targets = result
+                # Cast the buff spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_debuffs:
             result = choose_best_debuff_spell_action(npc, enemies, spell_debuffs)
             if result:
                 spell, mind_level, targets = result
+                # Cast the debuff spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_attacks:
             result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
             if result:
                 spell, mind_level, targets = result
+                # Cast the attack spell on the targets.
                 for target in targets:
                     spell.cast_spell(npc, target, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if full_attacks:
