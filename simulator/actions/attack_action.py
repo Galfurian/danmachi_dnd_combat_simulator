@@ -98,9 +98,7 @@ class BaseAttack(BaseAction):
             (
                 f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
                 f"rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] — "
-                f"[magenta]crit![/]"
-                if is_crit
-                else "[green]hit![/]"
+                + (f"[magenta]crit![/]" if is_crit else "[green]hit![/]")
             ),
             markup=True,
         )

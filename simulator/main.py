@@ -1,6 +1,5 @@
 from copy import deepcopy
 from logging import error, warning
-from cli_prompt import PromptToolkitCLI
 from character import *
 from effect import *
 from combat_manager import CombatManager
@@ -110,7 +109,6 @@ def make_names_unique(in_list: list[Character]):
 
 if __name__ == "__main__":
 
-    ui = PromptToolkitCLI()
     add_to_list(enemies, opponents, "Infant Dragon")
     # add_to_list(enemies, opponents, "Orc")
     # add_to_list(enemies, opponents, "Goblin")
@@ -122,7 +120,7 @@ if __name__ == "__main__":
     make_names_unique(opponents)
     make_names_unique(allies)
 
-    combat_manager = CombatManager(ui, player, opponents, allies)
+    combat_manager = CombatManager(player, opponents, allies)
     try:
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
