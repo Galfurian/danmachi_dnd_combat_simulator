@@ -5,7 +5,7 @@ from logging import debug, warning
 from typing import Any, Optional, Callable
 
 
-dice_pattern = re.compile(r"^(\d*)[dD](\d+)$")
+DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
 
 # ---- Singleton Metaclass ----
@@ -20,6 +20,23 @@ class Singleton(type):
         if cls._inst is None:
             cls._inst = super().__call__(*a, **kw)
         return cls._inst
+
+
+def _safe_eval(arith_expr: str) -> str:
+    """Safely evaluates a simple arithmetic expression.
+
+    Args:
+        arith_expr (str): The arithmetic expression to evaluate.
+
+    Returns:
+        str: The result of the evaluation or the original expression if an error occurs.
+    """
+    try:
+        # Only allow safe arithmetic evaluation
+        return str(eval(arith_expr, {"__builtins__": None}, {}))
+    except Exception:
+        # In case of evaluation error, keep the original
+        return arith_expr
 
 
 # ---- Stat Modifier ----
@@ -88,7 +105,7 @@ def _parse_term_and_process_dice(
         return 0, []
     if term.isdigit():
         return int(term), [int(term)]
-    match = dice_pattern.match(term)
+    match = DICE_PATTERN.match(term)
     if not match:
         warning(f"Invalid dice string: '{term}'")
         return 0, []
@@ -177,6 +194,7 @@ def _process_dice_expression(
         )
         debug(f"Processed {term} → {total} ({processed_expr})")
 
+    # Now evaluate the processed expression safely.
     try:
         return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
@@ -278,6 +296,34 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
     except Exception as e:
         warning(f"Failed to evaluate '{substituted}': {e}")
         return 0
+
+
+def simplify_expression(expr: str, variables: Optional[dict[str, int]] = None) -> str:
+    if not expr:
+        return ""
+
+    # Step 1: Substitute variables
+    substituted = substitute_variables(expr, variables)
+
+    # Step 2: Extract and replace dice terms with placeholders
+    dice_terms = DICE_PATTERN.findall(substituted)
+    placeholder_map = {}
+    for i, term in enumerate(dice_terms):
+        placeholder = f"__DICE_{i}__"
+        placeholder_map[placeholder] = term
+        print(f"Replacing {term} with placeholder {placeholder}")
+        substituted = substituted.replace(term, placeholder)
+
+    # Step 3: Evaluate entire expression safely.
+    substituted = re.sub(
+        r"\b(\d+\s*[\+\-\*\/]\s*\d+)\b", lambda m: _safe_eval(m.group(0)), substituted
+    )
+
+    # Step 4: Replace placeholders back to dice terms
+    for placeholder, dice_term in placeholder_map.items():
+        substituted = substituted.replace(placeholder, dice_term)
+
+    return substituted
 
 
 def make_bar(current: int, maximum: int, length: int = 10, color: str = "white") -> str:

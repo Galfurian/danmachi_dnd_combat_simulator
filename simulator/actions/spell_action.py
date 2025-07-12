@@ -421,7 +421,7 @@ class SpellHeal(Spell):
         """
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
-        return substitute_variables(self.heal_roll, variables)
+        return simplify_expression(self.heal_roll, variables)
 
     def get_min_heal(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the minimum healing value for the spell.

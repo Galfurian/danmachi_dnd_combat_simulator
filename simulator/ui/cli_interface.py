@@ -269,49 +269,72 @@ class PlayerInterface:
         # Get the variables for the prompt.
         variables = actor.get_expression_variables()
         prompt = "\n"
-        prompt = to_ansi(f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n")
+        prompt = f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n"
         for mind_level in spell.mind_cost:
+            # Set the mind level in the variables for evaluation.
             variables["MIND"] = mind_level
-            max_targets = (
-                ""
-                if not spell.multi_target_expr
-                else f", Targets: {evaluate_expression(
-                spell.multi_target_expr, variables
-            )}"
-            )
+
+            # Get the maximum number of targets if applicable.
+            max_targets = evaluate_expression(spell.multi_target_expr, variables)
+
+            prompt += f"    {mind_level} Mind → "
+
+            # Format each spell type accordingly.
             if isinstance(spell, SpellHeal):
-                prompt += f"    {mind_level} → "
-                prompt += f"Heal: {spell.get_heal_expr(actor, mind_level)} "
-                prompt += f"[{spell.get_min_heal(actor, mind_level):>3}-{spell.get_max_heal(actor, mind_level):<3}]"
-                prompt += max_targets + "\n"
+                prompt += f"Heals {simplify_expression(spell.heal_roll, variables)}"
+                prompt += f" (~ {spell.get_min_heal(actor, mind_level):>2}-{spell.get_max_heal(actor, mind_level):<2})"
+                if max_targets > 1:
+                    prompt += f" (up to {max_targets} targets)"
+                prompt += "\n"
+
             elif isinstance(spell, SpellAttack):
-                prompt += f"    {mind_level} → "
-                prompt += f"Damage: {spell.get_damage_expr(actor, mind_level)} "
-                prompt += f"[{spell.get_min_damage(actor, mind_level):>3}-{spell.get_max_damage(actor, mind_level):<3}]"
-                prompt += max_targets + "\n"
+                prompt += f"Deals "
+                prompt += "+ ".join(
+                    f"{simplify_expression(component.damage_roll, variables)}"
+                    f" [{get_damage_type_color(component.damage_type)}]{component.damage_type.name.title()}[/]"
+                    for component in spell.damage
+                )
+                prompt += f" (~ {spell.get_min_damage(actor, mind_level):>2}-{spell.get_max_damage(actor, mind_level):<2})"
+                if max_targets > 1:
+                    prompt += f" (up to {max_targets} targets)"
+                prompt += "\n"
+
             elif isinstance(spell, SpellBuff):
-                for bonus, modifier in spell.get_modifier_expressions(
-                    actor, mind_level
-                ).items():
-                    prompt += (
-                        f"    {mind_level} → Buff: {modifier} to {bonus.name.title()}"
-                    )
-                    if spell.effect.consume_on_hit:
-                        prompt += " (one-shot)"
-                    prompt += max_targets + "\n"
+                # If the spell has a consume_on_hit effect, indicate it.
+                if spell.effect.consume_on_hit:
+                    prompt += f"(one-shot)"
+                if max_targets > 1:
+                    prompt += f" (up to {max_targets} targets)"
+
+                # Iterate over each modifier and bonus.
+                for bonus_type, value in spell.effect.modifiers.items():
+                    if isinstance(value, DamageComponent):
+                        prompt += (
+                            f" {simplify_expression(value.damage_roll, variables)} "
+                            f"[{get_damage_type_color(value.damage_type)}]{value.damage_type.name.title()}[/]"
+                        )
+                    else:
+                        prompt += f" {value} to {bonus_type.name.title()}"
+                prompt += "\n"
             elif isinstance(spell, SpellDebuff):
-                for bonus, modifier in spell.get_modifier_expressions(
-                    actor, mind_level
-                ).items():
-                    prompt += (
-                        f"    {mind_level} → Debuff: {modifier} to {bonus.name.title()}"
-                    )
-                    prompt += max_targets + "\n"
+                # Get the modifier expressions for debuffs.
+                modifiers = spell.get_modifier_expressions(actor, mind_level)
+
+                # If the spell has a consume_on_hit effect, indicate it.
+                if max_targets > 1:
+                    prompt += f" (up to {max_targets} targets)"
+
+                # Iterate over each modifier and bonus.
+                prompt += f", ".join(
+                    f"{modifier} to {bonus.name.title()}"
+                    for bonus, modifier in modifiers.items()
+                )
+                prompt += "\n"
         prompt += "\nMind > "
 
         while True:
             # Prompt the user for input.
-            answer = session.prompt(ANSI(prompt))
+            answer = session.prompt(ANSI(to_ansi(prompt)))
             if not answer:
                 continue
 
