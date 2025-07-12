@@ -3,7 +3,6 @@ from logging import error, warning
 from cli_prompt import PromptToolkitCLI
 from character import *
 from effect import *
-from actions import *
 from combat_manager import CombatManager
 from rich.console import Console
 from rich.rule import Rule
@@ -20,6 +19,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
+DATA_DIR: Path = Path.cwd() / "../data"
 
 console = Console()
 
@@ -37,14 +37,16 @@ console.print(
 )
 
 
-repo = ContentRepository()
+repo = ContentRepository(DATA_DIR)
 
 # =============================================================================
 
 console.print(Rule("Loading Enemies", style="bold green"))
 
 # Load the enemies.
-enemies: dict[str, Character] = load_characters("data/enemies_danmachi_f1_f10.json")
+enemies: dict[str, Character] = load_characters(
+    DATA_DIR / "enemies_danmachi_f1_f10.json"
+)
 print("Enemies loaded:")
 for enemy in enemies.values():
     print_character_details(enemy)
@@ -56,7 +58,7 @@ for enemy in enemies.values():
 console.print(Rule("Loading Characters", style="bold green"))
 
 # Load the characters.
-characters: dict[str, Character] = load_characters("data/characters.json")
+characters: dict[str, Character] = load_characters(DATA_DIR / "characters.json")
 for character in characters.values():
     print_character_details(character)
     console.print("\n")
@@ -66,7 +68,7 @@ for character in characters.values():
 console.print(Rule("Loading Player Character", style="bold green"))
 
 # Load the player character.
-player = load_player_character("data/player.json")
+player = load_player_character(DATA_DIR / "player.json")
 if player is None:
     error("Failed to load player character. Please check the data file.")
     exit(1)

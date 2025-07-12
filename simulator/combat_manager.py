@@ -7,18 +7,16 @@ from typing import Tuple
 from rich.console import Console
 from rich.rule import Rule
 
+from actions.base_action import BaseAction
+from actions.attack_action import FullAttack
+from actions.spell_action import Spell, SpellAttack, SpellHeal, SpellBuff, SpellDebuff
 from character import *
-from actions import *
 from effect import *
 from constants import *
-from interfaces import PlayerInterface
+from interfaces import *
 from npc_ai import *
 
 console = Console()
-
-
-CAST_SPELL = BaseAction("Cast a Spell", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
-BACK = BaseAction("Back", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
 
 
 class CombatManager:
@@ -173,45 +171,65 @@ class CombatManager:
         if not self.get_alive_opponents(self.player):
             return
 
+        action: Optional[MenuOption] = None
+
         while not self.player.turn_done():
-            allowed_actions = (
-                self.player.get_available_attacks()
-                + self.player.get_available_actions()
-                + [CAST_SPELL]
-            )
+            attacks = [ActionOption(a) for a in self.player.get_available_attacks()]
+            actions = [ActionOption(a) for a in self.player.get_available_actions()]
+            spells = [ActionOption(s) for s in self.player.get_available_spells()]
+            cast_spell = SubmenuOption("Cast a Spell")
+            skip_action = MenuOption("Skip Action")
+            # Create the proper list of options for the UI.
+            options: list[MenuOption] = actions + attacks
+            if spells:
+                options.append(cast_spell)
+            options.append(skip_action)
             # Get the action.
-            action: Optional[BaseAction] = self.ui.choose_action(
-                self.player, allowed_actions
-            )
+            action = self.ui.choose_action(options)
+            if not action:
+                break
             # If the action is a Spell, we need to handle it differently.
-            if action == CAST_SPELL:
-                action = self.ui.choose_spell(
-                    self.player, self.player.get_available_spells()
-                )
-                if not action:
-                    break
+            if action == cast_spell:
+                # Create the back option.
+                back_option = MenuOption("Back")
+
+                # Choose a spell from the player's available spells.
+                spell = self.ui.choose_spell(self.player, spells + [back_option])
+                if spell is None:
+                    continue
+
+                # Get the legal targets for the attack.
+                valid_targets = self._get_legal_targets(self.player, spell)
+                # If there are no valid targets, skip this attack.
+                if not valid_targets:
+                    continue
+
+                valid_targets = [TargetOption(t) for t in valid_targets]
+
                 # Gather here the actual targets.
                 targets = []
+
+                mind_levels = [
+                    MenuOption(f"{i} MIND") for i in range(1, self.player.mind + 1)
+                ]
+
                 # Ask for the [MIND] level to use for the spell.
-                mind_level = self.ui.choose_mind(self.player, action)
+                mind_level = self.ui.choose_mind(mind_levels + [back_option])
                 if mind_level == -1:
                     continue
+
                 # Get the number of targets for the spell.
-                maximum_num_targets = action.target_count(self.player, mind_level)
+                maximum_num_targets = spell.target_count(self.player, mind_level)
                 # There is no point in asking for more targets than we have valid targets.
                 maximum_num_targets = min(maximum_num_targets, len(valid_targets))
                 # If the action accepts just one target, we can ask for a single target.
                 if maximum_num_targets == 1:
                     # Ask for a single target.
-                    targets = [
-                        self.ui.choose_target(self.player, valid_targets, action)
-                    ]
+                    targets = [self.ui.choose_target(valid_targets)]
                 # If the action accepts multiple targets, we can ask for multiple targets.
                 elif maximum_num_targets > 1:
                     # Ask for multiple targets.
-                    targets = self.ui.choose_targets(
-                        self.player, valid_targets, maximum_num_targets
-                    )
+                    targets = self.ui.choose_targets(valid_targets, maximum_num_targets)
                 # Check if the targets are valid.
                 if not isinstance(targets, list):
                     continue
@@ -219,20 +237,17 @@ class CombatManager:
                     continue
                 for target in targets:
                     # Perform the action on the target.
-                    action.cast_spell(self.player, target, mind_level)
+                    spell.cast_spell(self.player, target, mind_level)
                 # Remove the MIND cost from the player.
-                self.player.mind -= mind_level
+                self.player.mind -= mind_level.level
                 # Mark the action type as used.
-                self.player.use_action_type(action.type)
+                self.player.use_action_type(spell.type)
             elif isinstance(action, FullAttack):
                 for attack in action.attacks:
                     # Get the legal targets for the attack.
                     valid_targets = self._get_legal_targets(self.player, attack)
                     # If there are no valid targets, skip this attack.
                     if not valid_targets:
-                        warning(
-                            f"{self.player.name} has no valid targets for {attack.name}. Skipping attack."
-                        )
                         continue
                     # Get the target for the attack.
                     target = self.ui.choose_target(self.player, valid_targets, attack)
@@ -244,6 +259,11 @@ class CombatManager:
                 # Mark the action type as used.
                 self.player.use_action_type(action.type)
             else:
+                # Get the legal targets for the action.
+                valid_targets = self._get_legal_targets(self.player, action)
+                # If there are no valid targets, skip this action.
+                if not valid_targets:
+                    continue
                 # Get the target for the action.
                 target = self.ui.choose_target(self.player, valid_targets, action)
                 # If the target is not valid, skip this action.

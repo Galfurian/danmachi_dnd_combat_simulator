@@ -1,96 +1,118 @@
+from enum import Enum
 from typing import List, Optional, Protocol
 
-from actions import BaseAction, Spell
+from actions.base_action import BaseAction
+from actions.spell_action import Spell
 from character import Character
 from rich.console import Console
 
 console = Console()
 
 
+class MenuOption(object):
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+class SubmenuOption(MenuOption):
+
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+
+
+class ActionOption(MenuOption):
+
+    def __init__(self, action: BaseAction) -> None:
+        super().__init__(action.name)
+        self.action = action
+
+
+class TargetOption(MenuOption):
+
+    def __init__(self, target: Character) -> None:
+        super().__init__(target.name)
+        self.target = target
+
+
+class SpellOption(MenuOption):
+
+    def __init__(self, spell: Spell) -> None:
+        super().__init__(spell.name)
+        self.spell = spell
+
+
+class MindLevelOption(MenuOption):
+
+    def __init__(self, level: int) -> None:
+        super().__init__(f"{level}")
+        self.level = level
+
+
 class PlayerInterface(Protocol):
 
     def choose_action(
-        self, actor: Character, allowed: List[BaseAction]
-    ) -> Optional[BaseAction]:
-        """Choose an action for the actor.
+        self, actions: List[MenuOption]
+    ) -> Optional[MenuOption | ActionOption]:
+        """Choose an action.
 
         Args:
-            actor (Character): The character for whom to choose an action.
-            allowed (List[BaseAction]): The list of allowed actions.
+            actions (List[ActionOption]): The list of available actions.
 
         Returns:
-            Optional[BaseAction]: The chosen action, or None if no action is selected.
+            Optional[ActionOption]: The chosen action, or None if no action is selected.
         """
         ...
 
     def choose_target(
-        self,
-        actor: Character,
-        targets: List[Character],
-        action: Optional[BaseAction] = None,
-    ) -> Optional[Character]:
-        """Choose a target for the actor's action.
+        self, targets: List[MenuOption]
+    ) -> Optional[MenuOption | TargetOption]:
+        """Choose a target.
 
         Args:
-            actor (Character): The character for whom to choose a target.
-            targets (List[Character]): The list of potential targets.
-            action (Optional[BaseAction]): The action for which to choose a target, if applicable.
+            targets (List[TargetOption]): The list of potential targets.
 
         Returns:
-            Optional[Character]: The chosen target, or None if no target is selected.
+            Optional[TargetOption]: The chosen target, or None if no target is selected.
         """
         ...
 
     def choose_targets(
-        self,
-        actor: Character,
-        targets: List[Character],
-        max_targets: int,
-        action: Optional[BaseAction] = None,
-    ) -> Optional[List[Character]]:
+        self, targets: List[MenuOption], max_targets: int
+    ) -> Optional[MenuOption | List[TargetOption]]:
         """Choose multiple targets for an area spell or group buff.
 
         Args:
-            actor (Character): The character for whom to choose targets.
-            targets (List[Character]): The list of potential targets.
+            targets (List[TargetOption]): The list of potential targets.
             max_targets (int): The maximum number of targets to choose.
-            action (Optional[BaseAction]): The action for which to choose targets, if applicable.
 
         Returns:
-            Optional[List[Character]]: The chosen targets, or None if no targets are selected.
+            Optional[List[TargetOption]]: The chosen targets, or None if no targets are selected.
         """
         ...
 
-    def choose_spell(self, actor: Character, allowed: list[Spell]) -> Optional[Spell]:
-        """Choose a spell for the actor.
+    def choose_spell(
+        self, spells: list[MenuOption]
+    ) -> Optional[MenuOption | SpellOption]:
+        """Choose a spell.
 
         Args:
-            actor (Character): The character for whom to choose a spell.
-            allowed (list[Spell]): The list of allowed spells.
+            spells (list[SpellOption]): The list of available spells.
 
         Returns:
-            Optional[Spell]: The chosen spell, or None if no spell is selected.
+            Optional[SpellOption]: The chosen spell, or None if no spell is selected.
         """
         ...
 
-    def choose_mind(self, actor: Character, spell: Spell) -> int:
+    def choose_mind(
+        self, mind_levels: list[MenuOption]
+    ) -> Optional[MenuOption | MindLevelOption]:
         """Choose the MIND level for a spell.
 
         Args:
-            actor (Character): The character for whom to choose the MIND level.
-            spell (Spell): The spell for which to choose the MIND level.
+            mind_levels (list[MindLevelOption]): The list of available MIND levels.
 
         Returns:
             int: The chosen MIND level.
-        """
-        ...
-
-    def generate_action_card(self, actor: Character, action: BaseAction) -> str:
-        """Generates a card representation of the action.
-        Args:
-            actor (Character): The character performing the action.
-            action (BaseAction): The action to represent.
-        Returns:
-            str: A string representation of the action card.
         """
         ...

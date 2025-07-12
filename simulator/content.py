@@ -2,14 +2,23 @@ from pathlib import Path
 from rich.console import Console
 from rich.rule import Rule
 
+from actions.base_action import BaseAction
+from actions.attack_action import BaseAttack, from_dict_attack
+from actions.spell_action import (
+    Spell,
+    SpellAttack,
+    SpellHeal,
+    SpellBuff,
+    SpellDebuff,
+    from_dict_spell,
+)
+from effect import Armor
 from character_class import CharacterClass
 from character_race import CharacterRace
-from actions import *
 from utils import *
 
 import copy
-
-DATA = Path(__file__).with_suffix("").parent / "data"
+import json
 
 console = Console()
 
@@ -33,15 +42,13 @@ class ContentRepository(metaclass=Singleton):
     spells: dict[str, BaseAction]
     actions: dict[str, BaseAction]
 
-    def __init__(self, data_dir: Path = DATA):
+    def __init__(self, data_dir: Path):
         self.reload(data_dir)
 
-    def reload(self, data_dir: Path | str | None = None) -> None:
+    def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
 
         console.print(Rule("Reloading Database", style="bold green"))
-
-        root = Path(data_dir) if data_dir else DATA
 
         console.print(
             f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow"
@@ -101,7 +108,7 @@ class ContentRepository(metaclass=Singleton):
             data = json.load(f)
             if not isinstance(data, list):
                 raise ValueError(f"Expected a list in {root / 'spells.json'}")
-            self.spells = self._load_actions(data)
+            self.spells = self._load_spells(data)
 
         console.print("Loading actions...", style="bold yellow")
 
@@ -283,15 +290,29 @@ class ContentRepository(metaclass=Singleton):
             armors[armor.name] = armor
         return armors
 
-    @staticmethod
-    def _load_actions(data) -> dict[str, BaseAction]:
-        actions = {}
+    def _load_actions(self, data) -> dict[str, BaseAction]:
+        """Load actions from the given data."""
+        actions: dict[str, BaseAction] = {}
         for action_data in data:
-            action = BaseAction.from_dict(action_data)
-            if action.name in actions:
-                raise ValueError(f"Duplicate action name: {action.name}")
+            action = from_dict_attack(action_data, self.attacks)
+            if not action:
+                action = from_dict_spell(action_data)
+                if not action:
+                    raise ValueError(f"Invalid action data: {action_data}")
             actions[action.name] = action
         return actions
+
+    def _load_spells(self, data) -> dict[str, BaseAction]:
+        """Load spells from the given data."""
+        spells: dict[str, BaseAction] = {}
+        for spell_data in data:
+            spell = from_dict_spell(spell_data)
+            if not spell:
+                raise ValueError(f"Invalid spell data: {spell_data}")
+            if spell.name in spells:
+                raise ValueError(f"Duplicate spell name: {spell.name}")
+            spells[spell.name] = spell
+        return spells
 
     @staticmethod
     def _load_base_attacks(data) -> dict[str, BaseAttack]:

@@ -4,13 +4,16 @@ from typing import Any, Tuple
 from rich.console import Console
 
 from constants import *
-from actions import *
 from effect_manager import *
 from effect import *
 from utils import *
 from character_class import *
 from character_race import *
+
 from content import ContentRepository
+from actions.base_action import BaseAction
+from actions.attack_action import FullAttack
+from actions.spell_action import Spell
 
 console = Console()
 
@@ -713,7 +716,7 @@ class Character:
         return char
 
 
-def load_characters(file_path: str) -> dict[str, Character]:
+def load_characters(file_path: Path) -> dict[str, Character]:
     """
     Loads characters from a JSON file.
 
@@ -734,7 +737,7 @@ def load_characters(file_path: str) -> dict[str, Character]:
     return characters
 
 
-def load_player_character(file_path: str) -> Character | None:
+def load_player_character(file_path: Path) -> Character | None:
     """
     Loads the player character from a JSON file.
 

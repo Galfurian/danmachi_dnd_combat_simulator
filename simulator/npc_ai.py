@@ -1,6 +1,8 @@
 from character import *
-from actions import *
 
+from actions.base_action import BaseAction
+from actions.attack_action import BaseAttack, FullAttack
+from actions.spell_action import SpellAttack, SpellHeal, SpellBuff, SpellDebuff
 
 # =============================================================================
 # Sorting Functions

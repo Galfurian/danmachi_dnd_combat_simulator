@@ -7,21 +7,24 @@ from rich.text import Text
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
-from actions import (
-    BaseAction,
-    Spell,
-    SpellAttack,
-    SpellBuff,
-    SpellDebuff,
-    SpellHeal,
-    BaseAttack,
-)
+from actions.base_action import BaseAction
+from actions.attack_action import BaseAttack
+from actions.spell_action import Spell, SpellAttack, SpellHeal, SpellBuff, SpellDebuff
 from character import Character
 from prompt_toolkit import ANSI
 from effect import Buff, Debuff
 
 from constants import *
-from interfaces import PlayerInterface
+from interfaces import (
+    ActionOption,
+    CastSpellOption,
+    MenuOption,
+    MindLevelOption,
+    PlayerInterface,
+    SpellOption,
+    SubmenuOption,
+    TargetOption,
+)
 from utils import evaluate_expression, substitute_variables
 
 
@@ -80,60 +83,39 @@ class PromptToolkitCLI(PlayerInterface):
         pass
 
     def choose_action(
-        self, actor: Character, allowed: List[BaseAction]
-    ) -> Optional[BaseAction]:
-        assert allowed, "No actions available for the actor"
+        self, actions: List[MenuOption]
+    ) -> Optional[MenuOption | ActionOption]:
+        assert actions, "No actions available for the actor"
         # Generate a table of actions (including "Cast a Spell" if present)
-        tbl = self._create_action_table(allowed)
+        tbl, metadata = self._create_action_table(actions)
         if not tbl.rows:
             return None
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(tbl) + "\nAction > "
-        # Create a completer for the action names (including "Cast a Spell" if present)
-        completer = WordCompleter([a.name for a in allowed], ignore_case=True)
         while True:
             # Prompt the user for input.
-            answer = show_prompt(prompt, completer, True).lower()
+            answer = session.prompt(ANSI(prompt)).lower()
             # If the user didn't type anything, return None.
             if not answer:
                 continue
             # If the user typed a number, return the corresponding action.
-            if answer.isdigit():
-                if 1 <= int(answer) <= len(allowed):
-                    return allowed[int(answer) - 1]
-            elif answer.isalpha():
-                # If the user typed a letter, check if it matches a submenu.
-                action = next(
-                    (
-                        a
-                        for letter, a in self._get_submenu_actions(allowed)
-                        if letter == answer
-                    ),
-                    None,
-                )
-                # If no valid action was selected, prompt again.
-                if isinstance(action, BaseAction):
+            if metadata.get(answer):
+                action = metadata[answer]
+                if isinstance(action, ActionOption):
                     return action
-            else:
-                # If the selection is not a number, check if it matches an action name.
-                action = next((a for a in allowed if a.name.lower() == answer), None)
-                # If no valid action was selected, prompt again.
-                if isinstance(action, BaseAction):
+                if isinstance(action, SubmenuOption):
                     return action
 
     def choose_target(
-        self,
-        actor: Character,
-        targets: List[Character],
-        action: Optional[BaseAction] = None,
-    ) -> Optional[Character]:
+        self, targets: List[MenuOption]
+    ) -> Optional[MenuOption | TargetOption]:
         # Get the list of targets.
         targets = sorted(targets, key=lambda t: t.name)
         # If there are no targets, return None.
         if not targets:
             return None
         # Create a table of targets.
-        tbl = self._create_target_list(targets)
+        tbl = self._create_target_table(targets)
         tbl.add_row()
         tbl.add_row("0", "Back", "", "")
         # Generate a prompt with the table and a question.
@@ -165,12 +147,8 @@ class PromptToolkitCLI(PlayerInterface):
                     return target
 
     def choose_targets(
-        self,
-        actor: Character,
-        targets: List[Character],
-        max_targets: int,
-        action: Optional[BaseAction] = None,
-    ) -> Optional[List[Character]]:
+        self, targets: List[MenuOption], max_targets: int
+    ) -> Optional[MenuOption | List[TargetOption]]:
         assert (
             max_targets and max_targets > 1
         ), "max_targets must be greater than 1 for multiple target selection"
@@ -334,123 +312,60 @@ class PromptToolkitCLI(PlayerInterface):
                 if spell:
                     return spell
 
-    def generate_action_card(self, actor: Character, action: BaseAction) -> str:
-        """Generates a card representation of the action.
-        Args:
-            action (BaseAction): The action to represent.
-        Returns:
-            str: A string representation of the action card.
-        """
-        type_color = get_action_type_color(action.type)
-        category_color = get_action_category_color(action.category)
-
-        description = Text()
-
-        # Add the header.
-        if isinstance(action, Spell):
-            description.append(
-                f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/], Lvl: {action.level}, Mind Cost: {action.mind_cost}\n"
-            )
-        elif isinstance(action, BaseAttack):
-            description.append(
-                f"[bold]{action.name}[/], [{category_color}]{action.__class__.__name__}[/], [{type_color}]{action.type.name}[/]\n"
-            )
-
-        # Add the specific details of the action.
-        if isinstance(action, BaseAttack):
-            for damage in action.damage:
-                description.append(
-                    f"    Damage: {action.get_damage_expr(actor)} {damage.damage_type.name}\n"
-                )
-        if isinstance(action, SpellAttack):
-            for damage in action.damage:
-                for mind_cost in action.mind_cost:
-                    description.append(
-                        f"    {mind_cost} mind, damage: {action.get_damage_expr(actor, mind_cost)} {damage.damage_type.name}\n"
-                    )
-            if action.multi_target_expr:
-                description.append(f"    Targets: {action.multi_target_expr}\n")
-        if isinstance(action, SpellHeal):
-            for mind_cost in action.mind_cost:
-                description.append(
-                    f"    {mind_cost} mind, Healing: {action.get_heal_expr(actor, mind_cost)}\n"
-                )
-            if action.multi_target_expr:
-                description.append(f"    Targets: {action.multi_target_expr}\n")
-        if isinstance(action, (SpellBuff, SpellDebuff)):
-            for k, v in action.effect.modifiers.items():
-                description.append(f"{k.name.title()} Modifier: {v}\n")
-            if action.multi_target_expr:
-                description.append(f"    Targets: {action.multi_target_expr}\n")
-        # Capture the panel output to a string.
-        with console.capture() as capture:
-            console.print(description, markup=True)
-        return capture.get()
-
-    def _create_target_list(self, targets: list[Character]) -> Table:
-        """
-        Create a Rich table of targets for the player to choose from.
-        """
-        tbl = Table(title="Targets", pad_edge=False)
-        tbl.add_column("#", style="cyan", no_wrap=True)
-        tbl.add_column("Name", style="bold")
-        tbl.add_column("HP", justify="center")
-        tbl.add_column("AC", justify="right")
-        for i, target in enumerate(targets, 1):
-            tbl.add_row(
-                str(i),
-                target.name,
-                f"{target.hp:>3}/{target.HP_MAX:<3}",
-                str(target.AC),
-            )
-        return tbl
-
-    def _create_action_table(self, actions: list[BaseAction]) -> Table:
-        # Optional: define sort priority if you want custom order
-        type_priority = {
-            ActionType.STANDARD: 0,
-            ActionType.BONUS: 1,
-            ActionType.FREE: 2,
-        }
-        category_priority = {
-            ActionCategory.OFFENSIVE: 0,
-            ActionCategory.HEALING: 1,
-            ActionCategory.BUFF: 2,
-            ActionCategory.DEBUFF: 3,
-            ActionCategory.UTILITY: 4,
-            ActionCategory.DEBUG: 5,
-        }
+    def _create_action_table(
+        self, options: list[MenuOption]
+    ) -> tuple[Table, dict[str, MenuOption]]:
         # Sort actions by ActionType (then by name for stability)
-        actions.sort(
-            key=lambda action: (
-                type_priority.get(action.type, 99),
-                category_priority.get(action.category, 99),
-                action.name.lower(),
-            )
-        )
+        options = self._sort_options(options)
+
         # Create a Rich table of actions for the player to choose from.
         tbl = Table(title="Actions", pad_edge=False)
         tbl.add_column("#", style="cyan", no_wrap=True)
         tbl.add_column("Name", style="bold")
         tbl.add_column("Type", style="magenta")
         tbl.add_column("Category", style="blue")
-        for i, action in self._get_non_submenu_actions(actions):
+
+        # Store in a dictionary the letter associated with each submenu action.
+        metadata: dict[str, MenuOption] = {}
+
+        for i, option in enumerate(options, 1):
+            if isinstance(option, ActionOption):
+                a, a_type, a_cat = (
+                    option.action,
+                    option.action.type,
+                    option.action.category,
+                )
+                tbl.add_row(
+                    chr(i),
+                    a.name,
+                    apply_action_type_color(a_type, a_type.name.title()),
+                    apply_action_category_color(a_cat, a_cat.name.title()),
+                )
+                metadata[chr(i)] = option
+            elif isinstance(option, SubmenuOption):
+                # Add a special row for casting a spell.
+                tbl.add_row(chr(int("a") + i), option.name, "", "")
+                metadata[chr(int("a") + i)] = option
+        return tbl, metadata
+
+    def _create_target_table(self, targets: list[MenuOption]) -> Table:
+
+        # Create a Rich table of actions for the player to choose from.
+        tbl = Table(title="Targets", pad_edge=False)
+        tbl.add_column("#", style="cyan", no_wrap=True)
+        tbl.add_column("Name", style="bold")
+        tbl.add_column("HP", justify="center")
+        tbl.add_column("AC", justify="right")
+
+        # Store in a dictionary the letter associated with each submenu action.
+        metadata: dict[str, MenuOption] = {}
+
+        for i, target in enumerate(targets, 1):
             tbl.add_row(
                 str(i),
-                action.name,
-                apply_action_type_color(action.type, action.type.name.title()),
-                apply_action_category_color(
-                    action.category, action.category.name.title()
-                ),
-            )
-        for i, action in self._get_submenu_actions(actions):
-            tbl.add_row(
-                chr(i),
-                action.name,
-                apply_action_type_color(action.type, action.type.name.title()),
-                apply_action_category_color(
-                    action.category, action.category.name.title()
-                ),
+                target.name,
+                f"{target.:>3}/{target.HP_MAX:<3}",
+                str(target.AC),
             )
         return tbl
 
@@ -498,26 +413,46 @@ class PromptToolkitCLI(PlayerInterface):
             )
         return tbl
 
-    def _get_submenu_actions(
-        self, actions: list[BaseAction]
-    ) -> list[tuple[int, BaseAction]]:
-        """Iterates over submenu actions and yields their index and action."""
-        index = 0
-        result: list[tuple[int, BaseAction]] = []
-        for action in actions:
-            if action.category == ActionCategory.SUBMENU:
-                result.append((97 + index, action))
-                index += 1
-        return result
+    def _sort_options(self, options: List[MenuOption]) -> List[MenuOption]:
+        """
+        Sorts the options by their action type and name.
+        """
+        type_priority = {
+            ActionType.STANDARD: 0,
+            ActionType.BONUS: 1,
+            ActionType.FREE: 2,
+        }
+        category_priority = {
+            ActionCategory.OFFENSIVE: 0,
+            ActionCategory.HEALING: 1,
+            ActionCategory.BUFF: 2,
+            ActionCategory.DEBUFF: 3,
+            ActionCategory.UTILITY: 4,
+            ActionCategory.DEBUG: 5,
+        }
 
-    def _get_non_submenu_actions(
-        self, actions: list[BaseAction]
-    ) -> list[tuple[int, BaseAction]]:
-        """Iterates over non-submenu actions and yields their index and action."""
-        index: int = 1
-        result: list[tuple[int, BaseAction]] = []
-        for action in actions:
-            if action.category != ActionCategory.SUBMENU:
-                result.append((index, action))
-                index += 1
-        return result
+        def sort_key(option: MenuOption) -> tuple[int, int, str]:
+            if isinstance(option, ActionOption):
+                # Sort actions by ActionType and ActionCategory (then by name for stability)
+                return (
+                    type_priority.get(option.action.type, 99),
+                    category_priority.get(option.action.category, 99),
+                    option.action.name.lower(),
+                )
+            if isinstance(option, SpellOption):
+                # Sort spells by ActionType and ActionCategory (then by name for stability)
+                return (
+                    type_priority.get(option.spell.type, 99),
+                    category_priority.get(option.spell.category, 99),
+                    option.spell.name.lower(),
+                )
+            if isinstance(option, MindLevelOption):
+                # Sort mind levels by their level (as integer)
+                return (0, 0, str(option.level))
+            # Default case for any other MenuOption type
+            return (99, 99, option.name.lower())
+
+        # Sort actions by ActionType (then by name for stability)
+        options.sort(key=sort_key)
+
+        return options

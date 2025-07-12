@@ -1,5 +1,6 @@
 from typing import Any
-from actions import BaseAction
+
+from actions.base_action import BaseAction
 
 
 class CharacterClassAction:

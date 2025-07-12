@@ -56,7 +56,6 @@ class ActionCategory(Enum):
     BUFF = auto()
     DEBUFF = auto()
     UTILITY = auto()
-    SUBMENU = auto()
     DEBUG = auto()
 
 
