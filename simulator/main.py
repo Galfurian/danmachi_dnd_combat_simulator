@@ -1,14 +1,15 @@
 from copy import deepcopy
 from logging import error, warning
-from character import *
-from effect import *
-from combat_manager import CombatManager
 from rich.console import Console
 from rich.rule import Rule
 from collections import Counter
-from content import ContentRepository
+from core.content import ContentRepository
+from pathlib import Path
 
 import logging
+
+from combat.combat_manager import *
+from entities.character import *
 
 
 """Sets up basic logging configuration."""

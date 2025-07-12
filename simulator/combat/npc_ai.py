@@ -1,8 +1,7 @@
-from character import *
-
-from actions.base_action import BaseAction
-from actions.attack_action import BaseAttack, FullAttack
-from actions.spell_action import SpellAttack, SpellHeal, SpellBuff, SpellDebuff
+from actions.base_action import *
+from actions.attack_action import *
+from actions.spell_action import *
+from entities.character import *
 
 # =============================================================================
 # Sorting Functions
@@ -157,7 +156,7 @@ def choose_best_base_attack_action(
     npc: Character,
     enemies: list[Character],
     base_attacks: list[BaseAttack],
-) -> tuple[BaseAttack, Character] | None:
+) -> Optional[tuple[BaseAttack, Character]]:
     """
     Chooses the best attack and target combo based on:
     - Usefulness of the attack’s effect (if any)
@@ -165,8 +164,8 @@ def choose_best_base_attack_action(
     - Number of damage components
     """
     best_score: float = -1
-    best_attack: BaseAttack = None
-    best_target: Character = None
+    best_attack: Optional[BaseAttack] = None
+    best_target: Optional[Character] = None
 
     for attack in base_attacks:
         # Skip if the attack is not available (e.g., on cooldown).

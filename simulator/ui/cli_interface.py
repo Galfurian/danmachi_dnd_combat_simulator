@@ -5,14 +5,14 @@ from rich.console import Console
 from rich.table import Table
 
 from prompt_toolkit import PromptSession
-from character import Character
 from prompt_toolkit import ANSI
 
+from entities.character import *
 from actions.base_action import *
 from actions.spell_action import *
 from actions.attack_action import *
-from constants import *
-from utils import evaluate_expression, substitute_variables
+from core.constants import *
+from core.utils import *
 
 
 # main console for everything else
@@ -266,17 +266,17 @@ class PlayerInterface:
         """Prompts the user to select the amount of MIND to spend on a spell (if upcast is allowed)."""
         if len(spell.mind_cost) == 1:
             return spell.mind_cost[0]
-        # Get the resources for the prompt.
-        resources = actor.get_expression_modifiers()
+        # Get the variables for the prompt.
+        variables = actor.get_expression_variables()
         prompt = "\n"
         prompt = to_ansi(f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n")
         for mind_level in spell.mind_cost:
-            resources["MIND"] = mind_level
+            variables["MIND"] = mind_level
             max_targets = (
                 ""
                 if not spell.multi_target_expr
                 else f", Targets: {evaluate_expression(
-                spell.multi_target_expr, resources
+                spell.multi_target_expr, variables
             )}"
             )
             if isinstance(spell, SpellHeal):

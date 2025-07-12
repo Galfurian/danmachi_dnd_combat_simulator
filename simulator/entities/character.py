@@ -3,14 +3,14 @@ from logging import debug, warning
 from typing import Any, Tuple
 from rich.console import Console
 
-from constants import *
-from effect_manager import *
-from effect import *
-from utils import *
-from character_class import *
-from character_race import *
+from core.constants import *
+from effects.effect_manager import *
+from effects.effect import *
+from core.utils import *
+from entities.character_class import *
+from entities.character_race import *
 
-from content import ContentRepository
+from core.content import ContentRepository
 from actions.base_action import BaseAction
 from actions.attack_action import FullAttack
 from actions.spell_action import Spell
@@ -192,7 +192,7 @@ class Character:
         initiative += self.effect_manager.get_modifier(BonusType.INITIATIVE)
         return initiative
 
-    def get_expression_modifiers(self) -> dict[str, int]:
+    def get_expression_variables(self) -> dict[str, int]:
         """Returns a dictionary of the character's modifiers.
 
         Returns:

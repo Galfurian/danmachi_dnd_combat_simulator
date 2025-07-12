@@ -7,14 +7,12 @@ from typing import Tuple
 from rich.console import Console
 from rich.rule import Rule
 
-from actions.base_action import BaseAction
-from actions.attack_action import FullAttack
-from actions.spell_action import Spell, SpellAttack, SpellHeal, SpellBuff, SpellDebuff
-from character import *
-from effect import *
-from constants import *
-from cli_interface import *
-from npc_ai import *
+from actions.base_action import *
+from actions.attack_action import *
+from actions.spell_action import *
+from core.constants import *
+from ui.cli_interface import *
+from combat.npc_ai import *
 
 console = Console()
 

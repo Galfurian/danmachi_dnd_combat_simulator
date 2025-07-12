@@ -1,6 +1,7 @@
 from typing import Any, Generator, Iterator
-from effect import *
-from constants import *
+
+from core.constants import *
+from effects.effect import *
 
 
 class ActiveEffect:
@@ -67,13 +68,15 @@ class EffectManager:
                     consume_on_hit.append(modifier)
                     ae.consume_on_hit = False
                     continue
+                variables = ae.source.get_expression_variables()
+                variables["MIND"] = ae.mind_level
                 # Compute the maximum roll for the modifier.
-                new_max = get_max_roll(modifier.damage_roll, self, 1)
+                new_max = get_max_roll(modifier.damage_roll, variables)
                 # Get the current best modifier for this damage type.
                 current = best_by_type.get(modifier.damage_type)
                 # Compute the maximum roll for the current best modifier.
                 current_max = (
-                    get_max_roll(current.damage_roll, self, 1) if current else -1
+                    get_max_roll(current.damage_roll, variables) if current else -1
                 )
                 # If the new modifier is better, update the best_by_type dictionary.
                 if new_max > current_max:
@@ -92,6 +95,9 @@ class EffectManager:
             )
 
         if isinstance(effect, ModifierEffect):
+            variables = entity.get_expression_variables()
+            variables["MIND"] = mind_level
+
             usefulness_found = False
             for bonus_type, modifier in effect.modifiers.items():
                 if bonus_type in [BonusType.HP, BonusType.MIND]:
@@ -102,23 +108,21 @@ class EffectManager:
                         usefulness_found = True
                 elif bonus_type == BonusType.ATTACK:
                     existing_roll_max = max(
-                        get_max_roll(existing_modifier, entity, mind_level)
+                        get_max_roll(existing_modifier, variables)
                         for existing_modifier in self.get_modifier(BonusType.ATTACK)
                     )
-                    new_roll_max = get_max_roll(modifier, entity, mind_level)
+                    new_roll_max = get_max_roll(modifier, variables)
                     if new_roll_max > existing_roll_max:
                         usefulness_found = True
                 elif bonus_type == BonusType.DAMAGE:
                     existing_components = self.get_modifier(BonusType.DAMAGE)
                     existing_by_type = {
-                        c["type"]: get_max_roll(c["roll"], entity, mind_level)
+                        c["type"]: get_max_roll(c["roll"], variables)
                         for c in existing_components
                     }
                     for new_component in modifier:
                         new_type = new_component["type"]
-                        new_roll_max = get_max_roll(
-                            new_component["roll"], entity, mind_level
-                        )
+                        new_roll_max = get_max_roll(new_component["roll"], variables)
                         if new_type not in existing_by_type:
                             usefulness_found = True
                             break
@@ -139,15 +143,16 @@ class EffectManager:
                 consume_on_hit.append((modifier, ae.mind_level))
                 ae.consume_on_hit = False
                 continue
+            # Get the varibles for the effect.
+            variables = ae.source.get_expression_variables()
+            variables["MIND"] = ae.mind_level
             # Compute the maximum roll for the modifier.
-            new_max = get_max_roll(modifier.damage_roll, self, 1)
+            new_max = get_max_roll(modifier.damage_roll, variables)
             # Get the current best modifier for this damage type.
             current = best_by_type.get(modifier.damage_type)
             # Compute the maximum roll for the current best modifier.
             current_max = (
-                get_max_roll(current[0].damage_roll, self, current[1])
-                if current
-                else -1
+                get_max_roll(current[0].damage_roll, variables) if current else -1
             )
             # If the new modifier is better, update the best_by_type dictionary.
             if new_max > current_max:

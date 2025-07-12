@@ -5,11 +5,11 @@ from rich.console import Console
 from typing import Any, Optional
 from pathlib import Path
 
-from damage import *
-from effect import *
-from utils import *
-from constants import *
-from damage import *
+from combat.damage import *
+from core.utils import *
+from core.constants import *
+from combat.damage import *
+from effects.effect import *
 
 console = Console()
 
@@ -90,7 +90,7 @@ class BaseAction:
             expr += f" + {attack_bonus_expr}"
         for bonus in bonus_list:
             expr += f" + {bonus}"
-        total, desc, rolls = roll_and_describe(expr, actor.get_expression_modifiers())
+        total, desc, rolls = roll_and_describe(expr, actor.get_expression_variables())
         return total, desc, rolls[0] if rolls else 0
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:

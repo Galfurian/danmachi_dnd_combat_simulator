@@ -2,20 +2,13 @@ from pathlib import Path
 from rich.console import Console
 from rich.rule import Rule
 
-from actions.base_action import BaseAction
-from actions.attack_action import BaseAttack, from_dict_attack
-from actions.spell_action import (
-    Spell,
-    SpellAttack,
-    SpellHeal,
-    SpellBuff,
-    SpellDebuff,
-    from_dict_spell,
-)
-from effect import Armor
-from character_class import CharacterClass
-from character_race import CharacterRace
-from utils import *
+from actions.base_action import *
+from actions.attack_action import *
+from actions.spell_action import *
+from effects.effect import *
+from entities.character_class import *
+from entities.character_race import *
+from core.utils import *
 
 import copy
 import json
@@ -42,8 +35,9 @@ class ContentRepository(metaclass=Singleton):
     spells: dict[str, BaseAction]
     actions: dict[str, BaseAction]
 
-    def __init__(self, data_dir: Path):
-        self.reload(data_dir)
+    def __init__(self, data_dir: Optional[Path] = None):
+        if data_dir:
+            self.reload(data_dir)
 
     def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""

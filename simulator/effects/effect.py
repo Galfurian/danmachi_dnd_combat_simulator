@@ -2,10 +2,10 @@ import json
 from rich.console import Console
 from pathlib import Path
 
-from utils import *
+from core.utils import *
 from typing import Any
-from constants import *
-from damage import *
+from core.constants import *
+from combat.damage import *
 
 console = Console()
 
@@ -266,10 +266,10 @@ class DoT(Effect):
         self.validate()
 
     def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         # Calculate the damage amount using the provided expression.
-        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, modifiers)
+        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, variables)
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
@@ -342,10 +342,10 @@ class HoT(Effect):
         self.validate()
 
     def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         # Calculate the heal amount using the provided expression.
-        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, modifiers)
+        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, variables)
         # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0

@@ -1,7 +1,7 @@
 from typing import Any, Tuple
 
-from constants import *
-from utils import *
+from core.constants import *
+from core.utils import *
 
 
 class DamageComponent:
@@ -40,11 +40,11 @@ def roll_damage_component(
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
     """
-    modifiers = actor.get_expression_modifiers()
-    modifiers["MIND"] = damage_component[1]
+    variables = actor.get_expression_variables()
+    variables["MIND"] = damage_component[1]
     # Substitute variables in the damage roll expression.
     dmg_value, dmg_desc, _ = roll_and_describe(
-        damage_component[0].damage_roll, modifiers
+        damage_component[0].damage_roll, variables
     )
     assert (
         isinstance(dmg_value, int) and dmg_value >= 0

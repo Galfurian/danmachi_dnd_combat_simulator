@@ -5,11 +5,11 @@ from rich.console import Console
 from typing import Any, Optional
 from pathlib import Path
 
-from damage import *
-from effect import *
-from utils import *
-from constants import *
-from actions.base_action import BaseAction
+from combat.damage import *
+from core.utils import *
+from core.constants import *
+from actions.base_action import *
+from effects.effect import *
 
 console = Console()
 

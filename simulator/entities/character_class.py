@@ -1,7 +1,5 @@
 from typing import Any
 
-from actions.base_action import BaseAction
-
 
 class CharacterClassAction:
     """Represents an action available to a character class."""
