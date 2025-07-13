@@ -511,7 +511,7 @@ class Character:
             action_name (BaseAction): The action to add a cooldown to.
             duration (int): The duration of the cooldown in turns.
         """
-        if action.name not in self.cooldowns:
+        if action.name not in self.cooldowns and duration > 0:
             self.cooldowns[action.name] = duration + 1
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
