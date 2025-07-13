@@ -211,7 +211,7 @@ class CombatManager:
         # Mark the action type as used.
         self.player.use_action_type(full_attack.type)
 
-    def ask_for_player_spell_cast(self, spells: list[Spell]) -> None:
+    def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
         while True:
             # Ask for the spell and the mind level.
             choice = self.ask_for_player_spell_and_mind(spells)
@@ -246,7 +246,8 @@ class CombatManager:
                 self.player.use_action_type(spell.type)
                 # Add the spell to the cooldowns if it has one.
                 self.player.add_cooldown(spell, spell.cooldown)
-                return
+                return True
+        return False
 
     def ask_for_player_spell_and_mind(
         self, spells: list[Spell]
@@ -418,9 +419,30 @@ class CombatManager:
             if ability.is_valid_target(character, participant)
         ]
 
-    # -- Post-combat only the player is allowed to keep acting and ONLY with SpellHeal --
-    def post_combat_healing_phase(self) -> None:
-        console.print(Rule("🏥  Post-Combat Healing", style="green"))
+    def pre_combat_phase(self) -> None:
+        """Handles the pre-combat phase where the player can prepare for combat."""
+        console.print(Rule(":hourglass_done: Pre-Combat Phase", style="blue"))
+        # Gather viable healing spells.
+        buffs: list[Spell] = [
+            s for s in self.player.spells.values() if isinstance(s, SpellBuff)
+        ]
+        heals: list[Spell] = [
+            s for s in self.player.spells.values() if isinstance(s, SpellHeal)
+        ]
+        # If the player has no spells, skip this phase.
+        if not heals and not buffs:
+            console.print(
+                "[yellow]No healing or buff spells known. Skipping pre-combat phase.[/]"
+            )
+            return
+        # Otherwise, allow to perform healing actions.
+        while True:
+            if not self.ask_for_player_spell_cast(buffs + heals):
+                break
+
+    def post_combat_phase(self) -> None:
+        """Handles the post-combat phase where the player can heal friendly characters."""
+        console.print(Rule(":hourglass_done: Post-Combat Healing", style="green"))
         # Stop now if there are no friendly character that needs healing.
         if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             console.print("[yellow]No friendly characters to heal.[/]")
@@ -440,7 +462,8 @@ class CombatManager:
                 console.print("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.
-            self.ask_for_player_spell_cast(heals)
+            if not self.ask_for_player_spell_cast(heals):
+                break
 
     def final_report(self) -> None:
         console.print(Rule("📊  Final Battle Report", style="bold blue"))

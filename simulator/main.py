@@ -126,11 +126,13 @@ if __name__ == "__main__":
     console.print(Rule("Initializing Combat", style="bold green"))
     # Call the new initialize method.
     combat_manager.initialize()
-        
+
     try:
+        combat_manager.pre_combat_phase()
+        console.print(Rule("Combat Started", style="bold green"))
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
-        combat_manager.post_combat_healing_phase()
+        combat_manager.post_combat_phase()
         combat_manager.final_report()
         console.print(Rule("Combat Finished", style="bold green"))
     except KeyboardInterrupt:
