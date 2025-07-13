@@ -426,9 +426,11 @@ class CombatManager:
         buffs: list[Spell] = [
             s for s in self.player.spells.values() if isinstance(s, SpellBuff)
         ]
-        heals: list[Spell] = [
-            s for s in self.player.spells.values() if isinstance(s, SpellHeal)
-        ]
+        heals: list[Spell] = (
+            [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
+            if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
+            else []
+        )
         # If the player has no spells, skip this phase.
         if not heals and not buffs:
             console.print(

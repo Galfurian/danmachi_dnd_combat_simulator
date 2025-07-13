@@ -123,18 +123,18 @@ if __name__ == "__main__":
 
     combat_manager = CombatManager(player, opponents, allies)
 
-    console.print(Rule("Initializing Combat", style="bold green"))
+    console.print(Rule(":crossed_swords:  Initializing Combat", style="bold green"))
     # Call the new initialize method.
     combat_manager.initialize()
 
     try:
         combat_manager.pre_combat_phase()
-        console.print(Rule("Combat Started", style="bold green"))
+        console.print(Rule(":crossed_swords:  Combat Started", style="bold green"))
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
         combat_manager.post_combat_phase()
         combat_manager.final_report()
-        console.print(Rule("Combat Finished", style="bold green"))
+        console.print(Rule(":crossed_swords:  Combat Finished", style="bold green"))
     except KeyboardInterrupt:
         console.print("")
-        console.print(Rule("Combat Interrupted", style="bold red"))
+        console.print(Rule(":crossed_swords:  Combat Interrupted", style="bold red"))
