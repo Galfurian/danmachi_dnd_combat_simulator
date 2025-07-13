@@ -99,7 +99,7 @@ class PlayerInterface:
                 continue
 
             # If the user typed a number, return the corresponding action.
-            index = self.get_digit_choice(answer)
+            index = self.get_digit_choice(answer) - 1
             if 0 <= index < len(actions_sorted):
                 return actions_sorted[index]
 
@@ -159,7 +159,7 @@ class PlayerInterface:
             if not answer:
                 continue
             # If the user typed a number, return the corresponding action.
-            index = self.get_digit_choice(answer)
+            index = self.get_digit_choice(answer) - 1
             if 0 <= index < len(sorted_targets):
                 return sorted_targets[index]
 
@@ -228,7 +228,7 @@ class PlayerInterface:
                 continue
 
             # If the user typed a number, toggle the selection of the corresponding target.
-            index = self.get_digit_choice(answer)
+            index = self.get_digit_choice(answer) - 1
             if 0 <= index < len(sorted_targets):
                 # Get the target at the index.
                 target = sorted_targets[index]
@@ -300,7 +300,7 @@ class PlayerInterface:
                 continue
 
             # If the user typed a number, return the corresponding spell.
-            index = self.get_digit_choice(answer)
+            index = self.get_digit_choice(answer) - 1
             if 0 <= index < len(sorted_spells):
                 return sorted_spells[index]
 
@@ -386,9 +386,9 @@ class PlayerInterface:
                 continue
 
             # If the user typed a number, return the corresponding mind cost.
-            index = self.get_digit_choice(answer)
-            if 0 <= index < len(spell.mind_cost):
-                return spell.mind_cost[index]
+            mind_cost: int = self.get_digit_choice(answer)
+            if mind_cost in spell.mind_cost:
+                return mind_cost
 
     @staticmethod
     def sort_actions(actions: List[Any]) -> List[Any]:
@@ -428,7 +428,7 @@ class PlayerInterface:
         Converts a single digit input to an index (0 for '0', 1 for '1', etc.).
         """
         if isinstance(answer, str) and len(answer) == 1 and answer.isdigit():
-            return int(answer) - 1
+            return int(answer)
         return -1
 
     @staticmethod
