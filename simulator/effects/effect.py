@@ -38,6 +38,18 @@ class Effect:
         assert self.name, "Effect name must not be empty."
         assert isinstance(self.name, str), "Effect name must be a string."
 
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        """Check if the effect can be applied to the target.
+
+        Args:
+            actor (Any): The character applying the effect.
+            target (Any): The character receiving the effect.
+
+        Returns:
+            bool: True if the effect can be applied, False otherwise.
+        """
+        return False
+
     def to_dict(self):
         return {
             "type": self.__class__.__name__,
@@ -94,6 +106,23 @@ class ModifierEffect(Effect):
             else:
                 # Should be a string expression that evaluates to an integer.
                 int(v)
+
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        if not target.is_alive():
+            return False
+        # Check if the target is already affected by the same group of modifiers.
+        for bonus_type, modifier in self.modifiers.items():
+            exhisting_modifiers = target.effect_manager.get_modifier(bonus_type)
+            if not exhisting_modifiers:
+                continue
+            # If the target already has a modifier of this type, check if it is the same.
+            if isinstance(modifier, str):
+                # If the modifier is a string, check if it matches any existing modifier.
+                if modifier in exhisting_modifiers:
+                    return False
+            if not target.effect_manager.has_modifier(bonus_type, modifier):
+                return False
+        return True
 
     def to_dict(self) -> dict[str, Any]:
         return {
