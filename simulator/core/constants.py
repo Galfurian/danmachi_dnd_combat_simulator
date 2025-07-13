@@ -6,7 +6,7 @@ from rich.console import Console
 # 0 - Minimal (e.g., only final results)
 # 1 - Moderate (e.g., show dice rolls)
 # 2 - Full detail (e.g., intermediate computations, effects applied, bonuses, etc.)
-GLOBAL_VERBOSE_LEVEL = 1
+GLOBAL_VERBOSE_LEVEL = 0
 
 console = Console()
 

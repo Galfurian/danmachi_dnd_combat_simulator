@@ -43,11 +43,12 @@ class BaseAttack(BaseAction):
 
         # --- Build & resolve attack roll ---
 
+        # Get attack modifier from the actor's effect manager.
+        attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+
         # Roll the attack.
         attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
-            actor,
-            self.attack_roll,
-            actor.effect_manager.get_modifier(BonusType.ATTACK),
+            actor, self.attack_roll, attack_modifier
         )
 
         # Detect crit and fumble.
@@ -61,14 +62,14 @@ class BaseAttack(BaseAction):
         if is_fumble:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " → [magenta]fumble![/]\n"
+            msg += " and [magenta]fumble![/]\n"
             cprint(msg)
             return True
 
         if attack_total < target.AC and not is_crit:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " → [red]miss![/]\n"
+            msg += " and [red]miss![/]\n"
             cprint(msg)
             return True
 
@@ -96,19 +97,30 @@ class BaseAttack(BaseAction):
         is_dead = not target.is_alive()
 
         if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" dealing {total_damage} damage.\n"
+            msg += f" dealing {total_damage} damage"
+            if is_dead:
+                msg += f" defeating {target_str}"
+            elif self.effect:
+                if self.apply_effect(actor, target, self.effect):
+                    msg += f" and applying"
+                else:
+                    msg += f" and failing to apply"
+                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += ".\n"
         elif GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
+            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
             msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target_str} → "
             msg += " + ".join(damage_details) + ".\n"
+            if is_dead:
+                msg += f"        {target_str} is defeated.\n"
+            elif self.effect:
+                if self.apply_effect(actor, target, self.effect):
+                    msg += f"        {target_str} is affected by"
+                else:
+                    msg += f"        {target_str} is not affected by"
+                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/].\n"
         cprint(msg)
-
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect)
-
-        if is_dead:
-            cprint(f"[bold red]{target_str} has been defeated![/]")
 
         return True
 

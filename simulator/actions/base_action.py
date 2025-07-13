@@ -47,38 +47,29 @@ class BaseAction:
         target: Any,
         effect: Optional[Effect],
         mind_level: Optional[int] = 0,
-    ):
+    ) -> bool:
         """Applies an effect to a target character.
 
         Args:
             actor (Any): The character performing the action.
             target (Any): The character targeted by the action.
-            effect (Effect): The effect to apply.
-            mind_level (int, optional): The mind_cost level to use for the effect. Defaults to 0.
-        """
-        if effect:
-            debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
-            # Add the effect to the target's effects list.
-            target.effect_manager.add_effect(actor, effect, mind_level)
+            effect (Optional[Effect]): The effect to apply.
+            mind_level (Optional[int], optional): The mind_cost level to use for the effect. Defaults to 0.
 
-    def apply_effect_and_log(
-        self,
-        actor: Any,
-        target: Any,
-        effect: Optional[Effect],
-        mind_level: Optional[int] = 0,
-    ) -> None:
+        Returns:
+            bool: True if the effect was successfully applied, False otherwise.
         """
-        Applies the effect to the target if alive, adds it to their effect manager,
-        and logs the application message with color and emoji.
-        """
-        if effect and target.is_alive():
-            self.apply_effect(actor, target, effect, mind_level)
-            target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
-            effect_msg = f"        {get_effect_emoji(effect)} Effect "
-            effect_msg += apply_effect_color(effect, effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
+        if not effect:
+            return False
+        if not actor.is_alive():
+            return False
+        if not target.is_alive():
+            return False
+        if target.effect_manager.add_effect(actor, effect, mind_level):
+            debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
+            return True
+        debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")
+        return False
 
     def roll_attack_with_crit(
         self, actor, attack_bonus_expr: str, bonus_list: list[str]

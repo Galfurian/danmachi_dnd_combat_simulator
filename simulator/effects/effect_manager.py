@@ -65,7 +65,7 @@ class EffectManager:
     def has_effect(self, effect: Effect) -> bool:
         return any(ae.effect == effect for ae in self.active_effects)
 
-    def would_be_useful(self, effect: Effect, source: Any, mind_level: int) -> bool:
+    def can_add_effect(self, effect: Effect, source: Any, mind_level: int) -> bool:
         if isinstance(effect, HoT):
             return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
 

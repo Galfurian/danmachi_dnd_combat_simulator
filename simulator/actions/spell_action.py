@@ -136,11 +136,15 @@ class SpellAttack(Spell):
 
         # --- Build and roll attack expression ---
 
+        # Get the spell attack bonus for the actor.
+        spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
+
+        # Get the attack modifier from the actor's effect manager.
+        attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+
         # Roll the attack.
         attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
-            actor,
-            actor.get_spell_attack_bonus(self.level),
-            actor.effect_manager.get_modifier(BonusType.ATTACK),
+            actor, spell_attack_bonus, attack_modifier
         )
 
         # Detect crit and fumble.
@@ -154,7 +158,7 @@ class SpellAttack(Spell):
         if is_fumble:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " — [magenta]fumble![/]\n"
+            msg += " and [magenta]fumble![/]\n"
             cprint(msg)
             return True
 
@@ -163,7 +167,7 @@ class SpellAttack(Spell):
         if attack_total < target.AC and not is_crit:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " → [red]miss![/]\n"
+            msg += " and [red]miss![/]\n"
             cprint(msg)
             return True
 
@@ -177,21 +181,29 @@ class SpellAttack(Spell):
             actor, target, damage_components
         )
 
+        # Check if the target is still alive after the attack.
+        is_dead = not target.is_alive()
+
         # Print the damage breakdown.
         if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" dealing {total_damage} damage.\n"
+            msg += f" dealing {total_damage} damage"
+            if is_dead:
+                msg += f" defeating {target_str}"
+            elif self.effect and self.apply_effect(actor, target, self.effect):
+                msg += f" and applying the effect "
+                msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += ".\n"
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
             msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target_str} → "
             msg += " + ".join(damage_details) + ".\n"
+            if is_dead:
+                msg += f"        {target_str} is defeated.\n"
+            elif self.effect and self.apply_effect(actor, target, self.effect):
+                msg += f"        {target_str} is affected by "
+                msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/].\n"
         cprint(msg)
-
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
-
-        if not target.is_alive():
-            cprint(f"[bold red]{target_str} has been defeated![/]")
 
         return True
 
@@ -375,11 +387,15 @@ class SpellHeal(Spell):
         msg = f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}"
         msg += f" healing for [bold green]{actual_healed}[/]"
         if GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" healing for [bold green]{actual_healed}[/] ([white]{heal_desc}[/]).\n"
+            msg += f" ({heal_desc})"
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect):
+                msg += f" and applying "
+            else:
+                msg += f" but failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += f".\n"
         cprint(msg)
-
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
 
         return True
 
@@ -523,11 +539,16 @@ class SpellBuff(Spell):
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Informational log.
-        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str}."
-        cprint(msg)
+        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str} "
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect, mind_level):
+                msg += f"applying "
+            else:
+                msg += f"failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += ".\n"
 
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
+        cprint(msg)
 
         return True
 
@@ -652,11 +673,16 @@ class SpellDebuff(Spell):
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Informational log.
-        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str}."
-        cprint(msg)
+        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str} "
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect, mind_level):
+                msg += f"applying "
+            else:
+                msg += f"failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += ".\n"
 
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
+        cprint(msg)
 
         return True
 
