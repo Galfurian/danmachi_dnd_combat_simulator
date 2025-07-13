@@ -11,8 +11,6 @@ from core.constants import *
 from actions.base_action import *
 from effects.effect import *
 
-console = Console()
-
 
 class BaseAttack(BaseAction):
     def __init__(
@@ -56,22 +54,22 @@ class BaseAttack(BaseAction):
         is_crit = d20_roll == 20
         is_fumble = d20_roll == 1
 
+        msg = f"    🎯 {actor_str} attacks {target_str} with [bold blue]{self.name}[/]"
+
         # --- Outcome: MISS ---
 
         if is_fumble:
-            console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]fumble![/]",
-                markup=True,
-            )
+            if GLOBAL_VERBOSE_LEVEL >= 1:
+                msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+            msg += " → [magenta]fumble![/]\n"
+            cprint(msg)
             return True
 
         if attack_total < target.AC and not is_crit:
-            console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
-                markup=True,
-            )
+            if GLOBAL_VERBOSE_LEVEL >= 1:
+                msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+            msg += " → [red]miss![/]\n"
+            cprint(msg)
             return True
 
         # --- Outcome: HIT ---
@@ -94,28 +92,23 @@ class BaseAttack(BaseAction):
         total_damage = base_damage + bonus_damage
         damage_details = base_damage_details + bonus_damage_details
 
-        console.print(
-            (
-                f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] — "
-                + (f"[magenta]crit![/]" if is_crit else "[green]hit![/]")
-            ),
-            markup=True,
-        )
-        console.print(
-            f"        {actor_str} deals {total_damage} total damage to {target_str} → "
-            + " + ".join(damage_details),
-            markup=True,
-        )
+        # Is target still alive?
+        is_dead = not target.is_alive()
+
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            msg += f" dealing {total_damage} damage.\n"
+        elif GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
+            msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
+            msg += f"        Dealing {total_damage} damage to {target_str} → "
+            msg += " + ".join(damage_details) + ".\n"
+        cprint(msg)
 
         # Apply any effect.
         self.apply_effect_and_log(actor, target, self.effect)
 
-        if not target.is_alive():
-            console.print(
-                f"        [bold red]{target_str} has been defeated![/]",
-                markup=True,
-            )
+        if is_dead:
+            cprint(f"[bold red]{target_str} has been defeated![/]")
 
         return True
 

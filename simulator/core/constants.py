@@ -1,5 +1,24 @@
 from enum import Enum, auto
 from typing import Any
+from rich.console import Console
+
+# Global verbose level for combat output:
+# 0 - Minimal (e.g., only final results)
+# 1 - Moderate (e.g., show dice rolls)
+# 2 - Full detail (e.g., intermediate computations, effects applied, bonuses, etc.)
+GLOBAL_VERBOSE_LEVEL = 1
+
+console = Console()
+
+
+def cprint(message: str):
+    """Prints a message to the console if the global verbose level is sufficient.
+
+    Args:
+        level (int): The verbosity level of the message.
+        message (str): The message to print.
+    """
+    console.print(message, markup=True, end="")
 
 
 class CharacterType(Enum):

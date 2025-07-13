@@ -58,8 +58,6 @@ class BaseAction:
         """
         if effect:
             debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
-            # Apply the effect to the target.
-            effect.apply(actor, target, mind_level)
             # Add the effect to the target's effects list.
             target.effect_manager.add_effect(actor, effect, mind_level)
 

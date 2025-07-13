@@ -15,25 +15,6 @@ class Effect:
         self.name: str = name
         self.max_duration: int = max_duration
 
-    def apply(self, actor: Any, target: Any, mind_level: Optional[int] = 0) -> None:
-        """Apply the effect to the target Any.
-
-        Args:
-            actor (Any): The character applying the effect.
-            target (Any): The character receiving the effect.
-            mind_level (int, optional): The mind level of the actor. Defaults to 0.
-        """
-        ...
-
-    def remove(self, actor: Any, target: Any) -> None:
-        """Remove the effect from the target character.
-
-        Args:
-            actor (Any): The character removing the effect.
-            target (Any): The character from whom the effect is being removed.
-        """
-        ...
-
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
 
