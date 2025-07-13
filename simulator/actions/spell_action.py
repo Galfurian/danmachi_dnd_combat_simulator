@@ -413,9 +413,12 @@ class SpellHeal(Spell):
         # - It is not the actor itself.
         # - Both actor and target are alive.
         # - If the actor and the enemy are both allies or enemies.
+        # - The target is not at full health.
         if not actor.is_alive() or not target.is_alive():
             return False
         if is_oponent(actor.type, target.type):
+            return False
+        if target.hp >= target.HP_MAX:
             return False
         return True
 
