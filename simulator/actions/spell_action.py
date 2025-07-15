@@ -1,417 +1,15 @@
 from abc import abstractmethod
-import json
 from logging import debug, error
 from rich.console import Console
 from typing import Any, Optional
-from pathlib import Path
 
-from damage import *
-from effect import *
-from utils import *
-from constants import *
-from damage import *
+from combat.damage import *
+from core.utils import *
+from core.constants import *
+from actions.base_action import *
+from effects.effect import *
 
 console = Console()
-
-
-class BaseAction:
-    def __init__(
-        self,
-        name: str,
-        type: ActionType,
-        category: ActionCategory,
-        cooldown: int,
-        maximum_uses: int,
-    ):
-        self.name: str = name
-        self.type: ActionType = type
-        self.category: ActionCategory = category
-        self.cooldown: int = cooldown
-        self.maximum_uses: int = maximum_uses
-
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Abstract method for executables.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the action was successfully executed, False otherwise.
-        """
-        ...
-
-    def apply_effect(
-        self,
-        actor: Any,
-        target: Any,
-        effect: Optional[Effect],
-        mind_level: Optional[int] = 0,
-    ):
-        """Applies an effect to a target character.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-            effect (Effect): The effect to apply.
-            mind_level (int, optional): The mind_cost level to use for the effect. Defaults to 0.
-        """
-        if effect:
-            debug(f"Applying effect {effect.name} from {actor.name} to {target.name}.")
-            # Apply the effect to the target.
-            effect.apply(actor, target, mind_level)
-            # Add the effect to the target's effects list.
-            target.effect_manager.add_effect(actor, effect, mind_level)
-
-    def apply_effect_and_log(
-        self,
-        actor: Any,
-        target: Any,
-        effect: Optional[Effect],
-        mind_level: Optional[int] = 0,
-    ) -> None:
-        """
-        Applies the effect to the target if alive, adds it to their effect manager,
-        and logs the application message with color and emoji.
-        """
-        if effect and target.is_alive():
-            self.apply_effect(actor, target, effect, mind_level)
-            target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
-            effect_msg = f"        {get_effect_emoji(effect)} Effect "
-            effect_msg += apply_effect_color(effect, effect.name)
-            effect_msg += f" applied to {target_str}."
-            console.print(effect_msg, markup=True)
-
-    def roll_attack_with_crit(
-        self, actor, attack_bonus_expr: str, bonus_list: list[str]
-    ) -> Tuple[int, str, int]:
-        expr = "1D20"
-        if attack_bonus_expr:
-            expr += f" + {attack_bonus_expr}"
-        for bonus in bonus_list:
-            expr += f" + {bonus}"
-        total, desc, rolls = roll_and_describe(expr, actor.get_expression_modifiers())
-        return total, desc, rolls[0] if rolls else 0
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        return False
-
-    def to_dict(self) -> dict[str, Any]:
-        """Converts the action to a dictionary representation.
-
-        Returns:
-            dict: A dictionary containing the executable's data.
-        """
-        return {
-            "class": self.__class__.__name__,
-            "name": self.name,
-            "type": self.type.name,
-            "category": self.category.name,
-            "cooldown": self.cooldown,
-            "maximum_uses": self.maximum_uses,
-        }
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "BaseAction":
-        """Creates an executable from a dictionary representation.
-
-        Args:
-            data (dict): The dictionary containing the executable's data.
-
-        Returns:
-            Executable: An instance of the executable.
-        """
-        if data.get("class") == "BaseAttack":
-            return BaseAttack.from_dict(data)
-        if data.get("class") == "FullAttack":
-            return FullAttack.from_dict(data, {})
-        if data.get("class") == "SpellAttack":
-            return SpellAttack.from_dict(data)
-        if data.get("class") == "SpellHeal":
-            return SpellHeal.from_dict(data)
-        if data.get("class") == "SpellBuff":
-            return SpellBuff.from_dict(data)
-        if data.get("class") == "SpellDebuff":
-            return SpellDebuff.from_dict(data)
-        raise ValueError(f"Unknown action class: {data.get('class')}")
-
-
-class BaseAttack(BaseAction):
-    def __init__(
-        self,
-        name: str,
-        type: ActionType,
-        cooldown: int,
-        maximum_uses: int,
-        hands_required: int,
-        attack_roll: str,
-        damage: list[DamageComponent],
-        effect: Optional[Effect] = None,
-    ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
-        self.hands_required: int = hands_required
-        self.attack_roll: str = attack_roll
-        self.damage: list[DamageComponent] = damage
-        self.effect: Optional[Effect] = effect
-
-    def execute(self, actor: Any, target: Any):
-        actor_str = apply_character_type_color(actor.type, actor.name)
-        target_str = apply_character_type_color(target.type, target.name)
-
-        debug(f"{actor.name} attempts a {self.name} on {target.name}.")
-
-        # If the action has a cooldown, add it to the actor's cooldowns.
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
-
-        # --- Build & resolve attack roll ---
-
-        # Roll the attack.
-        attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
-            actor,
-            self.attack_roll,
-            actor.effect_manager.get_modifier(BonusType.ATTACK),
-        )
-
-        # Detect crit and fumble.
-        is_crit = d20_roll == 20
-        is_fumble = d20_roll == 1
-
-        # --- Outcome: MISS ---
-
-        if is_fumble:
-            console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]fumble![/]",
-                markup=True,
-            )
-            return True
-
-        if attack_total < target.AC and not is_crit:
-            console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
-                markup=True,
-            )
-            return True
-
-        # --- Outcome: HIT ---
-
-        # First roll the attack damage from the attack.
-        base_damage, base_damage_details = roll_damage_components_no_mind(
-            actor, target, self.damage
-        )
-
-        # If it's a crit, double the base damage.
-        if is_crit:
-            base_damage *= 2
-
-        # Then roll any additional damage from effects.
-        bonus_damage, bonus_damage_details = roll_damage_components(
-            actor, target, actor.effect_manager.get_damage_modifiers()
-        )
-
-        # Extend the total damage and details with bonus damage.
-        total_damage = base_damage + bonus_damage
-        damage_details = base_damage_details + bonus_damage_details
-
-        console.print(
-            (
-                f"    🎯 {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] — "
-                f"[magenta]crit![/]"
-                if is_crit
-                else "[green]hit![/]"
-            ),
-            markup=True,
-        )
-        console.print(
-            f"        {actor_str} deals {total_damage} total damage to {target_str} → "
-            + " + ".join(damage_details),
-            markup=True,
-        )
-
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect)
-
-        if not target.is_alive():
-            console.print(
-                f"        [bold red]{target_str} has been defeated![/]",
-                markup=True,
-            )
-
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
-        return True
-
-    def get_damage_expr(self, actor: Any) -> str:
-        """Returns the damage expression with variables substituted.
-
-        Args:
-            actor (Any): The character performing the action.
-
-        Returns:
-            str: The damage expression with variables substituted.
-        """
-        return " + ".join(
-            substitute_variables(component.damage_roll, actor)
-            for component in self.damage
-        )
-
-    def get_min_damage(self, actor: Any) -> int:
-        """Returns the minimum damage value for the attack.
-
-        Args:
-            actor (Any): The character performing the action.
-
-        Returns:
-            int: The minimum damage value for the attack.
-        """
-        return sum(
-            parse_expr_and_assume_min_roll(
-                substitute_variables(component.damage_roll, actor)
-            )
-            for component in self.damage
-        )
-
-    def get_max_damage(self, actor: Any) -> int:
-        """Returns the maximum damage value for the attack.
-
-        Args:
-            actor (Any): The character performing the action.
-
-        Returns:
-            int: The maximum damage value for the attack.
-        """
-        return sum(
-            parse_expr_and_assume_max_roll(
-                substitute_variables(component.damage_roll, actor)
-            )
-            for component in self.damage
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        # Get the base dictionary representation.
-        data = super().to_dict()
-        # Add specific fields for BaseAttack
-        data["hands_required"] = self.hands_required
-        data["attack_roll"] = self.attack_roll
-        data["damage"] = [component.to_dict() for component in self.damage]
-        # Include the effect if it exists.
-        if self.effect:
-            data["effect"] = self.effect.to_dict()
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "BaseAttack":
-        """
-        Creates a BaseAttack instance from a dictionary.
-        Args:
-            data (dict): Dictionary containing the action data.
-        Returns:
-            BaseAttack: An instance of BaseAttack.
-        """
-        return BaseAttack(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            hands_required=data["hands_required"],
-            attack_roll=data["attack_roll"],
-            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-        )
-
-
-class FullAttack(BaseAction):
-    def __init__(
-        self,
-        name: str,
-        type: ActionType,
-        cooldown: int,
-        maximum_uses: int,
-        attacks: list[BaseAttack],
-    ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
-        self.attacks: list[BaseAttack] = attacks
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
-        return True
-
-    def to_dict(self) -> dict[str, Any]:
-        # Get the base dictionary representation.
-        data = super().to_dict()
-        # Add specific fields for BaseAttack.
-        data["attacks"] = [attack.name for attack in self.attacks]
-        return data
-
-    @staticmethod
-    def from_dict(
-        data: dict[str, Any], base_attacks: dict[str, BaseAttack]
-    ) -> "FullAttack":
-        """
-        Creates a FullAttack instance from a dictionary.
-        Args:
-            data (dict): Dictionary containing the action data.
-        Returns:
-            FullAttack: An instance of FullAttack.
-        """
-        return FullAttack(
-            name=data["name"],
-            type=ActionType[data.get("type", ActionType.STANDARD)],
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            attacks=[base_attacks[attack] for attack in data["attacks"]],
-        )
 
 
 class Spell(BaseAction):
@@ -450,10 +48,10 @@ class Spell(BaseAction):
             int: The number of targets this ability can affect.
         """
         if self.multi_target_expr:
-            modifiers = actor.get_expression_modifiers()
-            modifiers["MIND"] = mind_level
+            variables = actor.get_expression_variables()
+            variables["MIND"] = mind_level
             # Evaluate the multi-target expression to get the number of targets.
-            return evaluate_expression(self.multi_target_expr, modifiers)
+            return evaluate_expression(self.multi_target_expr, variables)
         return 1
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -492,25 +90,6 @@ class Spell(BaseAction):
         if self.multi_target_expr:
             data["multi_target_expr"] = self.multi_target_expr
         return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Spell":
-        """
-        Creates a Spell instance from a dictionary.
-        Args:
-            data (dict): Dictionary containing the action data.
-        Returns:
-            Spell: An instance of Spell.
-        """
-        if data.get("class") == "SpellAttack":
-            return SpellAttack.from_dict(data)
-        if data.get("class") == "SpellHeal":
-            return SpellHeal.from_dict(data)
-        if data.get("class") == "SpellBuff":
-            return SpellBuff.from_dict(data)
-        if data.get("class") == "SpellDebuff":
-            return SpellDebuff.from_dict(data)
-        raise ValueError(f"Unknown spell class: {data.get('class')}")
 
 
 class SpellAttack(Spell):
@@ -551,43 +130,45 @@ class SpellAttack(Spell):
 
         # If the action has a cooldown, add it to the actor's cooldowns.
         assert not actor.is_on_cooldown(self), "Action is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
 
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # --- Build and roll attack expression ---
 
+        # Get the spell attack bonus for the actor.
+        spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
+
+        # Get the attack modifier from the actor's effect manager.
+        attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+
         # Roll the attack.
         attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
-            actor,
-            actor.get_spell_attack_bonus(self.level),
-            actor.effect_manager.get_modifier(BonusType.ATTACK),
+            actor, spell_attack_bonus, attack_modifier
         )
 
         # Detect crit and fumble.
         is_crit = d20_roll == 20
         is_fumble = d20_roll == 1
 
+        msg = f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}"
+
         # --- Outcome: FUMBLE ---
 
         if is_fumble:
-            console.print(
-                f"    ❌ {actor_str} attacks {target_str} with [bold]{self.name}[/]: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]fumble![/]",
-                markup=True,
-            )
+            if GLOBAL_VERBOSE_LEVEL >= 1:
+                msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+            msg += " and [magenta]fumble![/]\n"
+            cprint(msg)
             return True
 
         # --- Outcome: MISS ---
 
         if attack_total < target.AC and not is_crit:
-            console.print(
-                f"    ❌ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-                f"rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [red]miss[/]",
-                markup=True,
-            )
+            if GLOBAL_VERBOSE_LEVEL >= 1:
+                msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+            msg += " and [red]miss![/]\n"
+            cprint(msg)
             return True
 
         # --- Outcome: HIT ---
@@ -600,26 +181,30 @@ class SpellAttack(Spell):
             actor, target, damage_components
         )
 
+        # Check if the target is still alive after the attack.
+        is_dead = not target.is_alive()
+
         # Print the damage breakdown.
-        console.print(
-            f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-            f"rolled ({attack_roll_desc}) [white]{attack_total}[/] vs AC [yellow]{target.AC}[/] — [green]hit![/]",
-            markup=True,
-        )
-        console.print(
-            f"        {actor_str} deals {total_damage} total damage to {target_str} → "
-            + " + ".join(damage_details),
-            markup=True,
-        )
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            msg += f" dealing {total_damage} damage"
+            if is_dead:
+                msg += f" defeating {target_str}"
+            elif self.effect and self.apply_effect(actor, target, self.effect):
+                msg += f" and applying the effect "
+                msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += ".\n"
+        elif GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
+            msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
+            msg += f"        Dealing {total_damage} damage to {target_str} → "
+            msg += " + ".join(damage_details) + ".\n"
+            if is_dead:
+                msg += f"        {target_str} is defeated.\n"
+            elif self.effect and self.apply_effect(actor, target, self.effect):
+                msg += f"        {target_str} is affected by "
+                msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/].\n"
+        cprint(msg)
 
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
-
-        if not target.is_alive():
-            console.print(
-                f"        [bold red]{target_str} has been defeated![/]",
-                markup=True,
-            )
         return True
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
@@ -654,10 +239,10 @@ class SpellAttack(Spell):
         Returns:
             str: The damage expression with variables substituted.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         return " + ".join(
-            substitute_variables(component.damage_roll, modifiers)
+            substitute_variables(component.damage_roll, variables)
             for component in self.damage
         )
 
@@ -671,13 +256,13 @@ class SpellAttack(Spell):
         Returns:
             int: The minimum damage value for the spell.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         return sum(
             parse_expr_and_assume_min_roll(
                 substitute_variables(
                     component.damage_roll,
-                    modifiers,
+                    variables,
                 )
             )
             for component in self.damage
@@ -693,11 +278,11 @@ class SpellAttack(Spell):
         Returns:
             int: The maximum damage value for the spell.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         return sum(
             parse_expr_and_assume_max_roll(
-                substitute_variables(component.damage_roll, modifiers)
+                substitute_variables(component.damage_roll, variables)
             )
             for component in self.damage
         )
@@ -786,29 +371,31 @@ class SpellHeal(Spell):
 
         # If the action has a cooldown, add it to the actor's cooldowns.
         assert not actor.is_on_cooldown(self), "Action is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
         # Compute the healing based on the mind_cost spent and roll
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
-        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, modifiers)
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
+        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, variables)
 
         # Apply healing to the target
         actual_healed = target.heal(heal_value)
 
-        console.print(
-            f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}: "
-            f"heals for [bold green]{actual_healed}[/] ([white]{heal_desc}[/]).",
-            markup=True,
-        )
-
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
+        msg = f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}"
+        msg += f" healing for [bold green]{actual_healed}[/]"
+        if GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += f" ({heal_desc})"
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect):
+                msg += f" and applying "
+            else:
+                msg += f" but failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += f".\n"
+        cprint(msg)
 
         return True
 
@@ -826,9 +413,12 @@ class SpellHeal(Spell):
         # - It is not the actor itself.
         # - Both actor and target are alive.
         # - If the actor and the enemy are both allies or enemies.
+        # - The target is not at full health.
         if not actor.is_alive() or not target.is_alive():
             return False
         if is_oponent(actor.type, target.type):
+            return False
+        if target.hp >= target.HP_MAX:
             return False
         return True
 
@@ -840,9 +430,9 @@ class SpellHeal(Spell):
         Returns:
             str: The healing expression with variables substituted.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
-        return substitute_variables(self.heal_roll, modifiers)
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
+        return simplify_expression(self.heal_roll, variables)
 
     def get_min_heal(self, actor: Any, mind_level: Optional[int] = 1) -> int:
         """Returns the minimum healing value for the spell.
@@ -852,10 +442,10 @@ class SpellHeal(Spell):
         Returns:
             int: The minimum healing value for the spell.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         return parse_expr_and_assume_min_roll(
-            substitute_variables(self.heal_roll, modifiers)
+            substitute_variables(self.heal_roll, variables)
         )
 
     def get_max_heal(self, actor: Any, mind_level: Optional[int] = 1) -> int:
@@ -866,10 +456,10 @@ class SpellHeal(Spell):
         Returns:
             int: The maximum healing value for the spell.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         return parse_expr_and_assume_max_roll(
-            substitute_variables(self.heal_roll, modifiers)
+            substitute_variables(self.heal_roll, variables)
         )
 
     def to_dict(self):
@@ -946,21 +536,22 @@ class SpellBuff(Spell):
 
         # If the action has a cooldown, add it to the actor's cooldowns.
         assert not actor.is_on_cooldown(self), "Action is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
-        # Informational log
-        console.print(
-            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}.",
-            markup=True,
-        )
+        # Informational log.
+        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str} "
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect, mind_level):
+                msg += f"applying "
+            else:
+                msg += f"failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += ".\n"
 
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
+        cprint(msg)
 
         return True
 
@@ -994,17 +585,17 @@ class SpellBuff(Spell):
         Returns:
             dict[BonusType, str]: A dictionary mapping BonusType to expressions with variables substituted.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
         for bonus_type, value in self.effect.modifiers.items():
             if isinstance(value, DamageComponent):
                 expressions[bonus_type] = substitute_variables(
-                    value.damage_roll, modifiers
+                    value.damage_roll, variables
                 )
             elif isinstance(value, str):
                 # If the value is a string, substitute variables directly.
-                expressions[bonus_type] = substitute_variables(value, modifiers)
+                expressions[bonus_type] = substitute_variables(value, variables)
             else:
                 expressions[bonus_type] = value
         return expressions
@@ -1079,20 +670,22 @@ class SpellDebuff(Spell):
 
         # If the action has a cooldown, add it to the actor's cooldowns.
         assert not actor.is_on_cooldown(self), "Action is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
 
         # Prepare the actor and target strings for output.
         actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
         target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
 
-        console.print(
-            f"    {actor_str} casts [bold]{self.name}[/] on {target_str}.",
-            markup=True,
-        )
+        # Informational log.
+        msg = f"    {actor_str} casts [bold]{self.name}[/] on {target_str} "
+        if self.effect:
+            if self.apply_effect(actor, target, self.effect, mind_level):
+                msg += f"applying "
+            else:
+                msg += f"failing to apply "
+            msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]"
+        msg += ".\n"
 
-        # Apply any effect.
-        self.apply_effect_and_log(actor, target, self.effect, mind_level)
+        cprint(msg)
 
         return True
 
@@ -1128,11 +721,11 @@ class SpellDebuff(Spell):
         Returns:
             dict[BonusType, str]: A dictionary mapping BonusType to expressions with variables substituted.
         """
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
         for bonus_type, expr in self.effect.modifiers.items():
-            expressions[bonus_type] = substitute_variables(expr, modifiers)
+            expressions[bonus_type] = substitute_variables(expr, variables)
         return expressions
 
     def to_dict(self):
@@ -1161,3 +754,16 @@ class SpellDebuff(Spell):
             effect=Debuff.from_dict(data["effect"]),
             multi_target_expr=data.get("multi_target_expr", ""),
         )
+
+
+def from_dict_spell(data: dict[str, Any]) -> Optional[Spell]:
+    """Factory function to create a Spell instance from a dictionary."""
+    if data["class"] == "SpellAttack":
+        return SpellAttack.from_dict(data)
+    elif data["class"] == "SpellHeal":
+        return SpellHeal.from_dict(data)
+    elif data["class"] == "SpellBuff":
+        return SpellBuff.from_dict(data)
+    elif data["class"] == "SpellDebuff":
+        return SpellDebuff.from_dict(data)
+    return None

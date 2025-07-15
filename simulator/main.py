@@ -1,16 +1,16 @@
 from copy import deepcopy
 from logging import error, warning
-from cli_prompt import PromptToolkitCLI
-from character import *
-from effect import *
-from actions import *
-from combat_manager import CombatManager
 from rich.console import Console
 from rich.rule import Rule
 from collections import Counter
-from content import ContentRepository
+from core.content import ContentRepository
+from pathlib import Path
 
 import logging
+
+from combat.combat_manager import *
+from entities.character import *
+
 
 """Sets up basic logging configuration."""
 logging.basicConfig(
@@ -115,25 +115,31 @@ def make_names_unique(in_list: list[Character]):
 
 if __name__ == "__main__":
 
-    ui = PromptToolkitCLI()
-    add_to_list(enemies, opponents, "Infant Dragon")
-    # add_to_list(enemies, opponents, "Orc")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(characters, allies, "Naerin")
+    # add_to_list(enemies, opponents, "Infant Dragon")
+    add_to_list(enemies, opponents, "Orc")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(characters, allies, "Naerin")
     make_names_unique(opponents)
     make_names_unique(allies)
 
-    combat_manager = CombatManager(ui, player, opponents, allies)
+    combat_manager = CombatManager(player, opponents, allies)
+
+    console.print(Rule(":crossed_swords:  Initializing Combat", style="bold green"))
+    # Call the new initialize method.
+    combat_manager.initialize()
+
     try:
+        combat_manager.pre_combat_phase()
+        console.print(Rule(":crossed_swords:  Combat Started", style="bold green"))
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
-        combat_manager.post_combat_healing_phase()
+        combat_manager.post_combat_phase()
         combat_manager.final_report()
-        console.print(Rule("Combat Finished", style="bold green"))
+        console.print(Rule(":crossed_swords:  Combat Finished", style="bold green"))
     except KeyboardInterrupt:
         console.print("")
-        console.print(Rule("Combat Interrupted", style="bold red"))
+        console.print(Rule(":crossed_swords:  Combat Interrupted", style="bold red"))

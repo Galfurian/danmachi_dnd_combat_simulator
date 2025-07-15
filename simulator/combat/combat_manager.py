@@ -7,30 +7,25 @@ from typing import Tuple
 from rich.console import Console
 from rich.rule import Rule
 
-from character import *
-from actions import *
-from effect import *
-from constants import *
-from interfaces import PlayerInterface
-from npc_ai import *
+from actions.base_action import *
+from actions.attack_action import *
+from actions.spell_action import *
+from core.constants import *
+from ui.cli_interface import *
+from combat.npc_ai import *
 
 console = Console()
-
-
-CAST_SPELL = BaseAction("Cast a Spell", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
-BACK = BaseAction("Back", ActionType.NONE, ActionCategory.SUBMENU, 0, 0)
 
 
 class CombatManager:
     def __init__(
         self,
-        ui: PlayerInterface,
         player: Character,
         enemies: list[Character],
         friendlies: list[Character],
     ):
         # Store the ui.
-        self.ui = ui
+        self.ui: PlayerInterface = PlayerInterface()
 
         # The player character, who is controlled by the user.
         self.player: Character = player
@@ -46,9 +41,6 @@ class CombatManager:
 
         # This will now represent the "Round Number"
         self.turn_number: int = 0
-
-        # Call the new initialize method.
-        self.initialize()
 
     def initialize(self) -> None:
         """Initializes the combat by sorting participants by initiative."""
@@ -174,85 +166,158 @@ class CombatManager:
             return
 
         while not self.player.turn_done():
-            allowed_actions = (
-                self.player.get_available_attacks()
-                + self.player.get_available_actions()
-                + [CAST_SPELL]
-            )
-            # Get the action.
-            action: Optional[BaseAction] = self.ui.choose_action(
-                self.player, allowed_actions
-            )
+            # Gather available actions and attacks
+            attacks = self.player.get_available_attacks()
+            actions = self.player.get_available_actions()
+            spells = self.player.get_available_spells()
+
+            # Main action selection menu.
+            submenus = []
+            if spells:
+                submenus.append("Cast a Spell")
+
+            # Player selects an action or submenu option.
+            choice = self.ui.choose_action(attacks + actions, submenus)
+            if choice is None or isinstance(choice, str) and choice == "Skip":
+                break
             # If the action is a Spell, we need to handle it differently.
-            if action == CAST_SPELL:
-                action = self.ui.choose_spell(
-                    self.player, self.player.get_available_spells()
-                )
-                if not action:
+            if isinstance(choice, FullAttack):
+                self.ask_for_player_full_attack(choice)
+            elif choice == "Cast a Spell":
+                self.ask_for_player_spell_cast(spells)
+
+    def ask_for_player_full_attack(self, full_attack: FullAttack) -> None:
+        """Asks the player to choose targets for a full attack action."""
+        is_first_attack = True
+        # Iterate through each attack in the full attack.
+        for attack in full_attack.attacks:
+            # Get the legal targets for the action.
+            valid_targets = self._get_legal_targets(self.player, attack)
+            if not valid_targets:
+                warning(f"No valid targets for {attack.name}.")
+                continue
+            # Ask the player to choose a target.
+            target = self.ui.choose_target(valid_targets, show_back=is_first_attack)
+            # If the player chose to go back, we stop asking for targets.
+            if isinstance(target, str) and target == "Back":
+                return
+            # If this is the first attack, we allow to cancel the action.
+            is_first_attack = False
+            # If the target is not valid, skip this attack.
+            if not isinstance(target, Character):
+                continue
+            # Perform the attack on the target.
+            attack.execute(self.player, target)
+        # Mark the action type as used.
+        self.player.use_action_type(full_attack.type)
+
+    def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
+        while True:
+            # Ask for the spell and the mind level.
+            choice = self.ask_for_player_spell_and_mind(spells)
+            if choice is None:
+                break
+            if isinstance(choice, str):
+                if choice == "Back":
                     break
-                # Gather here the actual targets.
-                targets = []
-                # Ask for the [MIND] level to use for the spell.
-                mind_level = self.ui.choose_mind(self.player, action)
-                if mind_level == -1:
-                    continue
-                # Get the number of targets for the spell.
-                maximum_num_targets = action.target_count(self.player, mind_level)
-                # There is no point in asking for more targets than we have valid targets.
-                maximum_num_targets = min(maximum_num_targets, len(valid_targets))
-                # If the action accepts just one target, we can ask for a single target.
-                if maximum_num_targets == 1:
-                    # Ask for a single target.
-                    targets = [
-                        self.ui.choose_target(self.player, valid_targets, action)
-                    ]
-                # If the action accepts multiple targets, we can ask for multiple targets.
-                elif maximum_num_targets > 1:
-                    # Ask for multiple targets.
-                    targets = self.ui.choose_targets(
-                        self.player, valid_targets, maximum_num_targets
-                    )
-                # Check if the targets are valid.
-                if not isinstance(targets, list):
+                continue
+            # Unpack the spell and mind level.
+            spell, mind_level = choice
+            while True:
+                # Get the targets for the spell.
+                targets = self.ask_for_player_targets(
+                    spell, spell.target_count(self.player, mind_level)
+                )
+                if not targets:
+                    warning(f"No valid targets for {spell.name}.")
+                    break
+                if isinstance(targets, str):
+                    if targets == "Back":
+                        break
                     continue
                 if not all(isinstance(t, Character) for t in targets):
                     continue
                 for target in targets:
                     # Perform the action on the target.
-                    action.cast_spell(self.player, target, mind_level)
+                    spell.cast_spell(self.player, target, mind_level)
                 # Remove the MIND cost from the player.
                 self.player.mind -= mind_level
                 # Mark the action type as used.
-                self.player.use_action_type(action.type)
-            elif isinstance(action, FullAttack):
-                for attack in action.attacks:
-                    # Get the legal targets for the attack.
-                    valid_targets = self._get_legal_targets(self.player, attack)
-                    # If there are no valid targets, skip this attack.
-                    if not valid_targets:
-                        warning(
-                            f"{self.player.name} has no valid targets for {attack.name}. Skipping attack."
-                        )
-                        continue
-                    # Get the target for the attack.
-                    target = self.ui.choose_target(self.player, valid_targets, attack)
-                    # If the target is not valid, skip this attack.
-                    if not isinstance(target, Character):
-                        continue
-                    # Perform the attack on the target.
-                    attack.execute(self.player, target)
-                # Mark the action type as used.
-                self.player.use_action_type(action.type)
-            else:
-                # Get the target for the action.
-                target = self.ui.choose_target(self.player, valid_targets, action)
-                # If the target is not valid, skip this action.
-                if not isinstance(target, Character):
-                    continue
-                # Perform the action on the target.
-                action.execute(self.player, target)
-                # Mark the action type as used.
-                self.player.use_action_type(action.type)
+                self.player.use_action_type(spell.type)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                return True
+        return False
+
+    def ask_for_player_spell_and_mind(
+        self, spells: list[Spell]
+    ) -> Optional[tuple[Spell, int] | str]:
+        """Asks the player to choose a spell from their available spells.
+
+        Returns:
+            Optional[tuple[Spell, int]]: The chosen spell and mind level, or None if no spell was selected.
+        """
+        while True:
+            # Let the player choose a spell.
+            spell = self.ui.choose_spell(spells)
+            if spell is None:
+                break
+            if isinstance(spell, str):
+                if spell == "Back":
+                    return "Back"
+                continue
+            # Ask for the [MIND] level to use for the spell.
+            mind = self.ui.choose_mind(self.player, spell)
+            return spell, mind
+        return None
+
+    def ask_for_player_target(self, action: BaseAction) -> Optional[Character | str]:
+        """Asks the player to choose a target for the given action.
+
+        Args:
+            action (BaseAction): The action for which to choose a target.
+
+        Returns:
+            Optional[Character]: The chosen target, or None if no valid target was selected.
+        """
+        # Get the legal targets for the action.
+        valid_targets = self._get_legal_targets(self.player, action)
+        if not valid_targets:
+            warning(f"No valid targets for {action.name}.")
+            return None
+        # Ask the player to choose a target.
+        return self.ui.choose_target(valid_targets)
+
+    def ask_for_player_targets(
+        self, action: BaseAction, max_targets: int
+    ) -> Optional[List[Character] | str]:
+        """Asks the player to choose multiple targets for the given action.
+
+        Args:
+            action (BaseAction): The action for which to choose targets.
+            max_targets (int): The maximum number of targets to choose.
+
+        Returns:
+            Optional[list[Character]]: The chosen targets, or None if no valid targets were selected.
+        """
+        # Get the legal targets for the action.
+        valid_targets = self._get_legal_targets(self.player, action)
+        if len(valid_targets) == 0:
+            warning(f"No valid targets for {action.name}.")
+            return None
+        if max_targets <= 0:
+            warning(f"Invalid maximum number of targets: {max_targets}.")
+            return None
+        if max_targets == 1 or len(valid_targets) == 1:
+            target = self.ask_for_player_target(action)
+            if target is None:
+                warning(f"No valid target for {action.name}.")
+                return None
+            if isinstance(target, str):
+                return target
+            return [target]
+        # Ask the player to choose multiple targets.
+        return self.ui.choose_targets(valid_targets, max_targets)
 
     def execute_npc_action(self, npc: Character):
         """
@@ -281,32 +346,48 @@ class CombatManager:
             result = choose_best_healing_spell_action(npc, allies, spell_heals)
             if result:
                 spell, mind_level, targets = result
+                # Cast the healing spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_buffs:
             result = choose_best_buff_spell_action(npc, allies, spell_buffs)
             if result:
                 spell, mind_level, targets = result
+                # Cast the buff spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_debuffs:
             result = choose_best_debuff_spell_action(npc, enemies, spell_debuffs)
             if result:
                 spell, mind_level, targets = result
+                # Cast the debuff spell on the targets.
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if spell_attacks:
             result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
             if result:
                 spell, mind_level, targets = result
+                # Cast the attack spell on the targets.
                 for target in targets:
                     spell.cast_spell(npc, target, mind_level)
+                # Add the spell to the cooldowns if it has one.
+                self.player.add_cooldown(spell, spell.cooldown)
+                # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
         if full_attacks:
@@ -338,9 +419,32 @@ class CombatManager:
             if ability.is_valid_target(character, participant)
         ]
 
-    # -- Post-combat only the player is allowed to keep acting and ONLY with SpellHeal --
-    def post_combat_healing_phase(self) -> None:
-        console.print(Rule("🏥  Post-Combat Healing", style="green"))
+    def pre_combat_phase(self) -> None:
+        """Handles the pre-combat phase where the player can prepare for combat."""
+        console.print(Rule(":hourglass_done: Pre-Combat Phase", style="blue"))
+        # Gather viable healing spells.
+        buffs: list[Spell] = [
+            s for s in self.player.spells.values() if isinstance(s, SpellBuff)
+        ]
+        heals: list[Spell] = (
+            [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
+            if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
+            else []
+        )
+        # If the player has no spells, skip this phase.
+        if not heals and not buffs:
+            console.print(
+                "[yellow]No healing or buff spells known. Skipping pre-combat phase.[/]"
+            )
+            return
+        # Otherwise, allow to perform healing actions.
+        while True:
+            if not self.ask_for_player_spell_cast(buffs + heals):
+                break
+
+    def post_combat_phase(self) -> None:
+        """Handles the post-combat phase where the player can heal friendly characters."""
+        console.print(Rule(":hourglass_done: Post-Combat Healing", style="green"))
         # Stop now if there are no friendly character that needs healing.
         if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             console.print("[yellow]No friendly characters to heal.[/]")
@@ -360,43 +464,8 @@ class CombatManager:
                 console.print("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.
-            spell: Optional[Spell] = self.ui.choose_spell(self.player, heals)
-            if spell is None:
+            if not self.ask_for_player_spell_cast(heals):
                 break
-            # Gather here the actual targets.
-            targets = []
-            # Ask for the [MIND] level to use for the spell.
-            mind_level = self.ui.choose_mind(self.player, spell)
-            if mind_level == -1:
-                continue
-            # Get the legal targets for the spell.
-            targets = self._get_legal_targets(self.player, spell)
-            # Filter those that are fully healed.
-            targets = [t for t in targets if t.hp < t.HP_MAX and t.is_alive()]
-            # Get the number of targets for the spell.
-            maximum_num_targets = spell.target_count(self.player, mind_level)
-            # There is no point in asking for more targets than we have valid targets.
-            maximum_num_targets = min(maximum_num_targets, len(targets))
-            # If the action accepts just one target, we can ask for a single target.
-            if maximum_num_targets == 1:
-                # Ask for a single target.
-                targets = [self.ui.choose_target(self.player, targets)]
-            # If the action accepts multiple targets, we can ask for multiple targets.
-            elif maximum_num_targets > 1:
-                # Ask for multiple targets.
-                targets = self.ui.choose_targets(
-                    self.player, targets, maximum_num_targets
-                )
-            # Check if the targets are valid.
-            if not isinstance(targets, list):
-                continue
-            if not all(isinstance(t, Character) for t in targets):
-                continue
-            for target in targets:
-                # Perform the action on the target.
-                spell.cast_spell(self.player, target, mind_level)
-            # Remove the MIND cost from the player.
-            self.player.mind -= mind_level
 
     def final_report(self) -> None:
         console.print(Rule("📊  Final Battle Report", style="bold blue"))

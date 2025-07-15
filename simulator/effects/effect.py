@@ -2,10 +2,10 @@ import json
 from rich.console import Console
 from pathlib import Path
 
-from utils import *
+from core.utils import *
 from typing import Any
-from constants import *
-from damage import *
+from core.constants import *
+from combat.damage import *
 
 console = Console()
 
@@ -14,25 +14,6 @@ class Effect:
     def __init__(self, name: str, max_duration: int = -1):
         self.name: str = name
         self.max_duration: int = max_duration
-
-    def apply(self, actor: Any, target: Any, mind_level: Optional[int] = 0) -> None:
-        """Apply the effect to the target Any.
-
-        Args:
-            actor (Any): The character applying the effect.
-            target (Any): The character receiving the effect.
-            mind_level (int, optional): The mind level of the actor. Defaults to 0.
-        """
-        ...
-
-    def remove(self, actor: Any, target: Any) -> None:
-        """Remove the effect from the target character.
-
-        Args:
-            actor (Any): The character removing the effect.
-            target (Any): The character from whom the effect is being removed.
-        """
-        ...
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
@@ -56,6 +37,18 @@ class Effect:
         """Validate the effect's properties."""
         assert self.name, "Effect name must not be empty."
         assert isinstance(self.name, str), "Effect name must be a string."
+
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        """Check if the effect can be applied to the target.
+
+        Args:
+            actor (Any): The character applying the effect.
+            target (Any): The character receiving the effect.
+
+        Returns:
+            bool: True if the effect can be applied, False otherwise.
+        """
+        return False
 
     def to_dict(self):
         return {
@@ -113,6 +106,23 @@ class ModifierEffect(Effect):
             else:
                 # Should be a string expression that evaluates to an integer.
                 int(v)
+
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        if not target.is_alive():
+            return False
+        # Check if the target is already affected by the same group of modifiers.
+        for bonus_type, modifier in self.modifiers.items():
+            exhisting_modifiers = target.effect_manager.get_modifier(bonus_type)
+            if not exhisting_modifiers:
+                continue
+            # If the target already has a modifier of this type, check if it is the same.
+            if isinstance(modifier, str):
+                # If the modifier is a string, check if it matches any existing modifier.
+                if modifier in exhisting_modifiers:
+                    return False
+            if not target.effect_manager.has_modifier(bonus_type, modifier):
+                return False
+        return True
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -266,10 +276,10 @@ class DoT(Effect):
         self.validate()
 
     def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         # Calculate the damage amount using the provided expression.
-        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, modifiers)
+        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, variables)
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
@@ -342,10 +352,10 @@ class HoT(Effect):
         self.validate()
 
     def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
-        modifiers = actor.get_expression_modifiers()
-        modifiers["MIND"] = mind_level
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
         # Calculate the heal amount using the provided expression.
-        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, modifiers)
+        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, variables)
         # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0

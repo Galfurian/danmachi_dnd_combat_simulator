@@ -1,6 +1,7 @@
-from character import *
-from actions import *
-
+from actions.base_action import *
+from actions.attack_action import *
+from actions.spell_action import *
+from entities.character import *
 
 # =============================================================================
 # Sorting Functions
@@ -13,13 +14,13 @@ def _sort_for_base_attack(
     """
     Prioritizes targets for base attacks.
     - Lower HP gets higher priority.
-    - Effects (if any) are considered via `would_be_useful`.
+    - Effects (if any) are considered via `can_add_effect`.
     """
     useful = [
         t
         for t in targets
         if action.effect is None
-        or t.effect_manager.would_be_useful(action.effect, t, mind_level=0)
+        or t.effect_manager.can_add_effect(action.effect, t, mind_level=0)
     ]
     not_useful = [t for t in targets if t not in useful]
 
@@ -44,7 +45,7 @@ def _sort_for_spell_attack(
         t
         for t in targets
         if spell.effect is None
-        or t.effect_manager.would_be_useful(spell.effect, t, spell.mind_cost[0])
+        or t.effect_manager.can_add_effect(spell.effect, t, spell.mind_cost[0])
     ]
     not_useful = [t for t in targets if t not in useful]
 
@@ -69,7 +70,7 @@ def _sort_for_spell_heal(
 
     def priority_key(t: Character) -> Tuple[float, bool]:
         hp_ratio = t.hp / t.HP_MAX if t.HP_MAX > 0 else 1.0
-        usefulness = spell.effect is None or t.effect_manager.would_be_useful(
+        usefulness = spell.effect is None or t.effect_manager.can_add_effect(
             spell.effect, t, spell.mind_cost[0]
         )
         # Lower HP and useful effect come first.
@@ -88,7 +89,7 @@ def _sort_for_spell_buff(
     useful = [
         t
         for t in targets
-        if t.effect_manager.would_be_useful(action.effect, t, action.mind_cost[0])
+        if t.effect_manager.can_add_effect(action.effect, t, action.mind_cost[0])
     ]
     not_useful = [t for t in targets if t not in useful]
     return useful + not_useful
@@ -105,7 +106,7 @@ def _sort_for_spell_debuff(
     useful = [
         t
         for t in targets
-        if t.effect_manager.would_be_useful(spell.effect, t, spell.mind_cost[0])
+        if t.effect_manager.can_add_effect(spell.effect, t, spell.mind_cost[0])
     ]
     not_useful = [t for t in targets if t not in useful]
 
@@ -155,7 +156,7 @@ def choose_best_base_attack_action(
     npc: Character,
     enemies: list[Character],
     base_attacks: list[BaseAttack],
-) -> tuple[BaseAttack, Character] | None:
+) -> Optional[tuple[BaseAttack, Character]]:
     """
     Chooses the best attack and target combo based on:
     - Usefulness of the attack’s effect (if any)
@@ -163,8 +164,8 @@ def choose_best_base_attack_action(
     - Number of damage components
     """
     best_score: float = -1
-    best_attack: BaseAttack = None
-    best_target: Character = None
+    best_attack: Optional[BaseAttack] = None
+    best_target: Optional[Character] = None
 
     for attack in base_attacks:
         # Skip if the attack is not available (e.g., on cooldown).
@@ -177,7 +178,7 @@ def choose_best_base_attack_action(
             # Score based on how much the effect helps and how close the target is to death
             effect_score = 0
             if attack.effect:
-                if target.effect_manager.would_be_useful(attack.effect, target, 0):
+                if target.effect_manager.can_add_effect(attack.effect, target, 0):
                     effect_score += 10
             # HP-based vulnerability (lower is better)
             hp_ratio = target.hp / target.HP_MAX if target.HP_MAX > 0 else 1
@@ -266,7 +267,7 @@ def choose_best_attack_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect is None
-                or t.effect_manager.would_be_useful(spell.effect, t, mind_level)
+                or t.effect_manager.can_add_effect(spell.effect, t, mind_level)
             )
 
             # Prioritize high usefulness, low cost.
@@ -326,7 +327,7 @@ def choose_best_healing_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect
-                and t.effect_manager.would_be_useful(spell.effect, t, mind_level)
+                and t.effect_manager.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = total_hp_missing + useful_effects * 10 - mind_level
@@ -383,7 +384,7 @@ def choose_best_buff_spell_action(
             usefulness = sum(
                 1
                 for t in candidate_targets
-                if t.effect_manager.would_be_useful(spell.effect, t, mind_level)
+                if t.effect_manager.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = usefulness * 10 - mind_level
@@ -441,7 +442,7 @@ def choose_best_debuff_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect
-                and t.effect_manager.would_be_useful(spell.effect, t, mind_level)
+                and t.effect_manager.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = usefulness * 10 - mind_level

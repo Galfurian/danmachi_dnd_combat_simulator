@@ -3,14 +3,17 @@ from logging import debug, warning
 from typing import Any, Tuple
 from rich.console import Console
 
-from constants import *
-from actions import *
-from effect_manager import *
-from effect import *
-from utils import *
-from character_class import *
-from character_race import *
-from content import ContentRepository
+from core.constants import *
+from effects.effect_manager import *
+from effects.effect import *
+from core.utils import *
+from entities.character_class import *
+from entities.character_race import *
+
+from core.content import ContentRepository
+from actions.base_action import BaseAction
+from actions.attack_action import FullAttack
+from actions.spell_action import Spell
 
 console = Console()
 
@@ -189,7 +192,7 @@ class Character:
         initiative += self.effect_manager.get_modifier(BonusType.INITIATIVE)
         return initiative
 
-    def get_expression_modifiers(self) -> dict[str, int]:
+    def get_expression_variables(self) -> dict[str, int]:
         """Returns a dictionary of the character's modifiers.
 
         Returns:
@@ -508,7 +511,7 @@ class Character:
             action_name (BaseAction): The action to add a cooldown to.
             duration (int): The duration of the cooldown in turns.
         """
-        if action.name not in self.cooldowns:
+        if action.name not in self.cooldowns and duration > 0:
             self.cooldowns[action.name] = duration + 1
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
@@ -713,7 +716,7 @@ class Character:
         return char
 
 
-def load_characters(file_path: str) -> dict[str, Character]:
+def load_characters(file_path: Path) -> dict[str, Character]:
     """
     Loads characters from a JSON file.
 
@@ -734,7 +737,7 @@ def load_characters(file_path: str) -> dict[str, Character]:
     return characters
 
 
-def load_player_character(file_path: str) -> Character | None:
+def load_player_character(file_path: Path) -> Character | None:
     """
     Loads the player character from a JSON file.
 
