@@ -17,6 +17,7 @@ class Spell(BaseAction):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         level: int,
@@ -24,7 +25,7 @@ class Spell(BaseAction):
         category: ActionCategory,
         multi_target_expr: str = "",
     ):
-        super().__init__(name, type, category, cooldown, maximum_uses)
+        super().__init__(name, type, category, description, cooldown, maximum_uses)
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
         self.multi_target_expr: str = multi_target_expr
@@ -97,6 +98,7 @@ class SpellAttack(Spell):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         level: int,
@@ -108,6 +110,7 @@ class SpellAttack(Spell):
         super().__init__(
             name,
             type,
+            description,
             cooldown,
             maximum_uses,
             level,
@@ -310,6 +313,7 @@ class SpellAttack(Spell):
         return SpellAttack(
             name=data["name"],
             type=ActionType[data["type"]],
+            description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
@@ -327,6 +331,7 @@ class SpellHeal(Spell):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         level: int,
@@ -338,6 +343,7 @@ class SpellHeal(Spell):
         super().__init__(
             name,
             type,
+            description,
             cooldown,
             maximum_uses,
             level,
@@ -484,6 +490,7 @@ class SpellHeal(Spell):
         return SpellHeal(
             name=data["name"],
             type=ActionType[data["type"]],
+            description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
@@ -499,6 +506,7 @@ class SpellBuff(Spell):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         level: int,
@@ -509,6 +517,7 @@ class SpellBuff(Spell):
         super().__init__(
             name,
             type,
+            description,
             cooldown,
             maximum_uses,
             level,
@@ -619,6 +628,7 @@ class SpellBuff(Spell):
         return SpellBuff(
             name=data["name"],
             type=ActionType[data["type"]],
+            description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
@@ -633,6 +643,7 @@ class SpellDebuff(Spell):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         level: int,
@@ -643,6 +654,7 @@ class SpellDebuff(Spell):
         super().__init__(
             name,
             type,
+            description,
             cooldown,
             maximum_uses,
             level,
@@ -747,6 +759,7 @@ class SpellDebuff(Spell):
         return SpellDebuff(
             name=data["name"],
             type=ActionType[data["type"]],
+            description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],

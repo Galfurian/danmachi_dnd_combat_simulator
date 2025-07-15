@@ -17,6 +17,7 @@ class BaseAttack(BaseAction):
         self,
         name: str,
         type: ActionType,
+        description: str,
         cooldown: int,
         maximum_uses: int,
         hands_required: int,
@@ -24,7 +25,7 @@ class BaseAttack(BaseAction):
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
     ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
+        super().__init__(name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses)
         self.hands_required: int = hands_required
         self.attack_roll: str = attack_roll
         self.damage: list[DamageComponent] = damage
@@ -216,6 +217,7 @@ class BaseAttack(BaseAction):
         return BaseAttack(
             name=data["name"],
             type=ActionType[data["type"]],
+            description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             hands_required=data["hands_required"],

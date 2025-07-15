@@ -11,8 +11,9 @@ console = Console()
 
 
 class Effect:
-    def __init__(self, name: str, max_duration: int = -1):
+    def __init__(self, name: str, description: str = "", max_duration: int = 0):
         self.name: str = name
+        self.description: str = description
         self.max_duration: int = max_duration
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
@@ -36,7 +37,7 @@ class Effect:
     def validate(self):
         """Validate the effect's properties."""
         assert self.name, "Effect name must not be empty."
-        assert isinstance(self.name, str), "Effect name must be a string."
+        assert isinstance(self.description, str), "Effect description must be a string."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """Check if the effect can be applied to the target.
@@ -54,6 +55,8 @@ class Effect:
         return {
             "type": self.__class__.__name__,
             "name": self.name,
+            "description": self.description,
+            "max_duration": self.max_duration,
         }
 
     @staticmethod
@@ -81,11 +84,15 @@ class Effect:
 
 
 class ModifierEffect(Effect):
-    def __init__(self, name: str, max_duration: int, modifiers: dict[BonusType, str]):
-        super().__init__(name, max_duration)
-
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        max_duration: int,
+        modifiers: dict[BonusType, str],
+    ):
+        super().__init__(name, description, max_duration)
         self.modifiers: dict[BonusType, Any] = modifiers
-
         self.validate()
 
     def validate(self):
@@ -125,12 +132,12 @@ class ModifierEffect(Effect):
         return True
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": self.__class__.__name__,
-            "name": self.name,
-            "max_duration": self.max_duration,
-            "modifiers": {k.name.lower(): v for k, v in self.modifiers.items()},
+        data = super().to_dict()
+        data["modifiers"] = {
+            k.name.lower(): v.to_dict() if isinstance(v, DamageComponent) else str(v)
+            for k, v in self.modifiers.items()
         }
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Buff | Debuff":
@@ -146,11 +153,12 @@ class Buff(ModifierEffect):
     def __init__(
         self,
         name: str,
+        description: str,
         max_duration: int,
         modifiers: dict[BonusType, str],
         consume_on_hit: bool = False,
     ):
-        super().__init__(name, max_duration, modifiers)
+        super().__init__(name, description, max_duration, modifiers)
         self.consume_on_hit: bool = consume_on_hit
 
     def to_dict(self) -> dict[str, Any]:
@@ -177,7 +185,8 @@ class Buff(ModifierEffect):
                 modifiers[key] = str(v)
         return Buff(
             name=data["name"],
-            max_duration=data["max_duration"],
+            description=data.get("description", ""),
+            max_duration=data.get("max_duration", 0),
             modifiers=modifiers,
             consume_on_hit=data.get("consume_on_hit", False),
         )
@@ -187,10 +196,11 @@ class Debuff(ModifierEffect):
     def __init__(
         self,
         name: str,
+        description: str,
         max_duration: int,
         modifiers: dict[BonusType, str],
     ):
-        super().__init__(name, max_duration, modifiers)
+        super().__init__(name, description, max_duration, modifiers)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Debuff":
@@ -211,7 +221,8 @@ class Debuff(ModifierEffect):
                 modifiers[key] = str(v)
         return Debuff(
             name=data["name"],
-            max_duration=data["max_duration"],
+            description=data.get("description", ""),
+            max_duration=data.get("max_duration", 0),
             modifiers=modifiers,
         )
 
@@ -220,11 +231,12 @@ class Armor(Effect):
     def __init__(
         self,
         name: str,
+        description: str,
         ac: int,
         armor_slot: ArmorSlot,
         armor_type: ArmorType,
     ):
-        super().__init__(name, -1)
+        super().__init__(name, description)
         self.ac = ac
         self.armor_slot: ArmorSlot = armor_slot
         self.armor_type: ArmorType = armor_type
@@ -242,9 +254,7 @@ class Armor(Effect):
         ), f"Armor type '{self.armor_type}' must be of type ArmorType."
 
     def to_dict(self) -> dict[str, Any]:
-        data: dict[str, Any] = {}
-        data["type"] = "Armor"
-        data["name"] = self.name
+        data = super().to_dict()
         data["ac"] = self.ac
         data["armor_slot"] = self.armor_slot.name
         data["armor_type"] = self.armor_type.name
@@ -255,6 +265,7 @@ class Armor(Effect):
         assert data is not None, "Data must not be None."
         return Armor(
             name=data["name"],
+            description=data.get("description", ""),
             ac=data["ac"],
             armor_slot=ArmorSlot[data["armor_slot"]],
             armor_type=ArmorType[data["armor_type"]],
@@ -265,11 +276,12 @@ class DoT(Effect):
     def __init__(
         self,
         name: str,
+        description: str,
         max_duration: int,
         damage_per_turn: str,
         damage_type: DamageType,
     ):
-        super().__init__(name, max_duration)
+        super().__init__(name, description, max_duration)
         self.damage_per_turn = damage_per_turn
         self.damage_type: DamageType = damage_type
 
@@ -320,20 +332,18 @@ class DoT(Effect):
         ), f"Damage type '{self.damage_type}' must be of type DamageType."
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "DoT",
-            "name": self.name,
-            "max_duration": self.max_duration,
-            "damage_per_turn": self.damage_per_turn,
-            "damage_type": self.damage_type.name,
-        }
+        data = super().to_dict()
+        data["damage_per_turn"] = self.damage_per_turn
+        data["damage_type"] = self.damage_type.name
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "DoT":
         assert data is not None, "Data must not be None."
         return DoT(
             name=data["name"],
-            max_duration=data["max_duration"],
+            description=data.get("description", ""),
+            max_duration=data.get("max_duration", 0),
             damage_per_turn=data["damage_per_turn"],
             damage_type=DamageType[data["damage_type"]],
         )
@@ -343,10 +353,11 @@ class HoT(Effect):
     def __init__(
         self,
         name: str,
+        description: str,
         max_duration: int,
         heal_per_turn: str,
     ):
-        super().__init__(name, max_duration)
+        super().__init__(name, description, max_duration)
         self.heal_per_turn = heal_per_turn
 
         self.validate()
@@ -377,18 +388,16 @@ class HoT(Effect):
         ), "Heal per turn must be a string expression."
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": "HoT",
-            "name": self.name,
-            "max_duration": self.max_duration,
-            "heal_per_turn": self.heal_per_turn,
-        }
+        data = super().to_dict()
+        data["heal_per_turn"] = self.heal_per_turn
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "HoT":
         assert data is not None, "Data must not be None."
         return HoT(
             name=data["name"],
-            max_duration=data["max_duration"],
+            description=data.get("description", ""),
+            max_duration=data.get("max_duration", 0),
             heal_per_turn=data["heal_per_turn"],
         )

@@ -334,6 +334,10 @@ class ContentRepository(metaclass=Singleton):
             variant = copy.deepcopy(base_attack)
             # Set the variant name and apply deltas.
             variant.name = variant_data["name"]
+            # Change the description if provided.
+            if "description" in variant_data:
+                variant.description = variant_data["description"]
+            # Apply attack and damage roll modifications.
             if mod := variant_data.get("attack_roll_mod"):
                 variant.attack_roll += (
                     f"{mod:+}" if not mod.startswith(("+", "-")) else mod

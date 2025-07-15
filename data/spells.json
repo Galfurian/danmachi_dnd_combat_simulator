@@ -3,6 +3,7 @@
         "class": "SpellHeal",
         "name": "Cure Wounds",
         "type": "STANDARD",
+        "description": "A basic healing spell that restores a small amount of health.",
         "level": 1,
         "mind_cost": [
             1,
@@ -15,6 +16,7 @@
         "class": "SpellHeal",
         "name": "Healing Word",
         "type": "BONUS",
+        "description": "A quick healing spell that can be cast as a bonus action.",
         "level": 1,
         "mind_cost": [
             1,
@@ -27,6 +29,7 @@
         "class": "SpellBuff",
         "name": "Bless",
         "type": "STANDARD",
+        "description": "A spell that blesses allies, enhancing their attacks.",
         "level": 1,
         "mind_cost": [
             1,
@@ -37,6 +40,7 @@
         "effect": {
             "type": "Buff",
             "name": "Bless",
+            "description": "Adds a dice to the attack rolls.",
             "max_duration": 10,
             "modifiers": {
                 "attack": "1D4"
@@ -47,6 +51,7 @@
         "class": "SpellBuff",
         "name": "Shield of Faith",
         "type": "BONUS",
+        "description": "A protective spell that increases the target's armor class.",
         "level": 1,
         "mind_cost": [
             1
@@ -54,6 +59,7 @@
         "effect": {
             "type": "Buff",
             "name": "Shield of Faith",
+            "description": "Increases the target's armor class.",
             "max_duration": 10,
             "modifiers": {
                 "ac": "2"
@@ -64,6 +70,7 @@
         "class": "SpellBuff",
         "name": "Divine Favor",
         "type": "BONUS",
+        "description": "A spell that grants divine power to enhance attacks.",
         "level": 1,
         "mind_cost": [
             1
@@ -71,6 +78,7 @@
         "effect": {
             "type": "Buff",
             "name": "Divine Favor",
+            "description": "Adds radiant damage to successful attacks.",
             "max_duration": 10,
             "modifiers": {
                 "damage": {
@@ -84,6 +92,7 @@
         "class": "SpellBuff",
         "name": "Divine Smite",
         "type": "BONUS",
+        "description": "A powerful smite that deals extra radiant damage on a successful hit.",
         "level": 1,
         "mind_cost": [
             1,
@@ -93,7 +102,7 @@
         "effect": {
             "type": "Buff",
             "name": "Divine Smite",
-            "max_duration": 0,
+            "description": "Deals extra radiant damage on a successful hit.",
             "consume_on_hit": true,
             "modifiers": {
                 "damage": {
@@ -107,6 +116,7 @@
         "class": "SpellAttack",
         "name": "Searing Smite",
         "type": "BONUS",
+        "description": "A smite that ignites the target, dealing fire damage.",
         "level": 1,
         "mind_cost": [
             1,
@@ -122,6 +132,7 @@
         "effect": {
             "type": "DoT",
             "name": "Burning",
+            "description": "Deals fire damage over time.",
             "max_duration": 3,
             "damage_type": "FIRE",
             "damage_per_turn": "[MIND]D6"
@@ -131,6 +142,7 @@
         "class": "SpellAttack",
         "name": "Wrathful Smite",
         "type": "BONUS",
+        "description": "A smite that instills fear in the target, potentially causing them to flee.",
         "level": 1,
         "mind_cost": [
             1
@@ -146,6 +158,7 @@
         "class": "SpellAttack",
         "name": "Shatter",
         "type": "STANDARD",
+        "description": "A powerful spell that creates a loud noise, damaging and potentially deafening enemies.",
         "level": 2,
         "cooldown": 2,
         "mind_cost": [
@@ -165,6 +178,7 @@
         "class": "SpellAttack",
         "name": "Poison Spit",
         "type": "STANDARD",
+        "description": "A ranged attack that spits poison at the target, dealing damage and applying a poison effect.",
         "level": 1,
         "mind_cost": [
             1,
@@ -180,6 +194,7 @@
         "effect": {
             "type": "DoT",
             "name": "Poisoned",
+            "description": "Deals poison damage over time.",
             "max_duration": 3,
             "damage_type": "POISON",
             "damage_per_turn": "1D4"

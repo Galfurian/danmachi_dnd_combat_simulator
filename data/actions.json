@@ -3,6 +3,7 @@
         "class": "SpellAttack",
         "name": "Fire Breath",
         "type": "STANDARD",
+        "description": "Unleash a fiery breath attack that scorches enemies in front of you.",
         "level": 2,
         "cooldown": 3,
         "maximum_uses": 2,
@@ -30,6 +31,7 @@
         "class": "SpellAttack",
         "name": "Wing Buffet",
         "type": "STANDARD",
+        "description": "Use your wings to create a powerful gust of wind that knocks back enemies.",
         "level": 2,
         "cooldown": 3,
         "mind_cost": [

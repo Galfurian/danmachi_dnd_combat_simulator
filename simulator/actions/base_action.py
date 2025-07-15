@@ -20,12 +20,14 @@ class BaseAction:
         name: str,
         type: ActionType,
         category: ActionCategory,
-        cooldown: int,
-        maximum_uses: int,
+        description: str = "",
+        cooldown: int = 0,
+        maximum_uses: int = 0,
     ):
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
+        self.description: str = description
         self.cooldown: int = cooldown
         self.maximum_uses: int = maximum_uses
 
@@ -105,6 +107,7 @@ class BaseAction:
             "name": self.name,
             "type": self.type.name,
             "category": self.category.name,
+            "description": self.description,
             "cooldown": self.cooldown,
             "maximum_uses": self.maximum_uses,
         }
