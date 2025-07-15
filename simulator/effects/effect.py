@@ -74,8 +74,6 @@ class Effect:
             return Buff.from_dict(data)
         if data.get("type") == "Debuff":
             return Debuff.from_dict(data)
-        if data.get("type") == "Armor":
-            return Armor.from_dict(data)
         if data.get("type") == "DoT":
             return DoT.from_dict(data)
         if data.get("type") == "HoT":
@@ -224,51 +222,6 @@ class Debuff(ModifierEffect):
             description=data.get("description", ""),
             max_duration=data.get("max_duration", 0),
             modifiers=modifiers,
-        )
-
-
-class Armor(Effect):
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        ac: int,
-        armor_slot: ArmorSlot,
-        armor_type: ArmorType,
-    ):
-        super().__init__(name, description)
-        self.ac = ac
-        self.armor_slot: ArmorSlot = armor_slot
-        self.armor_type: ArmorType = armor_type
-
-        self.validate()
-
-    def validate(self) -> None:
-        assert self.ac >= 0, "Armor AC bonus must be a non-negative integer."
-        assert isinstance(
-            self.armor_slot, ArmorSlot
-        ), f"Armor slot '{self.armor_slot}' must be of type ArmorSlot."
-        # If armor type is specified, it must be of type ArmorType.
-        assert isinstance(
-            self.armor_type, ArmorType
-        ), f"Armor type '{self.armor_type}' must be of type ArmorType."
-
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["ac"] = self.ac
-        data["armor_slot"] = self.armor_slot.name
-        data["armor_type"] = self.armor_type.name
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Armor":
-        assert data is not None, "Data must not be None."
-        return Armor(
-            name=data["name"],
-            description=data.get("description", ""),
-            ac=data["ac"],
-            armor_slot=ArmorSlot[data["armor_slot"]],
-            armor_type=ArmorType[data["armor_type"]],
         )
 
 

@@ -9,6 +9,7 @@ from effects.effect import *
 from entities.character_class import *
 from entities.character_race import *
 from core.utils import *
+from items.armor import Armor
 
 import copy
 import json

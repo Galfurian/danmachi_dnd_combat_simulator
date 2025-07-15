@@ -9,11 +9,11 @@ from effects.effect import *
 from core.utils import *
 from entities.character_class import *
 from entities.character_race import *
-
 from core.content import ContentRepository
 from actions.base_action import BaseAction
 from actions.attack_action import FullAttack
 from actions.spell_action import Spell
+from items.armor import *
 
 console = Console()
 
@@ -149,35 +149,15 @@ class Character:
         # Base AC is 10 + DEX modifier.
         base_ac = 10 + self.DEX
 
-        # Add armor and shield AC.
-        armor_ac = None
-        shield_ac = 0
-        for armor in self.equipped_armor:
-            slot: ArmorSlot = getattr(armor, "armor_slot")
-            if slot == ArmorSlot.TORSO:
-                armor_type: ArmorType = getattr(armor, "armor_type")
-                assert (
-                    armor_type in ArmorType
-                ), f"Invalid armor type: {armor_type} for armor {armor.name}"
-                if armor_type == ArmorType.LIGHT:
-                    armor_ac = armor.ac + self.DEX
-                elif armor_type == ArmorType.MEDIUM:
-                    armor_ac = armor.ac + min(self.DEX, 2)
-                elif armor_type == ArmorType.HEAVY:
-                    armor_ac = armor.ac
-                else:
-                    armor_ac = armor.ac
-            elif slot == ArmorSlot.SHIELD:
-                shield_ac += armor.ac
+        # Add armor AC.
+        armor_ac = sum(armor.get_ac(self.DEX) for armor in self.equipped_armor)
 
         # Add effect bonuses to AC.
         effect_ac = self.effect_manager.get_modifier(BonusType.AC)
 
         # Determine final AC.
-        if armor_ac is not None:
-            return armor_ac + shield_ac + effect_ac
         race_bonus = self.race.natural_ac if self.race else 0
-        return base_ac + race_bonus + shield_ac + effect_ac
+        return base_ac + race_bonus + armor_ac + effect_ac
 
     @property
     def INITIATIVE(self) -> int:
@@ -397,30 +377,6 @@ class Character:
         hands_required = sum(attack.hands_required for attack in full_attack.attacks)
         return (self.hands_used + hands_required) <= self.total_hands
 
-    def can_equip_armor(self, armor: Any) -> bool:
-        """Checks if the character can equip a specific armor.
-
-        Args:
-            armor (Armor): The armor to check.
-
-        Returns:
-            bool: True if the armor can be equipped, False otherwise.
-        """
-        if not hasattr(armor, "armor_slot"):
-            warning(
-                f"{self.name} cannot equip {armor.name} because it is not a valid armor."
-            )
-            return False
-        # Check if the armor slot is already occupied.
-        for equipped in self.equipped_armor:
-            if equipped.armor_slot == armor.armor_slot:
-                warning(
-                    f"{self.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}."
-                )
-                return False
-        # If the armor slot is not occupied, we can equip it.
-        return True
-
     def add_attack(self, full_attack: FullAttack) -> bool:
         """Adds an attack to the character's equipped attacks.
 
@@ -454,15 +410,34 @@ class Character:
         warning(f"{self.name} does not have {full_attack.name} equipped.")
         return False
 
-    def add_armor(self, armor: Any) -> bool:
+    def can_equip_armor(self, armor: Armor) -> bool:
+        """Checks if the character can equip a specific armor.
+
+        Args:
+            armor (Armor): The armor to check.
+
+        Returns:
+            bool: True if the armor can be equipped, False otherwise.
         """
-        Adds an armor effect to the character's list of equipped armor.
+        # Check if the armor slot is already occupied.
+        for equipped in self.equipped_armor:
+            if equipped.armor_slot == armor.armor_slot:
+                warning(
+                    f"{self.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}."
+                )
+                return False
+        # If the armor slot is not occupied, we can equip it.
+        return True
+
+    def add_armor(self, armor: Armor) -> bool:
+        """Adds an armor to the character's equipped armor.
+
+        Args:
+            armor (Armor): The armor to equip.
+
+        Returns:
+            bool: True if the armor was equipped successfully, False otherwise.
         """
-        if not hasattr(armor, "armor_slot"):
-            warning(
-                f"{self.name} cannot equip {armor.name} because it is not a valid armor."
-            )
-            return False
         if self.can_equip_armor(armor):
             debug(f"Equipping armor: {armor.name} for {self.name}")
             # Add the armor to the character's armor list.
@@ -473,15 +448,15 @@ class Character:
         )
         return False
 
-    def remove_armor(self, armor: Any) -> bool:
+    def remove_armor(self, armor: Armor) -> bool:
+        """Removes an armor from the character's equipped armor.
+
+        Args:
+            armor (Armor): The armor to remove.
+
+        Returns:
+            bool: True if the armor was removed successfully, False otherwise.
         """
-        Removes an armor effect from the character's list of equipped armor.
-        """
-        if not hasattr(armor, "armor_slot"):
-            warning(
-                f"{self.name} cannot unequip {armor.name} because it is not a valid armor."
-            )
-            return False
         if armor in self.equipped_armor:
             debug(f"Unequipping armor: {armor.name} from {self.name}")
             # Remove the armor from the character's armor list.
