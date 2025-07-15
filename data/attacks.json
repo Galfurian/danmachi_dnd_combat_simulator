@@ -6,10 +6,10 @@
             "type": "STANDARD",
             "description": "A versatile sword that can be wielded with one or two hands.",
             "hands_required": 1,
-            "attack_roll": "[STR] + 1",
+            "attack_roll": "[STR]",
             "damage": [
                 {
-                    "damage_roll": "1D8 + [STR] + 1",
+                    "damage_roll": "1D8 + [STR]",
                     "damage_type": "SLASHING"
                 }
             ]
@@ -187,56 +187,122 @@
         {
             "base": "Longsword",
             "name": "Fine Longsword",
-            "description": "A finely crafted longsword with a balanced blade.",
             "delta": {
-                "attack_roll_mod": "+1",
-                "damage_roll_mod": "+1"
+                "description": "A finely crafted longsword with a balanced blade.",
+                "attack_roll": "[STR] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D10 + [STR] + 1",
+                        "damage_type": "SLASHING"
+                    }
+                ]
             }
         },
         {
             "base": "Shortsword",
             "name": "Fine Shortsword",
-            "description": "A finely crafted shortsword with a sharp edge.",
             "delta": {
-                "attack_roll_mod": "+1",
-                "damage_roll_mod": "+1"
+                "description": "A finely crafted shortsword with a sharp edge.",
+                "attack_roll": "[DEX] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX] + 1",
+                        "damage_type": "PIERCING"
+                    }
+                ]
             }
         },
         {
             "base": "Dagger",
             "name": "Rusty Dagger",
-            "description": "An old dagger with a dull blade.",
             "delta": {
-                "attack_roll_mod": "-1",
-                "damage_roll_mod": "-1"
+                "description": "An old dagger with a dull blade.",
+                "attack_roll": "[DEX] - 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D4 + [DEX] - 1",
+                        "damage_type": "PIERCING"
+                    }
+                ]
             }
         },
         {
             "base": "Clawed Gauntlets",
             "name": "Rusty Clawed Gauntlets",
-            "description": "Old gauntlets with worn claws.",
             "delta": {
-                "attack_roll_mod": "-1",
-                "damage_roll_mod": "-1"
+                "description": "Old gauntlets with worn claws.",
+                "attack_roll": "[STR] - 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR] - 1",
+                        "damage_type": "SLASHING"
+                    }
+                ]
             }
         },
         {
             "base": "Bite",
             "name": "Worm Bite",
-            "description": "A small, weak bite from a young worm."
+            "delta": {
+                "description": "A small bite that barely breaks the skin.",
+                "attack_roll": "[STR] - 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D4 + [STR] - 1",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        },
+        {
+            "base": "Bite",
+            "name": "Foul Bite",
+            "delta": {
+                "description": "A venomous bite that can inflict poison.",
+                "effect": {
+                    "type": "DoT",
+                    "name": "Poisoned",
+                    "description": "Deals poison damage over time.",
+                    "max_duration": 3,
+                    "damage_type": "POISON",
+                    "damage_per_turn": "1D4"
+                }
+            }
         },
         {
             "base": "Claw",
             "name": "Shadow Claw",
-            "description": "A claw that leaves behind a shadowy afterimage."
+            "delta": {
+                "description": "A claw attack that leaves a shadowy mark.",
+                "attack_roll": "[DEX] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX] + 1",
+                        "damage_type": "SLASHING"
+                    }
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Shadow Mark",
+                    "description": "The target is marked, taking additional necrotic damage from shadow attacks.",
+                    "max_duration": 2,
+                    "damage_type": "NECROTIC",
+                    "damage_per_turn": "1D4"
+                }
+            }
         },
         {
             "base": "Fist",
             "name": "Massive Fist",
-            "description": "A gigantic fist that can crush anything in its path.",
             "delta": {
-                "attack_roll_mod": "+2",
-                "damage_roll_mod": "+2"
+                "description": "A gigantic fist that can crush anything in its path.",
+                "attack_roll": "[STR] + 2",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR] + 2",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
             }
         }
     ]

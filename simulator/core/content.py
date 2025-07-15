@@ -330,28 +330,29 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(
                     f"Base attack '{variant_data['base']}' not found in attacks."
                 )
+            
             # Generate the variant.
             variant = copy.deepcopy(base_attack)
+
             # Set the variant name and apply deltas.
             variant.name = variant_data["name"]
+
             # Change the description if provided.
-            if "description" in variant_data:
-                variant.description = variant_data["description"]
-            # Apply attack and damage roll modifications.
-            if mod := variant_data.get("attack_roll_mod"):
-                variant.attack_roll += (
-                    f"{mod:+}" if not mod.startswith(("+", "-")) else mod
-                )
-            if mod := variant_data.get("damage_roll_mod"):
-                for comp in variant.damage:
-                    comp.damage_roll += (
-                        f"{mod:+}" if not mod.startswith(("+", "-")) else mod
-                    )
-            # blanket overrides / additions
-            for k, v in variant_data.get("delta", {}).items():
-                if k not in ("attack_roll_mod", "damage_roll_mod"):
-                    setattr(variant, k, v)
+            if description := variant_data.get("description"):
+                variant.description = description
+
+            for key, value in variant_data.get("delta", {}).items():
+                if key == "attack_roll":
+                    variant.attack_roll = value
+                elif key == "damage":
+                    variant.damage = []
+                    for comp in value:
+                        variant.damage.append(DamageComponent.from_dict(comp))
+                elif key == "effect":
+                    variant.effect = Effect.from_dict(value)
+
             if variant.name in base_attacks:
                 raise ValueError(f"Duplicate attack variant name: {variant.name}")
+
             variants[variant.name] = variant
         return variants
