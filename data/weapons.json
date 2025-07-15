@@ -1,0 +1,21 @@
+[
+    {
+        "name": "Longsword",
+        "description": "A versatile sword that can be wielded with one or two hands.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Thrust",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    }
+]

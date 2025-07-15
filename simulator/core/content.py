@@ -10,9 +10,11 @@ from entities.character_class import *
 from entities.character_race import *
 from core.utils import *
 from items.armor import Armor
+from items.weapon import Weapon
 
 import copy
 import json
+
 
 console = Console()
 
@@ -35,6 +37,8 @@ class ContentRepository(metaclass=Singleton):
     # Action-related attributes.
     spells: dict[str, BaseAction]
     actions: dict[str, BaseAction]
+    # Load the weapons.
+    weapons: dict[str, Weapon]
 
     def __init__(self, data_dir: Optional[Path] = None):
         if data_dir:
@@ -95,6 +99,17 @@ class ContentRepository(metaclass=Singleton):
             if not isinstance(data, list):
                 raise ValueError(f"Expected a list in {root / 'armors.json'}")
             self.armors = self._load_armors(data)
+
+        console.print("Loading weapons...", style="bold yellow")
+
+        # Load the weapons.
+        with open(root / "weapons.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'weapons.json'}")
+            self.weapons = self._load_weapons(data)
+
+        exit(0)
 
         console.print("Loading spells...", style="bold yellow")
 
@@ -285,6 +300,17 @@ class ContentRepository(metaclass=Singleton):
             armors[armor.name] = armor
         return armors
 
+    @staticmethod
+    def _load_weapons(data) -> dict[str, Weapon]:
+        """Load weapons from the given data."""
+        weapons: dict[str, Weapon] = {}
+        for weapon_data in data:
+            weapon = Weapon.from_dict(weapon_data)
+            if weapon.name in weapons:
+                raise ValueError(f"Duplicate weapon name: {weapon.name}")
+            weapons[weapon.name] = weapon
+        return weapons
+
     def _load_actions(self, data) -> dict[str, BaseAction]:
         """Load actions from the given data."""
         actions: dict[str, BaseAction] = {}
@@ -331,7 +357,7 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(
                     f"Base attack '{variant_data['base']}' not found in attacks."
                 )
-            
+
             # Generate the variant.
             variant = copy.deepcopy(base_attack)
 

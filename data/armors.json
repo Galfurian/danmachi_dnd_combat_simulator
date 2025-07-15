@@ -1,6 +1,5 @@
 [
     {
-        "type": "Armor",
         "name": "Plate Armor",
         "description": "Heavy armor that provides excellent protection but is cumbersome.",
         "ac": 18,
@@ -8,23 +7,22 @@
         "armor_type": "HEAVY"
     },
     {
-        "type": "Armor",
         "name": "Chainmail",
         "description": "A medium armor made of interlocking metal rings, offering a balance of protection and mobility",
         "ac": 16,
         "armor_slot": "TORSO",
-        "armor_type": "MEDIUM"
+        "armor_type": "MEDIUM",
+        "max_dex_bonus": 2
     },
     {
-        "type": "Armor",
         "name": "Brigandine Armor",
         "description": "A medium armor made of a fabric base with metal plates riveted to it, providing good protection and flexibility.",
         "ac": 14,
         "armor_slot": "TORSO",
-        "armor_type": "MEDIUM"
+        "armor_type": "MEDIUM",
+        "max_dex_bonus": 4
     },
     {
-        "type": "Armor",
         "name": "Leather Armor",
         "description": "Light armor made from hardened leather, offering basic protection and mobility.",
         "ac": 12,
@@ -32,12 +30,25 @@
         "armor_type": "LIGHT"
     },
     {
-        "type": "Armor",
         "name": "Steel Shield",
         "description": "A sturdy shield made of steel, providing additional protection.",
         "ac": 2,
         "armor_slot": "SHIELD",
         "armor_type": "HEAVY"
+    },
+    {
+        "name": "Wooden Shield",
+        "description": "A lightweight shield made of wood, offering basic protection.",
+        "ac": 1,
+        "armor_slot": "SHIELD",
+        "armor_type": "MEDIUM"
+    },
+    {
+        "name": "Iron buckler",
+        "description": "A small, round shield made of iron, easy to carry and quick to use.",
+        "ac": 1,
+        "armor_slot": "SHIELD",
+        "armor_type": "LIGHT"
     },
     {
         "type": "Armor",

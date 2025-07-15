@@ -220,7 +220,7 @@ class BaseAttack(BaseAction):
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
-            hands_required=data["hands_required"],
+            hands_required=data.get("hands_required", 0),
             attack_roll=data["attack_roll"],
             damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
