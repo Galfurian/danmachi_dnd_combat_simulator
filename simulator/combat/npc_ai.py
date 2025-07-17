@@ -132,8 +132,8 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
     )
 
 
-def get_full_attacks(actions: list[BaseAction]) -> list[FullAttack]:
-    return [a for a in actions if isinstance(a, FullAttack)]
+def get_base_attacks(actions: list[BaseAction]) -> list[BaseAttack]:
+    return [a for a in actions if isinstance(a, BaseAttack)]
 
 
 def get_spell_attacks(actions: list[BaseAction]) -> list[SpellAttack]:
@@ -196,33 +196,6 @@ def choose_best_base_attack_action(
     if best_attack and best_target:
         return best_attack, best_target
 
-    return None
-
-
-def choose_best_full_attack_action(
-    npc: Character,
-    enemies: list[Character],
-    full_attacks: list[FullAttack],
-) -> tuple[FullAttack, list[tuple[BaseAttack, Character]]] | None:
-    """It selects the best FullAttack, and it returns the association between the BaseAttack of the FullAttack and their targets.
-
-    Args:
-        npc (Character): The NPC character making the attack.
-        enemies (list[Character]): The list of enemy characters to attack.
-        full_attacks (list[FullAttack]): The list of FullAttack actions available to the NPC.
-
-    Returns:
-        tuple[FullAttack, list[tuple[BaseAttack, Character]]] | None: The best FullAttack and a list of tuples associating each BaseAttack with its target, or None if no viable FullAttack is found.
-    """
-    for full_attack in full_attacks:
-        available_associations = []
-        for attack in full_attack.attacks:
-            result = choose_best_base_attack_action(npc, enemies, [attack])
-            if result:
-                _, target = result
-                available_associations.append((attack, target))
-        if available_associations:
-            return full_attack, available_associations
     return None
 
 

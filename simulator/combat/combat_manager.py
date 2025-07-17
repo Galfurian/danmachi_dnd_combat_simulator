@@ -181,35 +181,37 @@ class CombatManager:
             if choice is None or isinstance(choice, str) and choice == "Skip":
                 break
             # If the action is a Spell, we need to handle it differently.
-            if isinstance(choice, FullAttack):
+            if isinstance(choice, BaseAttack):
                 self.ask_for_player_full_attack(choice)
             elif choice == "Cast a Spell":
                 self.ask_for_player_spell_cast(spells)
 
-    def ask_for_player_full_attack(self, full_attack: FullAttack) -> None:
+    def ask_for_player_full_attack(self, attack: BaseAttack) -> None:
         """Asks the player to choose targets for a full attack action."""
-        is_first_attack = True
+        attacks_used: int = 0
+        # Get the list of all attacks available in the full attack.
+        attacks = self.player.get_available_attacks()
         # Iterate through each attack in the full attack.
-        for attack in full_attack.attacks:
+        while attacks_used < self.player.number_of_attacks:
             # Get the legal targets for the action.
             valid_targets = self._get_legal_targets(self.player, attack)
             if not valid_targets:
                 warning(f"No valid targets for {attack.name}.")
                 continue
             # Ask the player to choose a target.
-            target = self.ui.choose_target(valid_targets, show_back=is_first_attack)
+            target = self.ui.choose_target(valid_targets, show_back=attacks_used == 0)
             # If the player chose to go back, we stop asking for targets.
             if isinstance(target, str) and target == "Back":
                 return
-            # If this is the first attack, we allow to cancel the action.
-            is_first_attack = False
             # If the target is not valid, skip this attack.
             if not isinstance(target, Character):
                 continue
+            # If this is the first attack, we allow to cancel the action.
+            attacks_used += 1
             # Perform the attack on the target.
             attack.execute(self.player, target)
         # Mark the action type as used.
-        self.player.use_action_type(full_attack.type)
+        self.player.use_action_type(ActionType.STANDARD)
 
     def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
         while True:
@@ -336,7 +338,7 @@ class CombatManager:
         # Get all actions available to the NPC.
         actions: list[BaseAction] = get_all_combat_actions(npc)
         # Get all actions by cathegory.
-        full_attacks: list[FullAttack] = get_full_attacks(actions)
+        base_attacks: list[BaseAttack] = get_base_attacks(actions)
         spell_attacks: list[SpellAttack] = get_spell_attacks(actions)
         spell_heals: list[SpellHeal] = get_spell_heals(actions)
         spell_buffs: list[SpellBuff] = get_spell_buffs(actions)
@@ -390,13 +392,12 @@ class CombatManager:
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
-        if full_attacks:
-            result = choose_best_full_attack_action(npc, enemies, full_attacks)
+        if base_attacks:
+            result = choose_best_base_attack_action(npc, enemies, base_attacks)
             if result:
-                _, associations = result
-                for attack, target in associations:
-                    # Perform the attack on the target.
-                    attack.execute(npc, target)
+                attack, target = result
+                # Perform the attack on the target.
+                attack.execute(npc, target)
                 return
 
         warning(f"SKIP: {npc.name} has no usable action or valid targets.")

@@ -1,0 +1,226 @@
+[
+    {
+        "name": "Longsword",
+        "description": "A versatile sword that can be wielded with one or two hands.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Thrust",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            },
+            {
+                "name": "Slash",
+                "type": "STANDARD",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [DEX]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Fine Longsword",
+        "description": "A finely crafted longsword with a balanced blade.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Thrust",
+                "type": "STANDARD",
+                "attack_roll": "[STR] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR] + 1",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            },
+            {
+                "name": "Slash",
+                "type": "STANDARD",
+                "attack_roll": "[DEX] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [DEX] + 1",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Shortsword",
+        "description": "A light and agile sword, ideal for quick strikes.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Thrust",
+                "type": "STANDARD",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            },
+            {
+                "name": "Slash",
+                "type": "STANDARD",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Fine Shortsword",
+        "description": "A finely crafted shortsword with a balanced blade.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Thrust",
+                "type": "STANDARD",
+                "attack_roll": "[DEX] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX] + 1",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            },
+            {
+                "name": "Slash",
+                "type": "STANDARD",
+                "attack_roll": "[DEX] + 1",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX] + 1",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Greatsword",
+        "description": "A large and powerful sword, requiring two hands to wield effectively.",
+        "hands_required": 2,
+        "attacks": [
+            {
+                "name": "Cleave",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Dagger",
+        "description": "A small and easily concealable blade, perfect for stealthy attacks.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Stab",
+                "type": "STANDARD",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D4 + [DEX]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Battle Axe",
+        "description": "A heavy axe designed for powerful strikes.",
+        "hands_required": 2,
+        "attacks": [
+            {
+                "name": "Chop",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D10 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Spear",
+        "description": "A long pole weapon that can be used for thrusting or throwing.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Pierce",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Mace",
+        "description": "A blunt weapon designed to crush armor and bone.",
+        "hands_required": 1,
+        "attacks": [
+            {
+                "name": "Smash",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Warhammer",
+        "description": "A heavy hammer designed for smashing through armor.",
+        "hands_required": 2,
+        "attacks": [
+            {
+                "name": "Crush",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D10 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    }
+]

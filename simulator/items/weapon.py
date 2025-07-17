@@ -37,12 +37,12 @@ class Weapon:
         Returns:
             Weapon: An instance of Weapon.
         """
-        attacks = [
-            BaseAttack.from_dict(action_data) for action_data in data.get("attacks", [])
-        ]
         return Weapon(
             name=data["name"],
             description=data["description"],
-            attacks=attacks,
+            attacks=[
+                BaseAttack.from_dict(action_data)
+                for action_data in data.get("attacks", [])
+            ],
             hands_required=data.get("hands_required", 0),
         )

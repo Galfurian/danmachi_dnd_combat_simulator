@@ -103,13 +103,16 @@ class ContentRepository(metaclass=Singleton):
         console.print("Loading weapons...", style="bold yellow")
 
         # Load the weapons.
-        with open(root / "weapons.json", "r") as f:
+        with open(root / "weapons_natural.json", "r") as f:
             data = json.load(f)
             if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'weapons.json'}")
+                raise ValueError(f"Expected a list in {root / 'weapons_natural.json'}")
             self.weapons = self._load_weapons(data)
-
-        exit(0)
+        with open(root / "weapons_wielded.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'weapons_wielded.json'}")
+            self.weapons.update(self._load_weapons(data))
 
         console.print("Loading spells...", style="bold yellow")
 
@@ -155,6 +158,20 @@ class ContentRepository(metaclass=Singleton):
         """
         entry = self.races.get(name)
         if entry and isinstance(entry, CharacterRace):
+            return entry
+        return None
+
+    def get_weapon(self, name: str) -> Weapon | None:
+        """Get a weapon by name, or None if not found.
+
+        Args:
+            name (str): The name of the weapon.
+
+        Returns:
+            Weapon | None: The weapon instance or None.
+        """
+        entry = self.weapons.get(name)
+        if entry and isinstance(entry, Weapon):
             return entry
         return None
 

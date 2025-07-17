@@ -1,0 +1,173 @@
+[
+    {
+        "name": "Fangs",
+        "description": "A set of sharp fangs used for biting and tearing.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Bite",
+                "type": "STANDARD",
+                "description": "A vicious bite attack that can tear through flesh.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Claws",
+        "description": "A natural weapon used by many creatures, capable of slashing attacks.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Claw",
+                "type": "STANDARD",
+                "description": "A sharp claw attack that can slash through armor.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D4 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Mandibles",
+        "description": "A powerful biting weapon used by insectoid creatures.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Crush",
+                "type": "STANDARD",
+                "description": "A crushing mandible attack that can break bones.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Acid gland",
+        "description": "A specialized organ that produces corrosive acid.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Acid spit",
+                "type": "STANDARD",
+                "description": "A glob of acid that splashes on impact.",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX]",
+                        "damage_type": "ACID"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Leap",
+        "description": "A powerful leap attack that can knock down opponents.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Pounce",
+                "type": "STANDARD",
+                "description": "A leaping attack that can knock down foes.",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [DEX]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Tail",
+        "description": "A sweeping attack with the tail that can knock opponents off balance.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Tail swipe",
+                "type": "STANDARD",
+                "description": "A powerful tail attack that can sweep opponents off their feet.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Strong Tail",
+        "description": "A powerful tail capable of delivering devastating blows.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Tail swipe",
+                "type": "STANDARD",
+                "description": "A powerful tail attack that can sweep opponents off their feet.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Fists",
+        "description": "A natural weapon used for punching and striking.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Punch",
+                "type": "STANDARD",
+                "description": "A quick punch that can stun opponents.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Massive Fists",
+        "description": "A set of large fists capable of delivering powerful strikes.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Punch",
+                "type": "STANDARD",
+                "description": "A quick punch that can stun opponents.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    }
+]

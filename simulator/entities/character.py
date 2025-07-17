@@ -11,9 +11,10 @@ from entities.character_class import *
 from entities.character_race import *
 from core.content import ContentRepository
 from actions.base_action import BaseAction
-from actions.attack_action import FullAttack
+from actions.attack_action import *
 from actions.spell_action import Spell
 from items.armor import *
+from items.weapon import *
 
 console = Console()
 
@@ -21,19 +22,18 @@ console = Console()
 class Character:
     def __init__(
         self,
+        char_type: CharacterType,
         name: str,
         race: CharacterRace,
         levels: dict[CharacterClass, int],
-        strength: int,
-        dexterity: int,
-        constitution: int,
-        intelligence: int,
-        wisdom: int,
-        charisma: int,
+        stats: dict[str, int],
         spellcasting_ability: Optional[str] = None,
+        total_hands: int = 2,
+        resistances: set[DamageType] = set(),
+        vulnerabilities: set[DamageType] = set(),
     ):
         # Determines if the character is a player or an NPC.
-        self.type: CharacterType = CharacterType.ENEMY
+        self.type: CharacterType = char_type
         # Name of the character.
         self.name: str = name
         # The character race.
@@ -41,36 +41,36 @@ class Character:
         # The character's class levels.
         self.levels: dict[CharacterClass, int] = levels
         # Stats.
-        self.stats: dict[str, int] = {
-            "strength": strength,
-            "dexterity": dexterity,
-            "constitution": constitution,
-            "intelligence": intelligence,
-            "wisdom": wisdom,
-            "charisma": charisma,
-        }
+        self.stats: dict[str, int] = stats
         # Spellcasting Ability.
         self.spellcasting_ability: Optional[str] = spellcasting_ability
         # List of available attacks.
-        self.attacks: list[FullAttack] = []
-        self.total_hands: int = 2
-        self.hands_used: int = 0
+        self.total_hands: int = total_hands
+        # Resistances and vulnerabilities to damage types.
+        self.resistances: set[DamageType] = resistances
+        self.vulnerabilities: set[DamageType] = vulnerabilities
+
+        # WIP: Number of attacks.
+        self.number_of_attacks: int = 1
+
+        # === Dynamic Properties ===
+
+        # List of equipped weapons.
+        self.equipped_weapons: list[Weapon] = list()
         # List of equipped armor.
-        self.equipped_armor: list[Armor] = []
-        # Manages active effects on the character.
-        self.effect_manager: EffectManager = EffectManager(self)
+        self.equipped_armor: list[Armor] = list()
         # List of actions.
-        self.actions: dict[str, BaseAction] = {}
+        self.actions: dict[str, BaseAction] = dict()
         # List of spells
-        self.spells: dict[str, Spell] = {}
+        self.spells: dict[str, Spell] = dict()
+
         # Turn flags to track used actions.
         self.turn_flags: dict[str, bool] = {
             "standard_action_used": False,
             "bonus_action_used": False,
         }
-        # Resistances and vulnerabilities to damage types.
-        self.resistances: set[DamageType] = set()
-        self.vulnerabilities: set[DamageType] = set()
+        # Manages active effects on the character.
+        self.effect_manager: EffectManager = EffectManager(self)
         # Keep track of abilitiies cooldown.
         self.cooldowns: dict[str, int] = {}
         # Keep track of the uses of abilities.
@@ -208,13 +208,18 @@ class Character:
             return not self.turn_flags["bonus_action_used"]
         return True
 
-    def get_available_attacks(self) -> list[FullAttack]:
+    def get_available_attacks(self) -> list[BaseAttack]:
         """Returns a list of attacks that the character can use this turn."""
-        available_attacks = []
-        for attack in self.attacks:
-            if not self.is_on_cooldown(attack) and self.has_action_type(attack.type):
-                available_attacks.append(attack)
-        return available_attacks
+        result = []
+        # Iterate through the equipped weapons and check if they are available.
+        for weapon in self.equipped_weapons:
+            for attack in weapon.attacks:
+                if self.is_on_cooldown(attack):
+                    continue
+                if not self.has_action_type(attack.type):
+                    continue
+                result.append(attack)
+        return result
 
     def get_available_actions(self) -> list[BaseAction]:
         """Returns a list of actions that the character can use this turn."""
@@ -364,50 +369,70 @@ class Character:
             del self.spells[spell.name.lower()]
             debug(f"{self.name} unlearned {spell.name}!")
 
-    def can_add_attack(self, full_attack: FullAttack) -> bool:
-        """
-        Checks if the character can add a specific full_attack.
+    def get_occupied_hands(self) -> int:
+        """Returns the number of hands currently occupied by equipped weapons and armor."""
+        used_hands = sum(item.hands_required for item in self.equipped_weapons)
+        used_hands += sum(
+            armor.armor_slot == ArmorSlot.SHIELD for armor in self.equipped_armor
+        )
+        return used_hands
+
+    def get_free_hands(self) -> int:
+        """Returns the number of free hands available for equipping items."""
+        return self.total_hands - self.get_occupied_hands()
+
+    def can_equip_weapon(self, weapon: Weapon) -> bool:
+        """Checks if the character can equip a specific weapon.
 
         Args:
-            full_attack (FullAttack): The full_attack to check.
+            weapon (Weapon): The weapon to check.
 
         Returns:
-            bool: True if the full_attack can be added, False otherwise.
+            bool: True if the weapon can be equipped, False otherwise.
         """
-        hands_required = sum(attack.hands_required for attack in full_attack.attacks)
-        return (self.hands_used + hands_required) <= self.total_hands
+        # If the weapon requires no hands, it can always be equipped.
+        if weapon.hands_required <= 0:
+            return True
+        # Check if the character has enough free hands to equip the weapon.
+        if weapon.hands_required > self.get_free_hands():
+            warning(
+                f"{self.name} does not have enough free hands to equip {weapon.name}."
+            )
+            return False
+        return True
 
-    def add_attack(self, full_attack: FullAttack) -> bool:
-        """Adds an attack to the character's equipped attacks.
+    def add_weapon(self, weapon: Weapon) -> bool:
+        """Adds a weapon to the character's equipped weapons.
 
         Args:
-            full_attack (FullAttack): The attack to add.
+            weapon (Weapon): The weapon to equip.
+
+        Returns:
+            bool: True if the weapon was equipped successfully, False otherwise.
         """
-        if self.can_add_attack(full_attack):
-            self.attacks.append(full_attack)
-            self.hands_used += sum(
-                attack.hands_required for attack in full_attack.attacks
-            )
+        if self.can_equip_weapon(weapon):
+            debug(f"Equipping weapon: {weapon.name} for {self.name}")
+            # Add the weapon to the character's weapon list.
+            self.equipped_weapons.append(weapon)
             return True
-        warning(
-            f"{self.name} does not have enough free hands to equip {full_attack.name}."
-        )
+        warning(f"{self.name} cannot equip {weapon.name}.")
         return False
 
-    def remove_attack(self, full_attack: FullAttack) -> bool:
-        """Removes an attack from the character's equipped attacks.
+    def remove_weapon(self, weapon: Weapon) -> bool:
+        """Removes a weapon from the character's equipped weapons.
 
         Args:
-            full_attack (FullAttack): The attack to remove.
+            weapon (Weapon): The weapon to remove.
+
+        Returns:
+            bool: True if the weapon was removed successfully, False otherwise.
         """
-        if full_attack in self.attacks:
-            debug(f"Unequipping attack: {full_attack.name} from {self.name}")
-            self.attacks.remove(full_attack)
-            self.hands_used -= sum(
-                attack.hands_required for attack in full_attack.attacks
-            )
+        if weapon in self.equipped_weapons:
+            debug(f"Unequipping weapon: {weapon.name} from {self.name}")
+            # Remove the weapon from the character's weapon list.
+            self.equipped_weapons.remove(weapon)
             return True
-        warning(f"{self.name} does not have {full_attack.name} equipped.")
+        warning(f"{self.name} does not have {weapon.name} equipped.")
         return False
 
     def can_equip_armor(self, armor: Armor) -> bool:
@@ -419,7 +444,13 @@ class Character:
         Returns:
             bool: True if the armor can be equipped, False otherwise.
         """
-        # Check if the armor slot is already occupied.
+        # If the armor is a shield, it can be equipped if the character has a free hand.
+        if armor.armor_slot == ArmorSlot.SHIELD:
+            if self.get_free_hands() <= 0:
+                warning(f"{self.name} does not have a free hand to equip {armor.name}.")
+                return False
+            return True
+        # Otherwise, check if the armor slot is already occupied.
         for equipped in self.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
                 warning(
@@ -566,111 +597,96 @@ class Character:
         return status
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "type": self.type.name,
-            "race": self.race.name,
-            "levels": {cls.name: lvl for cls, lvl in self.levels.items()},
-            "stats": self.stats,
-            "spellcasting_ability": self.spellcasting_ability,
-            "attacks": [w.name for w in self.attacks],
-            "equipped_armor": [a.name for a in self.equipped_armor],
-            "actions": list(self.actions.keys()),
-            "spells": list(self.spells.keys()),
+        """Converts the character to a dictionary representation."""
+        data: dict[str, Any] = {}
+        data["type"] = self.type.name
+        data["name"] = self.name
+        data["race"] = self.race.name
+        data["levels"] = {cls.name: lvl for cls, lvl in self.levels.items()}
+        data["stats"] = {
+            "strength": self.stats["strength"],
+            "dexterity": self.stats["dexterity"],
+            "constitution": self.stats["constitution"],
+            "intelligence": self.stats["intelligence"],
+            "wisdom": self.stats["wisdom"],
+            "charisma": self.stats["charisma"],
         }
+        data["spellcasting_ability"] = self.spellcasting_ability
+        data["total_hands"] = self.total_hands
+        data["equipped_weapons"] = [weapon.name for weapon in self.equipped_weapons]
+        data["equipped_armor"] = [armor.name for armor in self.equipped_armor]
+        data["actions"] = list(self.actions.keys())
+        data["spells"] = list(self.spells.keys())
+        data["resistances"] = [res.name for res in self.resistances]
+        data["vulnerabilities"] = [vuln.name for vuln in self.vulnerabilities]
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Character | None":
 
         # Get the content repositories.
         repo = ContentRepository()
-
-        # Load the race from the races registry.
+        # Get the type.
+        char_type = CharacterType[data["type"].upper()]
+        # Get the name.
+        name = data["name"]
+        # Get the race.
         race = repo.get_character_race(data["race"])
-        if race is None:
-            warning(f"Invalid race '{data['race']}' for character {data['name']}.")
-            return None
-
-        # Load the levels from the class registry.
+        assert race, f"Invalid race '{data['race']}' for character {name}."
+        # Get the levels.
         levels: dict[CharacterClass, int] = {}
         for cls_name, cls_level in data["levels"].items():
             # Get the class from the class registry.
-            character_class = repo.get_character_class(cls_name)
-            if character_class is None:
-                warning(f"Invalid class '{cls_name}' for character {data['name']}.")
-                return None
+            cls = repo.get_character_class(cls_name)
+            assert cls is not None, f"Invalid class '{cls_name}' for character {name}."
+            assert (
+                cls_level > 0
+            ), f"Invalid class level '{cls_level}' for character {name}."
             # Add the class and its level to the levels dictionary.
-            levels[character_class] = cls_level
+            levels[cls] = cls_level
+        # Get the stats.
+        stats = data["stats"]
+        # Get the spellcasting ability if present.
+        spellcasting_ability = data.get("spellcasting_ability", None)
+        # Get the total hands.
+        total_hands = data.get("total_hands", 2)
+        # Get the resistances.
+        resistances = set()
+        for res in data.get("resistances", []):
+            resistances.add(DamageType[res.upper()])
+        # Get the vulnerabilities.
+        vulnerabilities = set()
+        for vuln in data.get("vulnerabilities", []):
+            vulnerabilities.add(DamageType[vuln.upper()])
 
         # Create the character instance.
         char = Character(
-            name=data["name"],
-            race=race,
-            levels=levels,
-            strength=data["stats"]["strength"],
-            dexterity=data["stats"]["dexterity"],
-            constitution=data["stats"]["constitution"],
-            intelligence=data["stats"]["intelligence"],
-            wisdom=data["stats"]["wisdom"],
-            charisma=data["stats"]["charisma"],
-            spellcasting_ability=data.get("spellcasting_ability", None),
+            char_type,
+            name,
+            race,
+            levels,
+            stats,
+            spellcasting_ability,
+            total_hands,
+            resistances,
+            vulnerabilities,
         )
 
-        # Load resistances and vulnerabilities if present in the data.
-        if "resistances" in data:
-            for res in data["resistances"]:
-                try:
-                    char.resistances.add(DamageType[res.upper()])
-                except KeyError:
-                    warning(
-                        f"Invalid damage type '{res}' in resistances for {char.name}."
-                    )
-        if "vulnerabilities" in data:
-            for vuln in data["vulnerabilities"]:
-                try:
-                    char.vulnerabilities.add(DamageType[vuln.upper()])
-                except KeyError:
-                    warning(
-                        f"Invalid damage type '{vuln}' in vulnerabilities for {char.name}."
-                    )
-
-        # Set the character as a player if specified.
-        char.type = CharacterType[data.get("type", "ENEMY").upper()]
-
-        # Load the attacks.
-        for attack in data.get("attacks", []):
-            if isinstance(attack, str):
-                base_attack = repo.get_base_attack(attack)
-                if base_attack is None:
-                    warning(f"Invalid attack '{attack}' for character {char.name}.")
-                    continue
-                char.add_attack(
-                    FullAttack(
-                        name=base_attack.name,
-                        type=ActionType.STANDARD,
-                        cooldown=base_attack.cooldown,
-                        maximum_uses=base_attack.maximum_uses,
-                        attacks=[base_attack],
-                    )
-                )
-            elif isinstance(attack, dict) and attack.get("class") == "FullAttack":
-                full_attack = FullAttack.from_dict(attack, repo.attacks)
-                if full_attack is None:
-                    warning(
-                        f"Invalid full attack '{attack}' for character {char.name}."
-                    )
-                    continue
-                char.add_attack(full_attack)
-
-        # Load the armor.
-        for equipped_armor in data.get("equipped_armor", []):
-            equipped_armor = repo.get_armor(equipped_armor)
-            if equipped_armor is None:
-                warning(
-                    f"Invalid armor '{equipped_armor}' for character {data['name']}."
-                )
+        # Get the list of equipped weapons.
+        for weapon_name in data.get("equipped_weapons", []):
+            weapon = repo.get_weapon(weapon_name)
+            if weapon is None:
+                warning(f"Invalid weapon '{weapon_name}' for character {data['name']}.")
                 continue
-            char.add_armor(equipped_armor)
+            char.add_weapon(weapon)
+
+        # Get the list of equipped armor.
+        for armor_name in data.get("equipped_armor", []):
+            armor = repo.get_armor(armor_name)
+            if armor is None:
+                warning(f"Invalid armor '{armor_name}' for character {data['name']}.")
+                continue
+            char.add_armor(armor)
 
         # Load the actions.
         for action_name in data.get("actions", []):
@@ -691,13 +707,30 @@ class Character:
         return char
 
 
-def load_characters(file_path: Path) -> dict[str, Character]:
+def load_character(file_path: Path) -> Character | None:
     """
-    Loads characters from a JSON file.
+    Loads a character from a JSON file.
 
     Args:
         file_path (str): The path to the JSON file containing character data.
-        registries (dict[str, Any]): A dictionary containing registries for classes and races.
+
+    Returns:
+        Character | None: A Character instance if the file is valid, None otherwise.
+    """
+    try:
+        with open(file_path, "r") as f:
+            character_data = json.load(f)
+            return Character.from_dict(character_data)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        warning(f"Failed to load character from {file_path}: {e}")
+        return None
+
+
+def load_characters(file_path: Path) -> dict[str, Character]:
+    """Loads characters from a JSON file.
+
+    Args:
+        file_path (Path): The path to the JSON file containing character data.
 
     Returns:
         dict[str, Character]: A dictionary mapping character names to Character instances.
@@ -712,28 +745,6 @@ def load_characters(file_path: Path) -> dict[str, Character]:
     return characters
 
 
-def load_player_character(file_path: Path) -> Character | None:
-    """
-    Loads the player character from a JSON file.
-
-    Args:
-        file_path (str): The path to the JSON file containing player character data.
-        registries (dict[str, Any]): A dictionary containing registries for classes and races.
-
-    Returns:
-        Character: The loaded player character.
-    """
-    with open(file_path, "r") as f:
-        player_data = json.load(f)
-        player = Character.from_dict(player_data)
-        if player is None:
-            warning(f"Failed to load player character from {file_path}.")
-            return None
-        # Mark the character as a player character.
-        player.type = CharacterType.PLAYER
-        return player
-
-
 def print_character_details(char: Character):
     """Prints the details of a character in a formatted way."""
 
@@ -743,28 +754,20 @@ def print_character_details(char: Character):
     console.print(
         f"  {', '.join([f'{stat}: {value}' for stat, value in char.stats.items()])}"
     )
+    if char.equipped_weapons:
+        console.print(f"  Weapons:")
+        for weapon in char.equipped_weapons:
+            console.print(f"    - [blue]{weapon.name}[/]")
+            for i, attack in enumerate(weapon.attacks, start=1):
+                console.print(
+                    f"      {i}. [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
+                )
     if char.equipped_armor:
         console.print(f"  Armor:")
         for armor in char.equipped_armor:
             console.print(
                 f"    - [blue]{armor.name}[/], {get_armor_type_emoji(armor.armor_type)}, {armor.ac}"
             )
-    if char.attacks:
-        console.print(f"  Attacks:")
-        for full_attack in char.attacks:
-            if len(full_attack.attacks) == 1:
-                attack = full_attack.attacks[0]
-                console.print(
-                    f"    - [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
-                )
-            else:
-                console.print(
-                    f"    - [green]{full_attack.name}[/], [{get_action_type_color(full_attack.type)}]{full_attack.type.name}[/], cooldown: {full_attack.cooldown}, attacks:"
-                )
-                for i, attack in enumerate(full_attack.attacks, start=1):
-                    console.print(
-                        f"      {i}. [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
-                    )
     if char.actions:
         console.print(f"  Actions:")
         for action in char.actions.values():

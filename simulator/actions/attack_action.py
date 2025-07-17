@@ -25,7 +25,9 @@ class BaseAttack(BaseAction):
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
     ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses)
+        super().__init__(
+            name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses
+        )
         self.hands_required: int = hands_required
         self.attack_roll: str = attack_roll
         self.damage: list[DamageComponent] = damage
@@ -227,67 +229,6 @@ class BaseAttack(BaseAction):
         )
 
 
-class FullAttack(BaseAction):
-    def __init__(
-        self,
-        name: str,
-        type: ActionType,
-        cooldown: int,
-        maximum_uses: int,
-        attacks: list[BaseAttack],
-    ):
-        super().__init__(name, type, ActionCategory.OFFENSIVE, cooldown, maximum_uses)
-        self.attacks: list[BaseAttack] = attacks
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
-        return True
-
-    def to_dict(self) -> dict[str, Any]:
-        # Get the base dictionary representation.
-        data = super().to_dict()
-        # Add specific fields for BaseAttack.
-        data["attacks"] = [attack.name for attack in self.attacks]
-        return data
-
-    @staticmethod
-    def from_dict(
-        data: dict[str, Any], base_attacks: dict[str, BaseAttack]
-    ) -> "FullAttack":
-        """
-        Creates a FullAttack instance from a dictionary.
-        Args:
-            data (dict): Dictionary containing the action data.
-        Returns:
-            FullAttack: An instance of FullAttack.
-        """
-        return FullAttack(
-            name=data["name"],
-            type=ActionType[data.get("type", ActionType.STANDARD)],
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            attacks=[base_attacks[attack] for attack in data["attacks"]],
-        )
-
-
 def from_dict_attack(
     data: dict[str, Any], base_attacks: dict[str, BaseAttack]
 ) -> Optional[BaseAction]:
@@ -301,6 +242,4 @@ def from_dict_attack(
     """
     if data.get("class") == "BaseAttack":
         return BaseAttack.from_dict(data)
-    if data.get("class") == "FullAttack":
-        return FullAttack.from_dict(data, base_attacks)
     return None

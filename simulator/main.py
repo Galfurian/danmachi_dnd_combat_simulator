@@ -73,7 +73,7 @@ for character in characters.values():
 console.print(Rule("Loading Player Character", style="bold green"))
 
 # Load the player character.
-player = load_player_character(data_dir / "player.json")
+player = load_character(data_dir / "player.json")
 if player is None:
     error("Failed to load player character. Please check the data file.")
     exit(1)
@@ -127,6 +127,8 @@ if __name__ == "__main__":
     # add_to_list(characters, allies, "Naerin")
     make_names_unique(opponents)
     make_names_unique(allies)
+
+    exit(0)
 
     combat_manager = CombatManager(player, opponents, allies)
 
