@@ -132,28 +132,28 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
     )
 
 
-def get_base_attacks(actions: list[BaseAction]) -> list[BaseAttack]:
-    return [a for a in actions if isinstance(a, BaseAttack)]
-
-
-def get_spell_attacks(actions: list[BaseAction]) -> list[SpellAttack]:
-    return [a for a in actions if isinstance(a, SpellAttack)]
-
-
-def get_spell_heals(actions: list[BaseAction]) -> list[SpellHeal]:
-    return [a for a in actions if isinstance(a, SpellHeal)]
-
-
-def get_spell_buffs(actions: list[BaseAction]) -> list[SpellBuff]:
-    return [a for a in actions if isinstance(a, SpellBuff)]
-
-
-def get_spell_debuffs(actions: list[BaseAction]) -> list[SpellDebuff]:
-    return [a for a in actions if isinstance(a, SpellDebuff)]
-
-
 def get_natural_attacks(npc: Character) -> list[BaseAttack]:
     return npc.get_available_natural_weapon_attacks()
+
+
+def get_base_attacks(npc: Character) -> list[BaseAttack]:
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, BaseAttack)]
+
+
+def get_spell_attacks(npc: Character) -> list[SpellAttack]:
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellAttack)]
+
+
+def get_spell_heals(npc: Character) -> list[SpellHeal]:
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellHeal)]
+
+
+def get_spell_buffs(npc: Character) -> list[SpellBuff]:
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellBuff)]
+
+
+def get_spell_debuffs(npc: Character) -> list[SpellDebuff]:
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellDebuff)]
 
 
 def choose_best_base_attack_action(

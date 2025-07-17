@@ -15,6 +15,7 @@
         "charisma": 18
     },
     "spellcasting_ability": "charisma",
+    "number_of_attacks": 2,
     "equipped_weapons": [
         "Fine Shortsword"
     ],

@@ -350,17 +350,8 @@ class CombatManager:
             warning(f"SKIP: {npc.name} has no enemies to attack.")
             return
 
-        # Get all actions available to the NPC.
-        actions: list[BaseAction] = get_all_combat_actions(npc)
-        # Get all actions by cathegory.
-        base_attacks: list[BaseAttack] = get_base_attacks(actions)
-        spell_attacks: list[SpellAttack] = get_spell_attacks(actions)
-        spell_heals: list[SpellHeal] = get_spell_heals(actions)
-        spell_buffs: list[SpellBuff] = get_spell_buffs(actions)
-        spell_debuffs: list[SpellDebuff] = get_spell_debuffs(actions)
-        # Get all natural attacks, if any.
-        natural_attacks: list[BaseAttack] = get_natural_attacks(npc)
-
+        # Check for healing spells.
+        spell_heals: list[SpellHeal] = get_spell_heals(npc)
         if spell_heals:
             result = choose_best_healing_spell_action(npc, allies, spell_heals)
             if result:
@@ -370,9 +361,13 @@ class CombatManager:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
+                # Mark the action type as used.
+                npc.use_action_type(spell.type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
-                return
+
+        # Check for buff spells.
+        spell_buffs: list[SpellBuff] = get_spell_buffs(npc)
         if spell_buffs:
             result = choose_best_buff_spell_action(npc, allies, spell_buffs)
             if result:
@@ -382,9 +377,13 @@ class CombatManager:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
+                # Mark the action type as used.
+                npc.use_action_type(spell.type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
-                return
+
+        # Check for debuff spells.
+        spell_debuffs: list[SpellDebuff] = get_spell_debuffs(npc)
         if spell_debuffs:
             result = choose_best_debuff_spell_action(npc, enemies, spell_debuffs)
             if result:
@@ -394,9 +393,13 @@ class CombatManager:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
+                # Mark the action type as used.
+                npc.use_action_type(spell.type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
-                return
+
+        # Check for attack spells.
+        spell_attacks: list[SpellAttack] = get_spell_attacks(npc)
         if spell_attacks:
             result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
             if result:
@@ -406,20 +409,31 @@ class CombatManager:
                     spell.cast_spell(npc, target, mind_level)
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
+                # Mark the action type as used.
+                npc.use_action_type(spell.type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
-                return
+
+        # Check for base attacks.
+        base_attacks: list[BaseAttack] = get_base_attacks(npc)
+        used_base_attack: bool = False
         if base_attacks:
-            result = choose_best_base_attack_action(npc, enemies, base_attacks)
-            if result:
-                attack, target = result
-                # Perform the attack on the target.
-                attack.execute(npc, target)
-                # Add the attack to the cooldowns if it has one.
-                npc.add_cooldown(attack, attack.cooldown)
-                return
-        if natural_attacks:
-            for attack in natural_attacks:
+            for _ in range(npc.number_of_attacks):
+                result = choose_best_base_attack_action(npc, enemies, base_attacks)
+                if result:
+                    attack, target = result
+                    # Perform the attack on the target.
+                    attack.execute(npc, target)
+                    # Add the attack to the cooldowns if it has one.
+                    npc.add_cooldown(attack, attack.cooldown)
+                    # Mark the action type as used.
+                    npc.use_action_type(attack.type)
+                    # Mark that we used a base attack.
+                    used_base_attack = True
+
+        # Check for natural attacks.
+        if not used_base_attack:
+            for attack in get_natural_attacks(npc):
                 result = choose_best_base_attack_action(npc, enemies, [attack])
                 if result:
                     attack, target = result
@@ -427,9 +441,8 @@ class CombatManager:
                     attack.execute(npc, target)
                     # Add the attack to the cooldowns if it has one.
                     npc.add_cooldown(attack, attack.cooldown)
-            return
-
-        warning(f"SKIP: {npc.name} has no usable action or valid targets.")
+                    # Mark the action type as used.
+                    npc.use_action_type(attack.type)
 
     def _get_legal_targets(
         self, character: Character, ability: BaseAction

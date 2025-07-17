@@ -532,9 +532,6 @@ class Character:
         """
         if action.name not in self.cooldowns and duration > 0:
             self.cooldowns[action.name] = duration + 1
-            cprint(
-                f"{self.name} added a cooldown of {duration} turns to {action.name}."
-            )
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.
@@ -635,6 +632,7 @@ class Character:
         data["spells"] = list(self.spells.keys())
         data["resistances"] = [res.name for res in self.resistances]
         data["vulnerabilities"] = [vuln.name for vuln in self.vulnerabilities]
+        data["number_of_attacks"] = self.number_of_attacks
         return data
 
     @staticmethod

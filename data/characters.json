@@ -14,6 +14,7 @@
             "wisdom": 12,
             "charisma": 11
         },
+        "number_of_attacks": 2,
         "equipped_weapons": [
             "Shortsword"
         ],
