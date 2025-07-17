@@ -229,6 +229,20 @@ class BaseAttack(BaseAction):
         )
 
 
+class WeaponAttack(BaseAction):
+    """A special attack that allows the player to use their weapon."""
+
+    def __init__(self, weapon: Any, attack: BaseAttack):
+        super().__init__(
+            name=weapon.name + " - " + attack.name,
+            type=ActionType.STANDARD,
+            category=ActionCategory.OFFENSIVE,
+            description=f"Attack with {weapon.name}.",
+        )
+        self.weapon = weapon
+        self.attack = attack
+
+
 def from_dict_attack(
     data: dict[str, Any], base_attacks: dict[str, BaseAttack]
 ) -> Optional[BaseAction]:

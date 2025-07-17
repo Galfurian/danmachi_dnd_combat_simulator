@@ -222,5 +222,23 @@
                 ]
             }
         ]
+    },
+    {
+        "name": "Clawed Gauntlets",
+        "description": "A gauntlet with sharp claws for slashing attacks.",
+        "hands_required": 2,
+        "attacks": [
+            {
+                "name": "Slash",
+                "type": "STANDARD",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
     }
 ]

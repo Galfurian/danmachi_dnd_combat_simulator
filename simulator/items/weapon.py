@@ -14,6 +14,10 @@ class Weapon:
         self.attacks: list[BaseAttack] = attacks
         self.hands_required: int = hands_required
 
+        # Rename the attacks to match the weapon name.
+        for attack in self.attacks:
+            attack.name = f"{self.name} - {attack.name}"
+
     def to_dict(self) -> dict[str, Any]:
         """
         Converts the Weapon instance to a dictionary.

@@ -17,6 +17,9 @@ from combat.npc_ai import *
 console = Console()
 
 
+FULL_ATTACK = BaseAction("Full Attack", ActionType.STANDARD, ActionCategory.OFFENSIVE)
+
+
 class CombatManager:
     def __init__(
         self,
@@ -166,9 +169,11 @@ class CombatManager:
             return
 
         while not self.player.turn_done():
-            # Gather available actions and attacks
-            attacks = self.player.get_available_attacks()
-            actions = self.player.get_available_actions()
+            # Gather available actions and attacks.
+            actions = []
+            if self.player.has_action_type(ActionType.STANDARD):
+                actions.append(FULL_ATTACK)
+            actions.extend(self.player.get_available_actions())
             spells = self.player.get_available_spells()
 
             # Main action selection menu.
@@ -177,31 +182,43 @@ class CombatManager:
                 submenus.append("Cast a Spell")
 
             # Player selects an action or submenu option.
-            choice = self.ui.choose_action(attacks + actions, submenus)
-            if choice is None or isinstance(choice, str) and choice == "Skip":
+            choice = self.ui.choose_action(actions, submenus, "Skip")
+            if choice is None or isinstance(choice, str) and choice == "q":
                 break
             # If the action is a Spell, we need to handle it differently.
-            if isinstance(choice, BaseAttack):
-                self.ask_for_player_full_attack(choice)
+            if choice == FULL_ATTACK:
+                self.ask_for_player_full_attack()
             elif choice == "Cast a Spell":
                 self.ask_for_player_spell_cast(spells)
 
-    def ask_for_player_full_attack(self, attack: BaseAttack) -> None:
+    def ask_for_player_full_attack(self) -> None:
         """Asks the player to choose targets for a full attack action."""
         attacks_used: int = 0
-        # Get the list of all attacks available in the full attack.
-        attacks = self.player.get_available_attacks()
         # Iterate through each attack in the full attack.
-        while attacks_used < self.player.number_of_attacks:
+        while attacks_used < self.player.number_of_attacks and self.get_alive_opponents(
+            self.player
+        ):
+            # Get the list of all attacks available in the full attack.
+            attacks = self.player.get_available_attacks()
+            if not attacks:
+                warning("No available attacks for the full attack action.")
+                return
+            # Choose the next attack.
+            attack = self.ui.choose_action(attacks)
+            if attack is None or not isinstance(attack, BaseAttack):
+                warning("Invalid attack selected. Ending full attack.")
+                break
             # Get the legal targets for the action.
             valid_targets = self._get_legal_targets(self.player, attack)
             if not valid_targets:
                 warning(f"No valid targets for {attack.name}.")
                 continue
+            # Prepare the back option if this is not the first attack.
+            back_option = "q" if attacks_used > 0 else None
             # Ask the player to choose a target.
-            target = self.ui.choose_target(valid_targets, show_back=attacks_used == 0)
+            target = self.ui.choose_target(valid_targets, [], back_option)
             # If the player chose to go back, we stop asking for targets.
-            if isinstance(target, str) and target == "Back":
+            if isinstance(target, str) and target == "q":
                 return
             # If the target is not valid, skip this attack.
             if not isinstance(target, Character):
@@ -220,7 +237,7 @@ class CombatManager:
             if choice is None:
                 break
             if isinstance(choice, str):
-                if choice == "Back":
+                if choice == "q":
                     break
                 continue
             # Unpack the spell and mind level.
@@ -234,7 +251,7 @@ class CombatManager:
                     warning(f"No valid targets for {spell.name}.")
                     break
                 if isinstance(targets, str):
-                    if targets == "Back":
+                    if targets == "q":
                         break
                     continue
                 if not all(isinstance(t, Character) for t in targets):
@@ -265,11 +282,13 @@ class CombatManager:
             if spell is None:
                 break
             if isinstance(spell, str):
-                if spell == "Back":
-                    return "Back"
+                if spell == "q":
+                    return spell
                 continue
             # Ask for the [MIND] level to use for the spell.
             mind = self.ui.choose_mind(self.player, spell)
+            if mind == -1:
+                return "q"
             return spell, mind
         return None
 

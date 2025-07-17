@@ -55,7 +55,10 @@ class PlayerInterface:
         pass
 
     def choose_action(
-        self, actions: List[BaseAction], submenus: list[str] = []
+        self,
+        actions: List[BaseAction],
+        submenus: list[str] = [],
+        exit_entry: Optional[str] = "Back",
     ) -> Optional[BaseAction | str]:
         """Choose an action from a list of available actions.
 
@@ -64,11 +67,11 @@ class PlayerInterface:
             submenus (list[str], optional): A list of submenu options. Defaults to [].
 
         Returns:
-            Optional[BaseAction | str]: The selected action, "Skip", or a submenu option.
+            Optional[BaseAction | str]: The selected action, "q" for exit, or a submenu option.
         """
-        if not actions:
+        if not actions and not submenus:
             return None
-        submenus = [*sorted(submenus, key=lambda s: s.lower()), "Skip"]
+        sorted_submenus = [*sorted(submenus, key=lambda s: s.lower())]
         # Sort targets and submenus for consistent display.
         actions_sorted = self.sort_actions(actions)
         # Create a table of actions.
@@ -84,10 +87,15 @@ class PlayerInterface:
                 action.type.name.title(),
                 action.category.name.title(),
             )
+        # Add an empty row if there are submenus or an exit entry.
+        if sorted_submenus or exit_entry:
+            table.add_row()
         # Add the submenu actions if any.
-        table.add_row()
-        for i, submenu in enumerate(submenus, 0):
+        for i, submenu in enumerate(sorted_submenus, 0):
             table.add_row(chr(97 + i), submenu, "Submenu", "")
+        # Add the exit entry if requested.
+        if exit_entry:
+            table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(table) + "\nAction > "
         while True:
@@ -108,11 +116,15 @@ class PlayerInterface:
             if 0 <= index < len(submenus):
                 return submenus[index]
 
+            # If the user typed 'q', return a generic "q".
+            if isinstance(answer, str) and answer.lower() == "q":
+                return "q"
+
     def choose_target(
         self,
         targets: List[Character],
         submenus: list[str] = [],
-        show_back: bool = True,
+        exit_entry: Optional[str] = "Back",
     ) -> Optional[Character | str]:
         """Choose a target from a list of characters.
 
@@ -121,15 +133,13 @@ class PlayerInterface:
             submenus (list[str], optional): A list of submenu options. Defaults to [].
 
         Returns:
-            Optional[Character | str]: The selected target character, "Back", or a submenu option.
+            Optional[Character | str]: The selected target character, "q" for exit, or a submenu option.
         """
         # If there are no targets, return None.
         if not targets:
             return None
         # Add "Back" to the submenus if requested.
         sorted_submenus = sorted(submenus, key=lambda s: s.lower())
-        if show_back:
-            sorted_submenus.append("Back")
         # Sort targets and submenus for consistent display.
         sorted_targets = sorted(targets, key=lambda t: t.name.lower())
         # Create a table of targets.
@@ -145,11 +155,15 @@ class PlayerInterface:
                 f"{target.hp:>3}/{target.HP_MAX:<3}",
                 str(target.AC),
             )
-        # Add the submenu actions if any.
-        if sorted_submenus:
+        # Add an empty row if there are submenus or an exit entry.
+        if sorted_submenus or exit_entry:
             table.add_row()
-            for i, submenu in enumerate(sorted_submenus, 0):
-                table.add_row(chr(97 + i), submenu, "Submenu", "")
+        # Add the submenu actions if any.
+        for i, submenu in enumerate(sorted_submenus, 0):
+            table.add_row(chr(97 + i), submenu, "Submenu", "")
+        # Add the exit entry if requested.
+        if exit_entry:
+            table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(table) + "\nTarget > "
         while True:
@@ -168,11 +182,16 @@ class PlayerInterface:
             if 0 <= index < len(sorted_submenus):
                 return sorted_submenus[index]
 
+            # If the user typed 'q', return a generic "q".
+            if isinstance(answer, str) and answer.lower() == "q":
+                return "q"
+
     def choose_targets(
         self,
         targets: List[Character],
         max_targets: int,
         submenus: list[str] = [],
+        exit_entry: Optional[str] = "Back",
     ) -> Optional[List[Character] | str]:
         """Choose multiple targets from a list of characters.
 
@@ -182,17 +201,13 @@ class PlayerInterface:
             submenus (list[str], optional): A list of submenu options. Defaults to [].
 
         Returns:
-            Optional[List[Character] | str]: The list of selected characters, "Back", or a submenu option.
+            Optional[List[Character] | str]: The list of selected characters, "q" for exit, or a submenu option.
         """
         if not targets:
             return None
         if max_targets <= 0:
             return None
-        sorted_submenus = [
-            "Confirm",
-            *sorted(submenus, key=lambda s: s.lower()),
-            "Back",
-        ]
+        sorted_submenus = ["Confirm", *sorted(submenus, key=lambda s: s.lower())]
         # Sort targets and submenus for consistent display.
         sorted_targets = sorted(targets, key=lambda t: t.name.lower())
         # Prepare a set of selected targets.
@@ -214,11 +229,15 @@ class PlayerInterface:
                     str(t.AC),
                     "[green]✓[/]" if t in selected else "",
                 )
-            # Add the submenu actions if any.
-            if sorted_submenus:
+            # Add an empty row if there are submenus or an exit entry.
+            if sorted_submenus or exit_entry:
                 table.add_row()
-                for i, submenu in enumerate(sorted_submenus, 1):
-                    table.add_row(chr(96 + i), submenu, "Submenu", "", "")
+            # Add the submenu actions if any.
+            for i, submenu in enumerate(sorted_submenus, 1):
+                table.add_row(chr(96 + i), submenu, "Submenu", "", "")
+            # Add the exit entry if requested.
+            if exit_entry:
+                table.add_row("q", exit_entry, "", "", "")
             # Prepare the prompt with the table.
             prompt = "\n" + table_to_str(table) + "\nSelect > "
             # Prompt the user for input.
@@ -251,10 +270,15 @@ class PlayerInterface:
                 # If the user selected a submenu, return it.
                 return sorted_submenus[index]
 
+            # If the user typed 'q', return a generic "q".
+            if isinstance(answer, str) and answer.lower() == "q":
+                return "q"
+
     def choose_spell(
         self,
         spells: list[Spell],
         submenus: list[str] = [],
+        exit_entry: Optional[str] = "Back",
     ) -> Optional[Spell | str]:
         """Choose a spell from a list of available spells.
 
@@ -263,11 +287,10 @@ class PlayerInterface:
             submenus (list[str], optional): A list of submenus to display. Defaults to [].
 
         Returns:
-            Optional[Spell | str]: The selected spell, "Back", or submenu.
+            Optional[Spell | str]: The selected spell, "q" for exit, or submenu.
         """
         # Add "Back" to the submenus if requested.
         sorted_submenus = sorted(submenus, key=lambda s: s.lower())
-        sorted_submenus.append("Back")
         # Sort targets and submenus for consistent display.
         sorted_spells = self.sort_actions(spells)
         # Generate a table of spells.
@@ -283,11 +306,15 @@ class PlayerInterface:
                 f"[{get_action_type_color(spell.type)}]{spell.type.name.title()}[/]",
                 f"[{get_action_category_color(spell.category)}]{spell.category.name.title()}[/]",
             )
-        # Add the submenu actions if any.
-        if sorted_submenus:
+        # Add an empty row if there are submenus or an exit entry.
+        if sorted_submenus or exit_entry:
             table.add_row()
-            for i, submenu in enumerate(sorted_submenus, 0):
-                table.add_row(chr(97 + i), submenu, "Submenu", "")
+        # Add the submenu actions if any.
+        for i, submenu in enumerate(sorted_submenus, 0):
+            table.add_row(chr(97 + i), submenu, "Submenu", "")
+        # Add the exit entry if requested.
+        if exit_entry:
+            table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
         prompt = "\n" + table_to_str(table) + "\nSpell > "
         # Create a completer for the spell names.
@@ -309,7 +336,13 @@ class PlayerInterface:
             if 0 <= index < len(sorted_submenus):
                 return sorted_submenus[index]
 
-    def choose_mind(self, actor: Character, spell: Spell) -> int:
+            # If the user typed 'q', return a generic "q".
+            if isinstance(answer, str) and answer.lower() == "q":
+                return "q"
+
+    def choose_mind(
+        self, actor: Character, spell: Spell, exit_entry: Optional[str] = "Back"
+    ) -> int:
         """Prompts the user to select the amount of MIND to spend on a spell (if upcast is allowed)."""
         if len(spell.mind_cost) == 1:
             return spell.mind_cost[0]
@@ -377,6 +410,8 @@ class PlayerInterface:
                     for bonus, modifier in modifiers.items()
                 )
                 prompt += "\n"
+        if exit_entry:
+            prompt += f"\n[bold]Press [red]q[/] to go back[/]."
         prompt += "\nMind > "
 
         while True:
@@ -389,6 +424,9 @@ class PlayerInterface:
             mind_cost: int = self.get_digit_choice(answer)
             if mind_cost in spell.mind_cost:
                 return mind_cost
+            # If the user typed 'q', return -1 to indicate going back.
+            if isinstance(answer, str) and answer.lower() == "q":
+                return -1
 
     @staticmethod
     def sort_actions(actions: List[Any]) -> List[Any]:

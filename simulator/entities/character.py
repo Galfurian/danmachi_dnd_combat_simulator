@@ -51,7 +51,7 @@ class Character:
         self.vulnerabilities: set[DamageType] = vulnerabilities
 
         # WIP: Number of attacks.
-        self.number_of_attacks: int = 1
+        self.number_of_attacks: int = 2
 
         # === Dynamic Properties ===
 
@@ -208,9 +208,9 @@ class Character:
             return not self.turn_flags["bonus_action_used"]
         return True
 
-    def get_available_attacks(self) -> list[BaseAttack]:
+    def get_available_attacks(self) -> list[BaseAction]:
         """Returns a list of attacks that the character can use this turn."""
-        result = []
+        result: list[BaseAction] = []
         # Iterate through the equipped weapons and check if they are available.
         for weapon in self.equipped_weapons:
             for attack in weapon.attacks:
@@ -244,19 +244,14 @@ class Character:
         Checks if the character has used both a standard and bonus action this turn.
         Returns True if both actions are used, False otherwise.
         """
-        # Check if the character has any bonus actions available
-        has_bonus_actions = False
-        for action in list(self.actions.values()) + list(self.spells.values()):
-            if action.type == ActionType.BONUS:
-                has_bonus_actions = True
-                break
-        if has_bonus_actions:
-            return (
-                self.turn_flags["standard_action_used"]
-                and self.turn_flags["bonus_action_used"]
-            )
-        else:
-            return self.turn_flags["standard_action_used"]
+        available_actions = self.get_available_actions() + self.get_available_spells()
+        # Check if the character has any bonus actions available.
+        has_bonus_actions = any(
+            action.type == ActionType.BONUS for action in available_actions
+        )
+        if has_bonus_actions and not self.turn_flags["bonus_action_used"]:
+            return False
+        return self.turn_flags["standard_action_used"]
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
         """

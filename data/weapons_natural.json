@@ -38,6 +38,44 @@
         ]
     },
     {
+        "name": "Massive Claws",
+        "description": "A set of large claws capable of delivering powerful slashing attacks.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Claw",
+                "type": "STANDARD",
+                "description": "A powerful claw attack that can slash through armor.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Worm Mouth",
+        "description": "A large, gaping mouth used by worm-like creatures to engulf prey.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Bite",
+                "type": "STANDARD",
+                "description": "A vicious bite attack that can tear through flesh.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
         "name": "Mandibles",
         "description": "A powerful biting weapon used by insectoid creatures.",
         "attacks": [
