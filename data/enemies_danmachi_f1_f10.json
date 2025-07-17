@@ -172,7 +172,8 @@
             "charisma": 5
         },
         "natural_weapons": [
-            "Massive Fists"
+            "Massive Fist",
+            "Massive Fist"
         ]
     },
     {
@@ -197,7 +198,7 @@
         "natural_weapons": [
             "Massive Claws",
             "Massive Claws",
-            "Tail"
+            "Massive Tail"
         ],
         "actions": [
             "Fire Breath",

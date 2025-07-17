@@ -9,6 +9,7 @@ from entities.character_race import *
 from core.utils import *
 from items.armor import Armor
 from items.weapon import Weapon
+from items.weapon_variant import load_weapon_variants
 
 import copy
 import json
@@ -79,6 +80,19 @@ class ContentRepository(metaclass=Singleton):
             if not isinstance(data, list):
                 raise ValueError(f"Expected a list in {root / 'weapons_wielded.json'}")
             self.weapons.update(self._load_weapons(data))
+
+        cprint("Loading weapon variants...", style="bold yellow")
+
+        # Load weapon variants and add them to the weapons dictionary
+        try:
+            variant_weapons = load_weapon_variants(str(root / "weapon_variants.json"), self.weapons)
+            self.weapons.update(variant_weapons)
+            cprint(f"Loaded {len(variant_weapons)} weapon variants", style="bold green")
+        except FileNotFoundError:
+            cprint("No weapon variants file found, skipping...", style="bold yellow")
+        except Exception as e:
+            cprint(f"Error loading weapon variants: {e}", style="bold red")
+            raise
 
         cprint("Loading armors...", style="bold yellow")
 

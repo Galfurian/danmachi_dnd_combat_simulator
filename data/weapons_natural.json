@@ -32,26 +32,6 @@
                 "attack_roll": "[STR]",
                 "damage": [
                     {
-                        "damage_roll": "1D4 + [STR]",
-                        "damage_type": "SLASHING"
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "class": "NaturalWeapon",
-        "name": "Massive Claws",
-        "description": "A set of large claws capable of delivering powerful slashing attacks.",
-        "attacks": [
-            {
-                "class": "BaseAttack",
-                "name": "Claw",
-                "type": "STANDARD",
-                "description": "A powerful claw attack that can slash through armor.",
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
                         "damage_roll": "1D6 + [STR]",
                         "damage_type": "SLASHING"
                     }
@@ -150,6 +130,7 @@
                 "type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
+                "cooldown": 1,
                 "damage": [
                     {
                         "damage_roll": "1D6 + [STR]",
@@ -161,28 +142,7 @@
     },
     {
         "class": "NaturalWeapon",
-        "name": "Strong Tail",
-        "description": "A powerful tail capable of delivering devastating blows.",
-        "attacks": [
-            {
-                "class": "BaseAttack",
-                "name": "Tail swipe",
-                "type": "STANDARD",
-                "description": "A powerful tail attack that can sweep opponents off their feet.",
-                "attack_roll": "[STR]",
-                "cooldown": 2,
-                "damage": [
-                    {
-                        "damage_roll": "2D6 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "class": "NaturalWeapon",
-        "name": "Fists",
+        "name": "Fist",
         "description": "A natural weapon used for punching and striking.",
         "attacks": [
             {
@@ -194,26 +154,6 @@
                 "damage": [
                     {
                         "damage_roll": "1D6 + [STR]",
-                        "damage_type": "BLUDGEONING"
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "class": "NaturalWeapon",
-        "name": "Massive Fists",
-        "description": "A set of large fists capable of delivering powerful strikes.",
-        "attacks": [
-            {
-                "class": "BaseAttack",
-                "name": "Punch",
-                "type": "STANDARD",
-                "description": "A quick punch that can stun opponents.",
-                "attack_roll": "[STR]",
-                "damage": [
-                    {
-                        "damage_roll": "2D6 + [STR]",
                         "damage_type": "BLUDGEONING"
                     }
                 ]

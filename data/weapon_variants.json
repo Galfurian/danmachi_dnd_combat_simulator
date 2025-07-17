@@ -1,0 +1,77 @@
+[
+    {
+        "base_weapon": "Claws",
+        "name": "Venomous Claws",
+        "description": "Claws that have been enhanced with a potent venom, dealing increased damage and poisoning victims over time.",
+        "attacks": {
+            "Claw": {
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Poison",
+                    "description": "A venomous toxin that causes ongoing damage over time.",
+                    "max_duration": 3,
+                    "damage": {
+                        "damage_roll": "1D4",
+                        "damage_type": "POISON"
+                    }
+                },
+                "description": "A venomous claw attack that slashes and applies a lingering poison effect."
+            }
+        }
+    },
+    {
+        "base_weapon": "Fist",
+        "name": "Massive Fist",
+        "description": "A large fist capable of delivering powerful strikes that can devastate opponents.",
+        "attacks": {
+            "Punch": {
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ],
+                "description": "A devastating punch that can crush bones and break armor."
+            }
+        }
+    },
+    {
+        "base_weapon": "Claws",
+        "name": "Massive Claws",
+        "description": "A set of large claws capable of delivering powerful slashing attacks.",
+        "attacks": {
+            "Claw": {
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ],
+                "description": "A powerful claw attack that can slash through armor."
+            }
+        }
+    },
+    {
+        "base_weapon": "Tail",
+        "name": "Massive Tail",
+        "description": "A powerful tail capable of delivering devastating blows.",
+        "attacks": {
+            "Tail swipe": {
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ],
+                "cooldown": 2,
+                "description": "A powerful tail attack that can sweep opponents off their feet."
+            }
+        }
+    }
+]
