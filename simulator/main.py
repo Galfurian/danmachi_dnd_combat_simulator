@@ -1,7 +1,5 @@
 from copy import deepcopy
 from logging import error, warning
-from rich.console import Console
-from rich.rule import Rule
 from collections import Counter
 from core.content import ContentRepository
 from pathlib import Path
@@ -22,11 +20,9 @@ logging.basicConfig(
 # Get the path to the data folder.
 data_dir = Path(__file__).with_suffix("").parent / "../data"
 
-console = Console()
+crule("Combat Simulator", style="bold green")
 
-console.print(Rule("Combat Simulator", style="bold green"))
-
-console.print(
+cprint(
     "Welcome to the Combat Simulator! This is a simple combat simulator for tabletop RPGs. "
     "You can create characters, equip them with weapons and armor, and engage in combat. "
     "The combat system is turn-based, and you can use various actions such as attacks, spells, and effects. "
@@ -39,14 +35,14 @@ console.print(
 
 # =============================================================================
 
-console.print(Rule("Loading Repository", style="bold green"))
+crule("Loading Repository", style="bold green")
 
 # Load the repository of content.
 repo = ContentRepository(data_dir)
 
 # =============================================================================
 
-console.print(Rule("Loading Enemies", style="bold green"))
+crule("Loading Enemies", style="bold green")
 
 # Load the enemies.
 enemies: dict[str, Character] = load_characters(
@@ -55,22 +51,22 @@ enemies: dict[str, Character] = load_characters(
 print("Enemies loaded:")
 for enemy in enemies.values():
     print_character_details(enemy)
-    console.print("\n")
+    cprint("\n")
 
 
 # =============================================================================
 
-console.print(Rule("Loading Characters", style="bold green"))
+crule("Loading Characters", style="bold green")
 
 # Load the characters.
 characters: dict[str, Character] = load_characters(data_dir / "characters.json")
 for character in characters.values():
     print_character_details(character)
-    console.print("\n")
+    cprint("\n")
 
 # =============================================================================
 
-console.print(Rule("Loading Player Character", style="bold green"))
+crule("Loading Player Character", style="bold green")
 
 # Load the player character.
 player = load_character(data_dir / "player.json")
@@ -79,7 +75,7 @@ if player is None:
     exit(1)
 
 print_character_details(player)
-console.print("\n")
+cprint("\n")
 
 # =============================================================================
 
@@ -130,18 +126,18 @@ if __name__ == "__main__":
 
     combat_manager = CombatManager(player, opponents, allies)
 
-    console.print(Rule(":crossed_swords:  Initializing Combat", style="bold green"))
+    crule(":crossed_swords:  Initializing Combat", style="bold green")
     # Call the new initialize method.
     combat_manager.initialize()
 
     try:
         combat_manager.pre_combat_phase()
-        console.print(Rule(":crossed_swords:  Combat Started", style="bold green"))
+        crule(":crossed_swords:  Combat Started", style="bold green")
         while not combat_manager.is_combat_over():
             combat_manager.run_turn()
         combat_manager.post_combat_phase()
         combat_manager.final_report()
-        console.print(Rule(":crossed_swords:  Combat Finished", style="bold green"))
+        crule(":crossed_swords:  Combat Finished", style="bold green")
     except KeyboardInterrupt:
-        console.print("")
-        console.print(Rule(":crossed_swords:  Combat Interrupted", style="bold red"))
+        cprint("")
+        crule(":crossed_swords:  Combat Interrupted", style="bold red")

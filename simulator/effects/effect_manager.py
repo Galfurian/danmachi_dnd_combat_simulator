@@ -149,7 +149,7 @@ class EffectManager:
             if ae.duration > 0:
                 updated.append(ae)
             else:
-                console.print(
+                cprint(
                     f"    :hourglass_done: [bold yellow]{ae.effect.name}[/] has expired on [bold]{self.owner.name}[/]."
                 )
         self.active_effects = updated

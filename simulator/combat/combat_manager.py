@@ -2,10 +2,6 @@
 from collections import deque
 from logging import debug, warning
 import random
-from typing import Tuple
-
-from rich.console import Console
-from rich.rule import Rule
 
 from actions.base_action import *
 from actions.attack_action import *
@@ -13,8 +9,6 @@ from actions.spell_action import *
 from core.constants import *
 from ui.cli_interface import *
 from combat.npc_ai import *
-
-console = Console()
 
 
 FULL_ATTACK = BaseAction("Full Attack", ActionType.STANDARD, ActionCategory.OFFENSIVE)
@@ -56,10 +50,10 @@ class CombatManager:
                 reverse=True,
             )
         )
-        console.print("[bold green]Combat initialized![/]")
-        console.print("[bold yellow]Turn Order:[/]")
+        cprint("[bold green]Combat initialized![/]")
+        cprint("[bold yellow]Turn Order:[/]")
         for participant in self.participants:
-            console.print(
+            cprint(
                 f"    🎲 {self.initiatives[participant]:3}  {participant.get_status_line()}",
                 markup=True,
             )
@@ -122,7 +116,7 @@ class CombatManager:
             return False
 
         # Print the status of the player at the turn's end.
-        console.print(Rule(title=f"⏱ Start of Turn {self.turn_number}", style="cyan"))
+        crule(f"⏱ Start of Turn {self.turn_number}", style="cyan")
 
         # Keep dequeuing participants until we find one that can act.
         while alive_participants:
@@ -148,7 +142,7 @@ class CombatManager:
             participant.reset_turn_flags()
 
             # Print the participant's status line.
-            console.print(participant.get_status_line(), markup=True)
+            cprint(participant.get_status_line(), markup=True)
 
             # Execute the participant's action based on whether they are the player or an NPC.
             if participant == self.player:
@@ -159,7 +153,7 @@ class CombatManager:
             # Apply end-of-turn updates and check for expiration
             participant.turn_update()
 
-            console.print("")
+            cprint("")
 
     def ask_for_player_action(self) -> None:
         """
@@ -441,7 +435,7 @@ class CombatManager:
 
     def pre_combat_phase(self) -> None:
         """Handles the pre-combat phase where the player can prepare for combat."""
-        console.print(Rule(":hourglass_done: Pre-Combat Phase", style="blue"))
+        crule(":hourglass_done: Pre-Combat Phase", style="blue")
         # Gather viable healing spells.
         buffs: list[Spell] = [
             s for s in self.player.spells.values() if isinstance(s, SpellBuff)
@@ -453,7 +447,7 @@ class CombatManager:
         )
         # If the player has no spells, skip this phase.
         if not heals and not buffs:
-            console.print(
+            cprint(
                 "[yellow]No healing or buff spells known. Skipping pre-combat phase.[/]"
             )
             return
@@ -464,37 +458,37 @@ class CombatManager:
 
     def post_combat_phase(self) -> None:
         """Handles the post-combat phase where the player can heal friendly characters."""
-        console.print(Rule(":hourglass_done: Post-Combat Healing", style="green"))
+        crule(":hourglass_done: Post-Combat Healing", style="green")
         # Stop now if there are no friendly character that needs healing.
         if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
-            console.print("[yellow]No friendly characters to heal.[/]")
+            cprint("[yellow]No friendly characters to heal.[/]")
             return
         # Gather viable healing spells.
         heals: list[Spell] = [
             s for s in self.player.spells.values() if isinstance(s, SpellHeal)
         ]
         if not heals:
-            console.print("[yellow]No healing spells known.[/]")
+            cprint("[yellow]No healing spells known.[/]")
             return
         # Otherwise, allow to perform healing actions.
         while True:
             for ally in self.get_alive_friendlies(self.player):
-                console.print(ally.get_status_line(), markup=True)
+                cprint(ally.get_status_line(), markup=True)
             if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
-                console.print("[yellow]No friendly characters needs more healing.[/]")
+                cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.
             if not self.ask_for_player_spell_cast(heals):
                 break
 
     def final_report(self) -> None:
-        console.print(Rule("📊  Final Battle Report", style="bold blue"))
+        crule("📊  Final Battle Report", style="bold blue")
         # Player
-        console.print(self.player.get_status_line(), markup=True)
+        cprint(self.player.get_status_line(), markup=True)
         # Allies
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
-                console.print(ally.get_status_line(), markup=True)
+                cprint(ally.get_status_line(), markup=True)
         # Fallen foes
         defeated = [
             c
@@ -502,11 +496,11 @@ class CombatManager:
             if not c.is_alive() and c.type == CharacterType.ENEMY
         ]
         if defeated:
-            console.print(
+            cprint(
                 f"[bold magenta]Defeated Enemies ({len(defeated)}):[/] "
                 + ", ".join(d.name for d in defeated)
             )
-        console.print("")  # blank line
+        cprint("")  # blank line
 
     def is_combat_over(self) -> bool:
         """
@@ -514,10 +508,10 @@ class CombatManager:
         Combat ends if the player is defeated, or all enemies are defeated.
         """
         if not self.player.is_alive():
-            console.print("[bold red]Combat ends. You have been defeated![/]")
+            cprint("[bold red]Combat ends. You have been defeated![/]")
             return True
         if not self.get_alive_opponents(self.player):
-            console.print(
+            cprint(
                 "[bold green]Combat ends. All enemies defeated! You are victorious![/]"
             )
             return True

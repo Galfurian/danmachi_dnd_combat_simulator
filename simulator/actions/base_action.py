@@ -1,17 +1,11 @@
-from abc import abstractmethod
-import json
 from logging import debug, error
-from rich.console import Console
 from typing import Any, Optional
-from pathlib import Path
 
 from combat.damage import *
 from core.utils import *
 from core.constants import *
 from combat.damage import *
 from effects.effect import *
-
-console = Console()
 
 
 class BaseAction:

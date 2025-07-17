@@ -1,6 +1,4 @@
 from pathlib import Path
-from rich.console import Console
-from rich.rule import Rule
 
 from actions.base_action import *
 from actions.attack_action import *
@@ -16,9 +14,6 @@ import copy
 import json
 
 
-console = Console()
-
-
 class ContentRepository(metaclass=Singleton):
     """
     One-stop registry for every game-asset that needs fast by-name access.
@@ -32,13 +27,11 @@ class ContentRepository(metaclass=Singleton):
     classes: dict[str, CharacterClass]
     races: dict[str, CharacterRace]
     # Item-related attributes.
-    attacks: dict[str, BaseAttack]
+    weapons: dict[str, Weapon]
     armors: dict[str, Armor]
     # Action-related attributes.
     spells: dict[str, BaseAction]
     actions: dict[str, BaseAction]
-    # Load the weapons.
-    weapons: dict[str, Weapon]
 
     def __init__(self, data_dir: Optional[Path] = None):
         if data_dir:
@@ -47,13 +40,13 @@ class ContentRepository(metaclass=Singleton):
     def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
 
-        console.print(Rule("Reloading Database", style="bold green"))
+        crule("Reloading Database", style="bold green")
 
-        console.print(
+        cprint(
             f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow"
         )
 
-        console.print("Loading character classes...", style="bold yellow")
+        cprint("Loading character classes...", style="bold yellow")
 
         # Load the character classes.
         with open(root / "character_classes.json", "r") as f:
@@ -64,7 +57,7 @@ class ContentRepository(metaclass=Singleton):
                 )
             self.classes = self._load_character_classes(data)
 
-        console.print("Loading character races...", style="bold yellow")
+        cprint("Loading character races...", style="bold yellow")
 
         # Load the character races.
         with open(root / "character_races.json", "r") as f:
@@ -73,34 +66,7 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Expected a list in {root / 'character_races.json'}")
             self.races = self._load_character_races(data)
 
-        console.print("Loading attacks...", style="bold yellow")
-
-        # Load the attacks.
-        with open(root / "attacks.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, dict):
-                raise ValueError(f"Expected a dict in {root / 'attacks.json'}")
-            if "attacks" not in data:
-                raise ValueError(f"No 'attacks' key found in {root / 'attacks.json'}")
-            if "variants" not in data:
-                raise ValueError(f"No 'variants' key found in {root / 'attacks.json'}")
-            # First, load the base attacks.
-            self.attacks = self._load_base_attacks(data["attacks"])
-            # Then, load the attack variants.
-            attack_variants = self._load_attack_variants(data["variants"], self.attacks)
-            # Add the variants to the attacks dictionary.
-            self.attacks.update(attack_variants)
-
-        console.print("Loading armors...", style="bold yellow")
-
-        # Load the armors.
-        with open(root / "armors.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'armors.json'}")
-            self.armors = self._load_armors(data)
-
-        console.print("Loading weapons...", style="bold yellow")
+        cprint("Loading weapons...", style="bold yellow")
 
         # Load the weapons.
         with open(root / "weapons_natural.json", "r") as f:
@@ -114,7 +80,16 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Expected a list in {root / 'weapons_wielded.json'}")
             self.weapons.update(self._load_weapons(data))
 
-        console.print("Loading spells...", style="bold yellow")
+        cprint("Loading armors...", style="bold yellow")
+
+        # Load the armors.
+        with open(root / "armors.json", "r") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise ValueError(f"Expected a list in {root / 'armors.json'}")
+            self.armors = self._load_armors(data)
+
+        cprint("Loading spells...", style="bold yellow")
 
         # Load the spells and actions.
         with open(root / "spells.json", "r") as f:
@@ -123,7 +98,7 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Expected a list in {root / 'spells.json'}")
             self.spells = self._load_spells(data)
 
-        console.print("Loading actions...", style="bold yellow")
+        cprint("Loading actions...", style="bold yellow")
 
         with open(root / "actions.json", "r") as f:
             data = json.load(f)
@@ -131,7 +106,7 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Expected a list in {root / 'actions.json'}")
             self.actions = self._load_actions(data)
 
-        console.print("Content loaded successfully!\n", style="bold green")
+        cprint("Content loaded successfully!\n", style="bold green")
 
     def get_character_class(self, name: str) -> CharacterClass | None:
         """Get a character class by name, or None if not found.
@@ -200,20 +175,6 @@ class ContentRepository(metaclass=Singleton):
         """
         entry = self.actions.get(name)
         if entry and isinstance(entry, BaseAction):
-            return entry
-        return None
-
-    def get_base_attack(self, name: str) -> BaseAttack | None:
-        """Get a base attack by name, or None if not found.
-
-        Args:
-            name (str): The name of the base attack.
-
-        Returns:
-            BaseAttack | None: The base attack instance or None.
-        """
-        entry = self.attacks.get(name)
-        if entry and isinstance(entry, BaseAttack):
             return entry
         return None
 
@@ -332,7 +293,7 @@ class ContentRepository(metaclass=Singleton):
         """Load actions from the given data."""
         actions: dict[str, BaseAction] = {}
         for action_data in data:
-            action = from_dict_attack(action_data, self.attacks)
+            action = from_dict_attack(action_data)
             if not action:
                 action = from_dict_spell(action_data)
                 if not action:

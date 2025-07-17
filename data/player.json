@@ -23,17 +23,6 @@
         "Steel Shield",
         "Defense Style"
     ],
-    "attacks": [
-        {
-            "class": "FullAttack",
-            "name": "Full Attack",
-            "type": "STANDARD",
-            "attacks": [
-                "Fine Shortsword",
-                "Fine Shortsword"
-            ]
-        }
-    ],
     "spells": [
         "Cure Wounds",
         "Healing Word",

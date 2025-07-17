@@ -1,7 +1,6 @@
 # cli_prompt.py
 from typing import Any, List, Optional
 
-from rich.console import Console
 from rich.table import Table
 
 from prompt_toolkit import PromptSession
@@ -15,33 +14,8 @@ from core.constants import *
 from core.utils import *
 
 
-# main console for everything else
-console = Console()
 # one session keeps history
 session = PromptSession(erase_when_done=True)
-
-
-def to_ansi(content: Any) -> str:
-    with console.capture() as capture:
-        console.print(content, markup=True, end="")
-    return capture.get()
-
-
-def table_to_str(table: Table, *, colour: bool = True) -> str:
-    """
-    Render a Rich Table → str.
-
-    - If `colour` is True (default) you get ANSI escape sequences.
-    - If False, output is plain ASCII (good for logs or tests).
-    """
-    if colour:
-        with console.capture() as cap:
-            console.print(table)
-        return cap.get()  # with ANSI codes
-    else:
-        tmp = Console(record=True, color_system=None)  # no colour
-        tmp.print(table)
-        return tmp.export_text()  # plain string
 
 
 class PlayerInterface:
@@ -97,7 +71,7 @@ class PlayerInterface:
         if exit_entry:
             table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
-        prompt = "\n" + table_to_str(table) + "\nAction > "
+        prompt = "\n" + ccapture(table) + "\nAction > "
         while True:
             # Prompt the user for input.
             answer = session.prompt(ANSI(prompt))
@@ -165,7 +139,7 @@ class PlayerInterface:
         if exit_entry:
             table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
-        prompt = "\n" + table_to_str(table) + "\nTarget > "
+        prompt = "\n" + ccapture(table) + "\nTarget > "
         while True:
             # Prompt the user for input.
             answer = session.prompt(ANSI(prompt))
@@ -239,7 +213,7 @@ class PlayerInterface:
             if exit_entry:
                 table.add_row("q", exit_entry, "", "", "")
             # Prepare the prompt with the table.
-            prompt = "\n" + table_to_str(table) + "\nSelect > "
+            prompt = "\n" + ccapture(table) + "\nSelect > "
             # Prompt the user for input.
             answer = session.prompt(ANSI(prompt))
             # If the user didn't type anything, continue the loop.
@@ -316,7 +290,7 @@ class PlayerInterface:
         if exit_entry:
             table.add_row("q", exit_entry, "", "")
         # Generate a prompt with the table and a question.
-        prompt = "\n" + table_to_str(table) + "\nSpell > "
+        prompt = "\n" + ccapture(table) + "\nSpell > "
         # Create a completer for the spell names.
         while True:
             # Prompt the user for input.
@@ -416,7 +390,7 @@ class PlayerInterface:
 
         while True:
             # Prompt the user for input.
-            answer = session.prompt(ANSI(to_ansi(prompt)))
+            answer = session.prompt(ANSI(ccapture(prompt)))
             if not answer:
                 continue
 

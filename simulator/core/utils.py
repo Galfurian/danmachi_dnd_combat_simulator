@@ -3,9 +3,29 @@ import random
 import math
 from logging import debug, warning
 from typing import Any, Optional, Callable
-
+from rich.console import Console
+from rich.rule import Rule
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
+
+
+def cprint(*args, **kwargs):
+    """Custom print function to handle colored output."""
+    console = Console()
+    console.print(*args, **kwargs)
+
+
+def crule(*args, **kwargs):
+    """Custom print function to handle colored output with a rule."""
+    console = Console()
+    console.print(Rule(*args, **kwargs))
+
+
+def ccapture(content: Any) -> str:
+    console = Console()
+    with console.capture() as capture:
+        console.print(content, markup=True, end="")
+    return capture.get()
 
 
 # ---- Singleton Metaclass ----

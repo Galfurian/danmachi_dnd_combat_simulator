@@ -1,9 +1,4 @@
-from abc import abstractmethod
-import json
-from logging import debug, error
-from rich.console import Console
 from typing import Any, Optional
-from pathlib import Path
 
 from combat.damage import *
 from core.utils import *
@@ -65,14 +60,14 @@ class BaseAttack(BaseAction):
         if is_fumble:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [magenta]fumble![/]\n"
+            msg += " and [magenta]fumble![/]"
             cprint(msg)
             return True
 
         if attack_total < target.AC and not is_crit:
             if GLOBAL_VERBOSE_LEVEL >= 1:
                 msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [red]miss![/]\n"
+            msg += " and [red]miss![/]"
             cprint(msg)
             return True
 
@@ -109,20 +104,20 @@ class BaseAttack(BaseAction):
                 else:
                     msg += f" and failing to apply"
                 msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]"
-            msg += ".\n"
+            msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
             msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target_str} → "
             msg += " + ".join(damage_details) + ".\n"
             if is_dead:
-                msg += f"        {target_str} is defeated.\n"
+                msg += f"        {target_str} is defeated."
             elif self.effect:
                 if self.apply_effect(actor, target, self.effect):
                     msg += f"        {target_str} is affected by"
                 else:
                     msg += f"        {target_str} is not affected by"
-                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/].\n"
+                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
         cprint(msg)
 
         return True
@@ -243,9 +238,7 @@ class WeaponAttack(BaseAction):
         self.attack = attack
 
 
-def from_dict_attack(
-    data: dict[str, Any], base_attacks: dict[str, BaseAttack]
-) -> Optional[BaseAction]:
+def from_dict_attack(data: dict[str, Any]) -> Optional[BaseAction]:
     """
     Creates a BaseAction instance from a dictionary.
     Args:

@@ -1,7 +1,7 @@
 import json
 from logging import debug, warning
 from typing import Any, Tuple
-from rich.console import Console
+from pathlib import Path
 
 from core.constants import *
 from effects.effect_manager import *
@@ -15,8 +15,6 @@ from actions.attack_action import *
 from actions.spell_action import Spell
 from items.armor import *
 from items.weapon import *
-
-console = Console()
 
 
 class Character:
@@ -149,15 +147,16 @@ class Character:
         # Base AC is 10 + DEX modifier.
         base_ac = 10 + self.DEX
 
-        # Add armor AC.
-        armor_ac = sum(armor.get_ac(self.DEX) for armor in self.equipped_armor)
+        # If there is equipped armor, replace base AC.
+        if self.equipped_armor:
+            base_ac = sum(armor.get_ac(self.DEX) for armor in self.equipped_armor)
 
         # Add effect bonuses to AC.
         effect_ac = self.effect_manager.get_modifier(BonusType.AC)
 
         # Determine final AC.
         race_bonus = self.race.natural_ac if self.race else 0
-        return base_ac + race_bonus + armor_ac + effect_ac
+        return base_ac + race_bonus + effect_ac
 
     @property
     def INITIATIVE(self) -> int:
@@ -743,44 +742,44 @@ def load_characters(file_path: Path) -> dict[str, Character]:
 def print_character_details(char: Character):
     """Prints the details of a character in a formatted way."""
 
-    console.print(
+    cprint(
         f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], [blue]{char.race.name}[/], {', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])}, hp: {char.hp}/{char.HP_MAX}, ac: {char.AC}"
     )
-    console.print(
+    cprint(
         f"  {', '.join([f'{stat}: {value}' for stat, value in char.stats.items()])}"
     )
     if char.equipped_weapons:
-        console.print(f"  Weapons:")
+        cprint(f"  Weapons:")
         for weapon in char.equipped_weapons:
-            console.print(f"    - [blue]{weapon.name}[/]")
+            cprint(f"    - [blue]{weapon.name}[/]")
             for i, attack in enumerate(weapon.attacks, start=1):
-                console.print(
+                cprint(
                     f"      {i}. [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
                 )
     if char.equipped_armor:
-        console.print(f"  Armor:")
+        cprint(f"  Armor:")
         for armor in char.equipped_armor:
-            console.print(
+            cprint(
                 f"    - [blue]{armor.name}[/], {get_armor_type_emoji(armor.armor_type)}, {armor.ac}"
             )
     if char.actions:
-        console.print(f"  Actions:")
+        cprint(f"  Actions:")
         for action in char.actions.values():
-            console.print(
+            cprint(
                 f"    - [green]{action.name}[/], [{get_action_type_color(action.type)}]{action.type.name}[/]"
             )
     if char.spells:
-        console.print(f"  Spellcasting ability: {char.spellcasting_ability}")
-        console.print(f"  Spells:")
+        cprint(f"  Spellcasting ability: {char.spellcasting_ability}")
+        cprint(f"  Spells:")
         for spell in char.spells.values():
-            console.print(
+            cprint(
                 f"    - [green]{spell.name}[/], lv {spell.level}, [{get_action_type_color(spell.type)}]{spell.type.name}[/]"
             )
     if char.resistances:
-        console.print(
+        cprint(
             f"  Resistances: {', '.join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])}"
         )
     if char.vulnerabilities:
-        console.print(
+        cprint(
             f"  Vulnerabilities: {', '.join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])}"
         )

@@ -1,13 +1,7 @@
-import json
-from rich.console import Console
-from pathlib import Path
-
 from core.utils import *
 from typing import Any
 from core.constants import *
 from combat.damage import *
-
-console = Console()
 
 
 class Effect:
@@ -266,13 +260,10 @@ class DoT(Effect):
         # Append the rolled damage expression to the damage string.
         dot_str += f"({dot_desc})"
         # Add the damage string to the list of damage details.
-        console.print(dot_str, markup=True)
+        cprint(dot_str)
         # If the target is defeated, print a message.
         if not target.is_alive():
-            console.print(
-                f"    [bold red]{target.name} has been defeated![/]",
-                markup=True,
-            )
+            cprint(f"    [bold red]{target.name} has been defeated![/]")
 
     def validate(self):
         super().validate()
@@ -331,7 +322,7 @@ class HoT(Effect):
         message += apply_character_type_color(target.type, target.name)
         message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
         message += apply_effect_color(self, self.name) + "."
-        console.print(message, markup=True)
+        cprint(message)
 
     def validate(self):
         super().validate()
