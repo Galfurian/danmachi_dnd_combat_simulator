@@ -159,5 +159,96 @@
                 ]
             }
         ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Massive Fist",
+        "description": "A large fist capable of delivering powerful strikes that can devastate opponents.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Punch",
+                "type": "STANDARD",
+                "description": "A devastating punch that can crush bones and break armor.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Massive Claws",
+        "description": "A set of large claws capable of delivering powerful slashing attacks.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Claw",
+                "type": "STANDARD",
+                "description": "A powerful claw attack that can slash through armor.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Massive Tail",
+        "description": "A powerful tail capable of delivering devastating blows.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Tail swipe",
+                "type": "STANDARD",
+                "description": "A powerful tail attack that can sweep opponents off their feet.",
+                "attack_roll": "[STR]",
+                "cooldown": 2,
+                "damage": [
+                    {
+                        "damage_roll": "2D6 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Venomous Claws",
+        "description": "Claws that have been enhanced with a potent venom, dealing increased damage and poisoning victims over time.",
+        "attacks": [
+            {
+                "class": "BaseAttack",
+                "name": "Claw",
+                "type": "STANDARD",
+                "description": "A venomous claw attack that slashes and applies a lingering poison effect.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "SLASHING"
+                    }
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Poison",
+                    "description": "A venomous toxin that causes ongoing damage over time.",
+                    "max_duration": 3,
+                    "damage": {
+                        "damage_roll": "1D4",
+                        "damage_type": "POISON"
+                    }
+                }
+            }
+        ]
     }
 ]
