@@ -1,5 +1,6 @@
 [
     {
+        "class": "Weapon",
         "name": "Longsword",
         "description": "A versatile sword that can be wielded with one or two hands.",
         "hands_required": 1,
@@ -29,6 +30,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Fine Longsword",
         "description": "A finely crafted longsword with a balanced blade.",
         "hands_required": 1,
@@ -58,6 +60,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Shortsword",
         "description": "A light and agile sword, ideal for quick strikes.",
         "hands_required": 1,
@@ -87,6 +90,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Fine Shortsword",
         "description": "A finely crafted shortsword with a balanced blade.",
         "hands_required": 1,
@@ -116,6 +120,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Greatsword",
         "description": "A large and powerful sword, requiring two hands to wield effectively.",
         "hands_required": 2,
@@ -134,6 +139,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Greatclub",
         "description": "A large wooden club, effective for crushing blows.",
         "hands_required": 2,
@@ -152,6 +158,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Dagger",
         "description": "A small and easily concealable blade, perfect for stealthy attacks.",
         "hands_required": 1,
@@ -170,6 +177,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Battle Axe",
         "description": "A heavy axe designed for powerful strikes.",
         "hands_required": 2,
@@ -188,6 +196,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Spear",
         "description": "A long pole weapon that can be used for thrusting or throwing.",
         "hands_required": 1,
@@ -206,6 +215,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Mace",
         "description": "A blunt weapon designed to crush armor and bone.",
         "hands_required": 1,
@@ -224,6 +234,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Warhammer",
         "description": "A heavy hammer designed for smashing through armor.",
         "hands_required": 2,
@@ -242,6 +253,7 @@
         ]
     },
     {
+        "class": "Weapon",
         "name": "Clawed Gauntlets",
         "description": "A gauntlet with sharp claws for slashing attacks.",
         "hands_required": 2,

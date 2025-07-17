@@ -36,8 +36,6 @@ class BaseAttack(BaseAction):
 
         # If the action has a cooldown, add it to the actor's cooldowns.
         assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
-        if self.cooldown > 0:
-            actor.add_cooldown(self, self.cooldown)
 
         # --- Build & resolve attack roll ---
 

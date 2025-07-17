@@ -152,6 +152,10 @@ def get_spell_debuffs(actions: list[BaseAction]) -> list[SpellDebuff]:
     return [a for a in actions if isinstance(a, SpellDebuff)]
 
 
+def get_natural_attacks(npc: Character) -> list[BaseAttack]:
+    return npc.get_available_natural_weapon_attacks()
+
+
 def choose_best_base_attack_action(
     npc: Character,
     enemies: list[Character],

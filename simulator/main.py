@@ -8,6 +8,7 @@ import logging
 
 from combat.combat_manager import *
 from entities.character import *
+from core.sheets import *
 
 
 """Sets up basic logging configuration."""
@@ -50,7 +51,7 @@ enemies: dict[str, Character] = load_characters(
 )
 print("Enemies loaded:")
 for enemy in enemies.values():
-    print_character_details(enemy)
+    print_character_sheet(enemy)
     cprint("\n")
 
 
@@ -61,7 +62,7 @@ crule("Loading Characters", style="bold green")
 # Load the characters.
 characters: dict[str, Character] = load_characters(data_dir / "characters.json")
 for character in characters.values():
-    print_character_details(character)
+    print_character_sheet(character)
     cprint("\n")
 
 # =============================================================================
@@ -74,7 +75,7 @@ if player is None:
     error("Failed to load player character. Please check the data file.")
     exit(1)
 
-print_character_details(player)
+print_character_sheet(player)
 cprint("\n")
 
 # =============================================================================
@@ -111,8 +112,8 @@ def make_names_unique(in_list: list[Character]):
 
 if __name__ == "__main__":
 
-    # add_to_list(enemies, opponents, "Infant Dragon")
-    add_to_list(enemies, opponents, "Orc")
+    add_to_list(enemies, opponents, "Infant Dragon")
+    # add_to_list(enemies, opponents, "Orc")
     # add_to_list(enemies, opponents, "Goblin")
     # add_to_list(enemies, opponents, "Goblin")
     # add_to_list(enemies, opponents, "Goblin")

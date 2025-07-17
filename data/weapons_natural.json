@@ -1,5 +1,6 @@
 [
     {
+        "class": "NaturalWeapon",
         "name": "Fangs",
         "description": "A set of sharp fangs used for biting and tearing.",
         "attacks": [
@@ -19,6 +20,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Claws",
         "description": "A natural weapon used by many creatures, capable of slashing attacks.",
         "attacks": [
@@ -38,6 +40,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Massive Claws",
         "description": "A set of large claws capable of delivering powerful slashing attacks.",
         "attacks": [
@@ -57,6 +60,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Worm Mouth",
         "description": "A large, gaping mouth used by worm-like creatures to engulf prey.",
         "attacks": [
@@ -76,6 +80,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Mandibles",
         "description": "A powerful biting weapon used by insectoid creatures.",
         "attacks": [
@@ -95,6 +100,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Acid gland",
         "description": "A specialized organ that produces corrosive acid.",
         "attacks": [
@@ -114,6 +120,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Leap",
         "description": "A powerful leap attack that can knock down opponents.",
         "attacks": [
@@ -133,6 +140,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Tail",
         "description": "A sweeping attack with the tail that can knock opponents off balance.",
         "attacks": [
@@ -152,6 +160,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Strong Tail",
         "description": "A powerful tail capable of delivering devastating blows.",
         "attacks": [
@@ -161,6 +170,7 @@
                 "type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
+                "cooldown": 2,
                 "damage": [
                     {
                         "damage_roll": "2D6 + [STR]",
@@ -171,6 +181,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Fists",
         "description": "A natural weapon used for punching and striking.",
         "attacks": [
@@ -190,6 +201,7 @@
         ]
     },
     {
+        "class": "NaturalWeapon",
         "name": "Massive Fists",
         "description": "A set of large fists capable of delivering powerful strikes.",
         "attacks": [

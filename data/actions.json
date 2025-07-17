@@ -23,8 +23,10 @@
             "type": "DoT",
             "name": "Burning",
             "max_duration": 3,
-            "damage_type": "FIRE",
-            "damage_per_turn": "1D6"
+            "damage": {
+                "damage_roll": "[MIND]D4",
+                "damage_type": "FIRE"
+            }
         }
     },
     {

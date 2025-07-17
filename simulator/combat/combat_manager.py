@@ -221,6 +221,8 @@ class CombatManager:
             attacks_used += 1
             # Perform the attack on the target.
             attack.execute(self.player, target)
+            # Add the attack to the cooldowns if it has one.
+            self.player.add_cooldown(attack, attack.cooldown)
         # Mark the action type as used.
         self.player.use_action_type(ActionType.STANDARD)
 
@@ -356,6 +358,8 @@ class CombatManager:
         spell_heals: list[SpellHeal] = get_spell_heals(actions)
         spell_buffs: list[SpellBuff] = get_spell_buffs(actions)
         spell_debuffs: list[SpellDebuff] = get_spell_debuffs(actions)
+        # Get all natural attacks, if any.
+        natural_attacks: list[BaseAttack] = get_natural_attacks(npc)
 
         if spell_heals:
             result = choose_best_healing_spell_action(npc, allies, spell_heals)
@@ -365,7 +369,7 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell, spell.cooldown)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
@@ -377,7 +381,7 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell, spell.cooldown)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
@@ -389,7 +393,7 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell, spell.cooldown)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
@@ -401,7 +405,7 @@ class CombatManager:
                 for target in targets:
                     spell.cast_spell(npc, target, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell, spell.cooldown)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
                 return
@@ -411,7 +415,19 @@ class CombatManager:
                 attack, target = result
                 # Perform the attack on the target.
                 attack.execute(npc, target)
+                # Add the attack to the cooldowns if it has one.
+                npc.add_cooldown(attack, attack.cooldown)
                 return
+        if natural_attacks:
+            for attack in natural_attacks:
+                result = choose_best_base_attack_action(npc, enemies, [attack])
+                if result:
+                    attack, target = result
+                    # Perform the natural attack on the target.
+                    attack.execute(npc, target)
+                    # Add the attack to the cooldowns if it has one.
+                    npc.add_cooldown(attack, attack.cooldown)
+            return
 
         warning(f"SKIP: {npc.name} has no usable action or valid targets.")
 

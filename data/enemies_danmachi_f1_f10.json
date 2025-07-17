@@ -34,7 +34,7 @@
             "charisma": 6
         },
         "equipped_weapons": [
-            "Clawed Gauntlets"
+            "Shortsword"
         ]
     },
     {
@@ -52,7 +52,7 @@
             "wisdom": 6,
             "charisma": 1
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Worm Mouth"
         ]
     },
@@ -71,7 +71,7 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Claws"
         ]
     },
@@ -90,7 +90,7 @@
             "wisdom": 8,
             "charisma": 2
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Mandibles"
         ]
     },
@@ -110,7 +110,7 @@
             "charisma": 1
         },
         "spellcasting_ability": "wisdom",
-        "equipped_weapons": [
+        "natural_weapons": [
             "Acid gland"
         ],
         "spells": [
@@ -132,7 +132,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Greatclub"
         ]
     },
@@ -151,7 +151,7 @@
             "wisdom": 10,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Fangs",
             "Leap"
         ]
@@ -171,7 +171,7 @@
             "wisdom": 10,
             "charisma": 5
         },
-        "equipped_weapons": [
+        "natural_weapons": [
             "Massive Fists"
         ]
     },
@@ -194,7 +194,7 @@
             "FIRE"
         ],
         "spellcasting_ability": "intelligence",
-        "equipped_weapons": [
+        "natural_weapons": [
             "Massive Claws",
             "Massive Claws",
             "Tail"

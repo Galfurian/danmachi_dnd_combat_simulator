@@ -29,6 +29,7 @@ class Character:
         total_hands: int = 2,
         resistances: set[DamageType] = set(),
         vulnerabilities: set[DamageType] = set(),
+        number_of_attacks: int = 1,
     ):
         # Determines if the character is a player or an NPC.
         self.type: CharacterType = char_type
@@ -47,14 +48,15 @@ class Character:
         # Resistances and vulnerabilities to damage types.
         self.resistances: set[DamageType] = resistances
         self.vulnerabilities: set[DamageType] = vulnerabilities
-
-        # WIP: Number of attacks.
-        self.number_of_attacks: int = 2
+        # Number of attacks.
+        self.number_of_attacks: int = number_of_attacks
 
         # === Dynamic Properties ===
 
         # List of equipped weapons.
         self.equipped_weapons: list[Weapon] = list()
+        # List of natural weapons, if any.
+        self.natural_weapons: list[Weapon] = []
         # List of equipped armor.
         self.equipped_armor: list[Armor] = list()
         # List of actions.
@@ -206,6 +208,23 @@ class Character:
         elif action_type == ActionType.BONUS:
             return not self.turn_flags["bonus_action_used"]
         return True
+
+    def get_available_natural_weapon_attacks(self) -> list[BaseAction]:
+        """Returns a list of natural weapon attacks available to the character.
+
+        Returns:
+            list[BaseAction]: A list of natural weapon attacks.
+        """
+        result: list[BaseAction] = []
+        # Iterate through the natural weapons and check if they are available.
+        for weapon in self.natural_weapons:
+            for attack in weapon.attacks:
+                if self.is_on_cooldown(attack):
+                    continue
+                if not self.has_action_type(attack.type):
+                    continue
+                result.append(attack)
+        return result
 
     def get_available_attacks(self) -> list[BaseAction]:
         """Returns a list of attacks that the character can use this turn."""
@@ -513,6 +532,9 @@ class Character:
         """
         if action.name not in self.cooldowns and duration > 0:
             self.cooldowns[action.name] = duration + 1
+            cprint(
+                f"{self.name} added a cooldown of {duration} turns to {action.name}."
+            )
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.
@@ -652,6 +674,8 @@ class Character:
         vulnerabilities = set()
         for vuln in data.get("vulnerabilities", []):
             vulnerabilities.add(DamageType[vuln.upper()])
+        # Get the number of attacks.
+        number_of_attacks = data.get("number_of_attacks", 1)
 
         # Create the character instance.
         char = Character(
@@ -664,6 +688,7 @@ class Character:
             total_hands,
             resistances,
             vulnerabilities,
+            number_of_attacks,
         )
 
         # Get the list of equipped weapons.
@@ -673,6 +698,16 @@ class Character:
                 warning(f"Invalid weapon '{weapon_name}' for character {data['name']}.")
                 continue
             char.add_weapon(weapon)
+
+        # Get the list of natural weapons.
+        for weapon_name in data.get("natural_weapons", []):
+            weapon = repo.get_weapon(weapon_name)
+            if weapon is None:
+                warning(
+                    f"Invalid natural weapon '{weapon_name}' for character {data['name']}."
+                )
+                continue
+            char.natural_weapons.append(weapon)
 
         # Get the list of equipped armor.
         for armor_name in data.get("equipped_armor", []):
@@ -737,49 +772,3 @@ def load_characters(file_path: Path) -> dict[str, Character]:
             if character is not None:
                 characters[character.name] = character
     return characters
-
-
-def print_character_details(char: Character):
-    """Prints the details of a character in a formatted way."""
-
-    cprint(
-        f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], [blue]{char.race.name}[/], {', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])}, hp: {char.hp}/{char.HP_MAX}, ac: {char.AC}"
-    )
-    cprint(
-        f"  {', '.join([f'{stat}: {value}' for stat, value in char.stats.items()])}"
-    )
-    if char.equipped_weapons:
-        cprint(f"  Weapons:")
-        for weapon in char.equipped_weapons:
-            cprint(f"    - [blue]{weapon.name}[/]")
-            for i, attack in enumerate(weapon.attacks, start=1):
-                cprint(
-                    f"      {i}. [green]{attack.name}[/], [blue]1D20+{attack.attack_roll}[/], damage: [blue]{'+ '.join([f'{damage_component.damage_roll} {damage_component.damage_type.name}' for damage_component in attack.damage])}[/]"
-                )
-    if char.equipped_armor:
-        cprint(f"  Armor:")
-        for armor in char.equipped_armor:
-            cprint(
-                f"    - [blue]{armor.name}[/], {get_armor_type_emoji(armor.armor_type)}, {armor.ac}"
-            )
-    if char.actions:
-        cprint(f"  Actions:")
-        for action in char.actions.values():
-            cprint(
-                f"    - [green]{action.name}[/], [{get_action_type_color(action.type)}]{action.type.name}[/]"
-            )
-    if char.spells:
-        cprint(f"  Spellcasting ability: {char.spellcasting_ability}")
-        cprint(f"  Spells:")
-        for spell in char.spells.values():
-            cprint(
-                f"    - [green]{spell.name}[/], lv {spell.level}, [{get_action_type_color(spell.type)}]{spell.type.name}[/]"
-            )
-    if char.resistances:
-        cprint(
-            f"  Resistances: {', '.join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])}"
-        )
-    if char.vulnerabilities:
-        cprint(
-            f"  Vulnerabilities: {', '.join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])}"
-        )

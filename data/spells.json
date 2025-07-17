@@ -134,8 +134,10 @@
             "name": "Burning",
             "description": "Deals fire damage over time.",
             "max_duration": 3,
-            "damage_type": "FIRE",
-            "damage_per_turn": "[MIND]D6"
+            "damage": {
+                "damage_roll": "[MIND]D6",
+                "damage_type": "FIRE"
+            }
         }
     },
     {
@@ -196,8 +198,10 @@
             "name": "Poisoned",
             "description": "Deals poison damage over time.",
             "max_duration": 3,
-            "damage_type": "POISON",
-            "damage_per_turn": "1D4"
+            "damage": {
+                "damage_roll": "[MIND]D4",
+                "damage_type": "POISON"
+            }
         }
     }
 ]

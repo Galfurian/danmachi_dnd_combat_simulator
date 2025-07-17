@@ -225,12 +225,10 @@ class DoT(Effect):
         name: str,
         description: str,
         max_duration: int,
-        damage_per_turn: str,
-        damage_type: DamageType,
+        damage: DamageComponent,
     ):
         super().__init__(name, description, max_duration)
-        self.damage_per_turn = damage_per_turn
-        self.damage_type: DamageType = damage_type
+        self.damage: DamageComponent = damage
 
         self.validate()
 
@@ -238,20 +236,20 @@ class DoT(Effect):
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         # Calculate the damage amount using the provided expression.
-        dot_value, dot_desc, _ = roll_and_describe(self.damage_per_turn, variables)
+        dot_value, dot_desc, _ = roll_and_describe(self.damage.damage_roll, variables)
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
         ), f"DoT '{self.name}' must have a non-negative integer damage value, got {dot_value}."
         # Apply the damage to the target.
-        base, adjusted, taken = target.take_damage(dot_value, self.damage_type)
+        base, adjusted, taken = target.take_damage(dot_value, self.damage.damage_type)
         # If the damage value is positive, print the damage message.
         dot_str = f"    {get_effect_emoji(self)} "
         dot_str += apply_character_type_color(target.type, target.name) + " takes "
         # Create a damage string for display.
         dot_str += apply_damage_type_color(
-            self.damage_type,
-            f"{taken} {get_damage_type_emoji(self.damage_type)} ",
+            self.damage.damage_type,
+            f"{taken} {get_damage_type_emoji(self.damage.damage_type)} ",
         )
         # If the base damage differs from the adjusted damage (due to resistances),
         # include the original and adjusted values in the damage string.
@@ -269,16 +267,12 @@ class DoT(Effect):
         super().validate()
         assert self.max_duration > 0, "DoT duration must be greater than 0."
         assert isinstance(
-            self.damage_per_turn, str
-        ), "Damage per turn must be a string expression."
-        assert isinstance(
-            self.damage_type, DamageType
-        ), f"Damage type '{self.damage_type}' must be of type DamageType."
+            self.damage, DamageComponent
+        ), "Damage must be of type DamageComponent."
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
-        data["damage_per_turn"] = self.damage_per_turn
-        data["damage_type"] = self.damage_type.name
+        data["damage"] = self.damage.to_dict()
         return data
 
     @staticmethod
@@ -288,8 +282,7 @@ class DoT(Effect):
             name=data["name"],
             description=data.get("description", ""),
             max_duration=data.get("max_duration", 0),
-            damage_per_turn=data["damage_per_turn"],
-            damage_type=DamageType[data["damage_type"]],
+            damage=DamageComponent.from_dict(data["damage"]),
         )
 
 

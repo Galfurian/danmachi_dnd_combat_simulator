@@ -309,7 +309,7 @@ def get_armor_type_emoji(armor_type: ArmorType) -> str:
     emoji_map = {
         ArmorType.LIGHT: "🧥",
         ArmorType.MEDIUM: "🥋",
-        ArmorType.HEAVY: "🛡️",
+        ArmorType.HEAVY: ":shield:",
         ArmorType.OTHER: "🎭",
     }
     return emoji_map.get(armor_type, "❔")
