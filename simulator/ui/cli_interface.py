@@ -8,6 +8,7 @@ from prompt_toolkit import ANSI
 
 from entities.character import *
 from actions.base_action import *
+from combat.damage import DamageComponent
 from actions.spell_action import *
 from actions.attack_action import *
 from core.constants import *
@@ -361,7 +362,9 @@ class PlayerInterface:
                     prompt += f" (up to {max_targets} targets)"
 
                 # Iterate over each modifier and bonus.
-                for bonus_type, value in spell.effect.modifiers.items():
+                for modifier in spell.effect.modifiers:
+                    bonus_type = modifier.bonus_type
+                    value = modifier.value
                     if isinstance(value, DamageComponent):
                         prompt += (
                             f" {simplify_expression(value.damage_roll, variables)} "

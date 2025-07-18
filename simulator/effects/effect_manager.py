@@ -3,6 +3,7 @@
 from typing import Any, Generator, Iterator
 from core.constants import *
 from effects.effect import *
+from effects.modifier import Modifier
 
 
 class ActiveEffect:
@@ -34,7 +35,8 @@ class EffectManager:
                 return False
 
         elif isinstance(effect, ModifierEffect):
-            for bonus_type in effect.modifiers:
+            for modifier in effect.modifiers:
+                bonus_type = modifier.bonus_type
                 existing = self.active_modifiers.get(bonus_type)
                 if existing:
                     if self._get_modifier_strength(
@@ -52,7 +54,8 @@ class EffectManager:
             self.active_effects.remove(active_effect)
         # Clean up from active_modifiers
         if isinstance(active_effect.effect, ModifierEffect):
-            for bonus_type in active_effect.effect.modifiers:
+            for modifier in active_effect.effect.modifiers:
+                bonus_type = modifier.bonus_type
                 if self.active_modifiers.get(bonus_type) == active_effect:
                     del self.active_modifiers[bonus_type]
 
@@ -74,7 +77,8 @@ class EffectManager:
 
         if isinstance(effect, ModifierEffect):
             candidate = ActiveEffect(source, effect, mind_level)
-            for bonus_type in effect.modifiers:
+            for modifier in effect.modifiers:
+                bonus_type = modifier.bonus_type
                 existing = self.active_modifiers.get(bonus_type)
                 if not existing or self._get_modifier_strength(
                     candidate, bonus_type
@@ -98,18 +102,29 @@ class EffectManager:
         if not isinstance(ae.effect, ModifierEffect):
             return 0
 
-        mod = ae.effect.modifiers[bonus_type]
+        # Find the modifier for the specific bonus type
+        modifier = None
+        for mod in ae.effect.modifiers:
+            if mod.bonus_type == bonus_type:
+                modifier = mod
+                break
+
+        if not modifier:
+            return 0
+
         if bonus_type in [
             BonusType.HP,
             BonusType.MIND,
             BonusType.AC,
             BonusType.INITIATIVE,
         ]:
-            return int(mod)
+            return int(modifier.value)
         elif bonus_type == BonusType.ATTACK:
-            return [mod]
+            return [modifier.value]
         elif bonus_type == BonusType.DAMAGE:
-            return [mod] if isinstance(mod, DamageComponent) else []
+            return (
+                [modifier.value] if isinstance(modifier.value, DamageComponent) else []
+            )
 
     def get_damage_modifiers(self) -> list[tuple[DamageComponent, int]]:
         consume_on_hit: list[tuple[DamageComponent, int]] = []
@@ -118,9 +133,20 @@ class EffectManager:
         for ae in self.active_effects:
             if not isinstance(ae.effect, ModifierEffect):
                 continue
-            mod = ae.effect.modifiers.get(BonusType.DAMAGE)
-            if not mod:
+
+            # Find damage modifier in the effect
+            damage_modifier = None
+            for modifier in ae.effect.modifiers:
+                if modifier.bonus_type == BonusType.DAMAGE:
+                    damage_modifier = modifier
+                    break
+
+            if not damage_modifier or not isinstance(
+                damage_modifier.value, DamageComponent
+            ):
                 continue
+
+            mod = damage_modifier.value
             if ae.consume_on_hit:
                 consume_on_hit.append((mod, ae.mind_level))
                 ae.consume_on_hit = False
@@ -157,7 +183,8 @@ class EffectManager:
         self.active_modifiers.clear()
         for ae in self.active_effects:
             if isinstance(ae.effect, ModifierEffect):
-                for bt in ae.effect.modifiers:
+                for modifier in ae.effect.modifiers:
+                    bt = modifier.bonus_type
                     if bt not in self.active_modifiers:
                         self.active_modifiers[bt] = ae
 
@@ -166,7 +193,17 @@ class EffectManager:
     def _get_modifier_strength(self, ae: ActiveEffect, bonus_type: BonusType) -> int:
         if not isinstance(ae.effect, ModifierEffect):
             return 0
-        mod = ae.effect.modifiers[bonus_type]
+
+        # Find the modifier for the specific bonus type
+        modifier = None
+        for mod in ae.effect.modifiers:
+            if mod.bonus_type == bonus_type:
+                modifier = mod
+                break
+
+        if not modifier:
+            return 0
+
         variables = ae.source.get_expression_variables()
         variables["MIND"] = ae.mind_level
 
@@ -176,11 +213,12 @@ class EffectManager:
             BonusType.AC,
             BonusType.INITIATIVE,
         ]:
-            return int(mod)
+            return int(modifier.value)
         elif bonus_type == BonusType.ATTACK:
-            return get_max_roll(mod, variables)
+            return get_max_roll(modifier.value, variables)
         elif bonus_type == BonusType.DAMAGE:
-            return get_max_roll(mod.damage_roll, variables)
+            if isinstance(modifier.value, DamageComponent):
+                return get_max_roll(modifier.value.damage_roll, variables)
         return 0
 
     def _iterate_active_effects(self) -> Iterator[ActiveEffect]:

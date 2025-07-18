@@ -2,6 +2,7 @@ from core.utils import *
 from typing import Any
 from core.constants import *
 from combat.damage import *
+from .modifier import Modifier
 
 
 class Effect:
@@ -81,54 +82,36 @@ class ModifierEffect(Effect):
         name: str,
         description: str,
         max_duration: int,
-        modifiers: dict[BonusType, str],
+        modifiers: list[Modifier],
     ):
         super().__init__(name, description, max_duration)
-        self.modifiers: dict[BonusType, Any] = modifiers
+        self.modifiers: list[Modifier] = modifiers
         self.validate()
 
     def validate(self):
         super().validate()
-        assert isinstance(self.modifiers, dict), "Modifiers must be a dictionary."
-        for k, v in self.modifiers.items():
+        assert isinstance(self.modifiers, list), "Modifiers must be a list."
+        for modifier in self.modifiers:
             assert isinstance(
-                k, BonusType
-            ), f"Modifier key '{k}' must be of type BonusType."
-            if k == BonusType.DAMAGE:
-                assert isinstance(
-                    v, DamageComponent
-                ), f"Modifier value for '{k}' must be a DamageComponent."
-            elif k == BonusType.ATTACK:
-                assert isinstance(
-                    v, str
-                ), f"Modifier value for '{k}' must be a string expression."
-            else:
-                # Should be a string expression that evaluates to an integer.
-                int(v)
+                modifier, Modifier
+            ), f"Modifier '{modifier}' must be of type Modifier."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         if not target.is_alive():
             return False
-        # Check if the target is already affected by the same group of modifiers.
-        for bonus_type, modifier in self.modifiers.items():
-            exhisting_modifiers = target.effect_manager.get_modifier(bonus_type)
-            if not exhisting_modifiers:
+        # Check if the target is already affected by the same modifiers.
+        for modifier in self.modifiers:
+            existing_modifiers = target.effect_manager.get_modifier(modifier.bonus_type)
+            if not existing_modifiers:
                 continue
-            # If the target already has a modifier of this type, check if it is the same.
-            if isinstance(modifier, str):
-                # If the modifier is a string, check if it matches any existing modifier.
-                if modifier in exhisting_modifiers:
-                    return False
-            if not target.effect_manager.has_modifier(bonus_type, modifier):
+            # Check if the target already has this exact modifier
+            if modifier in existing_modifiers:
                 return False
         return True
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
-        data["modifiers"] = {
-            k.name.lower(): v.to_dict() if isinstance(v, DamageComponent) else str(v)
-            for k, v in self.modifiers.items()
-        }
+        data["modifiers"] = [modifier.to_dict() for modifier in self.modifiers]
         return data
 
     @staticmethod
@@ -147,7 +130,7 @@ class Buff(ModifierEffect):
         name: str,
         description: str,
         max_duration: int,
-        modifiers: dict[BonusType, str],
+        modifiers: list[Modifier],
         consume_on_hit: bool = False,
     ):
         super().__init__(name, description, max_duration, modifiers)
@@ -161,20 +144,33 @@ class Buff(ModifierEffect):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Buff":
         assert data is not None, "Data must not be None."
-        modifiers: dict[BonusType, Any] = {}
-        for k, v in data["modifiers"].items():
-            key = BonusType[k.upper()]
-            if key in [
-                BonusType.HP,
-                BonusType.MIND,
-                BonusType.AC,
-                BonusType.INITIATIVE,
-            ]:
-                modifiers[key] = int(v)
-            elif key == BonusType.DAMAGE:
-                modifiers[key] = DamageComponent.from_dict(v)
-            elif key == BonusType.ATTACK:
-                modifiers[key] = str(v)
+        modifiers: list[Modifier] = []
+
+        # Handle both old dict format and new list format for backward compatibility
+        if "modifiers" in data:
+            modifier_data = data["modifiers"]
+            if isinstance(modifier_data, dict):
+                # Old format: convert dict to list of Modifier objects
+                for k, v in modifier_data.items():
+                    bonus_type = BonusType[k.upper()]
+                    if bonus_type == BonusType.DAMAGE:
+                        value = DamageComponent.from_dict(v)
+                    elif bonus_type in [
+                        BonusType.HP,
+                        BonusType.MIND,
+                        BonusType.AC,
+                        BonusType.INITIATIVE,
+                    ]:
+                        value = int(v)
+                    elif bonus_type == BonusType.ATTACK:
+                        value = str(v)
+                    else:
+                        value = str(v)
+                    modifiers.append(Modifier(bonus_type, value))
+            elif isinstance(modifier_data, list):
+                # New format: list of modifier dicts
+                modifiers = [Modifier.from_dict(mod_data) for mod_data in modifier_data]
+
         return Buff(
             name=data["name"],
             description=data.get("description", ""),
@@ -190,27 +186,40 @@ class Debuff(ModifierEffect):
         name: str,
         description: str,
         max_duration: int,
-        modifiers: dict[BonusType, str],
+        modifiers: list[Modifier],
     ):
         super().__init__(name, description, max_duration, modifiers)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Debuff":
         assert data is not None, "Data must not be None."
-        modifiers: dict[BonusType, Any] = {}
-        for k, v in data["modifiers"].items():
-            key = BonusType[k.upper()]
-            if key in [
-                BonusType.HP,
-                BonusType.MIND,
-                BonusType.AC,
-                BonusType.INITIATIVE,
-            ]:
-                modifiers[key] = int(v)
-            elif key == BonusType.DAMAGE:
-                modifiers[key] = DamageComponent.from_dict(v)
-            elif key == BonusType.ATTACK:
-                modifiers[key] = str(v)
+        modifiers: list[Modifier] = []
+
+        # Handle both old dict format and new list format for backward compatibility
+        if "modifiers" in data:
+            modifier_data = data["modifiers"]
+            if isinstance(modifier_data, dict):
+                # Old format: convert dict to list of Modifier objects
+                for k, v in modifier_data.items():
+                    bonus_type = BonusType[k.upper()]
+                    if bonus_type == BonusType.DAMAGE:
+                        value = DamageComponent.from_dict(v)
+                    elif bonus_type in [
+                        BonusType.HP,
+                        BonusType.MIND,
+                        BonusType.AC,
+                        BonusType.INITIATIVE,
+                    ]:
+                        value = int(v)
+                    elif bonus_type == BonusType.ATTACK:
+                        value = str(v)
+                    else:
+                        value = str(v)
+                    modifiers.append(Modifier(bonus_type, value))
+            elif isinstance(modifier_data, list):
+                # New format: list of modifier dicts
+                modifiers = [Modifier.from_dict(mod_data) for mod_data in modifier_data]
+
         return Debuff(
             name=data["name"],
             description=data.get("description", ""),

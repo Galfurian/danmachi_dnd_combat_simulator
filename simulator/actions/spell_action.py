@@ -594,7 +594,9 @@ class SpellBuff(Spell):
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
-        for bonus_type, value in self.effect.modifiers.items():
+        for modifier in self.effect.modifiers:
+            bonus_type = modifier.bonus_type
+            value = modifier.value
             if isinstance(value, DamageComponent):
                 expressions[bonus_type] = substitute_variables(
                     value.damage_roll, variables
@@ -733,7 +735,9 @@ class SpellDebuff(Spell):
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
-        for bonus_type, expr in self.effect.modifiers.items():
+        for modifier in self.effect.modifiers:
+            bonus_type = modifier.bonus_type
+            expr = modifier.value
             expressions[bonus_type] = substitute_variables(expr, variables)
         return expressions
 

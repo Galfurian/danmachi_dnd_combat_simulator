@@ -13,7 +13,14 @@ def damage_to_string(damage: DamageComponent):
     damage_color = get_damage_type_color(damage.damage_type)
     return f"[{damage_color}]{damage.damage_roll} {damage.damage_type.name.lower()}[/]"
 
-
+def modifier_to_string(modifier: Modifier):
+    """Converts a Modifier to a formatted string representation."""
+    if isinstance(modifier.value, DamageComponent):
+        return f"[{get_damage_type_color(modifier.value.damage_type)}]{modifier.value.damage_roll} {modifier.value.damage_type.name.lower()}[/] to {modifier.bonus_type.name.lower()}"
+    elif isinstance(modifier.value, str):
+        return f"[blue]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
+    else:
+        return f"[green]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
 
 def print_effect_sheet(effect: Effect, padding: int = 2):
     """Prints the details of an effect in a formatted way."""
@@ -23,9 +30,9 @@ def print_effect_sheet(effect: Effect, padding: int = 2):
     if effect.max_duration:
         sheet += f"{effect.max_duration} turns, "
     if isinstance(effect, Buff):
-        sheet += f"[green]{", ".join([f"{k} {v}" for k, v in effect.modifiers.items()])}[/]"
+        sheet += f"[green]{", ".join([modifier_to_string(modifier) for modifier in effect.modifiers])}[/]"
     elif isinstance(effect, Debuff):
-        sheet += f"[red]{", ".join([f"{k} {v}" for k, v in effect.modifiers.items()])}[/]"
+        sheet += f"[red]{", ".join([modifier_to_string(modifier) for modifier in effect.modifiers])}[/]"
     elif isinstance(effect, HoT):
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
     elif isinstance(effect, DoT):
@@ -139,11 +146,11 @@ def print_character_sheet(char: Character):
         cprint(f"  Spells:")
         for spell in char.spells.values():
             print_spell_sheet(spell, 4)
-    # if char.resistances:
-    #     cprint(
-    #         f"  Resistances: {', '.join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])}"
-    #     )
-    # if char.vulnerabilities:
-    #     cprint(
-    #         f"  Vulnerabilities: {', '.join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])}"
-    #     )
+    if char.resistances:
+        cprint(
+            f"  Resistances: {', '.join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])}"
+        )
+    if char.vulnerabilities:
+        cprint(
+            f"  Vulnerabilities: {', '.join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])}"
+        )
