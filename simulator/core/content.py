@@ -46,207 +46,89 @@ class ContentRepository(metaclass=Singleton):
             f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow"
         )
 
-        cprint("Loading character classes...", style="bold yellow")
+        def load_json_file(filename: str, loader_func, description: str):
+            """Helper to load and validate JSON files"""
+            cprint(f"Loading {description}...", style="bold yellow")
+            with open(root / filename, "r") as f:
+                data = json.load(f)
+                if not isinstance(data, list):
+                    raise ValueError(f"Expected a list in {root / filename}")
+                return loader_func(data)
 
-        # Load the character classes.
-        with open(root / "character_classes.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(
-                    f"Expected a list in {root / 'character_classes.json'}"
-                )
-            self.classes = self._load_character_classes(data)
-
-        cprint("Loading character races...", style="bold yellow")
-
-        # Load the character races.
-        with open(root / "character_races.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'character_races.json'}")
-            self.races = self._load_character_races(data)
-
+        # Load all content using the helper
+        self.classes = load_json_file("character_classes.json", self._load_character_classes, "character classes")
+        self.races = load_json_file("character_races.json", self._load_character_races, "character races")
+        
+        # Load weapons (special case - two files)
         cprint("Loading weapons...", style="bold yellow")
-
-        # Load the weapons.
-        with open(root / "weapons_natural.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'weapons_natural.json'}")
-            self.weapons = self._load_weapons(data)
-        with open(root / "weapons_wielded.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'weapons_wielded.json'}")
-            self.weapons.update(self._load_weapons(data))
-
-        cprint("Loading armors...", style="bold yellow")
-
-        # Load the armors.
-        with open(root / "armors.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'armors.json'}")
-            self.armors = self._load_armors(data)
-
-        cprint("Loading spells...", style="bold yellow")
-
-        # Load the spells and actions.
-        with open(root / "spells.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'spells.json'}")
-            self.spells = self._load_spells(data)
-
-        cprint("Loading actions...", style="bold yellow")
-
-        with open(root / "actions.json", "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                raise ValueError(f"Expected a list in {root / 'actions.json'}")
-            self.actions = self._load_actions(data)
+        self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "")
+        self.weapons.update(load_json_file("weapons_wielded.json", self._load_weapons, ""))
+        
+        self.armors = load_json_file("armors.json", self._load_armors, "armors")
+        self.spells = load_json_file("spells.json", self._load_spells, "spells")
+        self.actions = load_json_file("actions.json", self._load_actions, "actions")
 
         cprint("Content loaded successfully!\n", style="bold green")
 
-    def get_character_class(self, name: str) -> CharacterClass | None:
-        """Get a character class by name, or None if not found.
-
+    def _get_from_collection(self, collection_name: str, item_name: str, expected_type: type = None) -> Any | None:
+        """Generic helper to get an item from any collection with optional type checking.
+        
         Args:
-            name (str): The name of the character class.
-
+            collection_name (str): Name of the collection attribute (e.g., 'weapons', 'spells')
+            item_name (str): Name of the item to retrieve
+            expected_type (type, optional): Expected type for isinstance check
+            
         Returns:
-            CharacterClass | None: The character class instance or None.
+            Any | None: The item if found and type matches, None otherwise
         """
-        entry = self.classes.get(name)
-        if entry and isinstance(entry, CharacterClass):
+        collection = getattr(self, collection_name, None)
+        if not collection:
+            return None
+        
+        entry = collection.get(item_name)
+        if entry and (expected_type is None or isinstance(entry, expected_type)):
             return entry
         return None
+
+    def get_character_class(self, name: str) -> CharacterClass | None:
+        """Get a character class by name, or None if not found."""
+        return self._get_from_collection('classes', name, CharacterClass)
 
     def get_character_race(self, name: str) -> CharacterRace | None:
-        """Get a character race by name, or None if not found.
-
-        Args:
-            name (str): The name of the character race.
-
-        Returns:
-            CharacterRace | None: The character race instance or None.
-        """
-        entry = self.races.get(name)
-        if entry and isinstance(entry, CharacterRace):
-            return entry
-        return None
+        """Get a character race by name, or None if not found."""
+        return self._get_from_collection('races', name, CharacterRace)
 
     def get_weapon(self, name: str) -> Weapon | None:
-        """Get a weapon by name, or None if not found.
-
-        Args:
-            name (str): The name of the weapon.
-
-        Returns:
-            Weapon | None: The weapon instance or None.
-        """
-        entry = self.weapons.get(name)
-        if entry and isinstance(entry, Weapon):
-            return entry
-        return None
+        """Get a weapon by name, or None if not found."""
+        return self._get_from_collection('weapons', name, Weapon)
 
     def get_armor(self, name: str) -> Armor | None:
-        """Get an armor effect by name, or None if not found.
-
-        Args:
-            name (str): The name of the armor effect.
-
-        Returns:
-            Effect | None: The armor effect instance or None.
-        """
-        entry = self.armors.get(name)
-        if entry and isinstance(entry, Armor):
-            return entry
-        return None
+        """Get an armor by name, or None if not found."""
+        return self._get_from_collection('armors', name, Armor)
 
     def get_action(self, name: str) -> BaseAction | None:
-        """Get an action by name, or None if not found.
-
-        Args:
-            name (str): The name of the action.
-
-        Returns:
-            BaseAction | None: The action instance or None.
-        """
-        entry = self.actions.get(name)
-        if entry and isinstance(entry, BaseAction):
-            return entry
-        return None
+        """Get an action by name, or None if not found."""
+        return self._get_from_collection('actions', name, BaseAction)
 
     def get_spell(self, name: str) -> BaseAction | None:
-        """Get a spell by name, or None if not found.
-
-        Args:
-            name (str): The name of the spell.
-
-        Returns:
-            BaseAction | None: The spell instance or None.
-        """
-        entry = self.spells.get(name)
-        if entry and isinstance(entry, BaseAction):
-            return entry
-        return None
+        """Get a spell by name, or None if not found."""
+        return self._get_from_collection('spells', name, BaseAction)
 
     def get_spell_attack(self, name: str) -> SpellAttack | None:
-        """Get a spell attack by name, or None if not found.
-
-        Args:
-            name (str): The name of the spell attack.
-
-        Returns:
-            SpellAttack | None: The spell attack instance or None.
-        """
-        entry = self.spells.get(name)
-        if entry and isinstance(entry, SpellAttack):
-            return entry
-        return None
+        """Get a spell attack by name, or None if not found."""
+        return self._get_from_collection('spells', name, SpellAttack)
 
     def get_spell_heal(self, name: str) -> SpellHeal | None:
-        """Get a spell heal by name, or None if not found.
-
-        Args:
-            name (str): The name of the spell heal.
-
-        Returns:
-            SpellHeal | None: The spell heal instance or None.
-        """
-        entry = self.spells.get(name)
-        if entry and isinstance(entry, SpellHeal):
-            return entry
-        return None
+        """Get a spell heal by name, or None if not found."""
+        return self._get_from_collection('spells', name, SpellHeal)
 
     def get_spell_buff(self, name: str) -> SpellBuff | None:
-        """Get a spell buff by name, or None if not found.
-
-        Args:
-            name (str): The name of the spell buff.
-
-        Returns:
-            SpellBuff | None: The spell buff instance or None.
-        """
-        entry = self.spells.get(name)
-        if entry and isinstance(entry, SpellBuff):
-            return entry
-        return None
+        """Get a spell buff by name, or None if not found."""
+        return self._get_from_collection('spells', name, SpellBuff)
 
     def get_spell_debuff(self, name: str) -> SpellDebuff | None:
-        """Get a spell debuff by name, or None if not found.
-
-        Args:
-            name (str): The name of the spell debuff.
-
-        Returns:
-            SpellDebuff | None: The spell debuff instance or None.
-        """
-        entry = self.spells.get(name)
-        if entry and isinstance(entry, SpellDebuff):
-            return entry
-        return None
+        """Get a spell debuff by name, or None if not found."""
+        return self._get_from_collection('spells', name, SpellDebuff)
 
     @staticmethod
     def _load_character_classes(data) -> dict[str, CharacterClass]:
@@ -323,41 +205,3 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Duplicate attack name: {base_attack.name}")
             attacks[base_attack.name] = base_attack
         return attacks
-
-    @staticmethod
-    def _load_attack_variants(
-        data, base_attacks: dict[str, BaseAttack]
-    ) -> dict[str, BaseAttack]:
-        variants: dict[str, BaseAttack] = {}
-        for variant_data in data:
-            base_attack = base_attacks.get(variant_data["base"])
-            if not base_attack:
-                raise ValueError(
-                    f"Base attack '{variant_data['base']}' not found in attacks."
-                )
-
-            # Generate the variant.
-            variant = copy.deepcopy(base_attack)
-
-            # Set the variant name and apply deltas.
-            variant.name = variant_data["name"]
-
-            # Change the description if provided.
-            if description := variant_data.get("description"):
-                variant.description = description
-
-            for key, value in variant_data.get("delta", {}).items():
-                if key == "attack_roll":
-                    variant.attack_roll = value
-                elif key == "damage":
-                    variant.damage = []
-                    for comp in value:
-                        variant.damage.append(DamageComponent.from_dict(comp))
-                elif key == "effect":
-                    variant.effect = Effect.from_dict(value)
-
-            if variant.name in base_attacks:
-                raise ValueError(f"Duplicate attack variant name: {variant.name}")
-
-            variants[variant.name] = variant
-        return variants

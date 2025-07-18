@@ -1,3 +1,4 @@
+from typing import Tuple
 from actions.base_action import *
 from actions.attack_action import *
 from actions.spell_action import *
@@ -7,116 +8,65 @@ from entities.character import *
 # Sorting Functions
 # =============================================================================
 
+def _hp_ratio(character: Character) -> float:
+    """Helper function to calculate HP ratio."""
+    return character.hp / character.HP_MAX if character.HP_MAX > 0 else 1.0
+
+def _sort_targets_by_usefulness_and_hp(targets: list[Character], action, mind_level: int = 0) -> list[Character]:
+    """
+    Generic sorting function that prioritizes:
+    1. Targets where the effect would be useful
+    2. Lower HP ratio within each group
+    """
+    useful = [
+        t for t in targets
+        if action.effect is None or t.effect_manager.can_add_effect(action.effect, t, mind_level)
+    ]
+    not_useful = [t for t in targets if t not in useful]
+    
+    useful_sorted = sorted(useful, key=_hp_ratio)
+    not_useful_sorted = sorted(not_useful, key=_hp_ratio)
+    
+    return useful_sorted + not_useful_sorted
 
 def _sort_for_base_attack(
     actor: Character, action: BaseAttack, targets: list[Character]
 ) -> list[Character]:
-    """
-    Prioritizes targets for base attacks.
-    - Lower HP gets higher priority.
-    - Effects (if any) are considered via `can_add_effect`.
-    """
-    useful = [
-        t
-        for t in targets
-        if action.effect is None
-        or t.effect_manager.can_add_effect(action.effect, t, mind_level=0)
-    ]
-    not_useful = [t for t in targets if t not in useful]
-
-    def hp_ratio(t: Character) -> float:
-        return t.hp / t.HP_MAX if t.HP_MAX > 0 else 1.0
-
-    useful_sorted = sorted(useful, key=hp_ratio)
-    not_useful_sorted = sorted(not_useful, key=hp_ratio)
-
-    return useful_sorted + not_useful_sorted
-
+    """Prioritizes targets for base attacks."""
+    return _sort_targets_by_usefulness_and_hp(targets, action, 0)
 
 def _sort_for_spell_attack(
     actor: Character, spell: SpellAttack, targets: list[Character]
 ) -> list[Character]:
-    """
-    Prioritizes targets for offensive spells:
-    - Enemies with lower HP
-    - Enemies not already affected by this effect (if applicable)
-    """
-    useful = [
-        t
-        for t in targets
-        if spell.effect is None
-        or t.effect_manager.can_add_effect(spell.effect, t, spell.mind_cost[0])
-    ]
-    not_useful = [t for t in targets if t not in useful]
-
-    # Within each group, sort by lowest HP%
-    def hp_ratio(t: Character) -> float:
-        return t.hp / t.HP_MAX if t.HP_MAX > 0 else 1.0
-
-    useful_sorted = sorted(useful, key=hp_ratio)
-    not_useful_sorted = sorted(not_useful, key=hp_ratio)
-
-    return useful_sorted + not_useful_sorted
-
+    """Prioritizes targets for offensive spells."""
+    return _sort_targets_by_usefulness_and_hp(targets, spell, spell.mind_cost[0])
 
 def _sort_for_spell_heal(
     actor: Character, spell: SpellHeal, targets: list[Character]
 ) -> list[Character]:
-    """
-    Prioritizes targets by how much they need healing and
-    whether the healing effect (e.g., HoT) is useful.
-    """
+    """Prioritizes targets by how much they need healing."""
     wounded = [t for t in targets if t.hp < t.HP_MAX]
-
+    
     def priority_key(t: Character) -> Tuple[float, bool]:
-        hp_ratio = t.hp / t.HP_MAX if t.HP_MAX > 0 else 1.0
+        hp_ratio = _hp_ratio(t)
         usefulness = spell.effect is None or t.effect_manager.can_add_effect(
             spell.effect, t, spell.mind_cost[0]
         )
-        # Lower HP and useful effect come first.
         return (hp_ratio, not usefulness)
-
+    
     return sorted(wounded, key=priority_key)
-
 
 def _sort_for_spell_buff(
     actor: Character, action: SpellBuff, targets: list[Character]
 ) -> list[Character]:
-    """
-    Returns targets sorted by whether the effect would be useful for them.
-    Currently, only separates useful from not-useful, but preserves a consistent order.
-    """
-    useful = [
-        t
-        for t in targets
-        if t.effect_manager.can_add_effect(action.effect, t, action.mind_cost[0])
-    ]
-    not_useful = [t for t in targets if t not in useful]
-    return useful + not_useful
-
+    """Returns targets sorted by whether the effect would be useful."""
+    return _sort_targets_by_usefulness_and_hp(targets, action, action.mind_cost[0])
 
 def _sort_for_spell_debuff(
     actor: Character, spell: SpellDebuff, targets: list[Character]
 ) -> list[Character]:
-    """
-    Sorts debuff targets:
-    - First, those for whom the effect would be useful
-    - Within that, prioritize lowest HP or worst resistance
-    """
-    useful = [
-        t
-        for t in targets
-        if t.effect_manager.can_add_effect(spell.effect, t, spell.mind_cost[0])
-    ]
-    not_useful = [t for t in targets if t not in useful]
-
-    def hp_ratio(t: Character) -> float:
-        return t.hp / t.HP_MAX if t.HP_MAX > 0 else 1.0
-
-    useful_sorted = sorted(useful, key=hp_ratio)
-    not_useful_sorted = sorted(not_useful, key=hp_ratio)
-
-    return useful_sorted + not_useful_sorted
+    """Sorts debuff targets by usefulness and HP."""
+    return _sort_targets_by_usefulness_and_hp(targets, spell, spell.mind_cost[0])
 
 
 # =============================================================================
@@ -136,24 +86,9 @@ def get_natural_attacks(npc: Character) -> list[BaseAttack]:
     return npc.get_available_natural_weapon_attacks()
 
 
-def get_base_attacks(npc: Character) -> list[BaseAttack]:
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, BaseAttack)]
-
-
-def get_spell_attacks(npc: Character) -> list[SpellAttack]:
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellAttack)]
-
-
-def get_spell_heals(npc: Character) -> list[SpellHeal]:
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellHeal)]
-
-
-def get_spell_buffs(npc: Character) -> list[SpellBuff]:
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellBuff)]
-
-
-def get_spell_debuffs(npc: Character) -> list[SpellDebuff]:
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, SpellDebuff)]
+def get_actions_by_type(npc: Character, action_type: type) -> list:
+    """Generic function to get actions of a specific type."""
+    return [a for a in get_all_combat_actions(npc) if isinstance(a, action_type)]
 
 
 def choose_best_base_attack_action(

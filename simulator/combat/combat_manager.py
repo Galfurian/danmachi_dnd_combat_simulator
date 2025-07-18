@@ -351,7 +351,7 @@ class CombatManager:
             return
 
         # Check for healing spells.
-        spell_heals: list[SpellHeal] = get_spell_heals(npc)
+        spell_heals: list[SpellHeal] = get_actions_by_type(npc, SpellHeal)
         if spell_heals:
             result = choose_best_healing_spell_action(npc, allies, spell_heals)
             if result:
@@ -367,7 +367,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for buff spells.
-        spell_buffs: list[SpellBuff] = get_spell_buffs(npc)
+        spell_buffs: list[SpellBuff] = get_actions_by_type(npc, SpellBuff)
         if spell_buffs:
             result = choose_best_buff_spell_action(npc, allies, spell_buffs)
             if result:
@@ -383,7 +383,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for debuff spells.
-        spell_debuffs: list[SpellDebuff] = get_spell_debuffs(npc)
+        spell_debuffs: list[SpellDebuff] = get_actions_by_type(npc, SpellDebuff)
         if spell_debuffs:
             result = choose_best_debuff_spell_action(npc, enemies, spell_debuffs)
             if result:
@@ -399,7 +399,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for attack spells.
-        spell_attacks: list[SpellAttack] = get_spell_attacks(npc)
+        spell_attacks: list[SpellAttack] = get_actions_by_type(npc, SpellAttack)
         if spell_attacks:
             result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
             if result:
@@ -415,7 +415,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for base attacks.
-        base_attacks: list[BaseAttack] = get_base_attacks(npc)
+        base_attacks: list[BaseAttack] = get_actions_by_type(npc, BaseAttack)
         used_base_attack: bool = False
         if base_attacks:
             for _ in range(npc.number_of_attacks):

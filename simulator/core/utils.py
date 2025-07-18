@@ -44,6 +44,9 @@ class Singleton(type):
 
 def _safe_eval(arith_expr: str) -> str:
     """Safely evaluates a simple arithmetic expression.
+    
+    DEPRECATED: This function uses eval() which is unsafe.
+    Use DiceParser from core.dice_parser instead.
 
     Args:
         arith_expr (str): The arithmetic expression to evaluate.
@@ -51,12 +54,20 @@ def _safe_eval(arith_expr: str) -> str:
     Returns:
         str: The result of the evaluation or the original expression if an error occurs.
     """
-    try:
+    # TODO: Replace with DiceParser.parse_dice()
+    from core.error_handling import error_handler, ErrorSeverity
+    
+    def _unsafe_eval():
         # Only allow safe arithmetic evaluation
         return str(eval(arith_expr, {"__builtins__": None}, {}))
-    except Exception:
-        # In case of evaluation error, keep the original
-        return arith_expr
+    
+    return error_handler.safe_execute(
+        _unsafe_eval,
+        arith_expr,  # Return original on error
+        f"Failed to evaluate expression: {arith_expr}",
+        ErrorSeverity.MEDIUM,
+        {"expression": arith_expr}
+    )
 
 
 # ---- Stat Modifier ----

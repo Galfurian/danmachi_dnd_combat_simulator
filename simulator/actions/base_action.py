@@ -4,7 +4,6 @@ from typing import Any, Optional
 from combat.damage import *
 from core.utils import *
 from core.constants import *
-from combat.damage import *
 from effects.effect import *
 
 
