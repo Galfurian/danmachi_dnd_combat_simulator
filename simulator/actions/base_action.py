@@ -16,6 +16,7 @@ class BaseAction:
         description: str = "",
         cooldown: int = 0,
         maximum_uses: int = 0,
+        target_restrictions: list[str] | None = None,
     ):
         self.name: str = name
         self.type: ActionType = type
@@ -23,6 +24,7 @@ class BaseAction:
         self.description: str = description
         self.cooldown: int = cooldown
         self.maximum_uses: int = maximum_uses
+        self.target_restrictions: list[str] = target_restrictions or []
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Abstract method for executables.
@@ -87,7 +89,84 @@ class BaseAction:
         Returns:
             bool: True if the target is valid, False otherwise.
         """
+        # If target_restrictions are defined, use the generic targeting system
+        if self.target_restrictions:
+            return self._check_target_restrictions(actor, target)
+        
+        # Otherwise, fall back to category-based default targeting
+        return self._get_default_targeting_by_category(actor, target)
+    
+    def _check_target_restrictions(self, actor: Any, target: Any) -> bool:
+        """Check if target is valid based on target_restrictions."""
+        # Basic validation - both must be alive
+        if not actor.is_alive() or not target.is_alive():
+            return False
+            
+        # Check each restriction
+        for restriction in self.target_restrictions:
+            if restriction == "SELF" and actor == target:
+                return True
+            elif restriction == "ALLY" and self._is_relationship_valid(actor, target, is_ally=True):
+                return True
+            elif restriction == "ENEMY" and self._is_relationship_valid(actor, target, is_ally=False):
+                return True
+            elif restriction == "ANY":
+                return True
+                
         return False
+    
+    def _get_default_targeting_by_category(self, actor: Any, target: Any) -> bool:
+        """Provide sensible default targeting based on action category."""
+        # Basic validation - both must be alive
+        if not actor.is_alive() or not target.is_alive():
+            return False
+            
+        from core.constants import ActionCategory
+        
+        if self.category == ActionCategory.OFFENSIVE:
+            # Offensive actions target enemies (not self, must be opponents)
+            return target != actor and is_oponent(actor.type, target.type)
+            
+        elif self.category == ActionCategory.HEALING:
+            # Healing actions target self and allies (not enemies, not at full health for healing)
+            if target == actor:
+                return target.hp < target.HP_MAX  # Can heal self if not at full health
+            elif not is_oponent(actor.type, target.type):
+                return target.hp < target.HP_MAX  # Can heal allies if not at full health
+            return False
+            
+        elif self.category == ActionCategory.BUFF:
+            # Buff actions target self and allies
+            return target == actor or not is_oponent(actor.type, target.type)
+            
+        elif self.category == ActionCategory.DEBUFF:
+            # Debuff actions target enemies
+            return target != actor and is_oponent(actor.type, target.type)
+            
+        elif self.category == ActionCategory.UTILITY:
+            # Utility actions can target anyone
+            return True
+            
+        elif self.category == ActionCategory.DEBUG:
+            # Debug actions can target anyone
+            return True
+            
+        else:
+            # Unknown category - default to no targeting
+            return False
+    
+    def _is_relationship_valid(self, actor: Any, target: Any, is_ally: bool) -> bool:
+        """Helper to check if actor and target have the correct relationship."""
+        if actor == target:  # Self is neither ally nor enemy in this context
+            return False
+        
+        # Check if they are opponents (enemies to each other)
+        are_opponents = is_oponent(actor.type, target.type)
+        
+        if is_ally:
+            return not are_opponents  # Allies are not opponents
+        else:
+            return are_opponents  # Enemies are opponents
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the action to a dictionary representation.
@@ -95,7 +174,7 @@ class BaseAction:
         Returns:
             dict: A dictionary containing the executable's data.
         """
-        return {
+        data = {
             "class": self.__class__.__name__,
             "name": self.name,
             "type": self.type.name,
@@ -104,3 +183,6 @@ class BaseAction:
             "cooldown": self.cooldown,
             "maximum_uses": self.maximum_uses,
         }
+        if self.target_restrictions:
+            data["target_restrictions"] = self.target_restrictions
+        return data

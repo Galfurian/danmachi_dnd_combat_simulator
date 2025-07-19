@@ -38,8 +38,11 @@ class Spell(BaseAction):
         category: ActionCategory,
         target_expr: str = "",
         requires_concentration: bool = False,
+        target_restrictions: list[str] | None = None,
     ):
-        super().__init__(name, type, category, description, cooldown, maximum_uses)
+        super().__init__(
+            name, type, category, description, cooldown, maximum_uses, target_restrictions
+        )
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
         self.target_expr: str = target_expr
@@ -154,6 +157,7 @@ class SpellAttack(Spell):
         effect: Optional[Effect] = None,
         target_expr: str = "",
         requires_concentration: bool = False,
+        target_restrictions: list[str] | None = None,
     ):
         super().__init__(
             name,
@@ -166,6 +170,7 @@ class SpellAttack(Spell):
             ActionCategory.OFFENSIVE,
             target_expr,
             requires_concentration,
+            target_restrictions,
         )
         self.damage: list[DamageComponent] = damage
         self.effect: Optional[Effect] = effect
@@ -257,28 +262,6 @@ class SpellAttack(Spell):
                 msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]."
         cprint(msg)
 
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
         return True
 
     def get_damage_expr(self, actor: Any, mind_level: Optional[int] = 1) -> str:
@@ -373,6 +356,7 @@ class SpellAttack(Spell):
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
+            target_restrictions=data.get("target_restrictions"),
         )
 
 
@@ -390,6 +374,7 @@ class SpellHeal(Spell):
         effect: Optional[Effect] = None,
         target_expr: str = "",
         requires_concentration: bool = False,
+        target_restrictions: list[str] | None = None,
     ):
         super().__init__(
             name,
@@ -402,6 +387,7 @@ class SpellHeal(Spell):
             ActionCategory.HEALING,
             target_expr,
             requires_concentration,
+            target_restrictions,
         )
         self.heal_roll: str = heal_roll
         self.effect: Optional[Effect] = effect
@@ -455,29 +441,6 @@ class SpellHeal(Spell):
         msg += f"."
         cprint(msg)
 
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are both allies or enemies.
-        # - The target is not at full health.
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if is_oponent(actor.type, target.type):
-            return False
-        if target.hp >= target.HP_MAX:
-            return False
         return True
 
     def get_heal_expr(self, actor: Any, mind_level: Optional[int] = 1) -> str:
@@ -551,6 +514,7 @@ class SpellHeal(Spell):
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
+            target_restrictions=data.get("target_restrictions", []),
         )
 
 
@@ -567,6 +531,7 @@ class SpellBuff(Spell):
         effect: Effect,  # Changed from Buff to Effect
         target_expr: str = "",
         requires_concentration: bool = False,
+        target_restrictions: list[str] | None = None,
     ):
         super().__init__(
             name,
@@ -579,6 +544,7 @@ class SpellBuff(Spell):
             ActionCategory.BUFF,
             target_expr,
             requires_concentration,
+            target_restrictions,
         )
         self.effect: Effect = effect  # Changed from Buff to Effect
         # Ensure the effect is provided.
@@ -617,26 +583,6 @@ class SpellBuff(Spell):
 
         cprint(msg)
 
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are both allies or enemies.
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if is_oponent(actor.type, target.type):
-            return False
         return True
 
     def get_modifier_expressions(
@@ -698,6 +644,7 @@ class SpellBuff(Spell):
             effect=Effect.from_dict(data["effect"]),
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
+            target_restrictions=data.get("target_restrictions", []),
         )
 
 
@@ -714,6 +661,7 @@ class SpellDebuff(Spell):
         effect: Debuff,
         target_expr: str = "",
         requires_concentration: bool = False,
+        target_restrictions: list[str] | None = None,
     ):
         super().__init__(
             name,
@@ -726,6 +674,7 @@ class SpellDebuff(Spell):
             ActionCategory.DEBUFF,
             target_expr,
             requires_concentration,
+            target_restrictions,
         )
         self.effect: Debuff = effect
         # Ensure the effect is provided.
@@ -764,28 +713,6 @@ class SpellDebuff(Spell):
 
         cprint(msg)
 
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
         return True
 
     def get_modifier_expressions(
@@ -835,6 +762,7 @@ class SpellDebuff(Spell):
             effect=Debuff.from_dict(data["effect"]),
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
+            target_restrictions=data.get("target_restrictions", []),
         )
 
 

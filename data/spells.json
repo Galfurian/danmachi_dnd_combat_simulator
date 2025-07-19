@@ -10,7 +10,8 @@
             2,
             3
         ],
-        "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]"
+        "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]",
+        "target_restrictions": ["SELF", "ALLY"]
     },
     {
         "class": "SpellHeal",
@@ -23,7 +24,8 @@
             2,
             3
         ],
-        "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]"
+        "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]",
+        "target_restrictions": ["SELF", "ALLY"]
     },
     {
         "class": "SpellBuff",
@@ -38,6 +40,7 @@
         ],
         "target_expr": "1+[MIND]",
         "requires_concentration": true,
+        "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "type": "Buff",
             "name": "Bless",
@@ -57,6 +60,7 @@
         "mind_cost": [
             1
         ],
+        "target_restrictions": ["SELF", "ALLY"],
         "requires_concentration": true,
         "effect": {
             "type": "Buff",
@@ -78,6 +82,7 @@
             1
         ],
         "requires_concentration": true,
+        "target_restrictions": ["SELF"],
         "effect": {
             "type": "Buff",
             "name": "Divine Favor",
@@ -102,6 +107,7 @@
             2,
             3
         ],
+        "target_restrictions": ["SELF"],
         "effect": {
             "type": "Buff",
             "name": "Divine Smite",
@@ -126,6 +132,7 @@
             2,
             3
         ],
+        "target_restrictions": ["SELF"],
         "effect": {
             "type": "OnHitTrigger",
             "name": "Searing Smite",
@@ -161,6 +168,7 @@
         "mind_cost": [
             1
         ],
+        "target_restrictions": ["ENEMY"],
         "damage": [
             {
                 "damage_type": "PSYCHIC",
@@ -181,6 +189,7 @@
             6
         ],
         "target_expr": "4",
+        "target_restrictions": ["ENEMY"],
         "damage": [
             {
                 "damage_type": "LIGHTNING",

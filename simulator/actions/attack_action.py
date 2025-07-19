@@ -25,9 +25,10 @@ class BaseAttack(BaseAction):
         attack_roll: str,
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
+        target_restrictions: list[str] | None = None,
     ):
         super().__init__(
-            name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses
+            name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses, target_restrictions
         )
         self.hands_required: int = hands_required
         self.attack_roll: str = attack_roll
@@ -139,28 +140,6 @@ class BaseAttack(BaseAction):
         
         cprint(msg)
 
-        return True
-
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-
-        Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # A target is valid if:
-        # - It is not the actor itself.
-        # - Both actor and target are alive.
-        # - If the actor and the enemy are not both allies or enemies.
-        if target == actor:
-            return False
-        if not actor.is_alive() or not target.is_alive():
-            return False
-        if not is_oponent(actor.type, target.type):
-            return False
         return True
 
     def get_damage_expr(self, actor: Any) -> str:
