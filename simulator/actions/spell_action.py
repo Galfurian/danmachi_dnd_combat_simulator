@@ -22,7 +22,7 @@ from core.utils import (
     substitute_variables,
     cprint,
 )
-from effects.effect import Buff, Debuff, Effect
+from effects.effect import Buff, Debuff, Effect, ModifierEffect
 
 
 class Spell(BaseAction):
@@ -564,7 +564,7 @@ class SpellBuff(Spell):
         maximum_uses: int,
         level: int,
         mind_cost: list[int],
-        effect: Buff,
+        effect: Effect,  # Changed from Buff to Effect
         target_expr: str = "",
         requires_concentration: bool = False,
     ):
@@ -580,7 +580,7 @@ class SpellBuff(Spell):
             target_expr,
             requires_concentration,
         )
-        self.effect: Buff = effect
+        self.effect: Effect = effect  # Changed from Buff to Effect
         # Ensure the effect is provided.
         assert self.effect is not None, "Effect must be provided for SpellBuff."
 
@@ -652,18 +652,23 @@ class SpellBuff(Spell):
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
-        for modifier in self.effect.modifiers:
-            bonus_type = modifier.bonus_type
-            value = modifier.value
-            if isinstance(value, DamageComponent):
-                expressions[bonus_type] = substitute_variables(
-                    value.damage_roll, variables
-                )
-            elif isinstance(value, str):
-                # If the value is a string, substitute variables directly.
-                expressions[bonus_type] = substitute_variables(value, variables)
-            else:
-                expressions[bonus_type] = str(value)
+        
+        # Handle effects that have modifiers (Buff/Debuff)
+        if isinstance(self.effect, ModifierEffect):
+            for modifier in self.effect.modifiers:
+                bonus_type = modifier.bonus_type
+                value = modifier.value
+                if isinstance(value, DamageComponent):
+                    expressions[bonus_type] = substitute_variables(
+                        value.damage_roll, variables
+                    )
+                elif isinstance(value, str):
+                    # If the value is a string, substitute variables directly.
+                    expressions[bonus_type] = substitute_variables(value, variables)
+                else:
+                    expressions[bonus_type] = str(value)
+        # OnHitTrigger and other effect types don't need modifier expressions here
+        
         return expressions
 
     def to_dict(self) -> dict[str, Any]:
@@ -690,7 +695,7 @@ class SpellBuff(Spell):
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
-            effect=Buff.from_dict(data["effect"]),
+            effect=Effect.from_dict(data["effect"]),
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
         )

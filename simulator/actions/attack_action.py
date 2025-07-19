@@ -86,9 +86,18 @@ class BaseAttack(BaseAction):
         if is_crit:
             base_damage *= 2
 
-        # Then roll any additional damage from effects.
+        # Trigger OnHitTrigger effects (like Searing Smite)
+        trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = actor.effect_manager.trigger_on_hit_effects(target)
+        
+        # Apply trigger effects to target with proper mind levels
+        for effect, mind_level in trigger_effects_with_levels:
+            if effect.can_apply(actor, target):
+                target.effect_manager.add_effect(actor, effect, mind_level)
+
+        # Then roll any additional damage from effects (including triggered damage bonuses).
+        all_damage_modifiers = actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
         bonus_damage, bonus_damage_details = roll_damage_components(
-            actor, target, actor.effect_manager.get_damage_modifiers()
+            actor, target, all_damage_modifiers
         )
 
         # Extend the total damage and details with bonus damage.
@@ -122,6 +131,12 @@ class BaseAttack(BaseAction):
                 else:
                     msg += f"        {target_str} is not affected by"
                 msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
+        
+        # Display messages for consumed OnHitTrigger effects
+        for trigger in consumed_triggers:
+            trigger_msg = f"    ⚡ {actor_str}'s [bold][{get_effect_color(trigger)}]{trigger.name}[/][/] activates!"
+            cprint(trigger_msg)
+        
         cprint(msg)
 
         return True

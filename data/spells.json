@@ -116,31 +116,40 @@
         }
     },
     {
-        "class": "SpellAttack",
+        "class": "SpellBuff",
         "name": "Searing Smite",
         "type": "BONUS",
-        "description": "A smite that ignites the target, dealing fire damage.",
+        "description": "Your next weapon attack deals extra fire damage and ignites the target.",
         "level": 1,
         "mind_cost": [
             1,
             2,
             3
         ],
-        "damage": [
-            {
-                "damage_type": "FIRE",
-                "damage_roll": "[MIND]D6"
-            }
-        ],
         "effect": {
-            "type": "DoT",
-            "name": "Burning",
-            "description": "Deals fire damage over time.",
-            "max_duration": 3,
-            "damage": {
-                "damage_roll": "[MIND]D6",
-                "damage_type": "FIRE"
-            }
+            "type": "OnHitTrigger",
+            "name": "Searing Smite",
+            "description": "Next weapon attack deals extra fire damage and applies burning.",
+            "max_duration": 10,
+            "damage_bonus": [
+                {
+                    "damage_roll": "[MIND]D6",
+                    "damage_type": "FIRE"
+                }
+            ],
+            "trigger_effects": [
+                {
+                    "type": "DoT",
+                    "name": "Burning",
+                    "description": "Deals fire damage over time.",
+                    "max_duration": 3,
+                    "damage": {
+                        "damage_roll": "[MIND]D6",
+                        "damage_type": "FIRE"
+                    }
+                }
+            ],
+            "consumes_on_trigger": true
         }
     },
     {

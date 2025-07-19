@@ -355,23 +355,26 @@ class PlayerInterface:
                 prompt += "\n"
 
             elif isinstance(spell, SpellBuff):
-                # If the spell has a consume_on_hit effect, indicate it.
-                if spell.effect.consume_on_hit:
+                # If the spell has a consume_on_hit or consumes_on_trigger effect, indicate it.
+                if hasattr(spell.effect, 'consume_on_hit') and getattr(spell.effect, 'consume_on_hit', False):
+                    prompt += f"(one-shot)"
+                elif hasattr(spell.effect, 'consumes_on_trigger') and getattr(spell.effect, 'consumes_on_trigger', False):
                     prompt += f"(one-shot)"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
 
-                # Iterate over each modifier and bonus.
-                for modifier in spell.effect.modifiers:
-                    bonus_type = modifier.bonus_type
-                    value = modifier.value
-                    if isinstance(value, DamageComponent):
-                        prompt += (
-                            f" {simplify_expression(value.damage_roll, variables)} "
-                            f"[{get_damage_type_color(value.damage_type)}]{value.damage_type.name.title()}[/]"
-                        )
-                    else:
-                        prompt += f" {value} to {bonus_type.name.title()}"
+                # Iterate over each modifier and bonus (only for effects that have modifiers).
+                if hasattr(spell.effect, 'modifiers'):
+                    for modifier in getattr(spell.effect, 'modifiers', []):
+                        bonus_type = modifier.bonus_type
+                        value = modifier.value
+                        if isinstance(value, DamageComponent):
+                            prompt += (
+                                f" {simplify_expression(value.damage_roll, variables)} "
+                                f"[{get_damage_type_color(value.damage_type)}]{value.damage_type.name.title()}[/]"
+                            )
+                        else:
+                            prompt += f" {value} to {bonus_type.name.title()}"
                 prompt += "\n"
             elif isinstance(spell, SpellDebuff):
                 # Get the modifier expressions for debuffs.

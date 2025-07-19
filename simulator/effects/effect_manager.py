@@ -46,6 +46,11 @@ class EffectManager:
             if self.has_effect(effect):
                 return False
 
+        elif isinstance(effect, OnHitTrigger):
+            # OnHitTrigger effects can stack (multiple smites, etc.)
+            # No special handling needed here, just add to active_effects
+            pass
+
         elif isinstance(effect, ModifierEffect):
             for modifier in effect.modifiers:
                 bonus_type = modifier.bonus_type
@@ -278,3 +283,56 @@ class EffectManager:
 
     def _iterate_active_effects(self) -> Iterator[ActiveEffect]:
         yield from self.active_effects
+
+    # === OnHitTrigger Management ===
+
+    def get_on_hit_triggers(self) -> list[ActiveEffect]:
+        """Get all active OnHitTrigger effects."""
+        triggers = []
+        for ae in self.active_effects:
+            if isinstance(ae.effect, OnHitTrigger):
+                triggers.append(ae)
+        return triggers
+
+    def trigger_on_hit_effects(self, target: Any) -> tuple[list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnHitTrigger]]:
+        """
+        Trigger all OnHitTrigger effects and return damage bonuses and effects to apply.
+        
+        Args:
+            target: The target being hit
+            
+        Returns:
+            tuple: (damage_bonuses, effects_to_apply, consumed_triggers)
+                - damage_bonuses: List of (DamageComponent, mind_level) tuples for extra damage
+                - effects_to_apply: List of (Effect, mind_level) tuples to apply to the target
+                - consumed_triggers: List of OnHitTrigger effects that were consumed
+        """
+        damage_bonuses: list[tuple[DamageComponent, int]] = []
+        effects_to_apply: list[tuple[Effect, int]] = []
+        effects_to_remove: list[ActiveEffect] = []
+        consumed_triggers: list[OnHitTrigger] = []
+
+        for ae in self.get_on_hit_triggers():
+            if not isinstance(ae.effect, OnHitTrigger):
+                continue
+            
+            trigger = ae.effect
+            
+            # Add damage bonuses from this trigger
+            for damage_comp in trigger.damage_bonus:
+                damage_bonuses.append((damage_comp, ae.mind_level))
+            
+            # Add effects to apply to target (with mind level)
+            for effect in trigger.trigger_effects:
+                effects_to_apply.append((effect, ae.mind_level))
+            
+            # Mark for removal if it consumes on trigger
+            if trigger.consumes_on_trigger:
+                effects_to_remove.append(ae)
+                consumed_triggers.append(trigger)
+
+        # Remove consumed effects
+        for ae in effects_to_remove:
+            self.remove_effect(ae)
+
+        return damage_bonuses, effects_to_apply, consumed_triggers
