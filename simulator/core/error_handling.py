@@ -36,16 +36,19 @@ class ErrorHandler:
         """Handle an error based on its severity."""
         self.error_history.append(error)
         
+        # Prefix context keys to avoid conflicts with logging system reserved keys
+        safe_context = {f"ctx_{key}": value for key, value in error.context.items()} if error.context else {}
+        
         if error.severity == ErrorSeverity.CRITICAL:
-            self.logger.critical(f"CRITICAL: {error.message}", extra=error.context)
+            self.logger.critical(f"CRITICAL: {error.message}", extra=safe_context)
             if error.exception:
                 self.logger.critical(traceback.format_exc())
         elif error.severity == ErrorSeverity.HIGH:
-            self.logger.error(f"ERROR: {error.message}", extra=error.context)
+            self.logger.error(f"ERROR: {error.message}", extra=safe_context)
         elif error.severity == ErrorSeverity.MEDIUM:
-            self.logger.warning(f"WARNING: {error.message}", extra=error.context)
+            self.logger.warning(f"WARNING: {error.message}", extra=safe_context)
         else:
-            self.logger.info(f"INFO: {error.message}", extra=error.context)
+            self.logger.info(f"INFO: {error.message}", extra=safe_context)
     
     def safe_execute(self, 
                     operation: Callable[[], T], 
@@ -66,7 +69,7 @@ class ErrorHandler:
             self.handle_error(error)
             return default
     
-    def validate_required(self, value: Any, name: str, context: dict = None) -> Any:
+    def validate_required(self, value: Any, name: str, context: dict[str, Any] | None = None) -> Any:
         """Validate that a required value is not None."""
         if value is None:
             error = GameError(
@@ -83,7 +86,7 @@ class ErrorHandler:
 error_handler = ErrorHandler()
 
 
-def safe_operation(default_value: T = None, 
+def safe_operation(default_value: Any = None, 
                   error_message: str = "Operation failed",
                   severity: ErrorSeverity = ErrorSeverity.MEDIUM):
     """Decorator for safe operation execution."""

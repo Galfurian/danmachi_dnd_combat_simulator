@@ -19,6 +19,7 @@ from actions.spell_action import (
     from_dict_spell,
 )
 from core.utils import Singleton, cprint, crule
+from core.error_handling import error_handler, ErrorSeverity, GameError
 from effects.effect import Buff, Debuff, Effect
 from entities.character_class import CharacterClass
 from entities.character_race import CharacterRace
@@ -58,32 +59,95 @@ class ContentRepository(metaclass=Singleton):
 
         def load_json_file(filename: str, loader_func, description: str):
             """Helper to load and validate JSON files"""
-            cprint(f"Loading {description}...")
-            with open(root / filename, "r") as f:
-                data = json.load(f)
+            try:
+                cprint(f"Loading {description}...")
+                
+                # Validate file path
+                file_path = root / filename
+                if not file_path.exists():
+                    error_handler.handle_error(GameError(
+                        f"Data file not found: {filename}",
+                        ErrorSeverity.CRITICAL,
+                        {"filename": filename, "path": str(file_path)}
+                    ))
+                    raise FileNotFoundError(f"File not found: {file_path}")
+                
+                if not file_path.is_file():
+                    error_handler.handle_error(GameError(
+                        f"Path is not a file: {filename}",
+                        ErrorSeverity.CRITICAL,
+                        {"filename": filename, "path": str(file_path)}
+                    ))
+                    raise ValueError(f"Not a file: {file_path}")
+                
+                # Load and validate JSON
+                with open(file_path, "r", encoding='utf-8') as f:
+                    data = json.load(f)
+                    
                 if not isinstance(data, list):
-                    raise ValueError(f"Expected a list in {root / filename}")
+                    error_handler.handle_error(GameError(
+                        f"Expected a list in {filename}, got {type(data).__name__}",
+                        ErrorSeverity.CRITICAL,
+                        {"filename": filename, "data_type": type(data).__name__}
+                    ))
+                    raise ValueError(f"Expected a list in {file_path}, got {type(data).__name__}")
+                
+                if not data:
+                    error_handler.handle_error(GameError(
+                        f"Empty data list in {filename}",
+                        ErrorSeverity.MEDIUM,
+                        {"filename": filename}
+                    ))
+                    
                 return loader_func(data)
+                
+            except json.JSONDecodeError as e:
+                error_handler.handle_error(GameError(
+                    f"Invalid JSON in {filename}: {str(e)}",
+                    ErrorSeverity.CRITICAL,
+                    {"filename": filename, "error": str(e)},
+                    e
+                ))
+                raise ValueError(f"Invalid JSON in {filename}: {e}")
+                
+            except Exception as e:
+                error_handler.handle_error(GameError(
+                    f"Error loading {filename}: {str(e)}",
+                    ErrorSeverity.CRITICAL,
+                    {"filename": filename, "description": description},
+                    e
+                ))
+                raise
 
-        # Load all content using the helper
-        self.classes = load_json_file(
-            "character_classes.json", self._load_character_classes, "character classes"
-        )
-        self.races = load_json_file(
-            "character_races.json", self._load_character_races, "character races"
-        )
+        try:
+            # Load all content using the helper
+            self.classes = load_json_file(
+                "character_classes.json", self._load_character_classes, "character classes"
+            )
+            self.races = load_json_file(
+                "character_races.json", self._load_character_races, "character races"
+            )
 
-        # Load weapons (special case - two files)
-        self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "natural weapons")
-        self.weapons.update(
-            load_json_file("weapons_wielded.json", self._load_weapons, "wielded weapons")
-        )
+            # Load weapons (special case - two files)
+            self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "natural weapons")
+            self.weapons.update(
+                load_json_file("weapons_wielded.json", self._load_weapons, "wielded weapons")
+            )
 
-        self.armors = load_json_file("armors.json", self._load_armors, "armors")
-        self.spells = load_json_file("spells.json", self._load_spells, "spells")
-        self.actions = load_json_file("actions.json", self._load_actions, "actions")
+            self.armors = load_json_file("armors.json", self._load_armors, "armors")
+            self.spells = load_json_file("spells.json", self._load_spells, "spells")
+            self.actions = load_json_file("actions.json", self._load_actions, "actions")
 
-        cprint("Content loaded successfully!\n")
+            cprint("Content loaded successfully!\n")
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Critical error during content loading: {str(e)}",
+                ErrorSeverity.CRITICAL,
+                {"root_path": str(root)},
+                e
+            ))
+            raise
 
     def _get_from_collection(
         self, collection_name: str, item_name: str, expected_type: Optional[type] = None

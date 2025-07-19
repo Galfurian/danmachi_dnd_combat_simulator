@@ -5,25 +5,96 @@ from core.constants import (
     apply_damage_type_color, get_damage_type_emoji
 )
 from core.utils import roll_and_describe
+from core.error_handling import error_handler, ErrorSeverity, GameError
 
 
 class DamageComponent:
     def __init__(self, damage_roll: str, damage_type: DamageType):
-        self.damage_roll: str = damage_roll
+        # Validate inputs
+        if not damage_roll or not isinstance(damage_roll, str):
+            error_handler.handle_error(GameError(
+                f"Damage roll must be a non-empty string, got: {damage_roll}",
+                ErrorSeverity.HIGH,
+                {"damage_roll": damage_roll, "damage_type": damage_type}
+            ))
+            raise ValueError(f"Invalid damage roll: {damage_roll}")
+            
+        if not isinstance(damage_type, DamageType):
+            error_handler.handle_error(GameError(
+                f"Damage type must be DamageType enum, got: {type(damage_type).__name__}",
+                ErrorSeverity.HIGH,
+                {"damage_roll": damage_roll, "damage_type": damage_type}
+            ))
+            raise ValueError(f"Invalid damage type: {damage_type}")
+            
+        self.damage_roll: str = damage_roll.strip()
         self.damage_type: DamageType = damage_type
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "damage_roll": self.damage_roll,
-            "damage_type": self.damage_type.name,
-        }
+        try:
+            return {
+                "damage_roll": self.damage_roll,
+                "damage_type": self.damage_type.name,
+            }
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error serializing DamageComponent to dict: {str(e)}",
+                ErrorSeverity.MEDIUM,
+                {"damage_roll": self.damage_roll, "damage_type": self.damage_type},
+                e
+            ))
+            return {"damage_roll": str(self.damage_roll), "damage_type": "PHYSICAL"}
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "DamageComponent":
-        return DamageComponent(
-            damage_roll=data["damage_roll"],
-            damage_type=DamageType[data["damage_type"]],
-        )
+        try:
+            if not isinstance(data, dict):
+                error_handler.handle_error(GameError(
+                    f"DamageComponent data must be dict, got: {type(data).__name__}",
+                    ErrorSeverity.HIGH,
+                    {"data": data}
+                ))
+                raise ValueError(f"Invalid data type: {type(data)}")
+                
+            if "damage_roll" not in data:
+                error_handler.handle_error(GameError(
+                    "Missing required field 'damage_roll' in DamageComponent data",
+                    ErrorSeverity.HIGH,
+                    {"data": data}
+                ))
+                raise ValueError("Missing damage_roll field")
+                
+            if "damage_type" not in data:
+                error_handler.handle_error(GameError(
+                    "Missing required field 'damage_type' in DamageComponent data",
+                    ErrorSeverity.HIGH,
+                    {"data": data}
+                ))
+                raise ValueError("Missing damage_type field")
+                
+            damage_type_str = data["damage_type"]
+            if not hasattr(DamageType, damage_type_str):
+                error_handler.handle_error(GameError(
+                    f"Unknown damage type: {damage_type_str}",
+                    ErrorSeverity.HIGH,
+                    {"data": data, "damage_type": damage_type_str}
+                ))
+                raise ValueError(f"Unknown damage type: {damage_type_str}")
+                
+            return DamageComponent(
+                damage_roll=data["damage_roll"],
+                damage_type=DamageType[damage_type_str],
+            )
+            
+        except Exception as e:
+            if not isinstance(e, ValueError):
+                error_handler.handle_error(GameError(
+                    f"Unexpected error creating DamageComponent from dict: {str(e)}",
+                    ErrorSeverity.HIGH,
+                    {"data": data},
+                    e
+                ))
+            raise
 
 
 def roll_damage_component(

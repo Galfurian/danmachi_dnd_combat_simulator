@@ -3,6 +3,7 @@
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint
+from core.error_handling import error_handler, ErrorSeverity, GameError
 from effects.effect import *
 from effects.modifier import Modifier
 from effects.concentration_manager import ConcentrationManager
@@ -27,48 +28,87 @@ class EffectManager:
     # === Effect Management ===
 
     def add_effect(self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None) -> bool:
-        new_effect = ActiveEffect(source, self.owner, effect, mind_level)
-
-        # Check concentration limit if this effect requires concentration
-        if getattr(effect, 'requires_concentration', False) and spell:
-            # The concentration is managed by the SOURCE (caster), not the target
-            if not source.effect_manager.concentration_manager.add_concentration_effect(
-                spell, self.owner, new_effect, mind_level
-            ):
-                return False  # Could not add due to concentration limits
-
-        if isinstance(effect, HoT):
-            if self.has_effect(effect):
+        try:
+            # Validate inputs
+            if not source:
+                error_handler.handle_error(GameError(
+                    "Source cannot be None when adding effect",
+                    ErrorSeverity.HIGH,
+                    {"effect": getattr(effect, 'name', 'unknown')}
+                ))
                 return False
-
-        elif isinstance(effect, DoT):
-            if self.has_effect(effect):
+                
+            if not effect:
+                error_handler.handle_error(GameError(
+                    "Effect cannot be None when adding to effect manager",
+                    ErrorSeverity.HIGH,
+                    {"source": getattr(source, 'name', 'unknown')}
+                ))
                 return False
+                
+            if not isinstance(mind_level, int) or mind_level < 0:
+                error_handler.handle_error(GameError(
+                    f"Mind level must be non-negative integer, got: {mind_level}",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": effect.name, "mind_level": mind_level}
+                ))
+                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
+                
+            new_effect = ActiveEffect(source, self.owner, effect, mind_level)
 
-        elif isinstance(effect, OnHitTrigger):
-            # Only allow one OnHitTrigger spell at a time (like D&D 5e smite spells)
-            # Remove any existing OnHitTrigger effects first
-            existing_triggers = [ae for ae in self.active_effects if isinstance(ae.effect, OnHitTrigger)]
-            for existing_trigger in existing_triggers:
-                self.remove_effect(existing_trigger)
-                # Show message about replacing the old trigger
-                from core.utils import cprint
-                cprint(f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}.")
+            # Check concentration limit if this effect requires concentration
+            if getattr(effect, 'requires_concentration', False) and spell:
+                # The concentration is managed by the SOURCE (caster), not the target
+                if not source.effect_manager.concentration_manager.add_concentration_effect(
+                    spell, self.owner, new_effect, mind_level
+                ):
+                    return False  # Could not add due to concentration limits
 
-        elif isinstance(effect, ModifierEffect):
-            for modifier in effect.modifiers:
-                bonus_type = modifier.bonus_type
-                existing = self.active_modifiers.get(bonus_type)
-                if existing:
-                    if self._get_modifier_strength(
-                        new_effect, bonus_type
-                    ) <= self._get_modifier_strength(existing, bonus_type):
-                        return False
-                    self.remove_effect(existing)
-                self.active_modifiers[bonus_type] = new_effect
+            if isinstance(effect, HoT):
+                if self.has_effect(effect):
+                    return False
 
-        self.active_effects.append(new_effect)
-        return True
+            elif isinstance(effect, DoT):
+                if self.has_effect(effect):
+                    return False
+
+            elif isinstance(effect, OnHitTrigger):
+                # Only allow one OnHitTrigger spell at a time (like D&D 5e smite spells)
+                # Remove any existing OnHitTrigger effects first
+                existing_triggers = [ae for ae in self.active_effects if isinstance(ae.effect, OnHitTrigger)]
+                for existing_trigger in existing_triggers:
+                    self.remove_effect(existing_trigger)
+                    # Show message about replacing the old trigger
+                    from core.utils import cprint
+                    cprint(f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}.")
+
+            elif isinstance(effect, ModifierEffect):
+                for modifier in effect.modifiers:
+                    bonus_type = modifier.bonus_type
+                    existing = self.active_modifiers.get(bonus_type)
+                    if existing:
+                        if self._get_modifier_strength(
+                            new_effect, bonus_type
+                        ) <= self._get_modifier_strength(existing, bonus_type):
+                            return False
+                        self.remove_effect(existing)
+                    self.active_modifiers[bonus_type] = new_effect
+
+            self.active_effects.append(new_effect)
+            return True
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error adding effect to manager: {str(e)}",
+                ErrorSeverity.HIGH,
+                {
+                    "effect": getattr(effect, 'name', 'unknown'),
+                    "source": getattr(source, 'name', 'unknown'),
+                    "target": getattr(self.owner, 'name', 'unknown')
+                },
+                e
+            ))
+            return False
 
     def remove_effect(self, active_effect: ActiveEffect) -> None:
         if active_effect in self.active_effects:

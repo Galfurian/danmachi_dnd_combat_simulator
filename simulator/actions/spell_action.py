@@ -13,6 +13,7 @@ from core.constants import (
     get_effect_color,
     is_oponent,
 )
+from core.error_handling import GameError, ErrorSeverity, error_handler
 from core.utils import (
     evaluate_expression,
     parse_expr_and_assume_max_roll,
@@ -40,13 +41,68 @@ class Spell(BaseAction):
         requires_concentration: bool = False,
         target_restrictions: list[str] | None = None,
     ):
-        super().__init__(
-            name, type, category, description, cooldown, maximum_uses, target_restrictions
-        )
-        self.level: int = level
-        self.mind_cost: list[int] = mind_cost
-        self.target_expr: str = target_expr
-        self.requires_concentration: bool = requires_concentration
+        try:
+            super().__init__(
+                name, type, category, description, cooldown, maximum_uses, target_restrictions
+            )
+            
+            # Validate level
+            if not isinstance(level, int) or level < 0:
+                error_handler.handle_error(GameError(
+                    f"Spell {name} level must be non-negative integer, got: {level}",
+                    ErrorSeverity.HIGH,
+                    {"name": name, "level": level}
+                ))
+                level = max(0, int(level) if isinstance(level, (int, float)) else 0)
+            
+            # Validate mind_cost
+            if not isinstance(mind_cost, list):
+                error_handler.handle_error(GameError(
+                    f"Spell {name} mind_cost must be list, got: {mind_cost.__class__.__name__}",
+                    ErrorSeverity.HIGH,
+                    {"name": name, "mind_cost": mind_cost}
+                ))
+                mind_cost = []
+            else:
+                # Validate each mind cost
+                for i, cost in enumerate(mind_cost):
+                    if not isinstance(cost, int) or cost < 0:
+                        error_handler.handle_error(GameError(
+                            f"Spell {name} mind_cost[{i}] must be non-negative integer, got: {cost}",
+                            ErrorSeverity.MEDIUM,
+                            {"name": name, "cost_index": i, "cost": cost}
+                        ))
+            
+            # Validate target_expr
+            if not isinstance(target_expr, str):
+                error_handler.handle_error(GameError(
+                    f"Spell {name} target_expr must be string, got: {target_expr.__class__.__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"name": name, "target_expr": target_expr}
+                ))
+                target_expr = str(target_expr) if target_expr is not None else ""
+                
+            # Validate requires_concentration
+            if not isinstance(requires_concentration, bool):
+                error_handler.handle_error(GameError(
+                    f"Spell {name} requires_concentration must be boolean, got: {requires_concentration.__class__.__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"name": name, "requires_concentration": requires_concentration}
+                ))
+                requires_concentration = bool(requires_concentration)
+            
+            self.level: int = level
+            self.mind_cost: list[int] = mind_cost
+            self.target_expr: str = target_expr
+            self.requires_concentration: bool = requires_concentration
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error initializing Spell {name}: {str(e)}",
+                ErrorSeverity.CRITICAL,
+                {"name": name, "error": str(e)}
+            ))
+            raise
 
     def is_single_target(self) -> bool:
         """Check if the spell is single-target.

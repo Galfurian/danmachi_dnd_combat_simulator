@@ -4,6 +4,7 @@ from typing import Any, Optional
 from combat.damage import *
 from core.utils import *
 from core.constants import *
+from core.error_handling import error_handler, ErrorSeverity, GameError
 from effects.effect import *
 
 
@@ -18,6 +19,55 @@ class BaseAction:
         maximum_uses: int = 0,
         target_restrictions: list[str] | None = None,
     ):
+        # Validate inputs
+        if not name or not isinstance(name, str):
+            error_handler.handle_error(GameError(
+                f"Action name must be a non-empty string, got: {name}",
+                ErrorSeverity.HIGH,
+                {"name": name, "type": type}
+            ))
+            raise ValueError(f"Invalid action name: {name}")
+            
+        if not isinstance(type, ActionType):
+            error_handler.handle_error(GameError(
+                f"Action type must be ActionType enum, got: {type(type).__name__}",
+                ErrorSeverity.HIGH,
+                {"name": name, "type": type}
+            ))
+            raise ValueError(f"Invalid action type: {type}")
+            
+        if not isinstance(category, ActionCategory):
+            error_handler.handle_error(GameError(
+                f"Action category must be ActionCategory enum, got: {type(category).__name__}",
+                ErrorSeverity.HIGH,
+                {"name": name, "category": category}
+            ))
+            raise ValueError(f"Invalid action category: {category}")
+            
+        if not isinstance(description, str):
+            error_handler.handle_error(GameError(
+                f"Action description must be string, got: {type(description).__name__}",
+                ErrorSeverity.MEDIUM,
+                {"name": name, "description": description}
+            ))
+            description = str(description) if description is not None else ""
+            
+        if not isinstance(cooldown, int) or cooldown < 0:
+            error_handler.handle_error(GameError(
+                f"Action cooldown must be non-negative integer, got: {cooldown}",
+                ErrorSeverity.MEDIUM,
+                {"name": name, "cooldown": cooldown}
+            ))
+            cooldown = max(0, int(cooldown) if isinstance(cooldown, (int, float)) else 0)
+            
+        if not isinstance(maximum_uses, int) or maximum_uses < 0:
+            error_handler.handle_error(GameError(
+                f"Action maximum_uses must be non-negative integer, got: {maximum_uses}",
+                ErrorSeverity.MEDIUM,
+                {"name": name, "maximum_uses": maximum_uses}
+            ))
+            maximum_uses = max(0, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else 0)
+            
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
@@ -56,28 +106,149 @@ class BaseAction:
         Returns:
             bool: True if the effect was successfully applied, False otherwise.
         """
-        if not effect:
+        try:
+            if not effect:
+                return False
+            
+            if not actor:
+                error_handler.handle_error(GameError(
+                    f"Cannot apply effect {effect.name}: actor is None",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": effect.name, "actor": actor}
+                ))
+                return False
+                
+            if not target:
+                error_handler.handle_error(GameError(
+                    f"Cannot apply effect {effect.name}: target is None",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": effect.name, "actor": getattr(actor, 'name', 'Unknown'), "target": target}
+                ))
+                return False
+                
+            if not hasattr(actor, 'is_alive') or not callable(actor.is_alive):
+                error_handler.handle_error(GameError(
+                    f"Actor lacks is_alive method for effect {effect.name}",
+                    ErrorSeverity.HIGH,
+                    {"effect": effect.name, "actor": getattr(actor, 'name', 'Unknown')}
+                ))
+                return False
+                
+            if not hasattr(target, 'is_alive') or not callable(target.is_alive):
+                error_handler.handle_error(GameError(
+                    f"Target lacks is_alive method for effect {effect.name}",
+                    ErrorSeverity.HIGH,
+                    {"effect": effect.name, "target": getattr(target, 'name', 'Unknown')}
+                ))
+                return False
+                
+            if not actor.is_alive():
+                return False
+            if not target.is_alive():
+                return False
+                
+            if not hasattr(target, 'effect_manager'):
+                error_handler.handle_error(GameError(
+                    f"Target lacks effect_manager for effect {effect.name}",
+                    ErrorSeverity.HIGH,
+                    {"effect": effect.name, "target": getattr(target, 'name', 'Unknown')}
+                ))
+                return False
+                
+            # Validate mind_level
+            if not isinstance(mind_level, int) or mind_level < 0:
+                error_handler.handle_error(GameError(
+                    f"Invalid mind_level for effect {effect.name}: {mind_level}",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": effect.name, "mind_level": mind_level}
+                ))
+                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
+            
+            if target.effect_manager.add_effect(actor, effect, mind_level):
+                debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
+                return True
+            debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")
             return False
-        if not actor.is_alive():
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error applying effect {getattr(effect, 'name', 'Unknown')}: {str(e)}",
+                ErrorSeverity.HIGH,
+                {"effect": getattr(effect, 'name', 'Unknown'), "error": str(e), 
+                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')}
+            ))
             return False
-        if not target.is_alive():
-            return False
-        if target.effect_manager.add_effect(actor, effect, mind_level):
-            debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
-            return True
-        debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")
-        return False
 
     def roll_attack_with_crit(
         self, actor, attack_bonus_expr: str, bonus_list: list[str]
     ) -> Tuple[int, str, int]:
-        expr = "1D20"
-        if attack_bonus_expr:
-            expr += f" + {attack_bonus_expr}"
-        for bonus in bonus_list:
-            expr += f" + {bonus}"
-        total, desc, rolls = roll_and_describe(expr, actor.get_expression_variables())
-        return total, desc, rolls[0] if rolls else 0
+        """Roll attack with critical hit detection."""
+        try:
+            if not actor:
+                error_handler.handle_error(GameError(
+                    "Cannot roll attack: actor is None",
+                    ErrorSeverity.HIGH,
+                    {"actor": actor}
+                ))
+                return 1, "1D20: 1", 1  # Return minimum valid roll
+            
+            if not hasattr(actor, 'get_expression_variables'):
+                error_handler.handle_error(GameError(
+                    f"Actor {getattr(actor, 'name', 'Unknown')} lacks get_expression_variables method",
+                    ErrorSeverity.HIGH,
+                    {"actor": getattr(actor, 'name', 'Unknown')}
+                ))
+                return 1, "1D20: 1", 1  # Return minimum valid roll
+            
+            expr = "1D20"
+            if attack_bonus_expr and isinstance(attack_bonus_expr, str):
+                expr += f" + {attack_bonus_expr}"
+            elif attack_bonus_expr:
+                error_handler.handle_error(GameError(
+                    f"Invalid attack_bonus_expr type: {type(attack_bonus_expr).__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"attack_bonus_expr": attack_bonus_expr, "type": type(attack_bonus_expr).__name__}
+                ))
+            
+            if bonus_list:
+                if not isinstance(bonus_list, list):
+                    error_handler.handle_error(GameError(
+                        f"bonus_list must be a list, got: {type(bonus_list).__name__}",
+                        ErrorSeverity.MEDIUM,
+                        {"bonus_list": bonus_list, "type": type(bonus_list).__name__}
+                    ))
+                    bonus_list = []
+                else:
+                    for bonus in bonus_list:
+                        if isinstance(bonus, str):
+                            expr += f" + {bonus}"
+                        else:
+                            error_handler.handle_error(GameError(
+                                f"Bonus in bonus_list must be string, got: {type(bonus).__name__}",
+                                ErrorSeverity.LOW,
+                                {"bonus": bonus, "type": type(bonus).__name__}
+                            ))
+            
+            variables = actor.get_expression_variables()
+            if not isinstance(variables, dict):
+                error_handler.handle_error(GameError(
+                    f"Actor expression variables must be dict, got: {type(variables).__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"variables": variables, "actor": getattr(actor, 'name', 'Unknown')}
+                ))
+                variables = {}
+            
+            total, desc, rolls = roll_and_describe(expr, variables)
+            return total, desc, rolls[0] if rolls else 0
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error rolling attack: {str(e)}",
+                ErrorSeverity.HIGH,
+                {"error": str(e), "actor": getattr(actor, 'name', 'Unknown'), 
+                 "attack_bonus_expr": attack_bonus_expr, "bonus_list": bonus_list}
+            ))
+            return 1, "1D20: 1 (error)", 1  # Return safe fallback
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
         """Checks if the target is valid for the action.

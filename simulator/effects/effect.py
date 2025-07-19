@@ -1,12 +1,46 @@
 from core.utils import *
 from typing import Any
 from core.constants import *
+from core.error_handling import error_handler, ErrorSeverity, GameError
 from combat.damage import *
 from .modifier import Modifier
 
 
 class Effect:
     def __init__(self, name: str, description: str = "", max_duration: int = 0, requires_concentration: bool = False):
+        # Validate inputs
+        if not name or not isinstance(name, str):
+            error_handler.handle_error(GameError(
+                f"Effect name must be a non-empty string, got: {name}",
+                ErrorSeverity.HIGH,
+                {"name": name, "type": type(name).__name__}
+            ))
+            raise ValueError(f"Invalid effect name: {name}")
+            
+        if not isinstance(description, str):
+            error_handler.handle_error(GameError(
+                f"Effect description must be a string, got: {type(description).__name__}",
+                ErrorSeverity.MEDIUM,
+                {"name": name, "description": description}
+            ))
+            description = str(description) if description is not None else ""
+            
+        if not isinstance(max_duration, int) or max_duration < 0:
+            error_handler.handle_error(GameError(
+                f"Effect max_duration must be a non-negative integer, got: {max_duration}",
+                ErrorSeverity.HIGH,
+                {"name": name, "max_duration": max_duration}
+            ))
+            max_duration = max(0, int(max_duration) if isinstance(max_duration, (int, float)) else 0)
+            
+        if not isinstance(requires_concentration, bool):
+            error_handler.handle_error(GameError(
+                f"Effect requires_concentration must be boolean, got: {type(requires_concentration).__name__}",
+                ErrorSeverity.MEDIUM,
+                {"name": name, "requires_concentration": requires_concentration}
+            ))
+            requires_concentration = bool(requires_concentration)
+            
         self.name: str = name
         self.description: str = description
         self.max_duration: int = max_duration
@@ -20,7 +54,39 @@ class Effect:
             target (Any): The character receiving the effect.
             mind_level (int, optional): The mind level of the actor. Defaults to 0.
         """
-        ...
+        try:
+            if not actor:
+                error_handler.handle_error(GameError(
+                    f"Actor cannot be None for effect {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"effect": self.name}
+                ))
+                return
+                
+            if not target:
+                error_handler.handle_error(GameError(
+                    f"Target cannot be None for effect {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"effect": self.name}
+                ))
+                return
+                
+            if not isinstance(mind_level, int) or mind_level < 0:
+                error_handler.handle_error(GameError(
+                    f"Mind level must be non-negative integer for effect {self.name}, got: {mind_level}",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": self.name, "mind_level": mind_level}
+                ))
+                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
+                
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error during turn_update validation for effect {self.name}: {str(e)}",
+                ErrorSeverity.HIGH,
+                {"effect": self.name, "actor": getattr(actor, 'name', 'unknown'), 
+                 "target": getattr(target, 'name', 'unknown')},
+                e
+            ))
 
     def is_permanent(self) -> bool:
         """Check if the effect is permanent (i.e., has no duration).
@@ -32,8 +98,32 @@ class Effect:
 
     def validate(self):
         """Validate the effect's properties."""
-        assert self.name, "Effect name must not be empty."
-        assert isinstance(self.description, str), "Effect description must be a string."
+        try:
+            if not self.name:
+                error_handler.handle_error(GameError(
+                    "Effect name must not be empty",
+                    ErrorSeverity.HIGH,
+                    {"name": self.name}
+                ))
+                raise ValueError("Effect name must not be empty")
+                
+            if not isinstance(self.description, str):
+                error_handler.handle_error(GameError(
+                    f"Effect description must be a string, got {type(self.description).__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"name": self.name, "description": self.description}
+                ))
+                raise ValueError("Effect description must be a string")
+                
+        except Exception as e:
+            if not isinstance(e, ValueError):
+                error_handler.handle_error(GameError(
+                    f"Unexpected error during effect validation: {str(e)}",
+                    ErrorSeverity.HIGH,
+                    {"effect": self.name},
+                    e
+                ))
+            raise
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """Check if the effect can be applied to the target.
@@ -45,7 +135,33 @@ class Effect:
         Returns:
             bool: True if the effect can be applied, False otherwise.
         """
-        return False
+        try:
+            if not actor:
+                error_handler.handle_error(GameError(
+                    f"Actor cannot be None when checking if effect {self.name} can be applied",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": self.name}
+                ))
+                return False
+                
+            if not target:
+                error_handler.handle_error(GameError(
+                    f"Target cannot be None when checking if effect {self.name} can be applied",
+                    ErrorSeverity.MEDIUM,
+                    {"effect": self.name}
+                ))
+                return False
+                
+            return False  # Base implementation
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error checking if effect {self.name} can be applied: {str(e)}",
+                ErrorSeverity.HIGH,
+                {"effect": self.name},
+                e
+            ))
+            return False
 
     def to_dict(self) -> dict[str, Any]:
         return {

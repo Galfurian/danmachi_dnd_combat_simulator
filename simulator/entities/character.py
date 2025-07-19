@@ -16,6 +16,7 @@ from core.constants import (
     get_effect_color,
 )
 from core.content import ContentRepository
+from core.error_handling import GameError, ErrorSeverity, error_handler
 from core.utils import get_stat_modifier, make_bar
 from effects.effect import Effect
 from effects.effect_manager import EffectManager

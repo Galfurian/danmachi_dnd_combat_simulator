@@ -6,6 +6,7 @@ from core.constants import (
     ActionCategory, ActionType, BonusType, GLOBAL_VERBOSE_LEVEL,
     apply_character_type_color, get_effect_color, is_oponent
 )
+from core.error_handling import GameError, ErrorSeverity, error_handler
 from core.utils import (
     debug, parse_expr_and_assume_max_roll, parse_expr_and_assume_min_roll, 
     substitute_variables, cprint
@@ -27,120 +28,241 @@ class BaseAttack(BaseAction):
         effect: Optional[Effect] = None,
         target_restrictions: list[str] | None = None,
     ):
-        super().__init__(
-            name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses, target_restrictions
-        )
-        self.hands_required: int = hands_required
-        self.attack_roll: str = attack_roll
-        self.damage: list[DamageComponent] = damage
-        self.effect: Optional[Effect] = effect
+        try:
+            super().__init__(
+                name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses, target_restrictions
+            )
+            
+            # Validate hands_required
+            if not isinstance(hands_required, int) or hands_required < 0:
+                error_handler.handle_error(GameError(
+                    f"Attack {name} hands_required must be non-negative integer, got: {hands_required}",
+                    ErrorSeverity.MEDIUM,
+                    {"name": name, "hands_required": hands_required}
+                ))
+                hands_required = max(0, int(hands_required) if isinstance(hands_required, (int, float)) else 0)
+            
+            # Validate attack_roll
+            if not isinstance(attack_roll, str):
+                error_handler.handle_error(GameError(
+                    f"Attack {name} attack_roll must be string, got: {attack_roll.__class__.__name__}",
+                    ErrorSeverity.HIGH,
+                    {"name": name, "attack_roll": attack_roll}
+                ))
+                attack_roll = str(attack_roll) if attack_roll is not None else ""
+            
+            # Validate damage list
+            if not isinstance(damage, list):
+                error_handler.handle_error(GameError(
+                    f"Attack {name} damage must be list, got: {damage.__class__.__name__}",
+                    ErrorSeverity.HIGH,
+                    {"name": name, "damage": damage}
+                ))
+                damage = []
+            else:
+                # Validate each damage component
+                for i, dmg_comp in enumerate(damage):
+                    if not isinstance(dmg_comp, DamageComponent):
+                        error_handler.handle_error(GameError(
+                            f"Attack {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
+                            ErrorSeverity.HIGH,
+                            {"name": name, "damage_index": i, "damage_component": dmg_comp}
+                        ))
+            
+            # Validate effect
+            if effect is not None and not isinstance(effect, Effect):
+                error_handler.handle_error(GameError(
+                    f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}",
+                    ErrorSeverity.MEDIUM,
+                    {"name": name, "effect": effect}
+                ))
+                effect = None
+            
+            self.hands_required: int = hands_required
+            self.attack_roll: str = attack_roll
+            self.damage: list[DamageComponent] = damage
+            self.effect: Optional[Effect] = effect
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error initializing BaseAttack {name}: {str(e)}",
+                ErrorSeverity.CRITICAL,
+                {"name": name, "error": str(e)}
+            ))
+            raise
 
     def execute(self, actor: Any, target: Any) -> bool:
-        actor_str = apply_character_type_color(actor.type, actor.name)
-        target_str = apply_character_type_color(target.type, target.name)
+        try:
+            # Validate inputs
+            if not actor:
+                error_handler.handle_error(GameError(
+                    f"Cannot execute {self.name}: actor is None",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name}
+                ))
+                return False
+                
+            if not target:
+                error_handler.handle_error(GameError(
+                    f"Cannot execute {self.name}: target is None",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name, "actor": getattr(actor, 'name', 'Unknown')}
+                ))
+                return False
+            
+            # Validate required attributes
+            if not hasattr(actor, 'name') or not hasattr(actor, 'type'):
+                error_handler.handle_error(GameError(
+                    f"Actor missing required attributes for {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name, "actor": actor}
+                ))
+                return False
+                
+            if not hasattr(target, 'name') or not hasattr(target, 'type'):
+                error_handler.handle_error(GameError(
+                    f"Target missing required attributes for {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name, "target": target}
+                ))
+                return False
+            
+            actor_str = apply_character_type_color(actor.type, actor.name)
+            target_str = apply_character_type_color(target.type, target.name)
 
-        debug(f"{actor.name} attempts a {self.name} on {target.name}.")
+            debug(f"{actor.name} attempts a {self.name} on {target.name}.")
 
-        # If the action has a cooldown, add it to the actor's cooldowns.
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+            # Check cooldown
+            if not hasattr(actor, 'is_on_cooldown'):
+                error_handler.handle_error(GameError(
+                    f"Actor lacks is_on_cooldown method for {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name, "actor": actor.name}
+                ))
+                return False
+                
+            if actor.is_on_cooldown(self):
+                error_handler.handle_error(GameError(
+                    f"Action {self.name} is on cooldown",
+                    ErrorSeverity.MEDIUM,
+                    {"action": self.name, "actor": actor.name}
+                ))
+                return False
 
-        # --- Build & resolve attack roll ---
+            # --- Build & resolve attack roll ---
 
-        # Get attack modifier from the actor's effect manager.
-        attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+            # Get attack modifier from the actor's effect manager.
+            if not hasattr(actor, 'effect_manager'):
+                error_handler.handle_error(GameError(
+                    f"Actor lacks effect_manager for {self.name}",
+                    ErrorSeverity.HIGH,
+                    {"action": self.name, "actor": actor.name}
+                ))
+                return False
+                
+            attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
 
-        # Roll the attack.
-        attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
-            actor, self.attack_roll, attack_modifier
-        )
+            # Roll the attack.
+            attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
+                actor, self.attack_roll, attack_modifier
+            )
 
-        # Detect crit and fumble.
-        is_crit = d20_roll == 20
-        is_fumble = d20_roll == 1
+            # Detect crit and fumble.
+            is_crit = d20_roll == 20
+            is_fumble = d20_roll == 1
 
-        msg = f"    🎯 {actor_str} attacks {target_str} with [bold blue]{self.name}[/]"
+            msg = f"    🎯 {actor_str} attacks {target_str} with [bold blue]{self.name}[/]"
 
-        # --- Outcome: MISS ---
+            # --- Outcome: MISS ---
 
-        if is_fumble:
-            if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [magenta]fumble![/]"
+            if is_fumble:
+                if GLOBAL_VERBOSE_LEVEL >= 1:
+                    msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+                msg += " and [magenta]fumble![/]"
+                cprint(msg)
+                return True
+
+            if attack_total < target.AC and not is_crit:
+                if GLOBAL_VERBOSE_LEVEL >= 1:
+                    msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+                msg += " and [red]miss![/]"
+                cprint(msg)
+                return True
+
+            # --- Outcome: HIT ---
+
+            # First roll the attack damage from the attack.
+            base_damage, base_damage_details = roll_damage_components_no_mind(
+                actor, target, self.damage
+            )
+
+            # If it's a crit, double the base damage.
+            if is_crit:
+                base_damage *= 2
+
+            # Trigger OnHitTrigger effects (like Searing Smite)
+            trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = actor.effect_manager.trigger_on_hit_effects(target)
+            
+            # Apply trigger effects to target with proper mind levels
+            for effect, mind_level in trigger_effects_with_levels:
+                if effect.can_apply(actor, target):
+                    target.effect_manager.add_effect(actor, effect, mind_level)
+
+            # Then roll any additional damage from effects (including triggered damage bonuses).
+            all_damage_modifiers = actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
+            bonus_damage, bonus_damage_details = roll_damage_components(
+                actor, target, all_damage_modifiers
+            )
+
+            # Extend the total damage and details with bonus damage.
+            total_damage = base_damage + bonus_damage
+            damage_details = base_damage_details + bonus_damage_details
+
+            # Is target still alive?
+            is_dead = not target.is_alive()
+
+            if GLOBAL_VERBOSE_LEVEL == 0:
+                msg += f" dealing {total_damage} damage"
+                if is_dead:
+                    msg += f" defeating {target_str}"
+                elif self.effect:
+                    if self.apply_effect(actor, target, self.effect):
+                        msg += f" and applying"
+                    else:
+                        msg += f" and failing to apply"
+                    msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+                msg += "."
+            elif GLOBAL_VERBOSE_LEVEL >= 1:
+                msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
+                msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
+                msg += f"        Dealing {total_damage} damage to {target_str} → "
+                msg += " + ".join(damage_details) + ".\n"
+                if is_dead:
+                    msg += f"        {target_str} is defeated."
+                elif self.effect:
+                    if self.apply_effect(actor, target, self.effect):
+                        msg += f"        {target_str} is affected by"
+                    else:
+                        msg += f"        {target_str} is not affected by"
+                    msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
+            
+            # Display messages for consumed OnHitTrigger effects
+            for trigger in consumed_triggers:
+                trigger_msg = f"    ⚡ {actor_str}'s [bold][{get_effect_color(trigger)}]{trigger.name}[/][/] activates!"
+                cprint(trigger_msg)
+            
             cprint(msg)
+
             return True
-
-        if attack_total < target.AC and not is_crit:
-            if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [red]miss![/]"
-            cprint(msg)
-            return True
-
-        # --- Outcome: HIT ---
-
-        # First roll the attack damage from the attack.
-        base_damage, base_damage_details = roll_damage_components_no_mind(
-            actor, target, self.damage
-        )
-
-        # If it's a crit, double the base damage.
-        if is_crit:
-            base_damage *= 2
-
-        # Trigger OnHitTrigger effects (like Searing Smite)
-        trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = actor.effect_manager.trigger_on_hit_effects(target)
-        
-        # Apply trigger effects to target with proper mind levels
-        for effect, mind_level in trigger_effects_with_levels:
-            if effect.can_apply(actor, target):
-                target.effect_manager.add_effect(actor, effect, mind_level)
-
-        # Then roll any additional damage from effects (including triggered damage bonuses).
-        all_damage_modifiers = actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
-        bonus_damage, bonus_damage_details = roll_damage_components(
-            actor, target, all_damage_modifiers
-        )
-
-        # Extend the total damage and details with bonus damage.
-        total_damage = base_damage + bonus_damage
-        damage_details = base_damage_details + bonus_damage_details
-
-        # Is target still alive?
-        is_dead = not target.is_alive()
-
-        if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" dealing {total_damage} damage"
-            if is_dead:
-                msg += f" defeating {target_str}"
-            elif self.effect:
-                if self.apply_effect(actor, target, self.effect):
-                    msg += f" and applying"
-                else:
-                    msg += f" and failing to apply"
-                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]"
-            msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
-            msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
-            msg += f"        Dealing {total_damage} damage to {target_str} → "
-            msg += " + ".join(damage_details) + ".\n"
-            if is_dead:
-                msg += f"        {target_str} is defeated."
-            elif self.effect:
-                if self.apply_effect(actor, target, self.effect):
-                    msg += f"        {target_str} is affected by"
-                else:
-                    msg += f"        {target_str} is not affected by"
-                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
-        
-        # Display messages for consumed OnHitTrigger effects
-        for trigger in consumed_triggers:
-            trigger_msg = f"    ⚡ {actor_str}'s [bold][{get_effect_color(trigger)}]{trigger.name}[/][/] activates!"
-            cprint(trigger_msg)
-        
-        cprint(msg)
-
-        return True
+            
+        except Exception as e:
+            error_handler.handle_error(GameError(
+                f"Error executing attack {self.name}: {str(e)}",
+                ErrorSeverity.HIGH,
+                {"action": self.name, "error": str(e), 
+                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')}
+            ))
+            return False
 
     def get_damage_expr(self, actor: Any) -> str:
         """Returns the damage expression with variables substituted.
