@@ -3,24 +3,32 @@ from typing import Any, Optional
 from actions.base_action import BaseAction
 from combat.damage import DamageComponent, roll_damage_components_no_mind
 from core.constants import (
-    ActionCategory, ActionType, BonusType, GLOBAL_VERBOSE_LEVEL,
-    apply_character_type_color, get_effect_color, is_oponent
+    ActionCategory,
+    ActionType,
+    BonusType,
+    GLOBAL_VERBOSE_LEVEL,
+    apply_character_type_color,
+    get_effect_color,
+    is_oponent,
 )
 from core.error_handling import GameError, ErrorSeverity, error_handler
 from core.utils import (
-    debug, parse_expr_and_assume_max_roll, parse_expr_and_assume_min_roll, 
-    substitute_variables, cprint
+    debug,
+    parse_expr_and_assume_max_roll,
+    parse_expr_and_assume_min_roll,
+    substitute_variables,
+    cprint,
 )
 from effects.effect import Effect
 
 
 class BaseAbility(BaseAction):
     """Base class for creature abilities (like dragon breath, wing buffet, etc.)
-    
+
     Unlike spells, abilities don't use mind points or spellcasting abilities.
     They typically have uses per day/encounter or cooldowns instead.
     """
-    
+
     def __init__(
         self,
         name: str,
@@ -35,55 +43,75 @@ class BaseAbility(BaseAction):
     ):
         try:
             super().__init__(
-                name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses, target_restrictions
+                name,
+                type,
+                ActionCategory.OFFENSIVE,
+                description,
+                cooldown,
+                maximum_uses,
+                target_restrictions,
             )
-            
+
             # Validate damage list
             if not isinstance(damage, list):
-                error_handler.handle_error(GameError(
-                    f"Ability {name} damage must be list, got: {damage.__class__.__name__}",
-                    ErrorSeverity.HIGH,
-                    {"name": name, "damage": damage}
-                ))
+                error_handler.handle_error(
+                    GameError(
+                        f"Ability {name} damage must be list, got: {damage.__class__.__name__}",
+                        ErrorSeverity.HIGH,
+                        {"name": name, "damage": damage},
+                    )
+                )
                 damage = []
             else:
                 # Validate each damage component
                 for i, dmg_comp in enumerate(damage):
                     if not isinstance(dmg_comp, DamageComponent):
-                        error_handler.handle_error(GameError(
-                            f"Ability {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
-                            ErrorSeverity.HIGH,
-                            {"name": name, "damage_index": i, "damage_component": dmg_comp}
-                        ))
-            
+                        error_handler.handle_error(
+                            GameError(
+                                f"Ability {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
+                                ErrorSeverity.HIGH,
+                                {
+                                    "name": name,
+                                    "damage_index": i,
+                                    "damage_component": dmg_comp,
+                                },
+                            )
+                        )
+
             # Validate effect
             if effect is not None and not isinstance(effect, Effect):
-                error_handler.handle_error(GameError(
-                    f"Ability {name} effect must be Effect or None, got: {effect.__class__.__name__}",
-                    ErrorSeverity.MEDIUM,
-                    {"name": name, "effect": effect}
-                ))
+                error_handler.handle_error(
+                    GameError(
+                        f"Ability {name} effect must be Effect or None, got: {effect.__class__.__name__}",
+                        ErrorSeverity.MEDIUM,
+                        {"name": name, "effect": effect},
+                    )
+                )
                 effect = None
-                
+
             # Validate target_expr
             if not isinstance(target_expr, str):
-                error_handler.handle_error(GameError(
-                    f"Ability {name} target_expr must be string, got: {target_expr.__class__.__name__}",
-                    ErrorSeverity.MEDIUM,
-                    {"name": name, "target_expr": target_expr}
-                ))
+                error_handler.handle_error(
+                    GameError(
+                        f"Ability {name} target_expr must be string, got: {target_expr.__class__.__name__}",
+                        ErrorSeverity.MEDIUM,
+                        {"name": name, "target_expr": target_expr},
+                    )
+                )
                 target_expr = str(target_expr) if target_expr is not None else ""
-            
+
             self.damage: list[DamageComponent] = damage
             self.effect: Optional[Effect] = effect
             self.target_expr: str = target_expr
-            
+
         except Exception as e:
-            error_handler.handle_error(GameError(
-                f"Error initializing BaseAbility {name}: {str(e)}",
-                ErrorSeverity.CRITICAL,
-                {"name": name, "error": str(e)}
-            ))
+            error_handler.handle_error(
+                GameError(
+                    f"Error initializing BaseAbility {name}: {str(e)}",
+                    ErrorSeverity.CRITICAL,
+                    {"name": name, "error": str(e)},
+                )
+            )
             raise
 
     def is_single_target(self) -> bool:
@@ -105,6 +133,7 @@ class BaseAbility(BaseAction):
         """
         if self.target_expr:
             from core.utils import evaluate_expression
+
             variables = actor.get_expression_variables()
             return max(1, int(evaluate_expression(self.target_expr, variables)))
         return 1
@@ -147,7 +176,7 @@ class BaseAbility(BaseAction):
 
         # Display message
         msg = f"    🔥 {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
-        
+
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {total_damage} damage"
             if is_dead:
@@ -170,7 +199,7 @@ class BaseAbility(BaseAction):
                 else:
                     msg += f"        {target_str} is not affected by"
                 msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
-        
+
         cprint(msg)
 
         return True
@@ -251,8 +280,8 @@ class BaseAbility(BaseAction):
 def from_dict_ability(data: dict[str, Any]) -> Optional[BaseAbility]:
     """Factory function to create an ability instance from a dictionary."""
     ability_class = data.get("class", "BaseAbility")
-    
+
     if ability_class == "BaseAbility":
         return BaseAbility.from_dict(data)
-    
+
     return None

@@ -643,10 +643,13 @@ class Character:
             action (BaseAction): The action to initialize uses for.
         """
         if action.name not in self.uses:
-            self.uses[action.name] = action.maximum_uses
-            debug(
-                f"{self.name} initialized {action.name} with {action.maximum_uses} uses."
-            )
+            # For unlimited use actions (-1), don't track uses
+            if action.maximum_uses == -1:
+                self.uses[action.name] = -1  # Unlimited
+                debug(f"{self.name} initialized {action.name} with unlimited uses.")
+            else:
+                self.uses[action.name] = action.maximum_uses
+                debug(f"{self.name} initialized {action.name} with {action.maximum_uses} uses.")
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Returns the remaining uses of an action.
@@ -655,8 +658,10 @@ class Character:
             action (BaseAction): The action to check.
 
         Returns:
-            int: The remaining uses of the action.
+            int: The remaining uses of the action. Returns -1 for unlimited use actions.
         """
+        if action.maximum_uses == -1:
+            return -1  # Unlimited uses
         return self.uses.get(action.name, 0)
 
     def decrement_uses(self, action: BaseAction):
@@ -665,6 +670,10 @@ class Character:
         Args:
             action (BaseAction): The action to decrement uses for.
         """
+        # Don't decrement unlimited use actions
+        if action.maximum_uses == -1:
+            return
+            
         if action.name in self.uses:
             if self.uses[action.name] > 0:
                 self.uses[action.name] -= 1

@@ -16,7 +16,7 @@ class BaseAction:
         category: ActionCategory,
         description: str = "",
         cooldown: int = 0,
-        maximum_uses: int = 0,
+        maximum_uses: int = -1,
         target_restrictions: list[str] | None = None,
     ):
         # Validate inputs
@@ -60,13 +60,13 @@ class BaseAction:
             ))
             cooldown = max(0, int(cooldown) if isinstance(cooldown, (int, float)) else 0)
             
-        if not isinstance(maximum_uses, int) or maximum_uses < 0:
+        if not isinstance(maximum_uses, int) or maximum_uses < -1:
             error_handler.handle_error(GameError(
-                f"Action maximum_uses must be non-negative integer, got: {maximum_uses}",
+                f"Action maximum_uses must be integer >= -1 (where -1 = unlimited), got: {maximum_uses}",
                 ErrorSeverity.MEDIUM,
                 {"name": name, "maximum_uses": maximum_uses}
             ))
-            maximum_uses = max(0, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else 0)
+            maximum_uses = max(-1, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else -1)
             
         self.name: str = name
         self.type: ActionType = type
