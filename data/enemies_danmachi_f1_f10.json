@@ -204,5 +204,48 @@
             "Fire Breath",
             "Wing Buffet"
         ]
+    },
+    {
+        "name": "Minotaur Boss",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 5
+        },
+        "stats": {
+            "strength": 18,
+            "dexterity": 12,
+            "constitution": 16,
+            "intelligence": 8,
+            "wisdom": 10,
+            "charisma": 8
+        },
+        "equipped_weapons": [
+            "Greatclub"
+        ],
+        "passive_effects": [
+            {
+                "type": "OnLowHealthTrigger",
+                "name": "Berserk Rage",
+                "description": "When below 25% HP, enters a berserker rage!",
+                "hp_threshold_percent": 0.25,
+                "trigger_effects": [
+                    {
+                        "type": "Buff",
+                        "name": "Rage",
+                        "description": "Massive boost to attack and damage from primal fury!",
+                        "max_duration": 999,
+                        "modifiers": {
+                            "attack": "5",
+                            "damage": {
+                                "damage_roll": "2D6",
+                                "damage_type": "BLUDGEONING"
+                            }
+                        }
+                    }
+                ],
+                "consumes_on_trigger": true
+            }
+        ]
     }
 ]

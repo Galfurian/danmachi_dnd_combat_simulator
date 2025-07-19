@@ -79,6 +79,8 @@ class Effect:
             return HoT.from_dict(data)
         if effect_type == "OnHitTrigger":
             return OnHitTrigger.from_dict(data)
+        if effect_type == "OnLowHealthTrigger":
+            return OnLowHealthTrigger.from_dict(data)
         raise ValueError(f"Unknown effect type: {effect_type}")
 
 
@@ -418,3 +420,93 @@ class OnHitTrigger(Effect):
             consumes_on_trigger=data.get("consumes_on_trigger", True),
             requires_concentration=data.get("requires_concentration", False),
         )
+
+
+class OnLowHealthTrigger(Effect):
+    """Effect that activates when the character's HP drops below a threshold percentage."""
+    
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        hp_threshold_percent: float,  # 0.25 for 25% HP
+        trigger_effects: list["Effect"],
+        damage_bonus: list[DamageComponent] | None = None,
+        consumes_on_trigger: bool = True,
+    ):
+        # No max_duration - these are permanent passive abilities
+        super().__init__(name, description, max_duration=0, requires_concentration=False)
+        self.hp_threshold_percent: float = hp_threshold_percent
+        self.trigger_effects: list[Effect] = trigger_effects or []
+        self.damage_bonus: list[DamageComponent] = damage_bonus or []
+        self.consumes_on_trigger: bool = consumes_on_trigger
+        self.has_triggered: bool = False  # Track if already activated
+        self.validate()
+
+    def validate(self):
+        super().validate()
+        assert 0.0 <= self.hp_threshold_percent <= 1.0, "HP threshold must be between 0.0 and 1.0"
+        assert isinstance(self.trigger_effects, list), "Trigger effects must be a list."
+        for effect in self.trigger_effects:
+            assert isinstance(effect, Effect), f"Trigger effect '{effect}' must be of type Effect."
+        assert isinstance(self.damage_bonus, list), "Damage bonus must be a list."
+        for damage_comp in self.damage_bonus:
+            assert isinstance(damage_comp, DamageComponent), f"Damage component '{damage_comp}' must be of type DamageComponent."
+
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        """OnLowHealthTrigger can be applied to any living target."""
+        return target.is_alive()
+
+    def should_trigger(self, character: Any) -> bool:
+        """Check if the trigger condition is met and hasn't already been activated."""
+        if self.has_triggered and self.consumes_on_trigger:
+            return False
+        
+        hp_ratio = character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
+        return hp_ratio <= self.hp_threshold_percent
+
+    def activate(self, character: Any) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
+        """Activate the trigger and return damage bonuses and effects to apply."""
+        self.has_triggered = True
+        
+        # Return damage bonuses and effects with mind level 0 (passive triggers don't use mind)
+        trigger_effects_with_levels = [(effect, 0) for effect in self.trigger_effects]
+        
+        return self.damage_bonus.copy(), trigger_effects_with_levels
+
+    def to_dict(self) -> dict[str, Any]:
+        data = super().to_dict()
+        data["hp_threshold_percent"] = self.hp_threshold_percent
+        data["trigger_effects"] = [effect.to_dict() for effect in self.trigger_effects]
+        data["damage_bonus"] = [damage.to_dict() for damage in self.damage_bonus]
+        data["consumes_on_trigger"] = self.consumes_on_trigger
+        data["has_triggered"] = self.has_triggered
+        return data
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "OnLowHealthTrigger":
+        assert data is not None, "Data must not be None."
+        
+        # Parse trigger effects
+        trigger_effects = []
+        for effect_data in data.get("trigger_effects", []):
+            trigger_effects.append(Effect.from_dict(effect_data))
+        
+        # Parse damage bonus components
+        damage_bonus = []
+        for damage_data in data.get("damage_bonus", []):
+            damage_bonus.append(DamageComponent.from_dict(damage_data))
+        
+        trigger = OnLowHealthTrigger(
+            name=data["name"],
+            description=data.get("description", ""),
+            hp_threshold_percent=data.get("hp_threshold_percent", 0.25),
+            trigger_effects=trigger_effects,
+            damage_bonus=damage_bonus,
+            consumes_on_trigger=data.get("consumes_on_trigger", True),
+        )
+        
+        # Restore triggered state if loading from save
+        trigger.has_triggered = data.get("has_triggered", False)
+        
+        return trigger

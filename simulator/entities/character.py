@@ -79,6 +79,8 @@ class Character:
         }
         # Manages active effects on the character.
         self.effect_manager: EffectManager = EffectManager(self)
+        # Passive effects that are always active (like boss phase triggers)
+        self.passive_effects: list[Effect] = []
         # Keep track of abilitiies cooldown.
         self.cooldowns: dict[str, int] = {}
         # Keep track of the uses of abilities.
@@ -317,6 +319,40 @@ class Character:
             return False
         return self.turn_flags["standard_action_used"]
 
+    def check_passive_triggers(self) -> list[str]:
+        """
+        Checks all passive effects for trigger conditions and activates them.
+        Returns a list of activation messages for triggered effects.
+        
+        Returns:
+            list[str]: Messages for effects that were triggered this check.
+        """
+        activation_messages = []
+        
+        for effect in self.passive_effects:
+            # Check for OnLowHealthTrigger specifically
+            if effect.__class__.__name__ == 'OnLowHealthTrigger':
+                # Import here to avoid circular imports
+                from effects.effect import OnLowHealthTrigger
+                trigger_effect: OnLowHealthTrigger = effect  # type: ignore
+                
+                if trigger_effect.should_trigger(self):
+                    # Activate the trigger
+                    damage_bonuses, trigger_effects_with_levels = trigger_effect.activate(self)
+                    
+                    # Apply triggered effects to self
+                    for triggered_effect, mind_level in trigger_effects_with_levels:
+                        if triggered_effect.can_apply(self, self):
+                            self.effect_manager.add_effect(self, triggered_effect, mind_level)
+                    
+                    # Create activation message
+                    from core.constants import get_effect_color
+                    activation_messages.append(
+                        f"🔥 {self.name}'s [bold][{get_effect_color(effect)}]{effect.name}[/][/] activates!"
+                    )
+        
+        return activation_messages
+
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
         """
         Applies damage to the character, factoring in resistances and vulnerabilities.
@@ -337,6 +373,15 @@ class Character:
         adjusted = max(adjusted, 0)
         actual = min(adjusted, self.hp)
         self.hp = max(self.hp - adjusted, 0)
+        
+        # Check for passive triggers after taking damage (e.g., OnLowHealthTrigger)
+        if self.passive_effects and self.is_alive():
+            activation_messages = self.check_passive_triggers()
+            if activation_messages:
+                from core.utils import cprint
+                for msg in activation_messages:
+                    cprint(f"    {msg}")
+        
         return base, adjusted, actual
 
     def heal(self, amount: int) -> int:
@@ -847,6 +892,15 @@ class Character:
                 warning(f"Invalid spell '{spell_data}' for character {data['name']}.")
                 continue
             char.learn_spell(spell)
+
+        # Load passive effects (like boss phase triggers).
+        for effect_data in data.get("passive_effects", []):
+            try:
+                effect = Effect.from_dict(effect_data)
+                char.passive_effects.append(effect)
+            except Exception as e:
+                warning(f"Invalid passive effect for character {data['name']}: {e}")
+                continue
 
         return char
 
