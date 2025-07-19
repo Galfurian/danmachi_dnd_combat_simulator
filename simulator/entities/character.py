@@ -209,13 +209,14 @@ class Character:
             return not self.turn_flags["bonus_action_used"]
         return True
 
-    def get_available_natural_weapon_attacks(self) -> list[BaseAction]:
+    def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
         """Returns a list of natural weapon attacks available to the character.
 
         Returns:
-            list[BaseAction]: A list of natural weapon attacks.
+            list[NaturalAttack]: A list of natural weapon attacks.
         """
-        result: list[BaseAction] = []
+        from actions.attack_action import NaturalAttack
+        result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
         for weapon in self.natural_weapons:
             for attack in weapon.attacks:
@@ -223,12 +224,15 @@ class Character:
                     continue
                 if not self.has_action_type(attack.type):
                     continue
-                result.append(attack)
+                # Only include NaturalAttack instances
+                if isinstance(attack, NaturalAttack):
+                    result.append(attack)
         return result
 
-    def get_available_attacks(self) -> list[BaseAction]:
-        """Returns a list of attacks that the character can use this turn."""
-        result: list[BaseAction] = []
+    def get_available_weapon_attacks(self) -> list["WeaponAttack"]:
+        """Returns a list of weapon attacks that the character can use this turn."""
+        from actions.attack_action import WeaponAttack
+        result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
         for weapon in self.equipped_weapons:
             for attack in weapon.attacks:
@@ -236,7 +240,17 @@ class Character:
                     continue
                 if not self.has_action_type(attack.type):
                     continue
-                result.append(attack)
+                # Only include WeaponAttack instances
+                if isinstance(attack, WeaponAttack):
+                    result.append(attack)
+        return result
+
+    def get_available_attacks(self) -> list[BaseAction]:
+        """Returns a list of all attacks (weapon + natural) that the character can use this turn."""
+        result: list[BaseAction] = []
+        result.extend(self.get_available_weapon_attacks())
+        result.extend(self.get_available_natural_weapon_attacks())
+        return result
         return result
 
     def get_available_actions(self) -> list[BaseAction]:

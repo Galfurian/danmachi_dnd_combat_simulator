@@ -41,12 +41,16 @@ class Weapon:
         Returns:
             Weapon: An instance of Weapon.
         """
+        # Load attacks using the dynamic attack factory
+        attack_list = []
+        for action_data in data.get("attacks", []):
+            attack = from_dict_attack(action_data)
+            if attack is not None:
+                attack_list.append(attack)
+        
         return Weapon(
             name=data["name"],
             description=data["description"],
-            attacks=[
-                BaseAttack.from_dict(action_data)
-                for action_data in data.get("attacks", [])
-            ],
+            attacks=attack_list,
             hands_required=data.get("hands_required", 0),
         )

@@ -187,42 +187,58 @@ class CombatManager:
 
     def ask_for_player_full_attack(self) -> None:
         """Asks the player to choose targets for a full attack action."""
-        attacks_used: int = 0
-        # Iterate through each attack in the full attack.
-        while attacks_used < self.player.number_of_attacks and self.get_alive_opponents(
-            self.player
-        ):
-            # Get the list of all attacks available in the full attack.
-            attacks = self.player.get_available_attacks()
-            if not attacks:
-                warning("No available attacks for the full attack action.")
-                return
-            # Choose the next attack.
-            attack = self.ui.choose_action(attacks)
-            if attack is None or not isinstance(attack, BaseAttack):
-                warning("Invalid attack selected. Ending full attack.")
+        # Get the list of all attacks available in the full attack.
+        attacks = self.player.get_available_attacks()
+        if not attacks:
+            warning("No available attacks for the full attack action.")
+            return
+        
+        # Choose the attack type to use for all attacks in the sequence
+        attack = self.ui.choose_action(attacks)
+        if attack is None or not isinstance(attack, BaseAttack):
+            warning("Invalid attack selected. Ending full attack.")
+            return
+        
+        # Get the legal targets for the action.
+        valid_targets = self._get_legal_targets(self.player, attack)
+        if not valid_targets:
+            warning(f"No valid targets for {attack.name}.")
+            return
+        
+        # Choose the initial target
+        target = self.ui.choose_target(valid_targets, [])
+        if not isinstance(target, Character):
+            return
+        
+        # Show what's about to happen
+        cprint(f"    🗡️ Performing full attack with [bold blue]{attack.name}[/] ({self.player.number_of_attacks} attacks)")
+        
+        # Execute the full attack sequence using the same attack type
+        attacks_made = 0
+        for attack_num in range(self.player.number_of_attacks):
+            # Check if there are still valid opponents
+            if not self.get_alive_opponents(self.player):
                 break
-            # Get the legal targets for the action.
-            valid_targets = self._get_legal_targets(self.player, attack)
-            if not valid_targets:
-                warning(f"No valid targets for {attack.name}.")
-                continue
-            # Prepare the back option if this is not the first attack.
-            back_option = "q" if attacks_used > 0 else None
-            # Ask the player to choose a target.
-            target = self.ui.choose_target(valid_targets, [], back_option)
-            # If the player chose to go back, we stop asking for targets.
-            if isinstance(target, str) and target == "q":
-                return
-            # If the target is not valid, skip this attack.
-            if not isinstance(target, Character):
-                continue
-            # If this is the first attack, we allow to cancel the action.
-            attacks_used += 1
-            # Perform the attack on the target.
-            attack.execute(self.player, target)
-            # Add the attack to the cooldowns if it has one.
-            self.player.add_cooldown(attack, attack.cooldown)
+                
+            # If the current target is dead, ask for a new target
+            current_target = target
+            if not target.is_alive():
+                remaining_targets = self._get_legal_targets(self.player, attack)
+                if not remaining_targets:
+                    break
+                current_target = self.ui.choose_target(remaining_targets, [], f"Attack {attack_num + 1} target")
+                if not isinstance(current_target, Character):
+                    break
+                target = current_target
+            
+            # Perform the attack
+            attack.execute(self.player, current_target)
+            attacks_made += 1
+            
+            # Add cooldown only once for the attack type
+            if attack_num == 0:
+                self.player.add_cooldown(attack, attack.cooldown)
+        
         # Mark the action type as used.
         self.player.use_action_type(ActionType.STANDARD)
 
@@ -418,25 +434,37 @@ class CombatManager:
         base_attacks: list[BaseAttack] = get_actions_by_type(npc, BaseAttack)
         used_base_attack: bool = False
         if base_attacks:
-            for _ in range(npc.number_of_attacks):
-                result = choose_best_base_attack_action(npc, enemies, base_attacks)
-                if result:
-                    attack, target = result
-                    # Perform the attack on the target.
-                    attack.execute(npc, target)
-                    # Add the attack to the cooldowns if it has one.
-                    npc.add_cooldown(attack, attack.cooldown)
-                    # Mark the action type as used.
-                    npc.use_action_type(attack.type)
-                    # Mark that we used a base attack.
+            # Choose the best weapon type once for the full attack sequence
+            best_weapon = choose_best_weapon_for_situation(npc, base_attacks, enemies)
+            if best_weapon:
+                # Get initial target for this weapon
+                current_target = choose_best_target_for_weapon(npc, best_weapon, enemies)
+                
+                # Perform multiple attacks with the same weapon type
+                for attack_num in range(npc.number_of_attacks):
+                    # If current target is dead, find a new one
+                    if not current_target or not current_target.is_alive():
+                        current_target = choose_best_target_for_weapon(npc, best_weapon, enemies)
+                        if not current_target:
+                            # No more valid targets
+                            break
+                    
+                    # Perform the attack
+                    best_weapon.execute(npc, current_target)
                     used_base_attack = True
+                
+                # Add cooldown and mark action type only once after all attacks
+                if used_base_attack:
+                    npc.add_cooldown(best_weapon, best_weapon.cooldown)
+                    npc.use_action_type(best_weapon.type)
 
         # Check for natural attacks.
         if not used_base_attack:
+            # Natural attacks are designed as a sequence - perform each different attack once
             for attack in get_natural_attacks(npc):
                 result = choose_best_base_attack_action(npc, enemies, [attack])
                 if result:
-                    attack, target = result
+                    _, target = result
                     # Perform the natural attack on the target.
                     attack.execute(npc, target)
                     # Add the attack to the cooldowns if it has one.

@@ -200,7 +200,9 @@ class ContentRepository(metaclass=Singleton):
         attacks: dict[str, BaseAttack] = {}
         # Load base attacks.
         for attack_data in data:
-            base_attack = BaseAttack.from_dict(attack_data)
+            base_attack = from_dict_attack(attack_data)
+            if base_attack is None:
+                continue  # Skip invalid attacks
             if base_attack.name in attacks:
                 raise ValueError(f"Duplicate attack name: {base_attack.name}")
             attacks[base_attack.name] = base_attack

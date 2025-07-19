@@ -20,12 +20,12 @@ class Spell(BaseAction):
         level: int,
         mind_cost: list[int],
         category: ActionCategory,
-        multi_target_expr: str = "",
+        target_expr: str = "",
     ):
         super().__init__(name, type, category, description, cooldown, maximum_uses)
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
-        self.multi_target_expr: str = multi_target_expr
+        self.target_expr: str = target_expr
 
     def is_single_target(self) -> bool:
         """Check if the spell is single-target.
@@ -33,7 +33,7 @@ class Spell(BaseAction):
         Returns:
             bool: True if single-target, False otherwise.
         """
-        return not self.multi_target_expr or self.multi_target_expr.strip() == ""
+        return not self.target_expr or self.target_expr.strip() == ""
 
     def target_count(self, actor: Any, mind_level: int) -> int:
         """Returns the number of targets this ability can affect.
@@ -45,11 +45,11 @@ class Spell(BaseAction):
         Returns:
             int: The number of targets this ability can affect.
         """
-        if self.multi_target_expr:
+        if self.target_expr:
             variables = actor.get_expression_variables()
             variables["MIND"] = mind_level
             # Evaluate the multi-target expression to get the number of targets.
-            return evaluate_expression(self.multi_target_expr, variables)
+            return evaluate_expression(self.target_expr, variables)
         return 1
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -85,8 +85,8 @@ class Spell(BaseAction):
         data["level"] = self.level
         data["mind_cost"] = self.mind_cost
         # Include the multi-target expression if it exists.
-        if self.multi_target_expr:
-            data["multi_target_expr"] = self.multi_target_expr
+        if self.target_expr:
+            data["target_expr"] = self.target_expr
         return data
 
 
@@ -102,7 +102,7 @@ class SpellAttack(Spell):
         mind_cost: list[int],
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
-        multi_target_expr: str = "",
+        target_expr: str = "",
     ):
         super().__init__(
             name,
@@ -113,7 +113,7 @@ class SpellAttack(Spell):
             level,
             mind_cost,
             ActionCategory.OFFENSIVE,
-            multi_target_expr,
+            target_expr,
         )
         self.damage: list[DamageComponent] = damage
         self.effect: Optional[Effect] = effect
@@ -319,7 +319,7 @@ class SpellAttack(Spell):
                 DamageComponent.from_dict(component) for component in data["damage"]
             ],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            multi_target_expr=data.get("multi_target_expr", ""),
+            target_expr=data.get("target_expr", ""),
         )
 
 
@@ -335,7 +335,7 @@ class SpellHeal(Spell):
         mind_cost: list[int],
         heal_roll: str,
         effect: Optional[Effect] = None,
-        multi_target_expr: str = "",
+        target_expr: str = "",
     ):
         super().__init__(
             name,
@@ -346,7 +346,7 @@ class SpellHeal(Spell):
             level,
             mind_cost,
             ActionCategory.HEALING,
-            multi_target_expr,
+            target_expr,
         )
         self.heal_roll: str = heal_roll
         self.effect: Optional[Effect] = effect
@@ -494,7 +494,7 @@ class SpellHeal(Spell):
             mind_cost=data["mind_cost"],
             heal_roll=data["heal_roll"],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            multi_target_expr=data.get("multi_target_expr", ""),
+            target_expr=data.get("target_expr", ""),
         )
 
 
@@ -509,7 +509,7 @@ class SpellBuff(Spell):
         level: int,
         mind_cost: list[int],
         effect: Buff,
-        multi_target_expr: str = "",
+        target_expr: str = "",
     ):
         super().__init__(
             name,
@@ -520,7 +520,7 @@ class SpellBuff(Spell):
             level,
             mind_cost,
             ActionCategory.BUFF,
-            multi_target_expr,
+            target_expr,
         )
         self.effect: Buff = effect
         # Ensure the effect is provided.
@@ -605,7 +605,7 @@ class SpellBuff(Spell):
                 # If the value is a string, substitute variables directly.
                 expressions[bonus_type] = substitute_variables(value, variables)
             else:
-                expressions[bonus_type] = value
+                expressions[bonus_type] = str(value)
         return expressions
 
     def to_dict(self):
@@ -633,7 +633,7 @@ class SpellBuff(Spell):
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Buff.from_dict(data["effect"]),
-            multi_target_expr=data.get("multi_target_expr", ""),
+            target_expr=data.get("target_expr", ""),
         )
 
 
@@ -648,7 +648,7 @@ class SpellDebuff(Spell):
         level: int,
         mind_cost: list[int],
         effect: Debuff,
-        multi_target_expr: str = "",
+        target_expr: str = "",
     ):
         super().__init__(
             name,
@@ -659,7 +659,7 @@ class SpellDebuff(Spell):
             level,
             mind_cost,
             ActionCategory.DEBUFF,
-            multi_target_expr,
+            target_expr,
         )
         self.effect: Debuff = effect
         # Ensure the effect is provided.
@@ -737,8 +737,9 @@ class SpellDebuff(Spell):
         expressions: dict[BonusType, str] = {}
         for modifier in self.effect.modifiers:
             bonus_type = modifier.bonus_type
-            expr = modifier.value
-            expressions[bonus_type] = substitute_variables(expr, variables)
+            expressions[bonus_type] = substitute_variables(
+                str(modifier.value), variables
+            )
         return expressions
 
     def to_dict(self):
@@ -766,7 +767,7 @@ class SpellDebuff(Spell):
             level=data["level"],
             mind_cost=data["mind_cost"],
             effect=Debuff.from_dict(data["effect"]),
-            multi_target_expr=data.get("multi_target_expr", ""),
+            target_expr=data.get("target_expr", ""),
         )
 
 

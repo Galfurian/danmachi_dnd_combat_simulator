@@ -12,7 +12,7 @@
             6,
             8
         ],
-        "multi_target_expr": "3",
+        "target_expr": "3",
         "damage": [
             {
                 "damage_roll": "[MIND]D6",
@@ -41,7 +41,7 @@
             4,
             6
         ],
-        "multi_target_expr": "2",
+        "target_expr": "2",
         "damage": [
             {
                 "damage_roll": "[MIND]D6",

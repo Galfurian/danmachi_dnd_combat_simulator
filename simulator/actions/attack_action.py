@@ -222,29 +222,92 @@ class BaseAttack(BaseAction):
         )
 
 
-class WeaponAttack(BaseAction):
-    """A special attack that allows the player to use their weapon."""
-
-    def __init__(self, weapon: Any, attack: BaseAttack):
+class WeaponAttack(BaseAttack):
+    """A weapon-based attack that can be equipped and unequipped."""
+    
+    def __init__(
+        self,
+        name: str,
+        type: ActionType,
+        description: str,
+        cooldown: int,
+        maximum_uses: int,
+        hands_required: int,
+        attack_roll: str,
+        damage: list[DamageComponent],
+        effect: Optional[Effect] = None,
+    ):
         super().__init__(
-            name=weapon.name + " - " + attack.name,
-            type=ActionType.STANDARD,
-            category=ActionCategory.OFFENSIVE,
-            description=f"Attack with {weapon.name}.",
+            name, type, description, cooldown, maximum_uses, 
+            hands_required, attack_roll, damage, effect
         )
-        self.weapon = weapon
-        self.attack = attack
+    
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "WeaponAttack":
+        """Creates a WeaponAttack instance from a dictionary."""
+        return WeaponAttack(
+            name=data["name"],
+            type=ActionType[data["type"]],
+            description=data.get("description", ""),
+            cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
+            hands_required=data.get("hands_required", 0),
+            attack_roll=data["attack_roll"],
+            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
+            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
+        )
 
 
-def from_dict_attack(data: dict[str, Any]) -> Optional[BaseAction]:
+class NaturalAttack(BaseAttack):
+    """A natural/innate attack that is part of a creature's biology."""
+    
+    def __init__(
+        self,
+        name: str,
+        type: ActionType,
+        description: str,
+        cooldown: int,
+        maximum_uses: int,
+        attack_roll: str,
+        damage: list[DamageComponent],
+        effect: Optional[Effect] = None,
+    ):
+        super().__init__(
+            name, type, description, cooldown, maximum_uses, 
+            0,  # Natural attacks don't require hands
+            attack_roll, damage, effect
+        )
+    
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "NaturalAttack":
+        """Creates a NaturalAttack instance from a dictionary."""
+        return NaturalAttack(
+            name=data["name"],
+            type=ActionType[data["type"]],
+            description=data.get("description", ""),
+            cooldown=data.get("cooldown", 0),
+            maximum_uses=data.get("maximum_uses", -1),
+            attack_roll=data["attack_roll"],
+            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
+            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
+        )
+
+
+def from_dict_attack(data: dict[str, Any]) -> Optional[BaseAttack]:
     """
-    Creates a BaseAction instance from a dictionary.
+    Creates a BaseAttack instance from a dictionary.
     Args:
         data (dict): Dictionary containing the action data.
-        base_attacks (dict): Dictionary mapping attack names to BaseAttack instances.
     Returns:
-        BaseAction: An instance of BaseAction or its subclass.
+        BaseAttack: An instance of BaseAttack or its subclass.
     """
-    if data.get("class") == "BaseAttack":
+    attack_class = data.get("class", "BaseAttack")
+    
+    if attack_class == "WeaponAttack":
+        return WeaponAttack.from_dict(data)
+    elif attack_class == "NaturalAttack":
+        return NaturalAttack.from_dict(data)
+    elif attack_class == "BaseAttack":
         return BaseAttack.from_dict(data)
+    
     return None

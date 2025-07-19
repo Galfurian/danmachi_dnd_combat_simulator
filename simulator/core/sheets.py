@@ -13,6 +13,7 @@ def damage_to_string(damage: DamageComponent):
     damage_color = get_damage_type_color(damage.damage_type)
     return f"[{damage_color}]{damage.damage_roll} {damage.damage_type.name.lower()}[/]"
 
+
 def modifier_to_string(modifier: Modifier):
     """Converts a Modifier to a formatted string representation."""
     if isinstance(modifier.value, DamageComponent):
@@ -22,6 +23,7 @@ def modifier_to_string(modifier: Modifier):
     else:
         return f"[green]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
 
+
 def print_effect_sheet(effect: Effect, padding: int = 2):
     """Prints the details of an effect in a formatted way."""
     sheet: str = f"[blue]{effect.name}[/], "
@@ -30,10 +32,14 @@ def print_effect_sheet(effect: Effect, padding: int = 2):
     if effect.max_duration:
         sheet += f"{effect.max_duration} turns, "
     if isinstance(effect, Buff):
-        modifiers_str = ", ".join([modifier_to_string(modifier) for modifier in effect.modifiers])
+        modifiers_str = ", ".join(
+            [modifier_to_string(modifier) for modifier in effect.modifiers]
+        )
         sheet += f"[green]{modifiers_str}[/]"
     elif isinstance(effect, Debuff):
-        modifiers_str = ", ".join([modifier_to_string(modifier) for modifier in effect.modifiers])
+        modifiers_str = ", ".join(
+            [modifier_to_string(modifier) for modifier in effect.modifiers]
+        )
         sheet += f"[red]{modifiers_str}[/]"
     elif isinstance(effect, HoT):
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
@@ -46,7 +52,9 @@ def print_base_attack_sheet(attack: BaseAttack, padding: int = 2):
     """Prints the details of a base attack in a formatted way."""
     sheet = f"[green]{attack.name}[/], "
     sheet += f"roll: [blue]1D20+{attack.attack_roll}[/], "
-    sheet += f"damage: {', '.join([damage_to_string(damage) for damage in attack.damage])}"
+    sheet += (
+        f"damage: {', '.join([damage_to_string(damage) for damage in attack.damage])}"
+    )
     if attack.effect:
         print_effect_sheet(attack.effect, padding + 2)
     cprint(Padding(sheet, (0, padding)))
@@ -90,9 +98,11 @@ def print_spell_sheet(spell: Spell, padding: int = 2):
     sheet = f"[italic]{spell.description}[/]"
     cprint(Padding(sheet, (0, padding)))
     if isinstance(spell, SpellAttack):
-        sheet = f"Deals {', '.join([damage_to_string(damage) for damage in spell.damage])}"
+        sheet = (
+            f"Deals {', '.join([damage_to_string(damage) for damage in spell.damage])}"
+        )
         cprint(Padding(sheet, (0, padding)))
-    if spell.effect:
+    if hasattr(spell, "effect") and spell.effect:
         cprint(Padding("Applies:", (0, padding)))
         padding += 2
         print_effect_sheet(spell.effect, padding)
@@ -151,10 +161,17 @@ def print_character_sheet(char: Character):
     if char.resistances:
         cprint(
             f"  Resistances: "
-            ", ".join([f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances])
+            + ", ".join(
+                [f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances]
+            )
         )
     if char.vulnerabilities:
         cprint(
             f"  Vulnerabilities: "
-            ", ".join([f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities])
+            + ", ".join(
+                [
+                    f"[{get_damage_type_color(v)}]{v.name}[/]"
+                    for v in char.vulnerabilities
+                ]
+            )
         )

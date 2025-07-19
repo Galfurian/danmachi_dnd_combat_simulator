@@ -36,7 +36,7 @@
             2,
             3
         ],
-        "multi_target_expr": "1+[MIND]",
+        "target_expr": "1+[MIND]",
         "effect": {
             "type": "Buff",
             "name": "Bless",
@@ -168,7 +168,7 @@
             4,
             6
         ],
-        "multi_target_expr": "4",
+        "target_expr": "4",
         "damage": [
             {
                 "damage_type": "LIGHTNING",

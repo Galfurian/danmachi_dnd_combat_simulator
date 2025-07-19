@@ -330,7 +330,7 @@ class PlayerInterface:
             variables["MIND"] = mind_level
 
             # Get the maximum number of targets if applicable.
-            max_targets = evaluate_expression(spell.multi_target_expr, variables)
+            max_targets = evaluate_expression(spell.target_expr, variables)
 
             prompt += f"    {mind_level} Mind → "
 

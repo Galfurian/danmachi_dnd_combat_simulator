@@ -70,6 +70,93 @@ def _sort_for_spell_debuff(
 
 
 # =============================================================================
+# Improved AI Functions - Split Weapon and Target Selection
+# =============================================================================
+
+def choose_best_weapon_for_situation(
+    npc: Character, 
+    weapons: list["WeaponAttack"], 
+    enemies: list[Character]
+) -> Optional["WeaponAttack"]:
+    """
+    Choose the best weapon type based on overall battlefield effectiveness.
+    This separates weapon selection from target selection for better performance.
+    """
+    if not weapons or not enemies:
+        return None
+    
+    best_weapon = None
+    best_score = -1
+    
+    for weapon in weapons:
+        # Skip if weapon is on cooldown
+        if npc.is_on_cooldown(weapon):
+            continue
+            
+        # Calculate weapon effectiveness against all available targets
+        total_score = 0
+        valid_target_count = 0
+        
+        for target in enemies:
+            # Skip dead targets
+            if not target.is_alive():
+                continue
+                
+            valid_target_count += 1
+            
+            # Effect score
+            effect_score = 0
+            if weapon.effect and target.effect_manager.can_add_effect(weapon.effect, target, 0):
+                effect_score = 10
+            
+            # Damage potential score
+            damage_score = len(weapon.damage) * 2
+            
+            # Weapon versatility score
+            target_score = effect_score + damage_score
+            total_score += target_score
+        
+        if valid_target_count > 0:
+            # Average effectiveness across all targets
+            avg_score = total_score / valid_target_count
+            if avg_score > best_score:
+                best_score = avg_score
+                best_weapon = weapon
+    
+    return best_weapon
+
+def choose_best_target_for_weapon(
+    npc: Character, 
+    weapon: "WeaponAttack", 
+    enemies: list[Character]
+) -> Optional[Character]:
+    """
+    Choose the best target for a specific weapon.
+    This is much faster than re-evaluating all weapon-target combinations.
+    """
+    if not weapon or not enemies:
+        return None
+    
+    # Use existing sorting logic but only for this weapon
+    sorted_targets = _sort_for_base_attack(npc, weapon, enemies)
+    
+    # Find the first alive target
+    for target in sorted_targets:
+        if target.is_alive():
+            return target
+    
+    return None
+
+def get_weapon_attacks(npc: Character) -> list["WeaponAttack"]:
+    """Get available weapon attacks for a character."""
+    return npc.get_available_weapon_attacks()
+
+def get_natural_attacks(npc: Character) -> list["NaturalAttack"]:
+    """Get available natural attacks for a character.""" 
+    return npc.get_available_natural_weapon_attacks()
+
+
+# =============================================================================
 # Public API
 # =============================================================================
 
@@ -80,10 +167,6 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
         + npc.get_available_actions()
         + npc.get_available_spells()
     )
-
-
-def get_natural_attacks(npc: Character) -> list[BaseAttack]:
-    return npc.get_available_natural_weapon_attacks()
 
 
 def get_actions_by_type(npc: Character, action_type: type) -> list:

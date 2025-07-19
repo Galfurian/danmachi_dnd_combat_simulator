@@ -6,6 +6,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Thrust",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -17,6 +18,7 @@
                 ]
             },
             {
+                "class": "WeaponAttack",
                 "name": "Slash",
                 "type": "STANDARD",
                 "attack_roll": "[DEX]",
@@ -36,6 +38,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Thrust",
                 "type": "STANDARD",
                 "attack_roll": "[STR] + 1",
@@ -47,6 +50,7 @@
                 ]
             },
             {
+                "class": "WeaponAttack",
                 "name": "Slash",
                 "type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
@@ -66,6 +70,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Thrust",
                 "type": "STANDARD",
                 "attack_roll": "[DEX]",
@@ -77,6 +82,7 @@
                 ]
             },
             {
+                "class": "WeaponAttack",
                 "name": "Slash",
                 "type": "STANDARD",
                 "attack_roll": "[DEX]",
@@ -96,6 +102,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Thrust",
                 "type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
@@ -107,6 +114,7 @@
                 ]
             },
             {
+                "class": "WeaponAttack",
                 "name": "Slash",
                 "type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
@@ -126,6 +134,7 @@
         "hands_required": 2,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Cleave",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -145,6 +154,7 @@
         "hands_required": 2,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Smash",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -164,6 +174,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Stab",
                 "type": "STANDARD",
                 "attack_roll": "[DEX]",
@@ -183,6 +194,7 @@
         "hands_required": 2,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Chop",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -202,6 +214,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Pierce",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -221,6 +234,7 @@
         "hands_required": 1,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Smash",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -240,6 +254,7 @@
         "hands_required": 2,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Crush",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
@@ -259,6 +274,7 @@
         "hands_required": 2,
         "attacks": [
             {
+                "class": "WeaponAttack",
                 "name": "Slash",
                 "type": "STANDARD",
                 "attack_roll": "[STR]",
