@@ -5,6 +5,7 @@ from logging import debug, warning
 from typing import Any, Optional, Callable
 from rich.console import Console
 from rich.rule import Rule
+from core.error_handling import log_error, log_warning
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
@@ -44,7 +45,7 @@ class Singleton(type):
 
 def _safe_eval(arith_expr: str) -> str:
     """Safely evaluates a simple arithmetic expression.
-    
+
     DEPRECATED: This function uses eval() which is unsafe.
     Use DiceParser from core.dice_parser instead.
 
@@ -55,19 +56,21 @@ def _safe_eval(arith_expr: str) -> str:
         str: The result of the evaluation or the original expression if an error occurs.
     """
     # TODO: Replace with DiceParser.parse_dice()
-    from core.error_handling import error_handler, ErrorSeverity
-    
+    from core.error_handling import log_error, log_warning
+
     def _unsafe_eval():
         # Only allow safe arithmetic evaluation
         return str(eval(arith_expr, {"__builtins__": None}, {}))
-    
-    return error_handler.safe_execute(
-        _unsafe_eval,
-        arith_expr,  # Return original on error
-        f"Failed to evaluate expression: {arith_expr}",
-        ErrorSeverity.MEDIUM,
-        {"expression": arith_expr}
-    )
+
+    try:
+        return _unsafe_eval()
+    except Exception as e:
+        log_warning(
+            f"Failed to evaluate expression: {arith_expr}",
+            {"expression": arith_expr},
+            e,
+        )
+        return arith_expr  # Return original on error
 
 
 # ---- Stat Modifier ----
@@ -86,59 +89,53 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
     Returns:
         str: The expression with variables substituted.
     """
-    from core.error_handling import error_handler, ErrorSeverity, GameError
-    
+    from core.error_handling import log_error, log_warning
+
     if not expr:
-        error_handler.handle_error(GameError(
+        log_warning(
             "Empty expression provided to substitute_variables",
-            ErrorSeverity.LOW,
-            {"expression": expr, "variables": variables}
-        ))
+            {"expression": expr, "variables": variables},
+        )
         return ""
-        
+
     if not isinstance(expr, str):
-        error_handler.handle_error(GameError(
+        log_warning(
             f"Expression must be a string, got {type(expr).__name__}",
-            ErrorSeverity.MEDIUM,
-            {"expression": expr, "type": type(expr).__name__}
-        ))
+            {"expression": expr, "type": type(expr).__name__},
+        )
         return str(expr) if expr is not None else ""
-    
+
     expr = expr.upper().strip()
     if expr == "":
         return ""
     if expr.isdigit():
         return str(expr)
-    
+
     # Replace [MIND] with the mind value.
     try:
         for key, value in variables.items() if variables else {}:
             if not isinstance(key, str):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Variable key must be string, got {type(key).__name__}",
-                    ErrorSeverity.MEDIUM,
-                    {"key": key, "value": value}
-                ))
+                    {"key": key, "value": value},
+                )
                 continue
-                
+
             if not isinstance(value, (int, float)):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Variable value must be numeric, got {type(value).__name__}",
-                    ErrorSeverity.MEDIUM,
-                    {"key": key, "value": value}
-                ))
+                    {"key": key, "value": value},
+                )
                 continue
-                
+
             if key.upper() in expr:
                 expr = expr.replace(f"[{key.upper()}]", str(int(value)))
     except Exception as e:
-        error_handler.handle_error(GameError(
+        log_error(
             f"Error during variable substitution: {str(e)}",
-            ErrorSeverity.HIGH,
             {"expression": expr, "variables": variables},
-            e
-        ))
-    
+            e,
+        )
     return expr
 
 
@@ -170,24 +167,17 @@ def _parse_term_and_process_dice(
     Returns:
         tuple[int, list[int]]: The total and individual processed rolls.
     """
-    from core.error_handling import error_handler, ErrorSeverity, GameError
-    
     if not term:
-        error_handler.handle_error(GameError(
-            "Empty dice term provided",
-            ErrorSeverity.LOW,
-            {"term": term}
-        ))
+        log_error("Empty dice term provided", {"term": term})
         return 0, []
-        
+
     if not isinstance(term, str):
-        error_handler.handle_error(GameError(
+        log_error(
             f"Dice term must be string, got {type(term).__name__}",
-            ErrorSeverity.MEDIUM,
-            {"term": term}
-        ))
+            {"term": term},
+        )
         return 0, []
-        
+
     term = term.upper().strip()
     if term == "":
         return 0, []
@@ -195,87 +185,78 @@ def _parse_term_and_process_dice(
         try:
             value = int(term)
             if value < 0:
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Negative dice value not allowed: {value}",
-                    ErrorSeverity.MEDIUM,
-                    {"term": term, "value": value}
-                ))
+                    {"term": term, "value": value},
+                )
                 return 0, []
             return value, [value]
         except ValueError as e:
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Invalid numeric dice term: {term}",
-                ErrorSeverity.MEDIUM,
                 {"term": term},
-                e
-            ))
+                e,
+            )
             return 0, []
-            
+
     match = DICE_PATTERN.match(term)
     if not match:
-        error_handler.handle_error(GameError(
+        log_error(
             f"Invalid dice string format: '{term}'",
-            ErrorSeverity.MEDIUM,
-            {"term": term}
-        ))
+            {"term": term},
+        )
         return 0, []
 
     try:
         num_str, sides_str = match.groups()
         num = int(num_str) if num_str else 1
         sides = int(sides_str)
-        
+
         # Validate dice parameters
         if num <= 0:
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Number of dice must be positive, got {num}",
-                ErrorSeverity.MEDIUM,
-                {"term": term, "num": num, "sides": sides}
-            ))
+                {"term": term, "num": num, "sides": sides},
+            )
             return 0, []
-            
+
         if sides <= 0:
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Number of sides must be positive, got {sides}",
-                ErrorSeverity.MEDIUM,
-                {"term": term, "num": num, "sides": sides}
-            ))
+                {"term": term, "num": num, "sides": sides},
+            )
             return 0, []
-            
+
         if num > 100:  # Reasonable limit
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Too many dice requested: {num} (limit: 100)",
-                ErrorSeverity.HIGH,
-                {"term": term, "num": num, "sides": sides}
-            ))
+                {"term": term, "num": num, "sides": sides},
+            )
             return 0, []
-            
+
         if sides > 1000:  # Reasonable limit
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Too many sides on dice: {sides} (limit: 1000)",
-                ErrorSeverity.HIGH,
-                {"term": term, "num": num, "sides": sides}
-            ))
+                {"term": term, "num": num, "sides": sides},
+            )
             return 0, []
 
         rolls = dice_action(num, sides)
         return sum(rolls), rolls
-        
+
     except ValueError as e:
-        error_handler.handle_error(GameError(
+        log_error(
             f"Error parsing dice values from '{term}': {str(e)}",
-            ErrorSeverity.HIGH,
             {"term": term},
-            e
-        ))
+            e,
+        )
         return 0, []
     except Exception as e:
-        error_handler.handle_error(GameError(
+        log_error(
             f"Unexpected error processing dice '{term}': {str(e)}",
-            ErrorSeverity.HIGH,
             {"term": term},
-            e
-        ))
+            e,
+        )
         return 0, []
 
 

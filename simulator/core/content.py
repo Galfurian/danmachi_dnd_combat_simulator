@@ -19,12 +19,11 @@ from actions.spell_action import (
     from_dict_spell,
 )
 from core.utils import Singleton, cprint, crule
-from core.error_handling import error_handler, ErrorSeverity, GameError
-from effects.effect import Buff, Debuff, Effect
 from entities.character_class import CharacterClass
 from entities.character_race import CharacterRace
 from items.armor import Armor
 from items.weapon import Weapon
+from core.error_handling import log_critical, log_error
 
 
 class ContentRepository(metaclass=Singleton):
@@ -61,77 +60,75 @@ class ContentRepository(metaclass=Singleton):
             """Helper to load and validate JSON files"""
             try:
                 cprint(f"Loading {description}...")
-                
+
                 # Validate file path
                 file_path = root / filename
                 if not file_path.exists():
-                    error_handler.handle_error(GameError(
+                    log_error(
                         f"Data file not found: {filename}",
-                        ErrorSeverity.CRITICAL,
-                        {"filename": filename, "path": str(file_path)}
-                    ))
+                        {"filename": filename, "path": str(file_path)},
+                    )
                     raise FileNotFoundError(f"File not found: {file_path}")
-                
+
                 if not file_path.is_file():
-                    error_handler.handle_error(GameError(
+                    log_error(
                         f"Path is not a file: {filename}",
-                        ErrorSeverity.CRITICAL,
-                        {"filename": filename, "path": str(file_path)}
-                    ))
+                        {"filename": filename, "path": str(file_path)},
+                    )
                     raise ValueError(f"Not a file: {file_path}")
-                
+
                 # Load and validate JSON
-                with open(file_path, "r", encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    
+
                 if not isinstance(data, list):
-                    error_handler.handle_error(GameError(
+                    log_error(
                         f"Expected a list in {filename}, got {type(data).__name__}",
-                        ErrorSeverity.CRITICAL,
-                        {"filename": filename, "data_type": type(data).__name__}
-                    ))
-                    raise ValueError(f"Expected a list in {file_path}, got {type(data).__name__}")
-                
+                        {"filename": filename, "data_type": type(data).__name__},
+                    )
+                    raise ValueError(
+                        f"Expected a list in {file_path}, got {type(data).__name__}"
+                    )
+
                 if not data:
-                    error_handler.handle_error(GameError(
-                        f"Empty data list in {filename}",
-                        ErrorSeverity.MEDIUM,
-                        {"filename": filename}
-                    ))
-                    
+                    log_error(f"Empty data list in {filename}", {"filename": filename})
                 return loader_func(data)
-                
+
             except json.JSONDecodeError as e:
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Invalid JSON in {filename}: {str(e)}",
-                    ErrorSeverity.CRITICAL,
                     {"filename": filename, "error": str(e)},
-                    e
-                ))
+                    e,
+                )
                 raise ValueError(f"Invalid JSON in {filename}: {e}")
-                
+
             except Exception as e:
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Error loading {filename}: {str(e)}",
-                    ErrorSeverity.CRITICAL,
                     {"filename": filename, "description": description},
-                    e
-                ))
+                    e,
+                )
                 raise
 
         try:
             # Load all content using the helper
             self.classes = load_json_file(
-                "character_classes.json", self._load_character_classes, "character classes"
+                "character_classes.json",
+                self._load_character_classes,
+                "character classes",
             )
             self.races = load_json_file(
                 "character_races.json", self._load_character_races, "character races"
             )
 
             # Load weapons (special case - two files)
-            self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "natural weapons")
+            self.weapons = load_json_file(
+                "weapons_natural.json", self._load_weapons, "natural weapons"
+            )
             self.weapons.update(
-                load_json_file("weapons_wielded.json", self._load_weapons, "wielded weapons")
+                load_json_file(
+                    "weapons_wielded.json", self._load_weapons, "wielded weapons"
+                )
             )
 
             self.armors = load_json_file("armors.json", self._load_armors, "armors")
@@ -139,14 +136,12 @@ class ContentRepository(metaclass=Singleton):
             self.actions = load_json_file("actions.json", self._load_actions, "actions")
 
             cprint("Content loaded successfully!\n")
-            
+
         except Exception as e:
-            error_handler.handle_error(GameError(
+            log_critical(
                 f"Critical error during content loading: {str(e)}",
-                ErrorSeverity.CRITICAL,
-                {"root_path": str(root)},
-                e
-            ))
+                {"root_path": str(root), "error": str(e)},
+            )
             raise
 
     def _get_from_collection(
@@ -261,6 +256,7 @@ class ContentRepository(metaclass=Singleton):
                 action = from_dict_spell(action_data)
                 if not action:
                     from actions.ability_action import from_dict_ability
+
                     action = from_dict_ability(action_data)
                     if not action:
                         raise ValueError(f"Invalid action data: {action_data}")

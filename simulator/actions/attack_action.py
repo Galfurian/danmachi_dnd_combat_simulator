@@ -6,7 +6,7 @@ from core.constants import (
     ActionCategory, ActionType, BonusType, GLOBAL_VERBOSE_LEVEL,
     apply_character_type_color, get_effect_color, is_oponent
 )
-from core.error_handling import GameError, ErrorSeverity, error_handler
+from core.error_handling import log_error, log_warning, log_critical
 from core.utils import (
     debug, parse_expr_and_assume_max_roll, parse_expr_and_assume_min_roll, 
     substitute_variables, cprint
@@ -35,47 +35,42 @@ class BaseAttack(BaseAction):
             
             # Validate hands_required
             if not isinstance(hands_required, int) or hands_required < 0:
-                error_handler.handle_error(GameError(
+                log_warning(
                     f"Attack {name} hands_required must be non-negative integer, got: {hands_required}",
-                    ErrorSeverity.MEDIUM,
                     {"name": name, "hands_required": hands_required}
-                ))
+                )
                 hands_required = max(0, int(hands_required) if isinstance(hands_required, (int, float)) else 0)
             
             # Validate attack_roll
             if not isinstance(attack_roll, str):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Attack {name} attack_roll must be string, got: {attack_roll.__class__.__name__}",
-                    ErrorSeverity.HIGH,
                     {"name": name, "attack_roll": attack_roll}
-                ))
+                )
                 attack_roll = str(attack_roll) if attack_roll is not None else ""
             
             # Validate damage list
             if not isinstance(damage, list):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Attack {name} damage must be list, got: {damage.__class__.__name__}",
-                    ErrorSeverity.HIGH,
                     {"name": name, "damage": damage}
-                ))
+                )
                 damage = []
             else:
                 # Validate each damage component
                 for i, dmg_comp in enumerate(damage):
                     if not isinstance(dmg_comp, DamageComponent):
-                        error_handler.handle_error(GameError(
+                        log_error(
                             f"Attack {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
-                            ErrorSeverity.HIGH,
                             {"name": name, "damage_index": i, "damage_component": dmg_comp}
-                        ))
+                        )
             
             # Validate effect
             if effect is not None and not isinstance(effect, Effect):
-                error_handler.handle_error(GameError(
+                log_warning(
                     f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}",
-                    ErrorSeverity.MEDIUM,
                     {"name": name, "effect": effect}
-                ))
+                )
                 effect = None
             
             self.hands_required: int = hands_required
@@ -84,47 +79,43 @@ class BaseAttack(BaseAction):
             self.effect: Optional[Effect] = effect
             
         except Exception as e:
-            error_handler.handle_error(GameError(
+            log_critical(
                 f"Error initializing BaseAttack {name}: {str(e)}",
-                ErrorSeverity.CRITICAL,
-                {"name": name, "error": str(e)}
-            ))
+                {"name": name, "error": str(e)},
+                e
+            )
             raise
 
     def execute(self, actor: Any, target: Any) -> bool:
         try:
             # Validate inputs
             if not actor:
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Cannot execute {self.name}: actor is None",
-                    ErrorSeverity.HIGH,
                     {"action": self.name}
-                ))
+                )
                 return False
                 
             if not target:
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Cannot execute {self.name}: target is None",
-                    ErrorSeverity.HIGH,
                     {"action": self.name, "actor": getattr(actor, 'name', 'Unknown')}
-                ))
+                )
                 return False
             
             # Validate required attributes
             if not hasattr(actor, 'name') or not hasattr(actor, 'type'):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Actor missing required attributes for {self.name}",
-                    ErrorSeverity.HIGH,
                     {"action": self.name, "actor": actor}
-                ))
+                )
                 return False
                 
             if not hasattr(target, 'name') or not hasattr(target, 'type'):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Target missing required attributes for {self.name}",
-                    ErrorSeverity.HIGH,
                     {"action": self.name, "target": target}
-                ))
+                )
                 return False
             
             actor_str = apply_character_type_color(actor.type, actor.name)
@@ -134,30 +125,27 @@ class BaseAttack(BaseAction):
 
             # Check cooldown
             if not hasattr(actor, 'is_on_cooldown'):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Actor lacks is_on_cooldown method for {self.name}",
-                    ErrorSeverity.HIGH,
                     {"action": self.name, "actor": actor.name}
-                ))
+                )
                 return False
                 
             if actor.is_on_cooldown(self):
-                error_handler.handle_error(GameError(
+                log_warning(
                     f"Action {self.name} is on cooldown",
-                    ErrorSeverity.MEDIUM,
                     {"action": self.name, "actor": actor.name}
-                ))
+                )
                 return False
 
             # --- Build & resolve attack roll ---
 
             # Get attack modifier from the actor's effect manager.
             if not hasattr(actor, 'effect_manager'):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Actor lacks effect_manager for {self.name}",
-                    ErrorSeverity.HIGH,
                     {"action": self.name, "actor": actor.name}
-                ))
+                )
                 return False
                 
             attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
@@ -256,12 +244,12 @@ class BaseAttack(BaseAction):
             return True
             
         except Exception as e:
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Error executing attack {self.name}: {str(e)}",
-                ErrorSeverity.HIGH,
                 {"action": self.name, "error": str(e), 
-                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')}
-            ))
+                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')},
+                e
+            )
             return False
 
     def get_damage_expr(self, actor: Any) -> str:

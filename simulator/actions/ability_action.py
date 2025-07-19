@@ -11,7 +11,7 @@ from core.constants import (
     get_effect_color,
     is_oponent,
 )
-from core.error_handling import GameError, ErrorSeverity, error_handler
+from core.error_handling import log_error, log_warning, log_critical
 from core.utils import (
     debug,
     parse_expr_and_assume_max_roll,
@@ -54,49 +54,37 @@ class BaseAbility(BaseAction):
 
             # Validate damage list
             if not isinstance(damage, list):
-                error_handler.handle_error(
-                    GameError(
-                        f"Ability {name} damage must be list, got: {damage.__class__.__name__}",
-                        ErrorSeverity.HIGH,
-                        {"name": name, "damage": damage},
-                    )
+                log_error(
+                    f"Ability {name} damage must be list, got: {damage.__class__.__name__}",
+                    {"name": name, "damage": damage},
                 )
                 damage = []
             else:
                 # Validate each damage component
                 for i, dmg_comp in enumerate(damage):
                     if not isinstance(dmg_comp, DamageComponent):
-                        error_handler.handle_error(
-                            GameError(
-                                f"Ability {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
-                                ErrorSeverity.HIGH,
-                                {
-                                    "name": name,
-                                    "damage_index": i,
-                                    "damage_component": dmg_comp,
-                                },
-                            )
+                        log_error(
+                            f"Ability {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
+                            {
+                                "name": name,
+                                "damage_index": i,
+                                "damage_component": dmg_comp,
+                            },
                         )
 
             # Validate effect
             if effect is not None and not isinstance(effect, Effect):
-                error_handler.handle_error(
-                    GameError(
-                        f"Ability {name} effect must be Effect or None, got: {effect.__class__.__name__}",
-                        ErrorSeverity.MEDIUM,
-                        {"name": name, "effect": effect},
-                    )
+                log_warning(
+                    f"Ability {name} effect must be Effect or None, got: {effect.__class__.__name__}",
+                    {"name": name, "effect": effect},
                 )
                 effect = None
 
             # Validate target_expr
             if not isinstance(target_expr, str):
-                error_handler.handle_error(
-                    GameError(
-                        f"Ability {name} target_expr must be string, got: {target_expr.__class__.__name__}",
-                        ErrorSeverity.MEDIUM,
-                        {"name": name, "target_expr": target_expr},
-                    )
+                log_warning(
+                    f"Ability {name} target_expr must be string, got: {target_expr.__class__.__name__}",
+                    {"name": name, "target_expr": target_expr},
                 )
                 target_expr = str(target_expr) if target_expr is not None else ""
 
@@ -105,12 +93,10 @@ class BaseAbility(BaseAction):
             self.target_expr: str = target_expr
 
         except Exception as e:
-            error_handler.handle_error(
-                GameError(
-                    f"Error initializing BaseAbility {name}: {str(e)}",
-                    ErrorSeverity.CRITICAL,
-                    {"name": name, "error": str(e)},
-                )
+            log_critical(
+                f"Error initializing BaseAbility {name}: {str(e)}",
+                {"name": name, "error": str(e)},
+                e,
             )
             raise
 

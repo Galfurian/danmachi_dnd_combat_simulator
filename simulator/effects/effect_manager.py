@@ -3,7 +3,7 @@
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint
-from core.error_handling import error_handler, ErrorSeverity, GameError
+from core.error_handling import log_error, log_warning, log_critical
 from effects.effect import *
 from effects.modifier import Modifier
 from effects.concentration_manager import ConcentrationManager
@@ -31,27 +31,24 @@ class EffectManager:
         try:
             # Validate inputs
             if not source:
-                error_handler.handle_error(GameError(
+                log_error(
                     "Source cannot be None when adding effect",
-                    ErrorSeverity.HIGH,
                     {"effect": getattr(effect, 'name', 'unknown')}
-                ))
+                )
                 return False
                 
             if not effect:
-                error_handler.handle_error(GameError(
+                log_error(
                     "Effect cannot be None when adding to effect manager",
-                    ErrorSeverity.HIGH,
                     {"source": getattr(source, 'name', 'unknown')}
-                ))
+                )
                 return False
                 
             if not isinstance(mind_level, int) or mind_level < 0:
-                error_handler.handle_error(GameError(
+                log_warning(
                     f"Mind level must be non-negative integer, got: {mind_level}",
-                    ErrorSeverity.MEDIUM,
                     {"effect": effect.name, "mind_level": mind_level}
-                ))
+                )
                 mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
                 
             new_effect = ActiveEffect(source, self.owner, effect, mind_level)
@@ -98,28 +95,33 @@ class EffectManager:
             return True
             
         except Exception as e:
-            error_handler.handle_error(GameError(
+            log_critical(
                 f"Error adding effect to manager: {str(e)}",
-                ErrorSeverity.HIGH,
                 {
-                    "effect": getattr(effect, 'name', 'unknown'),
-                    "source": getattr(source, 'name', 'unknown'),
-                    "target": getattr(self.owner, 'name', 'unknown')
+                    "ctx_effect": getattr(effect, 'name', 'unknown'),
+                    "ctx_source": getattr(source, 'name', 'unknown'),
+                    "ctx_target": getattr(self.owner, 'name', 'unknown')
                 },
                 e
-            ))
+            )
             return False
 
-    def remove_effect(self, active_effect: ActiveEffect) -> None:
-        if active_effect in self.active_effects:
-            self.active_effects.remove(active_effect)
-        
-        # Clean up from active_modifiers
-        if isinstance(active_effect.effect, ModifierEffect):
-            for modifier in active_effect.effect.modifiers:
-                bonus_type = modifier.bonus_type
-                if self.active_modifiers.get(bonus_type) == active_effect:
-                    del self.active_modifiers[bonus_type]
+    def remove_effect(self, effect: 'ActiveEffect') -> bool:
+        try:
+            if effect in self.active_effects:
+                self.active_effects.remove(effect)
+                return True
+            return False
+        except Exception as e:
+            log_error(
+                f"Error removing effect from manager: {str(e)}",
+                {
+                    "ctx_effect": getattr(effect.effect, 'name', 'unknown'),
+                    "ctx_target": getattr(self.owner, 'name', 'unknown')
+                },
+                e
+            )
+            return False
 
     # === Concentration Management Delegation ===
     

@@ -1,32 +1,33 @@
 from typing import Any, Tuple
 
 from core.constants import (
-    BonusType, DamageType, GLOBAL_VERBOSE_LEVEL,
-    apply_damage_type_color, get_damage_type_emoji
+    BonusType,
+    DamageType,
+    GLOBAL_VERBOSE_LEVEL,
+    apply_damage_type_color,
+    get_damage_type_emoji,
 )
 from core.utils import roll_and_describe
-from core.error_handling import error_handler, ErrorSeverity, GameError
+from core.error_handling import log_error, log_warning
 
 
 class DamageComponent:
     def __init__(self, damage_roll: str, damage_type: DamageType):
         # Validate inputs
         if not damage_roll or not isinstance(damage_roll, str):
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Damage roll must be a non-empty string, got: {damage_roll}",
-                ErrorSeverity.HIGH,
-                {"damage_roll": damage_roll, "damage_type": damage_type}
-            ))
+                {"damage_roll": damage_roll, "damage_type": damage_type},
+            )
             raise ValueError(f"Invalid damage roll: {damage_roll}")
-            
+
         if not isinstance(damage_type, DamageType):
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Damage type must be DamageType enum, got: {type(damage_type).__name__}",
-                ErrorSeverity.HIGH,
-                {"damage_roll": damage_roll, "damage_type": damage_type}
-            ))
+                {"damage_roll": damage_roll, "damage_type": damage_type},
+            )
             raise ValueError(f"Invalid damage type: {damage_type}")
-            
+
         self.damage_roll: str = damage_roll.strip()
         self.damage_type: DamageType = damage_type
 
@@ -37,63 +38,57 @@ class DamageComponent:
                 "damage_type": self.damage_type.name,
             }
         except Exception as e:
-            error_handler.handle_error(GameError(
+            log_error(
                 f"Error serializing DamageComponent to dict: {str(e)}",
-                ErrorSeverity.MEDIUM,
                 {"damage_roll": self.damage_roll, "damage_type": self.damage_type},
-                e
-            ))
+                e,
+            )
             return {"damage_roll": str(self.damage_roll), "damage_type": "PHYSICAL"}
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "DamageComponent":
         try:
             if not isinstance(data, dict):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"DamageComponent data must be dict, got: {type(data).__name__}",
-                    ErrorSeverity.HIGH,
-                    {"data": data}
-                ))
+                    {"data": data},
+                )
                 raise ValueError(f"Invalid data type: {type(data)}")
-                
+
             if "damage_roll" not in data:
-                error_handler.handle_error(GameError(
+                log_error(
                     "Missing required field 'damage_roll' in DamageComponent data",
-                    ErrorSeverity.HIGH,
-                    {"data": data}
-                ))
+                    {"data": data},
+                )
                 raise ValueError("Missing damage_roll field")
-                
+
             if "damage_type" not in data:
-                error_handler.handle_error(GameError(
+                log_error(
                     "Missing required field 'damage_type' in DamageComponent data",
-                    ErrorSeverity.HIGH,
-                    {"data": data}
-                ))
+                    {"data": data},
+                )
                 raise ValueError("Missing damage_type field")
-                
+
             damage_type_str = data["damage_type"]
             if not hasattr(DamageType, damage_type_str):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Unknown damage type: {damage_type_str}",
-                    ErrorSeverity.HIGH,
-                    {"data": data, "damage_type": damage_type_str}
-                ))
+                    {"data": data, "damage_type": damage_type_str},
+                )
                 raise ValueError(f"Unknown damage type: {damage_type_str}")
-                
+
             return DamageComponent(
                 damage_roll=data["damage_roll"],
                 damage_type=DamageType[damage_type_str],
             )
-            
+
         except Exception as e:
             if not isinstance(e, ValueError):
-                error_handler.handle_error(GameError(
+                log_error(
                     f"Unexpected error creating DamageComponent from dict: {str(e)}",
-                    ErrorSeverity.HIGH,
                     {"data": data},
-                    e
-                ))
+                    e,
+                )
             raise
 
 

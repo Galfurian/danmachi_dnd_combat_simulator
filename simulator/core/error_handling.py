@@ -32,8 +32,19 @@ class ErrorHandler:
         self.logger = logging.getLogger("game_errors")
         self.error_history: list[GameError] = []
         
-    def handle_error(self, error: GameError) -> None:
+    def handle(self, 
+              message: str, 
+              severity: ErrorSeverity, 
+              context: dict[str, Any] | None = None,
+              exception: Optional[Exception] = None) -> None:
         """Handle an error based on its severity."""
+        # Create the GameError object internally
+        error = GameError(
+            message=message,
+            severity=severity,
+            context=context or {},
+            exception=exception
+        )
         self.error_history.append(error)
         
         # Prefix context keys to avoid conflicts with logging system reserved keys
@@ -49,6 +60,10 @@ class ErrorHandler:
             self.logger.warning(f"WARNING: {error.message}", extra=safe_context)
         else:
             self.logger.info(f"INFO: {error.message}", extra=safe_context)
+    
+    def handle_error(self, error: GameError) -> None:
+        """Handle an error based on its severity. (Legacy method - prefer handle())"""
+        self.handle(error.message, error.severity, error.context, error.exception)
     
     def safe_execute(self, 
                     operation: Callable[[], T], 
@@ -83,7 +98,7 @@ class ErrorHandler:
 
 
 # Global error handler instance
-error_handler = ErrorHandler()
+ERROR_HANDLER = ErrorHandler()
 
 
 def safe_operation(default_value: Any = None, 
@@ -92,7 +107,7 @@ def safe_operation(default_value: Any = None,
     """Decorator for safe operation execution."""
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         def wrapper(*args, **kwargs) -> T:
-            return error_handler.safe_execute(
+            return ERROR_HANDLER.safe_execute(
                 lambda: func(*args, **kwargs),
                 default_value,
                 error_message,
@@ -100,3 +115,24 @@ def safe_operation(default_value: Any = None,
             )
         return wrapper
     return decorator
+
+
+# Convenience functions for each severity level
+def log_info(message: str, context: dict[str, Any] | None = None, exception: Optional[Exception] = None) -> None:
+    """Log an info-level message."""
+    ERROR_HANDLER.handle(message, ErrorSeverity.LOW, context, exception)
+
+
+def log_warning(message: str, context: dict[str, Any] | None = None, exception: Optional[Exception] = None) -> None:
+    """Log a warning-level message."""
+    ERROR_HANDLER.handle(message, ErrorSeverity.MEDIUM, context, exception)
+
+
+def log_error(message: str, context: dict[str, Any] | None = None, exception: Optional[Exception] = None) -> None:
+    """Log an error-level message."""
+    ERROR_HANDLER.handle(message, ErrorSeverity.HIGH, context, exception)
+
+
+def log_critical(message: str, context: dict[str, Any] | None = None, exception: Optional[Exception] = None) -> None:
+    """Log a critical-level message."""
+    ERROR_HANDLER.handle(message, ErrorSeverity.CRITICAL, context, exception)
