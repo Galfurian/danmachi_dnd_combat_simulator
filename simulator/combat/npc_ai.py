@@ -1,8 +1,9 @@
-from typing import Tuple
-from actions.base_action import *
-from actions.attack_action import *
-from actions.spell_action import *
-from entities.character import *
+from typing import Optional, Tuple
+
+from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
+from actions.base_action import BaseAction
+from actions.spell_action import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from entities.character import Character
 
 # =============================================================================
 # Sorting Functions

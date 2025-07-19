@@ -1,17 +1,29 @@
-from pathlib import Path
-
-from actions.base_action import *
-from actions.attack_action import *
-from actions.spell_action import *
-from effects.effect import *
-from entities.character_class import *
-from entities.character_race import *
-from core.utils import *
-from items.armor import Armor
-from items.weapon import Weapon
-
 import copy
 import json
+from pathlib import Path
+from typing import Any, Optional
+
+from actions.base_action import BaseAction
+from actions.attack_action import (
+    BaseAttack,
+    NaturalAttack,
+    WeaponAttack,
+    from_dict_attack,
+)
+from actions.spell_action import (
+    Spell,
+    SpellAttack,
+    SpellBuff,
+    SpellDebuff,
+    SpellHeal,
+    from_dict_spell,
+)
+from core.utils import Singleton, cprint, crule
+from effects.effect import Buff, Debuff, Effect
+from entities.character_class import CharacterClass
+from entities.character_race import CharacterRace
+from items.armor import Armor
+from items.weapon import Weapon
 
 
 class ContentRepository(metaclass=Singleton):
@@ -42,13 +54,11 @@ class ContentRepository(metaclass=Singleton):
 
         crule("Reloading Database", style="bold green")
 
-        cprint(
-            f"Loading content from: [bold blue]{root}[/bold blue]", style="bold yellow"
-        )
+        cprint(f"Loading content from: [bold blue]{root}[/bold blue]")
 
         def load_json_file(filename: str, loader_func, description: str):
             """Helper to load and validate JSON files"""
-            cprint(f"Loading {description}...", style="bold yellow")
+            cprint(f"Loading {description}...")
             with open(root / filename, "r") as f:
                 data = json.load(f)
                 if not isinstance(data, list):
@@ -56,35 +66,43 @@ class ContentRepository(metaclass=Singleton):
                 return loader_func(data)
 
         # Load all content using the helper
-        self.classes = load_json_file("character_classes.json", self._load_character_classes, "character classes")
-        self.races = load_json_file("character_races.json", self._load_character_races, "character races")
-        
+        self.classes = load_json_file(
+            "character_classes.json", self._load_character_classes, "character classes"
+        )
+        self.races = load_json_file(
+            "character_races.json", self._load_character_races, "character races"
+        )
+
         # Load weapons (special case - two files)
-        cprint("Loading weapons...", style="bold yellow")
+        cprint("Loading weapons...")
         self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "")
-        self.weapons.update(load_json_file("weapons_wielded.json", self._load_weapons, ""))
-        
+        self.weapons.update(
+            load_json_file("weapons_wielded.json", self._load_weapons, "")
+        )
+
         self.armors = load_json_file("armors.json", self._load_armors, "armors")
         self.spells = load_json_file("spells.json", self._load_spells, "spells")
         self.actions = load_json_file("actions.json", self._load_actions, "actions")
 
-        cprint("Content loaded successfully!\n", style="bold green")
+        cprint("Content loaded successfully!\n")
 
-    def _get_from_collection(self, collection_name: str, item_name: str, expected_type: type = None) -> Any | None:
+    def _get_from_collection(
+        self, collection_name: str, item_name: str, expected_type: Optional[type] = None
+    ) -> Any | None:
         """Generic helper to get an item from any collection with optional type checking.
-        
+
         Args:
             collection_name (str): Name of the collection attribute (e.g., 'weapons', 'spells')
             item_name (str): Name of the item to retrieve
             expected_type (type, optional): Expected type for isinstance check
-            
+
         Returns:
             Any | None: The item if found and type matches, None otherwise
         """
         collection = getattr(self, collection_name, None)
         if not collection:
             return None
-        
+
         entry = collection.get(item_name)
         if entry and (expected_type is None or isinstance(entry, expected_type)):
             return entry
@@ -92,43 +110,43 @@ class ContentRepository(metaclass=Singleton):
 
     def get_character_class(self, name: str) -> CharacterClass | None:
         """Get a character class by name, or None if not found."""
-        return self._get_from_collection('classes', name, CharacterClass)
+        return self._get_from_collection("classes", name, CharacterClass)
 
     def get_character_race(self, name: str) -> CharacterRace | None:
         """Get a character race by name, or None if not found."""
-        return self._get_from_collection('races', name, CharacterRace)
+        return self._get_from_collection("races", name, CharacterRace)
 
     def get_weapon(self, name: str) -> Weapon | None:
         """Get a weapon by name, or None if not found."""
-        return self._get_from_collection('weapons', name, Weapon)
+        return self._get_from_collection("weapons", name, Weapon)
 
     def get_armor(self, name: str) -> Armor | None:
         """Get an armor by name, or None if not found."""
-        return self._get_from_collection('armors', name, Armor)
+        return self._get_from_collection("armors", name, Armor)
 
     def get_action(self, name: str) -> BaseAction | None:
         """Get an action by name, or None if not found."""
-        return self._get_from_collection('actions', name, BaseAction)
+        return self._get_from_collection("actions", name, BaseAction)
 
     def get_spell(self, name: str) -> BaseAction | None:
         """Get a spell by name, or None if not found."""
-        return self._get_from_collection('spells', name, BaseAction)
+        return self._get_from_collection("spells", name, BaseAction)
 
     def get_spell_attack(self, name: str) -> SpellAttack | None:
         """Get a spell attack by name, or None if not found."""
-        return self._get_from_collection('spells', name, SpellAttack)
+        return self._get_from_collection("spells", name, SpellAttack)
 
     def get_spell_heal(self, name: str) -> SpellHeal | None:
         """Get a spell heal by name, or None if not found."""
-        return self._get_from_collection('spells', name, SpellHeal)
+        return self._get_from_collection("spells", name, SpellHeal)
 
     def get_spell_buff(self, name: str) -> SpellBuff | None:
         """Get a spell buff by name, or None if not found."""
-        return self._get_from_collection('spells', name, SpellBuff)
+        return self._get_from_collection("spells", name, SpellBuff)
 
     def get_spell_debuff(self, name: str) -> SpellDebuff | None:
         """Get a spell debuff by name, or None if not found."""
-        return self._get_from_collection('spells', name, SpellDebuff)
+        return self._get_from_collection("spells", name, SpellDebuff)
 
     @staticmethod
     def _load_character_classes(data) -> dict[str, CharacterClass]:

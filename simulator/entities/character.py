@@ -1,20 +1,28 @@
 import json
 from logging import debug, warning
-from typing import Any, Tuple
 from pathlib import Path
+from typing import Any, Optional, Tuple
 
-from core.constants import *
-from effects.effect_manager import *
-from effects.effect import *
-from core.utils import *
-from entities.character_class import *
-from entities.character_race import *
-from core.content import ContentRepository
 from actions.base_action import BaseAction
-from actions.attack_action import *
+from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spell_action import Spell
-from items.armor import *
-from items.weapon import *
+from core.constants import (
+    ActionType,
+    ArmorSlot,
+    BonusType,
+    CharacterType,
+    DamageType,
+    get_character_type_emoji,
+    get_effect_color,
+)
+from core.content import ContentRepository
+from core.utils import get_stat_modifier, make_bar
+from effects.effect import Effect
+from effects.effect_manager import EffectManager
+from entities.character_class import CharacterClass
+from entities.character_race import CharacterRace
+from items.armor import Armor
+from items.weapon import Weapon
 
 
 class Character:
@@ -250,7 +258,6 @@ class Character:
         result: list[BaseAction] = []
         result.extend(self.get_available_weapon_attacks())
         result.extend(self.get_available_natural_weapon_attacks())
-        return result
         return result
 
     def get_available_actions(self) -> list[BaseAction]:

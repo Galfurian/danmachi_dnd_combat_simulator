@@ -1,4 +1,6 @@
-from actions.attack_action import *
+from typing import Any, List
+
+from actions.attack_action import BaseAttack, from_dict_attack
 
 
 class Weapon:

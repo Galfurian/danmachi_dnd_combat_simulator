@@ -1,7 +1,10 @@
 from typing import Any, Tuple
 
-from core.constants import *
-from core.utils import *
+from core.constants import (
+    BonusType, DamageType, GLOBAL_VERBOSE_LEVEL,
+    apply_damage_type_color, get_damage_type_emoji
+)
+from core.utils import roll_and_describe
 
 
 class DamageComponent:

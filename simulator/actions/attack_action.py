@@ -1,10 +1,16 @@
 from typing import Any, Optional
 
-from combat.damage import *
-from core.utils import *
-from core.constants import *
-from actions.base_action import *
-from effects.effect import *
+from actions.base_action import BaseAction
+from combat.damage import DamageComponent, roll_damage_components, roll_damage_components_no_mind
+from core.constants import (
+    ActionCategory, ActionType, BonusType, GLOBAL_VERBOSE_LEVEL,
+    apply_character_type_color, get_effect_color, is_oponent
+)
+from core.utils import (
+    debug, parse_expr_and_assume_max_roll, parse_expr_and_assume_min_roll, 
+    substitute_variables, cprint
+)
+from effects.effect import Effect
 
 
 class BaseAttack(BaseAction):

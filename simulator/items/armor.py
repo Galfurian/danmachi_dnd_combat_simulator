@@ -1,9 +1,9 @@
 # armor.py
 
-from typing import Optional
+from typing import Any, Optional
 
-from core.constants import *
-from effects.effect import *
+from core.constants import ArmorSlot, ArmorType, BonusType
+from effects.effect import Effect
 
 
 class Armor:

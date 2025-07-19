@@ -1,14 +1,28 @@
 # combat_manager.py
+import random
 from collections import deque
 from logging import debug, warning
-import random
+from typing import List, Optional
 
-from actions.base_action import *
-from actions.attack_action import *
-from actions.spell_action import *
-from core.constants import *
-from ui.cli_interface import *
-from combat.npc_ai import *
+from core.utils import cprint, crule
+from actions.base_action import BaseAction
+from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
+from actions.spell_action import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from combat.npc_ai import (
+    choose_best_attack_spell_action,
+    choose_best_base_attack_action,
+    choose_best_buff_spell_action,
+    choose_best_debuff_spell_action,
+    choose_best_healing_spell_action,
+    choose_best_target_for_weapon,
+    choose_best_weapon_for_situation,
+    get_actions_by_type,
+    get_natural_attacks,
+)
+from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
+from core.sheets import print_character_sheet
+from entities.character import Character
+from ui.cli_interface import PlayerInterface
 
 
 FULL_ATTACK = BaseAction("Full Attack", ActionType.STANDARD, ActionCategory.OFFENSIVE)
@@ -54,8 +68,7 @@ class CombatManager:
         cprint("[bold yellow]Turn Order:[/]")
         for participant in self.participants:
             cprint(
-                f"    🎲 {self.initiatives[participant]:3}  {participant.get_status_line()}",
-                markup=True,
+                f"    🎲 {self.initiatives[participant]:3}  {participant.get_status_line()}"
             )
 
     def get_alive_participants(self) -> list[Character]:
@@ -142,7 +155,7 @@ class CombatManager:
             participant.reset_turn_flags()
 
             # Print the participant's status line.
-            cprint(participant.get_status_line(), markup=True)
+            cprint(participant.get_status_line())
 
             # Execute the participant's action based on whether they are the player or an NPC.
             if participant == self.player:
@@ -192,53 +205,57 @@ class CombatManager:
         if not attacks:
             warning("No available attacks for the full attack action.")
             return
-        
+
         # Choose the attack type to use for all attacks in the sequence
         attack = self.ui.choose_action(attacks)
         if attack is None or not isinstance(attack, BaseAttack):
             warning("Invalid attack selected. Ending full attack.")
             return
-        
+
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, attack)
         if not valid_targets:
             warning(f"No valid targets for {attack.name}.")
             return
-        
+
         # Choose the initial target
         target = self.ui.choose_target(valid_targets, [])
         if not isinstance(target, Character):
             return
-        
+
         # Show what's about to happen
-        cprint(f"    🗡️ Performing full attack with [bold blue]{attack.name}[/] ({self.player.number_of_attacks} attacks)")
-        
+        cprint(
+            f"    🗡️ Performing full attack with [bold blue]{attack.name}[/] ({self.player.number_of_attacks} attacks)"
+        )
+
         # Execute the full attack sequence using the same attack type
         attacks_made = 0
         for attack_num in range(self.player.number_of_attacks):
             # Check if there are still valid opponents
             if not self.get_alive_opponents(self.player):
                 break
-                
+
             # If the current target is dead, ask for a new target
             current_target = target
             if not target.is_alive():
                 remaining_targets = self._get_legal_targets(self.player, attack)
                 if not remaining_targets:
                     break
-                current_target = self.ui.choose_target(remaining_targets, [], f"Attack {attack_num + 1} target")
+                current_target = self.ui.choose_target(
+                    remaining_targets, [], f"Attack {attack_num + 1} target"
+                )
                 if not isinstance(current_target, Character):
                     break
                 target = current_target
-            
+
             # Perform the attack
             attack.execute(self.player, current_target)
             attacks_made += 1
-            
+
             # Add cooldown only once for the attack type
             if attack_num == 0:
                 self.player.add_cooldown(attack, attack.cooldown)
-        
+
         # Mark the action type as used.
         self.player.use_action_type(ActionType.STANDARD)
 
@@ -438,21 +455,25 @@ class CombatManager:
             best_weapon = choose_best_weapon_for_situation(npc, base_attacks, enemies)
             if best_weapon:
                 # Get initial target for this weapon
-                current_target = choose_best_target_for_weapon(npc, best_weapon, enemies)
-                
+                current_target = choose_best_target_for_weapon(
+                    npc, best_weapon, enemies
+                )
+
                 # Perform multiple attacks with the same weapon type
                 for attack_num in range(npc.number_of_attacks):
                     # If current target is dead, find a new one
                     if not current_target or not current_target.is_alive():
-                        current_target = choose_best_target_for_weapon(npc, best_weapon, enemies)
+                        current_target = choose_best_target_for_weapon(
+                            npc, best_weapon, enemies
+                        )
                         if not current_target:
                             # No more valid targets
                             break
-                    
+
                     # Perform the attack
                     best_weapon.execute(npc, current_target)
                     used_base_attack = True
-                
+
                 # Add cooldown and mark action type only once after all attacks
                 if used_base_attack:
                     npc.add_cooldown(best_weapon, best_weapon.cooldown)
@@ -530,7 +551,7 @@ class CombatManager:
         # Otherwise, allow to perform healing actions.
         while True:
             for ally in self.get_alive_friendlies(self.player):
-                cprint(ally.get_status_line(), markup=True)
+                cprint(ally.get_status_line())
             if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
@@ -541,11 +562,11 @@ class CombatManager:
     def final_report(self) -> None:
         crule("📊  Final Battle Report", style="bold blue")
         # Player
-        cprint(self.player.get_status_line(), markup=True)
+        cprint(self.player.get_status_line())
         # Allies
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
-                cprint(ally.get_status_line(), markup=True)
+                cprint(ally.get_status_line())
         # Fallen foes
         defeated = [
             c

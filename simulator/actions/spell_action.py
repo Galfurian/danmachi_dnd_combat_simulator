@@ -2,11 +2,27 @@ from abc import abstractmethod
 from logging import debug, error
 from typing import Any, Optional
 
-from combat.damage import *
-from core.utils import *
-from core.constants import *
-from actions.base_action import *
-from effects.effect import *
+from actions.base_action import BaseAction
+from combat.damage import DamageComponent, roll_damage_components
+from core.constants import (
+    ActionCategory,
+    ActionType,
+    BonusType,
+    GLOBAL_VERBOSE_LEVEL,
+    get_character_type_color,
+    get_effect_color,
+    is_oponent,
+)
+from core.utils import (
+    evaluate_expression,
+    parse_expr_and_assume_max_roll,
+    parse_expr_and_assume_min_roll,
+    roll_and_describe,
+    simplify_expression,
+    substitute_variables,
+    cprint,
+)
+from effects.effect import Buff, Debuff, Effect
 
 
 class Spell(BaseAction):
