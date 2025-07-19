@@ -15,7 +15,6 @@ class ActiveEffect:
         self.effect: Effect = effect
         self.mind_level: int = mind_level
         self.duration: int = effect.max_duration
-        self.consume_on_hit: bool = getattr(effect, "consume_on_hit", False)
 
 
 class EffectManager:
@@ -182,7 +181,6 @@ class EffectManager:
             )
 
     def get_damage_modifiers(self) -> list[tuple[DamageComponent, int]]:
-        consume_on_hit: list[tuple[DamageComponent, int]] = []
         best_by_type: dict[DamageType, tuple[DamageComponent, int]] = {}
 
         for ae in self.active_effects:
@@ -202,11 +200,6 @@ class EffectManager:
                 continue
 
             mod = damage_modifier.value
-            if ae.consume_on_hit:
-                consume_on_hit.append((mod, ae.mind_level))
-                ae.consume_on_hit = False
-                continue
-
             variables = ae.source.get_expression_variables()
             variables["MIND"] = ae.mind_level
             new_max = get_max_roll(mod.damage_roll, variables)
@@ -217,14 +210,11 @@ class EffectManager:
             if new_max > current_max:
                 best_by_type[mod.damage_type] = (mod, ae.mind_level)
 
-        return list(best_by_type.values()) + consume_on_hit
+        return list(best_by_type.values())
 
     def turn_update(self) -> None:
         updated = []
         for ae in self.active_effects:
-            if ae.consume_on_hit:
-                updated.append(ae)
-                continue
             ae.effect.turn_update(ae.source, self.owner, ae.mind_level)
             ae.duration -= 1
             if ae.duration > 0:

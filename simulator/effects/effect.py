@@ -140,14 +140,11 @@ class Buff(ModifierEffect):
         description: str,
         max_duration: int,
         modifiers: list[Modifier],
-        consume_on_hit: bool = False,
     ):
         super().__init__(name, description, max_duration, modifiers)
-        self.consume_on_hit: bool = consume_on_hit
 
     def to_dict(self) -> dict[str, Any]:
         data = super().to_dict()
-        data["consume_on_hit"] = self.consume_on_hit
         return data
 
     @staticmethod
@@ -185,7 +182,6 @@ class Buff(ModifierEffect):
             description=data.get("description", ""),
             max_duration=data.get("max_duration", 0),
             modifiers=modifiers,
-            consume_on_hit=data.get("consume_on_hit", False),
         )
 
 

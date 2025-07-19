@@ -109,16 +109,18 @@
         ],
         "target_restrictions": ["SELF"],
         "effect": {
-            "type": "Buff",
+            "type": "OnHitTrigger",
             "name": "Divine Smite",
-            "description": "Deals extra radiant damage on a successful hit.",
-            "consume_on_hit": true,
-            "modifiers": {
-                "damage": {
+            "description": "Next weapon attack deals extra radiant damage.",
+            "max_duration": 10,
+            "damage_bonus": [
+                {
                     "damage_roll": "1D8 + [MIND]D8",
                     "damage_type": "RADIANT"
                 }
-            }
+            ],
+            "trigger_effects": [],
+            "consumes_on_trigger": true
         }
     },
     {

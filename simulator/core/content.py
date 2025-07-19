@@ -74,10 +74,9 @@ class ContentRepository(metaclass=Singleton):
         )
 
         # Load weapons (special case - two files)
-        cprint("Loading weapons...")
-        self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "")
+        self.weapons = load_json_file("weapons_natural.json", self._load_weapons, "natural weapons")
         self.weapons.update(
-            load_json_file("weapons_wielded.json", self._load_weapons, "")
+            load_json_file("weapons_wielded.json", self._load_weapons, "wielded weapons")
         )
 
         self.armors = load_json_file("armors.json", self._load_armors, "armors")

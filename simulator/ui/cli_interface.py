@@ -355,10 +355,8 @@ class PlayerInterface:
                 prompt += "\n"
 
             elif isinstance(spell, SpellBuff):
-                # If the spell has a consume_on_hit or consumes_on_trigger effect, indicate it.
-                if hasattr(spell.effect, 'consume_on_hit') and getattr(spell.effect, 'consume_on_hit', False):
-                    prompt += f"(one-shot)"
-                elif hasattr(spell.effect, 'consumes_on_trigger') and getattr(spell.effect, 'consumes_on_trigger', False):
+                # If the spell has a consumes_on_trigger effect, indicate it.
+                if hasattr(spell.effect, 'consumes_on_trigger') and getattr(spell.effect, 'consumes_on_trigger', False):
                     prompt += f"(one-shot)"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
@@ -380,7 +378,6 @@ class PlayerInterface:
                 # Get the modifier expressions for debuffs.
                 modifiers = spell.get_modifier_expressions(actor, mind_level)
 
-                # If the spell has a consume_on_hit effect, indicate it.
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
 
