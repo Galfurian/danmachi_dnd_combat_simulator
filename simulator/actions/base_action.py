@@ -23,45 +23,49 @@ class BaseAction:
         if not name or not isinstance(name, str):
             log_error(
                 f"Action name must be a non-empty string, got: {name}",
-                {"name": name, "type": type}
+                {"name": name, "type": type},
             )
             raise ValueError(f"Invalid action name: {name}")
-            
+
         if not isinstance(type, ActionType):
             log_error(
                 f"Action type must be ActionType enum, got: {type(type).__name__}",
-                {"name": name, "type": type}
+                {"name": name, "type": type},
             )
             raise ValueError(f"Invalid action type: {type}")
-            
+
         if not isinstance(category, ActionCategory):
             log_error(
                 f"Action category must be ActionCategory enum, got: {type(category).__name__}",
-                {"name": name, "category": category}
+                {"name": name, "category": category},
             )
             raise ValueError(f"Invalid action category: {category}")
-            
+
         if not isinstance(description, str):
             log_warning(
                 f"Action description must be string, got: {type(description).__name__}",
-                {"name": name, "description": description}
+                {"name": name, "description": description},
             )
             description = str(description) if description is not None else ""
-            
+
         if not isinstance(cooldown, int) or cooldown < 0:
             log_warning(
                 f"Action cooldown must be non-negative integer, got: {cooldown}",
-                {"name": name, "cooldown": cooldown}
+                {"name": name, "cooldown": cooldown},
             )
-            cooldown = max(0, int(cooldown) if isinstance(cooldown, (int, float)) else 0)
-            
+            cooldown = max(
+                0, int(cooldown) if isinstance(cooldown, (int, float)) else 0
+            )
+
         if not isinstance(maximum_uses, int) or maximum_uses < -1:
             log_warning(
                 f"Action maximum_uses must be integer >= -1 (where -1 = unlimited), got: {maximum_uses}",
-                {"name": name, "maximum_uses": maximum_uses}
+                {"name": name, "maximum_uses": maximum_uses},
             )
-            maximum_uses = max(-1, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else -1)
-            
+            maximum_uses = max(
+                -1, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else -1
+            )
+
         self.name: str = name
         self.type: ActionType = type
         self.category: ActionCategory = category
@@ -103,67 +107,87 @@ class BaseAction:
         try:
             if not effect:
                 return False
-            
+
             if not actor:
                 log_warning(
                     f"Cannot apply effect {effect.name}: actor is None",
-                    {"effect": effect.name, "actor": actor}
+                    {"effect": effect.name, "actor": actor},
                 )
                 return False
-                
+
             if not target:
                 log_warning(
-                    f"Cannot apply effect {effect.name}: target is None", 
-                    {"effect": effect.name, "actor": getattr(actor, 'name', 'Unknown'), "target": target}
+                    f"Cannot apply effect {effect.name}: target is None",
+                    {
+                        "effect": effect.name,
+                        "actor": getattr(actor, "name", "Unknown"),
+                        "target": target,
+                    },
                 )
                 return False
-                
-            if not hasattr(actor, 'is_alive') or not callable(actor.is_alive):
+
+            if not hasattr(actor, "is_alive") or not callable(actor.is_alive):
                 log_error(
                     f"Actor lacks is_alive method for effect {effect.name}",
-                    {"effect": effect.name, "actor": getattr(actor, 'name', 'Unknown')}
+                    {"effect": effect.name, "actor": getattr(actor, "name", "Unknown")},
                 )
                 return False
-                
-            if not hasattr(target, 'is_alive') or not callable(target.is_alive):
+
+            if not hasattr(target, "is_alive") or not callable(target.is_alive):
                 log_error(
                     f"Target lacks is_alive method for effect {effect.name}",
-                    {"effect": effect.name, "target": getattr(target, 'name', 'Unknown')}
+                    {
+                        "effect": effect.name,
+                        "target": getattr(target, "name", "Unknown"),
+                    },
                 )
                 return False
-                
+
             if not actor.is_alive():
                 return False
             if not target.is_alive():
                 return False
-                
-            if not hasattr(target, 'effect_manager'):
+
+            if not hasattr(target, "effect_manager"):
                 log_error(
                     f"Target lacks effect_manager for effect {effect.name}",
-                    {"effect": effect.name, "target": getattr(target, 'name', 'Unknown')}
+                    {
+                        "effect": effect.name,
+                        "target": getattr(target, "name", "Unknown"),
+                    },
                 )
                 return False
-                
+
             # Validate mind_level
             if not isinstance(mind_level, int) or mind_level < 0:
                 log_warning(
                     f"Invalid mind_level for effect {effect.name}: {mind_level}",
-                    {"effect": effect.name, "mind_level": mind_level}
+                    {"effect": effect.name, "mind_level": mind_level},
                 )
-                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
-            
+                mind_level = max(
+                    0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
+                )
+
             if target.effect_manager.add_effect(actor, effect, mind_level):
-                debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
+                debug(
+                    f"Applied effect {effect.name} from {actor.name} to {target.name}."
+                )
                 return True
-            debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")
+            debug(
+                f"Not applied effect {effect.name} from {actor.name} to {target.name}."
+            )
             return False
-            
+
         except Exception as e:
             log_error(
                 f"Error applying effect {getattr(effect, 'name', 'Unknown')}: {str(e)}",
-                {"effect": getattr(effect, 'name', 'Unknown'), "error": str(e), 
-                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')},
-                e
+                {
+                    "effect": getattr(effect, "name", "Unknown"),
+                    "error": str(e),
+                    "actor": getattr(actor, "name", "Unknown"),
+                    "target": getattr(target, "name", "Unknown"),
+                },
+                e,
             )
             return False
 
@@ -173,33 +197,33 @@ class BaseAction:
         """Roll attack with critical hit detection."""
         try:
             if not actor:
-                log_error(
-                    "Cannot roll attack: actor is None",
-                    {"actor": actor}
-                )
+                log_error("Cannot roll attack: actor is None", {"actor": actor})
                 return 1, "1D20: 1", 1  # Return minimum valid roll
-            
-            if not hasattr(actor, 'get_expression_variables'):
+
+            if not hasattr(actor, "get_expression_variables"):
                 log_error(
                     f"Actor {getattr(actor, 'name', 'Unknown')} lacks get_expression_variables method",
-                    {"actor": getattr(actor, 'name', 'Unknown')}
+                    {"actor": getattr(actor, "name", "Unknown")},
                 )
                 return 1, "1D20: 1", 1  # Return minimum valid roll
-            
+
             expr = "1D20"
             if attack_bonus_expr and isinstance(attack_bonus_expr, str):
                 expr += f" + {attack_bonus_expr}"
             elif attack_bonus_expr:
                 log_warning(
                     f"Invalid attack_bonus_expr type: {type(attack_bonus_expr).__name__}",
-                    {"attack_bonus_expr": attack_bonus_expr, "type": type(attack_bonus_expr).__name__}
+                    {
+                        "attack_bonus_expr": attack_bonus_expr,
+                        "type": type(attack_bonus_expr).__name__,
+                    },
                 )
-            
+
             if bonus_list:
                 if not isinstance(bonus_list, list):
                     log_warning(
                         f"bonus_list must be a list, got: {type(bonus_list).__name__}",
-                        {"bonus_list": bonus_list, "type": type(bonus_list).__name__}
+                        {"bonus_list": bonus_list, "type": type(bonus_list).__name__},
                     )
                     bonus_list = []
                 else:
@@ -209,26 +233,33 @@ class BaseAction:
                         else:
                             log_warning(
                                 f"Bonus in bonus_list must be string, got: {type(bonus).__name__}",
-                                {"bonus": bonus, "type": type(bonus).__name__}
+                                {"bonus": bonus, "type": type(bonus).__name__},
                             )
-            
+
             variables = actor.get_expression_variables()
             if not isinstance(variables, dict):
                 log_warning(
                     f"Actor expression variables must be dict, got: {type(variables).__name__}",
-                    {"variables": variables, "actor": getattr(actor, 'name', 'Unknown')}
+                    {
+                        "variables": variables,
+                        "actor": getattr(actor, "name", "Unknown"),
+                    },
                 )
                 variables = {}
-            
+
             total, desc, rolls = roll_and_describe(expr, variables)
             return total, desc, rolls[0] if rolls else 0
-            
+
         except Exception as e:
             log_error(
                 f"Error rolling attack: {str(e)}",
-                {"error": str(e), "actor": getattr(actor, 'name', 'Unknown'), 
-                 "attack_bonus_expr": attack_bonus_expr, "bonus_list": bonus_list},
-                e
+                {
+                    "error": str(e),
+                    "actor": getattr(actor, "name", "Unknown"),
+                    "attack_bonus_expr": attack_bonus_expr,
+                    "bonus_list": bonus_list,
+                },
+                e,
             )
             return 1, "1D20: 1 (error)", 1  # Return safe fallback
 
@@ -245,77 +276,83 @@ class BaseAction:
         # If target_restrictions are defined, use the generic targeting system
         if self.target_restrictions:
             return self._check_target_restrictions(actor, target)
-        
+
         # Otherwise, fall back to category-based default targeting
         return self._get_default_targeting_by_category(actor, target)
-    
+
     def _check_target_restrictions(self, actor: Any, target: Any) -> bool:
         """Check if target is valid based on target_restrictions."""
         # Basic validation - both must be alive
         if not actor.is_alive() or not target.is_alive():
             return False
-            
+
         # Check each restriction
         for restriction in self.target_restrictions:
             if restriction == "SELF" and actor == target:
                 return True
-            elif restriction == "ALLY" and self._is_relationship_valid(actor, target, is_ally=True):
+            elif restriction == "ALLY" and self._is_relationship_valid(
+                actor, target, is_ally=True
+            ):
                 return True
-            elif restriction == "ENEMY" and self._is_relationship_valid(actor, target, is_ally=False):
+            elif restriction == "ENEMY" and self._is_relationship_valid(
+                actor, target, is_ally=False
+            ):
                 return True
             elif restriction == "ANY":
                 return True
-                
+
         return False
-    
+
     def _get_default_targeting_by_category(self, actor: Any, target: Any) -> bool:
         """Provide sensible default targeting based on action category."""
         # Basic validation - both must be alive
         if not actor.is_alive() or not target.is_alive():
             return False
-            
+
         from core.constants import ActionCategory
-        
+
         if self.category == ActionCategory.OFFENSIVE:
             # Offensive actions target enemies (not self, must be opponents)
             return target != actor and is_oponent(actor.type, target.type)
-            
+
         elif self.category == ActionCategory.HEALING:
             # Healing actions target self and allies (not enemies, not at full health for healing)
             if target == actor:
                 return target.hp < target.HP_MAX  # Can heal self if not at full health
             elif not is_oponent(actor.type, target.type):
-                return target.hp < target.HP_MAX  # Can heal allies if not at full health
+                return (
+                    target.hp < target.HP_MAX
+                )  # Can heal allies if not at full health
             return False
-            
+
         elif self.category == ActionCategory.BUFF:
             # Buff actions target self and allies
             return target == actor or not is_oponent(actor.type, target.type)
-            
+
         elif self.category == ActionCategory.DEBUFF:
             # Debuff actions target enemies
             return target != actor and is_oponent(actor.type, target.type)
-            
+
         elif self.category == ActionCategory.UTILITY:
             # Utility actions can target anyone
             return True
-            
+
         elif self.category == ActionCategory.DEBUG:
             # Debug actions can target anyone
             return True
-            
+
         else:
             # Unknown category - default to no targeting
             return False
-    
+
     def _is_relationship_valid(self, actor: Any, target: Any, is_ally: bool) -> bool:
         """Helper to check if actor and target have the correct relationship."""
         if actor == target:  # Self is neither ally nor enemy in this context
             return False
-        
+
         # Check if they are opponents (enemies to each other)
         are_opponents = is_oponent(actor.type, target.type)
-        
+
         if is_ally:
             return not are_opponents  # Allies are not opponents
         else:

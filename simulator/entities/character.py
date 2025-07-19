@@ -323,34 +323,40 @@ class Character:
         """
         Checks all passive effects for trigger conditions and activates them.
         Returns a list of activation messages for triggered effects.
-        
+
         Returns:
             list[str]: Messages for effects that were triggered this check.
         """
         activation_messages = []
-        
+
         for effect in self.passive_effects:
             # Check for OnLowHealthTrigger specifically
-            if effect.__class__.__name__ == 'OnLowHealthTrigger':
+            if effect.__class__.__name__ == "OnLowHealthTrigger":
                 # Import here to avoid circular imports
                 from effects.effect import OnLowHealthTrigger
+
                 trigger_effect: OnLowHealthTrigger = effect  # type: ignore
-                
+
                 if trigger_effect.should_trigger(self):
                     # Activate the trigger
-                    damage_bonuses, trigger_effects_with_levels = trigger_effect.activate(self)
-                    
+                    damage_bonuses, trigger_effects_with_levels = (
+                        trigger_effect.activate(self)
+                    )
+
                     # Apply triggered effects to self
                     for triggered_effect, mind_level in trigger_effects_with_levels:
                         if triggered_effect.can_apply(self, self):
-                            self.effect_manager.add_effect(self, triggered_effect, mind_level)
-                    
+                            self.effect_manager.add_effect(
+                                self, triggered_effect, mind_level
+                            )
+
                     # Create activation message
                     from core.constants import get_effect_color
+
                     activation_messages.append(
                         f"🔥 {self.name}'s [bold][{get_effect_color(effect)}]{effect.name}[/][/] activates!"
                     )
-        
+
         return activation_messages
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
@@ -373,15 +379,16 @@ class Character:
         adjusted = max(adjusted, 0)
         actual = min(adjusted, self.hp)
         self.hp = max(self.hp - adjusted, 0)
-        
+
         # Check for passive triggers after taking damage (e.g., OnLowHealthTrigger)
         if self.passive_effects and self.is_alive():
             activation_messages = self.check_passive_triggers()
             if activation_messages:
                 from core.utils import cprint
+
                 for msg in activation_messages:
                     cprint(f"    {msg}")
-        
+
         return base, adjusted, actual
 
     def heal(self, amount: int) -> int:
@@ -648,7 +655,9 @@ class Character:
                 debug(f"{self.name} initialized {action.name} with unlimited uses.")
             else:
                 self.uses[action.name] = action.maximum_uses
-                debug(f"{self.name} initialized {action.name} with {action.maximum_uses} uses.")
+                debug(
+                    f"{self.name} initialized {action.name} with {action.maximum_uses} uses."
+                )
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Returns the remaining uses of an action.
@@ -672,7 +681,7 @@ class Character:
         # Don't decrement unlimited use actions
         if action.maximum_uses == -1:
             return
-            
+
         if action.name in self.uses:
             if self.uses[action.name] > 0:
                 self.uses[action.name] -= 1
@@ -684,27 +693,41 @@ class Character:
         else:
             warning(f"{self.name} does not have {action.name} in their uses.")
 
-    def get_status_line(self, show_all_effects: bool = False, show_numbers: bool = False, show_bars: bool = False, show_ac: bool = True):
+    def get_status_line(
+        self,
+        show_all_effects: bool = False,
+        show_numbers: bool = False,
+        show_bars: bool = False,
+        show_ac: bool = True,
+    ):
         # Collect all effects with better formatting
         effects_list = []
         if self.effect_manager.active_effects:
             for e in self.effect_manager.active_effects:
                 color = get_effect_color(e.effect)
                 # Truncate long effect names and show duration more compactly
-                effect_name = e.effect.name[:12] + "..." if len(e.effect.name) > 15 else e.effect.name
+                effect_name = (
+                    e.effect.name[:12] + "..."
+                    if len(e.effect.name) > 15
+                    else e.effect.name
+                )
                 effects_list.append(f"[{color}]{effect_name}[/]({e.duration})")
-        
+
         # Build status line with better spacing
-        hp_bar = make_bar(self.hp, self.HP_MAX, color="green", length=8) if show_bars else ""
-        
+        hp_bar = (
+            make_bar(self.hp, self.HP_MAX, color="green", length=8) if show_bars else ""
+        )
+
         # Use dynamic name width based on name length, but cap it
         name_width = min(max(len(self.name), 8), 16)
-        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<{name_width}}[/] "
-        
+        status = (
+            f"{get_character_type_emoji(self.type)} [bold]{self.name:<{name_width}}[/] "
+        )
+
         # Show AC only for player and allies (not enemies) with yellow color
         if show_ac:
             status += f"| [yellow]AC:{self.AC:>2}[/] "
-        
+
         # Build HP display based on parameters with green color
         hp_display = ""
         if show_numbers and show_bars:
@@ -717,10 +740,14 @@ class Character:
             # Default to showing numbers if neither is specified
             hp_display = f"| [green]HP:{self.hp:>3}/{self.HP_MAX}[/] "
         status += hp_display
-        
+
         if self.MIND_MAX > 0:
-            mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue", length=8) if show_bars else ""
-            
+            mind_bar = (
+                make_bar(self.mind, self.MIND_MAX, color="blue", length=8)
+                if show_bars
+                else ""
+            )
+
             # Build MP display based on parameters with blue color
             mp_display = ""
             if show_numbers and show_bars:
@@ -739,21 +766,36 @@ class Character:
             self.type == CharacterType.PLAYER
             and self.effect_manager.concentration_manager.get_concentration_count() > 0
         ):
-            concentration_count = self.effect_manager.concentration_manager.get_concentration_count()
+            concentration_count = (
+                self.effect_manager.concentration_manager.get_concentration_count()
+            )
             concentration_limit = self.CONCENTRATION_LIMIT
-            conc_bar = make_bar(concentration_count, concentration_limit, color="magenta", length=concentration_limit) if show_bars else ""
-            
+            conc_bar = (
+                make_bar(
+                    concentration_count,
+                    concentration_limit,
+                    color="magenta",
+                    length=concentration_limit,
+                )
+                if show_bars
+                else ""
+            )
+
             # Build concentration display based on parameters with magenta color
             conc_display = ""
             if show_numbers and show_bars:
                 conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/]{conc_bar} "
             elif show_numbers:
-                conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+                conc_display = (
+                    f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+                )
             elif show_bars:
                 conc_display = f"| [magenta]C:[/]{conc_bar} "
             else:
                 # Default to showing numbers if neither is specified
-                conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+                conc_display = (
+                    f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+                )
             status += conc_display
 
         # Handle effects more intelligently
@@ -764,20 +806,24 @@ class Character:
             else:
                 # Show first 2 effects + count of remaining
                 remaining_count = len(effects_list) - 2
-                status += f"| {' '.join(effects_list[:2])} [dim]+{remaining_count} more[/]"
-        
+                status += (
+                    f"| {' '.join(effects_list[:2])} [dim]+{remaining_count} more[/]"
+                )
+
         return status
 
     def get_detailed_effects(self) -> str:
         """Get a detailed multi-line view of all active effects."""
         if not self.effect_manager.active_effects:
             return "No active effects"
-        
+
         effects_info = []
         for e in self.effect_manager.active_effects:
             color = get_effect_color(e.effect)
-            effects_info.append(f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}")
-        
+            effects_info.append(
+                f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"
+            )
+
         return "Active Effects:\n" + "\n".join(effects_info)
 
     def to_dict(self) -> dict[str, Any]:

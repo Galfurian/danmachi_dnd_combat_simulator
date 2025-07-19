@@ -43,22 +43,28 @@ class Spell(BaseAction):
     ):
         try:
             super().__init__(
-                name, type, category, description, cooldown, maximum_uses, target_restrictions
+                name,
+                type,
+                category,
+                description,
+                cooldown,
+                maximum_uses,
+                target_restrictions,
             )
-            
+
             # Validate level
             if not isinstance(level, int) or level < 0:
                 log_error(
                     f"Spell {name} level must be non-negative integer, got: {level}",
-                    {"name": name, "level": level}
+                    {"name": name, "level": level},
                 )
                 level = max(0, int(level) if isinstance(level, (int, float)) else 0)
-            
+
             # Validate mind_cost
             if not isinstance(mind_cost, list):
                 log_error(
                     f"Spell {name} mind_cost must be list, got: {mind_cost.__class__.__name__}",
-                    {"name": name, "mind_cost": mind_cost}
+                    {"name": name, "mind_cost": mind_cost},
                 )
                 mind_cost = []
             else:
@@ -67,35 +73,35 @@ class Spell(BaseAction):
                     if not isinstance(cost, int) or cost < 0:
                         log_warning(
                             f"Spell {name} mind_cost[{i}] must be non-negative integer, got: {cost}",
-                            {"name": name, "cost_index": i, "cost": cost}
+                            {"name": name, "cost_index": i, "cost": cost},
                         )
-            
+
             # Validate target_expr
             if not isinstance(target_expr, str):
                 log_warning(
                     f"Spell {name} target_expr must be string, got: {target_expr.__class__.__name__}",
-                    {"name": name, "target_expr": target_expr}
+                    {"name": name, "target_expr": target_expr},
                 )
                 target_expr = str(target_expr) if target_expr is not None else ""
-                
+
             # Validate requires_concentration
             if not isinstance(requires_concentration, bool):
                 log_warning(
                     f"Spell {name} requires_concentration must be boolean, got: {requires_concentration.__class__.__name__}",
-                    {"name": name, "requires_concentration": requires_concentration}
+                    {"name": name, "requires_concentration": requires_concentration},
                 )
                 requires_concentration = bool(requires_concentration)
-            
+
             self.level: int = level
             self.mind_cost: list[int] = mind_cost
             self.target_expr: str = target_expr
             self.requires_concentration: bool = requires_concentration
-            
+
         except Exception as e:
             log_critical(
                 f"Error initializing Spell {name}: {str(e)}",
                 {"name": name, "error": str(e)},
-                e
+                e,
             )
             raise
 
@@ -149,17 +155,23 @@ class Spell(BaseAction):
             bool: True if the action was successfully executed, False otherwise.
         """
         pass
-    
-    def apply_effect(self, actor: Any, target: Any, effect: Optional[Effect], mind_level: Optional[int] = 0) -> bool:
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        effect: Optional[Effect],
+        mind_level: Optional[int] = 0,
+    ) -> bool:
         """
         Override apply_effect to handle concentration requirements from spells.
-        
+
         Args:
             actor: The character applying the effect.
             target: The character receiving the effect.
             effect: The effect to apply.
             mind_level: The spell level used.
-            
+
         Returns:
             bool: True if the effect was successfully applied.
         """
@@ -169,11 +181,11 @@ class Spell(BaseAction):
             return False
         if not target.is_alive():
             return False
-        
+
         # If this spell requires concentration and effect exists, mark it as requiring concentration
         if self.requires_concentration and effect:
             effect.requires_concentration = True
-        
+
         # For spells, pass the spell reference to the effect manager
         if target.effect_manager.add_effect(actor, effect, mind_level, self):
             debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
@@ -649,7 +661,7 @@ class SpellBuff(Spell):
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
-        
+
         # Handle effects that have modifiers (Buff/Debuff)
         if isinstance(self.effect, ModifierEffect):
             for modifier in self.effect.modifiers:
@@ -665,7 +677,7 @@ class SpellBuff(Spell):
                 else:
                     expressions[bonus_type] = str(value)
         # OnHitTrigger and other effect types don't need modifier expressions here
-        
+
         return expressions
 
     def to_dict(self) -> dict[str, Any]:

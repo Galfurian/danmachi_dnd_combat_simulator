@@ -71,9 +71,7 @@ class CombatManager:
             # Show AC for player and allies, hide for enemies
             show_ac = participant.type != CharacterType.ENEMY
             status_line = participant.get_status_line(show_bars=True, show_ac=show_ac)
-            cprint(
-                f"    🎲 {self.initiatives[participant]:3}  {status_line}"
-            )
+            cprint(f"    🎲 {self.initiatives[participant]:3}  {status_line}")
 
     def get_alive_participants(self) -> list[Character]:
         """Returns a list of all participants (player, enemies, friendlies) who are still alive.
@@ -161,7 +159,11 @@ class CombatManager:
             # Print the participant's status line with appropriate display mode
             if participant == self.player:
                 # Player gets full display: numbers + bars + AC
-                cprint(participant.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+                cprint(
+                    participant.get_status_line(
+                        show_numbers=True, show_bars=True, show_ac=True
+                    )
+                )
             else:
                 # NPCs get bars only for cleaner display
                 # Show AC for allies, hide for enemies
@@ -454,11 +456,11 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for base attacks.
-        base_attacks: list[BaseAttack] = get_actions_by_type(npc, BaseAttack)
-        used_base_attack: bool = False
-        if base_attacks:
+        weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
+        used_weapon_attack: bool = False
+        if weapon_attacks:
             # Choose the best weapon type once for the full attack sequence
-            best_weapon = choose_best_weapon_for_situation(npc, base_attacks, enemies)
+            best_weapon = choose_best_weapon_for_situation(npc, weapon_attacks, enemies)
             if best_weapon:
                 # Get initial target for this weapon
                 current_target = choose_best_target_for_weapon(
@@ -478,15 +480,15 @@ class CombatManager:
 
                     # Perform the attack
                     best_weapon.execute(npc, current_target)
-                    used_base_attack = True
+                    used_weapon_attack = True
 
                 # Add cooldown and mark action type only once after all attacks
-                if used_base_attack:
+                if used_weapon_attack:
                     npc.add_cooldown(best_weapon, best_weapon.cooldown)
                     npc.use_action_type(best_weapon.type)
 
         # Check for natural attacks.
-        if not used_base_attack:
+        if not used_weapon_attack:
             # Natural attacks are designed as a sequence - perform each different attack once
             for attack in get_natural_attacks(npc):
                 result = choose_best_base_attack_action(npc, enemies, [attack])
@@ -558,7 +560,11 @@ class CombatManager:
         while True:
             for ally in self.get_alive_friendlies(self.player):
                 # Show full details for healing phase (allies show AC)
-                cprint(ally.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+                cprint(
+                    ally.get_status_line(
+                        show_numbers=True, show_bars=True, show_ac=True
+                    )
+                )
             if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
@@ -569,11 +575,17 @@ class CombatManager:
     def final_report(self) -> None:
         crule("📊  Final Battle Report", style="bold blue")
         # Player gets full display in final report
-        cprint(self.player.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+        cprint(
+            self.player.get_status_line(show_numbers=True, show_bars=True, show_ac=True)
+        )
         # Allies get full display too in final report
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
-                cprint(ally.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+                cprint(
+                    ally.get_status_line(
+                        show_numbers=True, show_bars=True, show_ac=True
+                    )
+                )
         # Fallen foes
         defeated = [
             c

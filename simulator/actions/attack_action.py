@@ -1,15 +1,27 @@
 from typing import Any, Optional
 
 from actions.base_action import BaseAction
-from combat.damage import DamageComponent, roll_damage_components, roll_damage_components_no_mind
+from combat.damage import (
+    DamageComponent,
+    roll_damage_components,
+    roll_damage_components_no_mind,
+)
 from core.constants import (
-    ActionCategory, ActionType, BonusType, GLOBAL_VERBOSE_LEVEL,
-    apply_character_type_color, get_effect_color, is_oponent
+    ActionCategory,
+    ActionType,
+    BonusType,
+    GLOBAL_VERBOSE_LEVEL,
+    apply_character_type_color,
+    get_effect_color,
+    is_oponent,
 )
 from core.error_handling import log_error, log_warning, log_critical
 from core.utils import (
-    debug, parse_expr_and_assume_max_roll, parse_expr_and_assume_min_roll, 
-    substitute_variables, cprint
+    debug,
+    parse_expr_and_assume_max_roll,
+    parse_expr_and_assume_min_roll,
+    substitute_variables,
+    cprint,
 )
 from effects.effect import Effect
 
@@ -30,30 +42,43 @@ class BaseAttack(BaseAction):
     ):
         try:
             super().__init__(
-                name, type, ActionCategory.OFFENSIVE, description, cooldown, maximum_uses, target_restrictions
+                name,
+                type,
+                ActionCategory.OFFENSIVE,
+                description,
+                cooldown,
+                maximum_uses,
+                target_restrictions,
             )
-            
+
             # Validate hands_required
             if not isinstance(hands_required, int) or hands_required < 0:
                 log_warning(
                     f"Attack {name} hands_required must be non-negative integer, got: {hands_required}",
-                    {"name": name, "hands_required": hands_required}
+                    {"name": name, "hands_required": hands_required},
                 )
-                hands_required = max(0, int(hands_required) if isinstance(hands_required, (int, float)) else 0)
-            
+                hands_required = max(
+                    0,
+                    (
+                        int(hands_required)
+                        if isinstance(hands_required, (int, float))
+                        else 0
+                    ),
+                )
+
             # Validate attack_roll
             if not isinstance(attack_roll, str):
                 log_error(
                     f"Attack {name} attack_roll must be string, got: {attack_roll.__class__.__name__}",
-                    {"name": name, "attack_roll": attack_roll}
+                    {"name": name, "attack_roll": attack_roll},
                 )
                 attack_roll = str(attack_roll) if attack_roll is not None else ""
-            
+
             # Validate damage list
             if not isinstance(damage, list):
                 log_error(
                     f"Attack {name} damage must be list, got: {damage.__class__.__name__}",
-                    {"name": name, "damage": damage}
+                    {"name": name, "damage": damage},
                 )
                 damage = []
             else:
@@ -62,27 +87,31 @@ class BaseAttack(BaseAction):
                     if not isinstance(dmg_comp, DamageComponent):
                         log_error(
                             f"Attack {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
-                            {"name": name, "damage_index": i, "damage_component": dmg_comp}
+                            {
+                                "name": name,
+                                "damage_index": i,
+                                "damage_component": dmg_comp,
+                            },
                         )
-            
+
             # Validate effect
             if effect is not None and not isinstance(effect, Effect):
                 log_warning(
                     f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}",
-                    {"name": name, "effect": effect}
+                    {"name": name, "effect": effect},
                 )
                 effect = None
-            
+
             self.hands_required: int = hands_required
             self.attack_roll: str = attack_roll
             self.damage: list[DamageComponent] = damage
             self.effect: Optional[Effect] = effect
-            
+
         except Exception as e:
             log_critical(
                 f"Error initializing BaseAttack {name}: {str(e)}",
                 {"name": name, "error": str(e)},
-                e
+                e,
             )
             raise
 
@@ -91,63 +120,62 @@ class BaseAttack(BaseAction):
             # Validate inputs
             if not actor:
                 log_error(
-                    f"Cannot execute {self.name}: actor is None",
-                    {"action": self.name}
+                    f"Cannot execute {self.name}: actor is None", {"action": self.name}
                 )
                 return False
-                
+
             if not target:
                 log_error(
                     f"Cannot execute {self.name}: target is None",
-                    {"action": self.name, "actor": getattr(actor, 'name', 'Unknown')}
+                    {"action": self.name, "actor": getattr(actor, "name", "Unknown")},
                 )
                 return False
-            
+
             # Validate required attributes
-            if not hasattr(actor, 'name') or not hasattr(actor, 'type'):
+            if not hasattr(actor, "name") or not hasattr(actor, "type"):
                 log_error(
                     f"Actor missing required attributes for {self.name}",
-                    {"action": self.name, "actor": actor}
+                    {"action": self.name, "actor": actor},
                 )
                 return False
-                
-            if not hasattr(target, 'name') or not hasattr(target, 'type'):
+
+            if not hasattr(target, "name") or not hasattr(target, "type"):
                 log_error(
                     f"Target missing required attributes for {self.name}",
-                    {"action": self.name, "target": target}
+                    {"action": self.name, "target": target},
                 )
                 return False
-            
+
             actor_str = apply_character_type_color(actor.type, actor.name)
             target_str = apply_character_type_color(target.type, target.name)
 
             debug(f"{actor.name} attempts a {self.name} on {target.name}.")
 
             # Check cooldown
-            if not hasattr(actor, 'is_on_cooldown'):
+            if not hasattr(actor, "is_on_cooldown"):
                 log_error(
                     f"Actor lacks is_on_cooldown method for {self.name}",
-                    {"action": self.name, "actor": actor.name}
+                    {"action": self.name, "actor": actor.name},
                 )
                 return False
-                
+
             if actor.is_on_cooldown(self):
                 log_warning(
                     f"Action {self.name} is on cooldown",
-                    {"action": self.name, "actor": actor.name}
+                    {"action": self.name, "actor": actor.name},
                 )
                 return False
 
             # --- Build & resolve attack roll ---
 
             # Get attack modifier from the actor's effect manager.
-            if not hasattr(actor, 'effect_manager'):
+            if not hasattr(actor, "effect_manager"):
                 log_error(
                     f"Actor lacks effect_manager for {self.name}",
-                    {"action": self.name, "actor": actor.name}
+                    {"action": self.name, "actor": actor.name},
                 )
                 return False
-                
+
             attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
 
             # Roll the attack.
@@ -189,15 +217,19 @@ class BaseAttack(BaseAction):
                 base_damage *= 2
 
             # Trigger OnHitTrigger effects (like Searing Smite)
-            trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = actor.effect_manager.trigger_on_hit_effects(target)
-            
+            trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = (
+                actor.effect_manager.trigger_on_hit_effects(target)
+            )
+
             # Apply trigger effects to target with proper mind levels
             for effect, mind_level in trigger_effects_with_levels:
                 if effect.can_apply(actor, target):
                     target.effect_manager.add_effect(actor, effect, mind_level)
 
             # Then roll any additional damage from effects (including triggered damage bonuses).
-            all_damage_modifiers = actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
+            all_damage_modifiers = (
+                actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
+            )
             bonus_damage, bonus_damage_details = roll_damage_components(
                 actor, target, all_damage_modifiers
             )
@@ -233,22 +265,26 @@ class BaseAttack(BaseAction):
                     else:
                         msg += f"        {target_str} is not affected by"
                     msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
-            
+
             # Display messages for consumed OnHitTrigger effects
             for trigger in consumed_triggers:
                 trigger_msg = f"    ⚡ {actor_str}'s [bold][{get_effect_color(trigger)}]{trigger.name}[/][/] activates!"
                 cprint(trigger_msg)
-            
+
             cprint(msg)
 
             return True
-            
+
         except Exception as e:
             log_error(
                 f"Error executing attack {self.name}: {str(e)}",
-                {"action": self.name, "error": str(e), 
-                 "actor": getattr(actor, 'name', 'Unknown'), "target": getattr(target, 'name', 'Unknown')},
-                e
+                {
+                    "action": self.name,
+                    "error": str(e),
+                    "actor": getattr(actor, "name", "Unknown"),
+                    "target": getattr(target, "name", "Unknown"),
+                },
+                e,
             )
             return False
 
@@ -334,7 +370,7 @@ class BaseAttack(BaseAction):
 
 class WeaponAttack(BaseAttack):
     """A weapon-based attack that can be equipped and unequipped."""
-    
+
     def __init__(
         self,
         name: str,
@@ -348,10 +384,17 @@ class WeaponAttack(BaseAttack):
         effect: Optional[Effect] = None,
     ):
         super().__init__(
-            name, type, description, cooldown, maximum_uses, 
-            hands_required, attack_roll, damage, effect
+            name,
+            type,
+            description,
+            cooldown,
+            maximum_uses,
+            hands_required,
+            attack_roll,
+            damage,
+            effect,
         )
-    
+
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "WeaponAttack":
         """Creates a WeaponAttack instance from a dictionary."""
@@ -370,7 +413,7 @@ class WeaponAttack(BaseAttack):
 
 class NaturalAttack(BaseAttack):
     """A natural/innate attack that is part of a creature's biology."""
-    
+
     def __init__(
         self,
         name: str,
@@ -383,11 +426,17 @@ class NaturalAttack(BaseAttack):
         effect: Optional[Effect] = None,
     ):
         super().__init__(
-            name, type, description, cooldown, maximum_uses, 
+            name,
+            type,
+            description,
+            cooldown,
+            maximum_uses,
             0,  # Natural attacks don't require hands
-            attack_roll, damage, effect
+            attack_roll,
+            damage,
+            effect,
         )
-    
+
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "NaturalAttack":
         """Creates a NaturalAttack instance from a dictionary."""
@@ -412,12 +461,12 @@ def from_dict_attack(data: dict[str, Any]) -> Optional[BaseAttack]:
         BaseAttack: An instance of BaseAttack or its subclass.
     """
     attack_class = data.get("class", "BaseAttack")
-    
+
     if attack_class == "WeaponAttack":
         return WeaponAttack.from_dict(data)
     elif attack_class == "NaturalAttack":
         return NaturalAttack.from_dict(data)
     elif attack_class == "BaseAttack":
         return BaseAttack.from_dict(data)
-    
+
     return None

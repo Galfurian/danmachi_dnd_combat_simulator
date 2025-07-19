@@ -356,14 +356,16 @@ class PlayerInterface:
 
             elif isinstance(spell, SpellBuff):
                 # If the spell has a consumes_on_trigger effect, indicate it.
-                if hasattr(spell.effect, 'consumes_on_trigger') and getattr(spell.effect, 'consumes_on_trigger', False):
+                if hasattr(spell.effect, "consumes_on_trigger") and getattr(
+                    spell.effect, "consumes_on_trigger", False
+                ):
                     prompt += f"(one-shot)"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
 
                 # Iterate over each modifier and bonus (only for effects that have modifiers).
-                if hasattr(spell.effect, 'modifiers'):
-                    for modifier in getattr(spell.effect, 'modifiers', []):
+                if hasattr(spell.effect, "modifiers"):
+                    for modifier in getattr(spell.effect, "modifiers", []):
                         bonus_type = modifier.bonus_type
                         value = modifier.value
                         if isinstance(value, DamageComponent):

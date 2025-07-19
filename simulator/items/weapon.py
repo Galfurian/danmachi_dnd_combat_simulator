@@ -49,7 +49,7 @@ class Weapon:
             attack = from_dict_attack(action_data)
             if attack is not None:
                 attack_list.append(attack)
-        
+
         return Weapon(
             name=data["name"],
             description=data["description"],

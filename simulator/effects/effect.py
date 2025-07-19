@@ -7,36 +7,44 @@ from .modifier import Modifier
 
 
 class Effect:
-    def __init__(self, name: str, description: str = "", max_duration: int = 0, requires_concentration: bool = False):
+    def __init__(
+        self,
+        name: str,
+        description: str = "",
+        max_duration: int = 0,
+        requires_concentration: bool = False,
+    ):
         # Validate inputs
         if not name or not isinstance(name, str):
             log_error(
                 f"Effect name must be a non-empty string, got: {name}",
-                {"name": name, "type": type(name).__name__}
+                {"name": name, "type": type(name).__name__},
             )
             raise ValueError(f"Invalid effect name: {name}")
-            
+
         if not isinstance(description, str):
             log_warning(
                 f"Effect description must be a string, got: {type(description).__name__}",
-                {"name": name, "description": description}
+                {"name": name, "description": description},
             )
             description = str(description) if description is not None else ""
-            
+
         if not isinstance(max_duration, int) or max_duration < 0:
             log_error(
                 f"Effect max_duration must be a non-negative integer, got: {max_duration}",
-                {"name": name, "max_duration": max_duration}
+                {"name": name, "max_duration": max_duration},
             )
-            max_duration = max(0, int(max_duration) if isinstance(max_duration, (int, float)) else 0)
-            
+            max_duration = max(
+                0, int(max_duration) if isinstance(max_duration, (int, float)) else 0
+            )
+
         if not isinstance(requires_concentration, bool):
             log_warning(
                 f"Effect requires_concentration must be boolean, got: {type(requires_concentration).__name__}",
-                {"name": name, "requires_concentration": requires_concentration}
+                {"name": name, "requires_concentration": requires_concentration},
             )
             requires_concentration = bool(requires_concentration)
-            
+
         self.name: str = name
         self.description: str = description
         self.max_duration: int = max_duration
@@ -54,30 +62,35 @@ class Effect:
             if not actor:
                 log_error(
                     f"Actor cannot be None for effect {self.name}",
-                    {"effect": self.name}
+                    {"effect": self.name},
                 )
                 return
-                
+
             if not target:
                 log_error(
                     f"Target cannot be None for effect {self.name}",
-                    {"effect": self.name}
+                    {"effect": self.name},
                 )
                 return
-                
+
             if not isinstance(mind_level, int) or mind_level < 0:
                 log_warning(
                     f"Mind level must be non-negative integer for effect {self.name}, got: {mind_level}",
-                    {"effect": self.name, "mind_level": mind_level}
+                    {"effect": self.name, "mind_level": mind_level},
                 )
-                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
-                
+                mind_level = max(
+                    0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
+                )
+
         except Exception as e:
             log_critical(
                 f"Error during turn_update validation for effect {self.name}: {str(e)}",
-                {"effect": self.name, "actor": getattr(actor, 'name', 'unknown'), 
-                 "target": getattr(target, 'name', 'unknown')},
-                e
+                {
+                    "effect": self.name,
+                    "actor": getattr(actor, "name", "unknown"),
+                    "target": getattr(target, "name", "unknown"),
+                },
+                e,
             )
 
     def is_permanent(self) -> bool:
@@ -92,25 +105,22 @@ class Effect:
         """Validate the effect's properties."""
         try:
             if not self.name:
-                log_error(
-                    "Effect name must not be empty",
-                    {"name": self.name}
-                )
+                log_error("Effect name must not be empty", {"name": self.name})
                 raise ValueError("Effect name must not be empty")
-                
+
             if not isinstance(self.description, str):
                 log_warning(
                     f"Effect description must be a string, got {type(self.description).__name__}",
-                    {"name": self.name, "description": self.description}
+                    {"name": self.name, "description": self.description},
                 )
                 raise ValueError("Effect description must be a string")
-                
+
         except Exception as e:
             if not isinstance(e, ValueError):
                 log_critical(
                     f"Unexpected error during effect validation: {str(e)}",
                     {"effect": self.name},
-                    e
+                    e,
                 )
             raise
 
@@ -128,24 +138,24 @@ class Effect:
             if not actor:
                 log_warning(
                     f"Actor cannot be None when checking if effect {self.name} can be applied",
-                    {"effect": self.name}
+                    {"effect": self.name},
                 )
                 return False
-                
+
             if not target:
                 log_warning(
                     f"Target cannot be None when checking if effect {self.name} can be applied",
-                    {"effect": self.name}
+                    {"effect": self.name},
                 )
                 return False
-                
+
             return False  # Base implementation
-            
+
         except Exception as e:
             log_error(
                 f"Error checking if effect {self.name} can be applied: {str(e)}",
                 {"effect": self.name},
-                e
+                e,
             )
             return False
 
@@ -170,7 +180,7 @@ class Effect:
         """
         assert data is not None, "Data must not be None."
         effect_type = data.get("type")
-        
+
         if effect_type == "Buff":
             return Buff.from_dict(data)
         if effect_type == "Debuff":
@@ -458,7 +468,7 @@ class HoT(Effect):
 
 class OnHitTrigger(Effect):
     """Effect that activates when the character makes their next weapon/natural attack."""
-    
+
     def __init__(
         self,
         name: str,
@@ -479,10 +489,14 @@ class OnHitTrigger(Effect):
         super().validate()
         assert isinstance(self.trigger_effects, list), "Trigger effects must be a list."
         for effect in self.trigger_effects:
-            assert isinstance(effect, Effect), f"Trigger effect '{effect}' must be of type Effect."
+            assert isinstance(
+                effect, Effect
+            ), f"Trigger effect '{effect}' must be of type Effect."
         assert isinstance(self.damage_bonus, list), "Damage bonus must be a list."
         for damage_comp in self.damage_bonus:
-            assert isinstance(damage_comp, DamageComponent), f"Damage component '{damage_comp}' must be of type DamageComponent."
+            assert isinstance(
+                damage_comp, DamageComponent
+            ), f"Damage component '{damage_comp}' must be of type DamageComponent."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """OnHitTrigger can be applied to any living target."""
@@ -498,17 +512,17 @@ class OnHitTrigger(Effect):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "OnHitTrigger":
         assert data is not None, "Data must not be None."
-        
+
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
             trigger_effects.append(Effect.from_dict(effect_data))
-        
+
         # Parse damage bonus components
         damage_bonus = []
         for damage_data in data.get("damage_bonus", []):
             damage_bonus.append(DamageComponent.from_dict(damage_data))
-        
+
         return OnHitTrigger(
             name=data["name"],
             description=data.get("description", ""),
@@ -522,7 +536,7 @@ class OnHitTrigger(Effect):
 
 class OnLowHealthTrigger(Effect):
     """Effect that activates when the character's HP drops below a threshold percentage."""
-    
+
     def __init__(
         self,
         name: str,
@@ -533,7 +547,9 @@ class OnLowHealthTrigger(Effect):
         consumes_on_trigger: bool = True,
     ):
         # No max_duration - these are permanent passive abilities
-        super().__init__(name, description, max_duration=0, requires_concentration=False)
+        super().__init__(
+            name, description, max_duration=0, requires_concentration=False
+        )
         self.hp_threshold_percent: float = hp_threshold_percent
         self.trigger_effects: list[Effect] = trigger_effects or []
         self.damage_bonus: list[DamageComponent] = damage_bonus or []
@@ -543,13 +559,19 @@ class OnLowHealthTrigger(Effect):
 
     def validate(self):
         super().validate()
-        assert 0.0 <= self.hp_threshold_percent <= 1.0, "HP threshold must be between 0.0 and 1.0"
+        assert (
+            0.0 <= self.hp_threshold_percent <= 1.0
+        ), "HP threshold must be between 0.0 and 1.0"
         assert isinstance(self.trigger_effects, list), "Trigger effects must be a list."
         for effect in self.trigger_effects:
-            assert isinstance(effect, Effect), f"Trigger effect '{effect}' must be of type Effect."
+            assert isinstance(
+                effect, Effect
+            ), f"Trigger effect '{effect}' must be of type Effect."
         assert isinstance(self.damage_bonus, list), "Damage bonus must be a list."
         for damage_comp in self.damage_bonus:
-            assert isinstance(damage_comp, DamageComponent), f"Damage component '{damage_comp}' must be of type DamageComponent."
+            assert isinstance(
+                damage_comp, DamageComponent
+            ), f"Damage component '{damage_comp}' must be of type DamageComponent."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """OnLowHealthTrigger can be applied to any living target."""
@@ -559,17 +581,19 @@ class OnLowHealthTrigger(Effect):
         """Check if the trigger condition is met and hasn't already been activated."""
         if self.has_triggered and self.consumes_on_trigger:
             return False
-        
+
         hp_ratio = character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
         return hp_ratio <= self.hp_threshold_percent
 
-    def activate(self, character: Any) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
+    def activate(
+        self, character: Any
+    ) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
         """Activate the trigger and return damage bonuses and effects to apply."""
         self.has_triggered = True
-        
+
         # Return damage bonuses and effects with mind level 0 (passive triggers don't use mind)
         trigger_effects_with_levels = [(effect, 0) for effect in self.trigger_effects]
-        
+
         return self.damage_bonus.copy(), trigger_effects_with_levels
 
     def to_dict(self) -> dict[str, Any]:
@@ -584,17 +608,17 @@ class OnLowHealthTrigger(Effect):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "OnLowHealthTrigger":
         assert data is not None, "Data must not be None."
-        
+
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
             trigger_effects.append(Effect.from_dict(effect_data))
-        
+
         # Parse damage bonus components
         damage_bonus = []
         for damage_data in data.get("damage_bonus", []):
             damage_bonus.append(DamageComponent.from_dict(damage_data))
-        
+
         trigger = OnLowHealthTrigger(
             name=data["name"],
             description=data.get("description", ""),
@@ -603,8 +627,8 @@ class OnLowHealthTrigger(Effect):
             damage_bonus=damage_bonus,
             consumes_on_trigger=data.get("consumes_on_trigger", True),
         )
-        
+
         # Restore triggered state if loading from save
         trigger.has_triggered = data.get("has_triggered", False)
-        
+
         return trigger

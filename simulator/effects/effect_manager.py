@@ -10,9 +10,11 @@ from effects.concentration_manager import ConcentrationManager
 
 
 class ActiveEffect:
-    def __init__(self, source: Any, target: Any, effect: Effect, mind_level: int) -> None:
+    def __init__(
+        self, source: Any, target: Any, effect: Effect, mind_level: int
+    ) -> None:
         self.source: Any = source  # The caster
-        self.target: Any = target  # The recipient 
+        self.target: Any = target  # The recipient
         self.effect: Effect = effect
         self.mind_level: int = mind_level
         self.duration: int = effect.max_duration
@@ -27,34 +29,38 @@ class EffectManager:
 
     # === Effect Management ===
 
-    def add_effect(self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None) -> bool:
+    def add_effect(
+        self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None
+    ) -> bool:
         try:
             # Validate inputs
             if not source:
                 log_error(
                     "Source cannot be None when adding effect",
-                    {"effect": getattr(effect, 'name', 'unknown')}
+                    {"effect": getattr(effect, "name", "unknown")},
                 )
                 return False
-                
+
             if not effect:
                 log_error(
                     "Effect cannot be None when adding to effect manager",
-                    {"source": getattr(source, 'name', 'unknown')}
+                    {"source": getattr(source, "name", "unknown")},
                 )
                 return False
-                
+
             if not isinstance(mind_level, int) or mind_level < 0:
                 log_warning(
                     f"Mind level must be non-negative integer, got: {mind_level}",
-                    {"effect": effect.name, "mind_level": mind_level}
+                    {"effect": effect.name, "mind_level": mind_level},
                 )
-                mind_level = max(0, int(mind_level) if isinstance(mind_level, (int, float)) else 0)
-                
+                mind_level = max(
+                    0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
+                )
+
             new_effect = ActiveEffect(source, self.owner, effect, mind_level)
 
             # Check concentration limit if this effect requires concentration
-            if getattr(effect, 'requires_concentration', False) and spell:
+            if getattr(effect, "requires_concentration", False) and spell:
                 # The concentration is managed by the SOURCE (caster), not the target
                 if not source.effect_manager.concentration_manager.add_concentration_effect(
                     spell, self.owner, new_effect, mind_level
@@ -72,12 +78,19 @@ class EffectManager:
             elif isinstance(effect, OnHitTrigger):
                 # Only allow one OnHitTrigger spell at a time (like D&D 5e smite spells)
                 # Remove any existing OnHitTrigger effects first
-                existing_triggers = [ae for ae in self.active_effects if isinstance(ae.effect, OnHitTrigger)]
+                existing_triggers = [
+                    ae
+                    for ae in self.active_effects
+                    if isinstance(ae.effect, OnHitTrigger)
+                ]
                 for existing_trigger in existing_triggers:
                     self.remove_effect(existing_trigger)
                     # Show message about replacing the old trigger
                     from core.utils import cprint
-                    cprint(f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}.")
+
+                    cprint(
+                        f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}."
+                    )
 
             elif isinstance(effect, ModifierEffect):
                 for modifier in effect.modifiers:
@@ -93,20 +106,20 @@ class EffectManager:
 
             self.active_effects.append(new_effect)
             return True
-            
+
         except Exception as e:
             log_critical(
                 f"Error adding effect to manager: {str(e)}",
                 {
-                    "ctx_effect": getattr(effect, 'name', 'unknown'),
-                    "ctx_source": getattr(source, 'name', 'unknown'),
-                    "ctx_target": getattr(self.owner, 'name', 'unknown')
+                    "ctx_effect": getattr(effect, "name", "unknown"),
+                    "ctx_source": getattr(source, "name", "unknown"),
+                    "ctx_target": getattr(self.owner, "name", "unknown"),
                 },
-                e
+                e,
             )
             return False
 
-    def remove_effect(self, effect: 'ActiveEffect') -> bool:
+    def remove_effect(self, effect: "ActiveEffect") -> bool:
         try:
             if effect in self.active_effects:
                 self.active_effects.remove(effect)
@@ -116,31 +129,31 @@ class EffectManager:
             log_error(
                 f"Error removing effect from manager: {str(e)}",
                 {
-                    "ctx_effect": getattr(effect.effect, 'name', 'unknown'),
-                    "ctx_target": getattr(self.owner, 'name', 'unknown')
+                    "ctx_effect": getattr(effect.effect, "name", "unknown"),
+                    "ctx_target": getattr(self.owner, "name", "unknown"),
                 },
-                e
+                e,
             )
             return False
 
     # === Concentration Management Delegation ===
-    
+
     def can_add_concentration_effect(self) -> bool:
         """Check if we can add another concentration effect without exceeding the limit."""
         return self.concentration_manager.can_add_concentration_spell()
-    
+
     def break_concentration(self, effect: Optional[Effect] = None) -> bool:
         """Break concentration on a specific effect or all concentration effects.
-        
+
         Args:
             effect: Specific effect to break concentration on. If None, breaks all.
-            
+
         Returns:
             bool: True if any concentration was broken
         """
         if effect:
             # Try to find the spell that created this effect and break concentration on it
-            spell_name = getattr(effect, '_from_spell', None)
+            spell_name = getattr(effect, "_from_spell", None)
             if spell_name:
                 return self.concentration_manager.break_concentration(spell_name.name)
             return False
@@ -312,7 +325,11 @@ class EffectManager:
                 return get_max_roll(modifier.value, variables)
             else:
                 # int or DamageComponent - convert to string or return 0
-                return get_max_roll(str(modifier.value), variables) if isinstance(modifier.value, int) else 0
+                return (
+                    get_max_roll(str(modifier.value), variables)
+                    if isinstance(modifier.value, int)
+                    else 0
+                )
         elif bonus_type == BonusType.DAMAGE:
             if isinstance(modifier.value, DamageComponent):
                 return get_max_roll(modifier.value.damage_roll, variables)
@@ -331,13 +348,17 @@ class EffectManager:
                 triggers.append(ae)
         return triggers
 
-    def trigger_on_hit_effects(self, target: Any) -> tuple[list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnHitTrigger]]:
+    def trigger_on_hit_effects(
+        self, target: Any
+    ) -> tuple[
+        list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnHitTrigger]
+    ]:
         """
         Trigger all OnHitTrigger effects and return damage bonuses and effects to apply.
-        
+
         Args:
             target: The target being hit
-            
+
         Returns:
             tuple: (damage_bonuses, effects_to_apply, consumed_triggers)
                 - damage_bonuses: List of (DamageComponent, mind_level) tuples for extra damage
@@ -352,17 +373,17 @@ class EffectManager:
         for ae in self.get_on_hit_triggers():
             if not isinstance(ae.effect, OnHitTrigger):
                 continue
-            
+
             trigger = ae.effect
-            
+
             # Add damage bonuses from this trigger
             for damage_comp in trigger.damage_bonus:
                 damage_bonuses.append((damage_comp, ae.mind_level))
-            
+
             # Add effects to apply to target (with mind level)
             for effect in trigger.trigger_effects:
                 effects_to_apply.append((effect, ae.mind_level))
-            
+
             # Mark for removal if it consumes on trigger
             if trigger.consumes_on_trigger:
                 effects_to_remove.append(ae)
