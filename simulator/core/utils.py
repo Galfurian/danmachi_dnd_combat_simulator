@@ -1,7 +1,7 @@
 import re
 import random
 import math
-from logging import debug, warning
+from logging import debug
 from typing import Any, Optional, Callable
 from rich.console import Console
 from rich.rule import Rule
@@ -340,7 +340,10 @@ def _process_dice_expression(
     try:
         return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        warning(f"Failed to evaluate '{processed_expr}': {e}")
+        log_warning(
+            f"Failed to evaluate '{processed_expr}': {e}",
+            {"expression": processed_expr, "error": str(e), "context": "dice_expression_evaluation"}
+        )
         return 0
 
 
@@ -420,7 +423,10 @@ def roll_and_describe(
         comment = f"{substituted} → {breakdown}"
         return result, comment, dice_rolls
     except Exception as e:
-        warning(f"Failed to evaluate '{breakdown}': {e}")
+        log_warning(
+            f"Failed to evaluate '{breakdown}': {e}",
+            {"breakdown": breakdown, "original_expr": original_expr, "error": str(e), "context": "dice_breakdown_evaluation"}
+        )
         return 0, f"{original_expr} = ERROR", []
 
 
@@ -436,7 +442,10 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        warning(f"Failed to evaluate '{substituted}': {e}")
+        log_warning(
+            f"Failed to evaluate '{substituted}': {e}",
+            {"expression": substituted, "original": expr, "variables": variables or {}, "error": str(e), "context": "variable_expression_evaluation"}
+        )
         return 0
 
 

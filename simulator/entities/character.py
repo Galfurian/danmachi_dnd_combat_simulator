@@ -1,11 +1,12 @@
 import json
-from logging import debug, warning
+from logging import debug
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
 from actions.base_action import BaseAction
 from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spell_action import Spell
+from core.error_handling import log_warning
 from core.constants import (
     ActionType,
     ArmorSlot,
@@ -506,8 +507,9 @@ class Character:
             return True
         # Check if the character has enough free hands to equip the weapon.
         if weapon.hands_required > self.get_free_hands():
-            warning(
-                f"{self.name} does not have enough free hands to equip {weapon.name}."
+            log_warning(
+                f"{self.name} does not have enough free hands to equip {weapon.name}.",
+                {"character": self.name, "weapon": weapon.name, "hands_required": weapon.hands_required, "free_hands": self.get_free_hands()}
             )
             return False
         return True
@@ -526,7 +528,10 @@ class Character:
             # Add the weapon to the character's weapon list.
             self.equipped_weapons.append(weapon)
             return True
-        warning(f"{self.name} cannot equip {weapon.name}.")
+        log_warning(
+            f"{self.name} cannot equip {weapon.name}",
+            {"character": self.name, "weapon": weapon.name}
+        )
         return False
 
     def remove_weapon(self, weapon: Weapon) -> bool:
@@ -543,7 +548,10 @@ class Character:
             # Remove the weapon from the character's weapon list.
             self.equipped_weapons.remove(weapon)
             return True
-        warning(f"{self.name} does not have {weapon.name} equipped.")
+        log_warning(
+            f"{self.name} does not have {weapon.name} equipped",
+            {"character": self.name, "weapon": weapon.name}
+        )
         return False
 
     def can_equip_armor(self, armor: Armor) -> bool:
@@ -558,14 +566,18 @@ class Character:
         # If the armor is a shield, it can be equipped if the character has a free hand.
         if armor.armor_slot == ArmorSlot.SHIELD:
             if self.get_free_hands() <= 0:
-                warning(f"{self.name} does not have a free hand to equip {armor.name}.")
+                log_warning(
+                    f"{self.name} does not have a free hand to equip {armor.name}",
+                    {"character": self.name, "armor": armor.name, "free_hands": self.get_free_hands()}
+                )
                 return False
             return True
         # Otherwise, check if the armor slot is already occupied.
         for equipped in self.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
-                warning(
-                    f"{self.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}."
+                log_warning(
+                    f"{self.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
+                    {"character": self.name, "armor": armor.name, "slot": armor.armor_slot.name, "equipped": equipped.name}
                 )
                 return False
         # If the armor slot is not occupied, we can equip it.
@@ -585,8 +597,9 @@ class Character:
             # Add the armor to the character's armor list.
             self.equipped_armor.append(armor)
             return True
-        warning(
-            f"{self.name} cannot equip {armor.name} because the armor slot is already occupied."
+        log_warning(
+            f"{self.name} cannot equip {armor.name} because the armor slot is already occupied",
+            {"character": self.name, "armor": armor.name, "slot": armor.armor_slot.name}
         )
         return False
 
@@ -604,7 +617,10 @@ class Character:
             # Remove the armor from the character's armor list.
             self.equipped_armor.remove(armor)
             return True
-        warning(f"{self.name} does not have {armor.name} equipped.")
+        log_warning(
+            f"{self.name} does not have {armor.name} equipped",
+            {"character": self.name, "armor": armor.name}
+        )
         return False
 
     def turn_update(self):
@@ -689,9 +705,15 @@ class Character:
                     f"{self.name} used {action.name}. Remaining uses: {self.uses[action.name]}"
                 )
             else:
-                warning(f"{self.name} has no remaining uses for {action.name}.")
+                log_warning(
+                    f"{self.name} has no remaining uses for {action.name}",
+                    {"character": self.name, "action": action.name, "remaining_uses": self.uses[action.name]}
+                )
         else:
-            warning(f"{self.name} does not have {action.name} in their uses.")
+            log_warning(
+                f"{self.name} does not have {action.name} in their uses",
+                {"character": self.name, "action": action.name, "available_actions": list(self.uses.keys())}
+            )
 
     def get_status_line(
         self,
@@ -910,7 +932,10 @@ class Character:
         for weapon_name in data.get("equipped_weapons", []):
             weapon = repo.get_weapon(weapon_name)
             if weapon is None:
-                warning(f"Invalid weapon '{weapon_name}' for character {data['name']}.")
+                log_warning(
+                    f"Invalid weapon '{weapon_name}' for character {data['name']}",
+                    {"character": data['name'], "weapon_name": weapon_name, "context": "character_loading"}
+                )
                 continue
             char.add_weapon(weapon)
 
@@ -918,8 +943,9 @@ class Character:
         for weapon_name in data.get("natural_weapons", []):
             weapon = repo.get_weapon(weapon_name)
             if weapon is None:
-                warning(
-                    f"Invalid natural weapon '{weapon_name}' for character {data['name']}."
+                log_warning(
+                    f"Invalid natural weapon '{weapon_name}' for character {data['name']}",
+                    {"character": data['name'], "weapon_name": weapon_name, "weapon_type": "natural", "context": "character_loading"}
                 )
                 continue
             char.natural_weapons.append(weapon)
@@ -928,7 +954,10 @@ class Character:
         for armor_name in data.get("equipped_armor", []):
             armor = repo.get_armor(armor_name)
             if armor is None:
-                warning(f"Invalid armor '{armor_name}' for character {data['name']}.")
+                log_warning(
+                    f"Invalid armor '{armor_name}' for character {data['name']}",
+                    {"character": data['name'], "armor_name": armor_name, "context": "character_loading"}
+                )
                 continue
             char.add_armor(armor)
 
@@ -936,7 +965,10 @@ class Character:
         for action_name in data.get("actions", []):
             action = repo.get_action(action_name)
             if action is None:
-                warning(f"Invalid action '{action_name}' for character {data['name']}.")
+                log_warning(
+                    f"Invalid action '{action_name}' for character {data['name']}",
+                    {"character": data['name'], "action_name": action_name, "context": "character_loading"}
+                )
                 continue
             char.learn_action(action)
 
@@ -944,7 +976,10 @@ class Character:
         for spell_data in data.get("spells", []):
             spell = repo.get_spell(spell_data)
             if spell is None:
-                warning(f"Invalid spell '{spell_data}' for character {data['name']}.")
+                log_warning(
+                    f"Invalid spell '{spell_data}' for character {data['name']}",
+                    {"character": data['name'], "spell_data": str(spell_data), "context": "character_loading"}
+                )
                 continue
             char.learn_spell(spell)
 
@@ -954,7 +989,10 @@ class Character:
                 effect = Effect.from_dict(effect_data)
                 char.passive_effects.append(effect)
             except Exception as e:
-                warning(f"Invalid passive effect for character {data['name']}: {e}")
+                log_warning(
+                    f"Invalid passive effect for character {data['name']}: {e}",
+                    {"character": data['name'], "effect_data": str(effect_data), "error": str(e), "context": "character_loading"}
+                )
                 continue
 
         return char
@@ -975,7 +1013,10 @@ def load_character(file_path: Path) -> Character | None:
             character_data = json.load(f)
             return Character.from_dict(character_data)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        warning(f"Failed to load character from {file_path}: {e}")
+        log_warning(
+            f"Failed to load character from {file_path}: {e}",
+            {"file_path": str(file_path), "error": str(e), "context": "character_file_loading"}
+        )
         return None
 
 

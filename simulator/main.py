@@ -1,11 +1,11 @@
 import logging
 from collections import Counter
 from copy import deepcopy
-from logging import error, warning
 from pathlib import Path
 
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
+from core.error_handling import log_error, log_warning
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
 from entities.character import Character, load_character, load_characters
@@ -72,7 +72,10 @@ crule("Loading Player Character", style="bold green")
 # Load the player character.
 player = load_character(data_dir / "player.json")
 if player is None:
-    error("Failed to load player character. Please check the data file.")
+    log_error(
+        "Failed to load player character. Please check the data file",
+        {"data_file": str(data_dir / "player.json"), "context": "main_startup"}
+    )
     exit(1)
 
 print_character_sheet(player)
@@ -92,7 +95,10 @@ def add_to_list(from_group: dict[str, Character], to_list: list[Character], name
     if name in from_group:
         to_list.append(deepcopy(from_group[name]))
     else:
-        warning(f"Opponent '{name}' not found in enemies data.")
+        log_warning(
+            f"Opponent '{name}' not found in enemies data",
+            {"opponent_name": name, "available_opponents": list(from_group.keys()), "context": "combat_setup"}
+        )
 
 
 def make_names_unique(in_list: list[Character]):

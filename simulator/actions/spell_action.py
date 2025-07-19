@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from logging import debug, error
+from logging import debug
 from typing import Any, Optional
 
 from actions.base_action import BaseAction
@@ -245,7 +245,10 @@ class SpellAttack(Spell):
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
 
         if actor.mind < mind_level:
-            error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
+            log_error(
+                f"{actor.name} does not have enough mind_cost to cast {self.name}",
+                {"actor": actor.name, "spell": self.name, "mind_required": mind_level, "mind_current": actor.mind}
+            )
             return False
 
         # If the action has a cooldown, add it to the actor's cooldowns.
@@ -473,7 +476,10 @@ class SpellHeal(Spell):
         )
         # Determine the mind_cost level to use.
         if actor.mind < mind_level:
-            error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
+            log_error(
+                f"{actor.name} does not have enough mind_cost to cast {self.name}",
+                {"actor": actor.name, "spell": self.name, "mind_required": mind_level, "mind_current": actor.mind}
+            )
             return False
 
         # If the action has a cooldown, add it to the actor's cooldowns.
@@ -624,7 +630,10 @@ class SpellBuff(Spell):
 
         # Determine the mind_cost level to use.
         if actor.mind < mind_level:
-            error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
+            log_error(
+                f"{actor.name} does not have enough mind_cost to cast {self.name}",
+                {"actor": actor.name, "spell": self.name, "mind_required": mind_level, "mind_current": actor.mind}
+            )
             return False
 
         # If the action has a cooldown, add it to the actor's cooldowns.
@@ -754,7 +763,10 @@ class SpellDebuff(Spell):
 
         # Determine the mind_cost level to use.
         if actor.mind < mind_level:
-            error(f"{actor.name} does not have enough mind_cost to cast {self.name}.")
+            log_error(
+                f"{actor.name} does not have enough mind_cost to cast {self.name}",
+                {"actor": actor.name, "spell": self.name, "mind_required": mind_level, "mind_current": actor.mind}
+            )
             return False
 
         # If the action has a cooldown, add it to the actor's cooldowns.

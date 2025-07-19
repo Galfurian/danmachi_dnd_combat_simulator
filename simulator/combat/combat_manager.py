@@ -1,10 +1,11 @@
 # combat_manager.py
 import random
 from collections import deque
-from logging import debug, warning
+from logging import debug
 from typing import List, Optional
 
 from core.utils import cprint, crule
+from core.error_handling import log_warning
 from actions.base_action import BaseAction
 from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spell_action import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
@@ -216,19 +217,28 @@ class CombatManager:
         # Get the list of all attacks available in the full attack.
         attacks = self.player.get_available_attacks()
         if not attacks:
-            warning("No available attacks for the full attack action.")
+            log_warning(
+                "No available attacks for the full attack action",
+                {"player": self.player.name, "context": "full_attack_selection"}
+            )
             return
 
         # Choose the attack type to use for all attacks in the sequence
         attack = self.ui.choose_action(attacks)
         if attack is None or not isinstance(attack, BaseAttack):
-            warning("Invalid attack selected. Ending full attack.")
+            log_warning(
+                "Invalid attack selected. Ending full attack",
+                {"player": self.player.name, "selected_attack": str(attack), "context": "full_attack_selection"}
+            )
             return
 
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, attack)
         if not valid_targets:
-            warning(f"No valid targets for {attack.name}.")
+            log_warning(
+                f"No valid targets for {attack.name}",
+                {"player": self.player.name, "attack": attack.name, "context": "full_attack_target_selection"}
+            )
             return
 
         # Choose the initial target
@@ -285,7 +295,10 @@ class CombatManager:
                     spell, spell.target_count(self.player, mind_level)
                 )
                 if not targets:
-                    warning(f"No valid targets for {spell.name}.")
+                    log_warning(
+                        f"No valid targets for {spell.name}",
+                        {"player": self.player.name, "spell": spell.name, "context": "spell_target_selection"}
+                    )
                     break
                 if isinstance(targets, str):
                     if targets == "q":
@@ -341,7 +354,10 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if not valid_targets:
-            warning(f"No valid targets for {action.name}.")
+            log_warning(
+                f"No valid targets for {action.name}",
+                {"player": self.player.name, "action": action.name, "context": "single_target_selection"}
+            )
             return None
         # Ask the player to choose a target.
         return self.ui.choose_target(valid_targets)
@@ -361,15 +377,24 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if len(valid_targets) == 0:
-            warning(f"No valid targets for {action.name}.")
+            log_warning(
+                f"No valid targets for {action.name}",
+                {"player": self.player.name, "action": action.name, "context": "multi_target_selection"}
+            )
             return None
         if max_targets <= 0:
-            warning(f"Invalid maximum number of targets: {max_targets}.")
+            log_warning(
+                f"Invalid maximum number of targets: {max_targets}",
+                {"player": self.player.name, "action": action.name, "max_targets": max_targets, "context": "target_validation"}
+            )
             return None
         if max_targets == 1 or len(valid_targets) == 1:
             target = self.ask_for_player_target(action)
             if target is None:
-                warning(f"No valid target for {action.name}.")
+                log_warning(
+                    f"No valid target for {action.name}",
+                    {"player": self.player.name, "action": action.name, "context": "single_target_fallback"}
+                )
                 return None
             if isinstance(target, str):
                 return target
@@ -388,7 +413,10 @@ class CombatManager:
         enemies = self.get_alive_opponents(npc)
 
         if not enemies:
-            warning(f"SKIP: {npc.name} has no enemies to attack.")
+            log_warning(
+                f"SKIP: {npc.name} has no enemies to attack",
+                {"npc": npc.name, "allies_count": len(allies), "context": "npc_ai_decision"}
+            )
             return
 
         # Check for healing spells.
