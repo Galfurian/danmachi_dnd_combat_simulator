@@ -47,9 +47,14 @@ class EffectManager:
                 return False
 
         elif isinstance(effect, OnHitTrigger):
-            # OnHitTrigger effects can stack (multiple smites, etc.)
-            # No special handling needed here, just add to active_effects
-            pass
+            # Only allow one OnHitTrigger spell at a time (like D&D 5e smite spells)
+            # Remove any existing OnHitTrigger effects first
+            existing_triggers = [ae for ae in self.active_effects if isinstance(ae.effect, OnHitTrigger)]
+            for existing_trigger in existing_triggers:
+                self.remove_effect(existing_trigger)
+                # Show message about replacing the old trigger
+                from core.utils import cprint
+                cprint(f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}.")
 
         elif isinstance(effect, ModifierEffect):
             for modifier in effect.modifiers:

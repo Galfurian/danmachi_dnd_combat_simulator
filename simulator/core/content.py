@@ -197,7 +197,10 @@ class ContentRepository(metaclass=Singleton):
             if not action:
                 action = from_dict_spell(action_data)
                 if not action:
-                    raise ValueError(f"Invalid action data: {action_data}")
+                    from actions.ability_action import from_dict_ability
+                    action = from_dict_ability(action_data)
+                    if not action:
+                        raise ValueError(f"Invalid action data: {action_data}")
             actions[action.name] = action
         return actions
 

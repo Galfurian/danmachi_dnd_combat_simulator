@@ -166,7 +166,9 @@
         "description": "Your next weapon attack deals extra psychic damage and fills the target with dread.",
         "level": 1,
         "mind_cost": [
-            1
+            1,
+            2,
+            3
         ],
         "target_restrictions": ["SELF"],
         "effect": {

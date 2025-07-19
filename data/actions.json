@@ -1,21 +1,15 @@
 [
     {
-        "class": "SpellAttack",
+        "class": "BaseAbility",
         "name": "Fire Breath",
         "type": "STANDARD",
         "description": "Unleash a fiery breath attack that scorches enemies in front of you.",
-        "level": 2,
         "cooldown": 3,
         "maximum_uses": 2,
-        "mind_cost": [
-            4,
-            6,
-            8
-        ],
         "target_expr": "3",
         "damage": [
             {
-                "damage_roll": "[MIND]D6",
+                "damage_roll": "3D6",
                 "damage_type": "FIRE"
             }
         ],
@@ -24,27 +18,21 @@
             "name": "Burning",
             "max_duration": 3,
             "damage": {
-                "damage_roll": "[MIND]D4",
+                "damage_roll": "1D4",
                 "damage_type": "FIRE"
             }
         }
     },
     {
-        "class": "SpellAttack",
+        "class": "BaseAbility",
         "name": "Wing Buffet",
         "type": "STANDARD",
         "description": "Use your wings to create a powerful gust of wind that knocks back enemies.",
-        "level": 2,
         "cooldown": 3,
-        "mind_cost": [
-            2,
-            4,
-            6
-        ],
         "target_expr": "2",
         "damage": [
             {
-                "damage_roll": "[MIND]D6",
+                "damage_roll": "2D6",
                 "damage_type": "BLUDGEONING"
             }
         ]
