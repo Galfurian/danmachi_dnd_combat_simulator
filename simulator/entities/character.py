@@ -630,48 +630,101 @@ class Character:
         else:
             warning(f"{self.name} does not have {action.name} in their uses.")
 
-    def get_status_line(self):
-        effects = (
-            ", ".join(
-                f"[{get_effect_color(e.effect)}]"
-                + e.effect.name
-                + f"[/] ({e.duration})"
-                for e in self.effect_manager.active_effects
-            )
-            if self.effect_manager.active_effects
-            else ""
-        )
-        hp_bar = make_bar(self.hp, self.HP_MAX, color="green")
-
-        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<14}[/] "
-        status += f"| AC: [bold yellow]{self.AC}[/] "
-        status += (
-            f"| HP: [green]{self.hp:>3}[/]/[bold green]{self.HP_MAX:<3}[/] {hp_bar} "
-        )
+    def get_status_line(self, show_all_effects: bool = False, show_numbers: bool = False, show_bars: bool = False, show_ac: bool = True):
+        # Collect all effects with better formatting
+        effects_list = []
+        if self.effect_manager.active_effects:
+            for e in self.effect_manager.active_effects:
+                color = get_effect_color(e.effect)
+                # Truncate long effect names and show duration more compactly
+                effect_name = e.effect.name[:12] + "..." if len(e.effect.name) > 15 else e.effect.name
+                effects_list.append(f"[{color}]{effect_name}[/]({e.duration})")
+        
+        # Build status line with better spacing
+        hp_bar = make_bar(self.hp, self.HP_MAX, color="green", length=8) if show_bars else ""
+        
+        # Use dynamic name width based on name length, but cap it
+        name_width = min(max(len(self.name), 8), 16)
+        status = f"{get_character_type_emoji(self.type)} [bold]{self.name:<{name_width}}[/] "
+        
+        # Show AC only for player and allies (not enemies) with yellow color
+        if show_ac:
+            status += f"| [yellow]AC:{self.AC:>2}[/] "
+        
+        # Build HP display based on parameters with green color
+        hp_display = ""
+        if show_numbers and show_bars:
+            hp_display = f"| [green]HP:{self.hp:>3}/{self.HP_MAX}[/]{hp_bar} "
+        elif show_numbers:
+            hp_display = f"| [green]HP:{self.hp:>3}/{self.HP_MAX}[/] "
+        elif show_bars:
+            hp_display = f"| [green]HP:[/]{hp_bar} "
+        else:
+            # Default to showing numbers if neither is specified
+            hp_display = f"| [green]HP:{self.hp:>3}/{self.HP_MAX}[/] "
+        status += hp_display
+        
         if self.MIND_MAX > 0:
-            mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue")
-            status += f"| MIND: [blue]{self.mind:>3}[/]/[bold blue]{self.MIND_MAX:<3}[/] {mind_bar} "
+            mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue", length=8) if show_bars else ""
+            
+            # Build MP display based on parameters with blue color
+            mp_display = ""
+            if show_numbers and show_bars:
+                mp_display = f"| [blue]MP:{self.mind:>3}/{self.MIND_MAX}[/]{mind_bar} "
+            elif show_numbers:
+                mp_display = f"| [blue]MP:{self.mind:>3}/{self.MIND_MAX}[/] "
+            elif show_bars:
+                mp_display = f"| [blue]MP:[/]{mind_bar} "
+            else:
+                # Default to showing numbers if neither is specified
+                mp_display = f"| [blue]MP:{self.mind:>3}/{self.MIND_MAX}[/] "
+            status += mp_display
 
-        # Show concentration info only for the player
+        # Show concentration info only for the player with magenta/purple color
         if (
             self.type == CharacterType.PLAYER
             and self.effect_manager.concentration_manager.get_concentration_count() > 0
         ):
-            concentration_count = (
-                self.effect_manager.concentration_manager.get_concentration_count()
-            )
+            concentration_count = self.effect_manager.concentration_manager.get_concentration_count()
             concentration_limit = self.CONCENTRATION_LIMIT
-            conc_bar = make_bar(
-                concentration_count,
-                maximum=concentration_limit,
-                length=concentration_limit,
-                color="purple",
-            )
-            status += f"| CONC: [purple]{concentration_count}[/]/[bold purple]{concentration_limit}[/] {conc_bar} "
+            conc_bar = make_bar(concentration_count, concentration_limit, color="magenta", length=concentration_limit) if show_bars else ""
+            
+            # Build concentration display based on parameters with magenta color
+            conc_display = ""
+            if show_numbers and show_bars:
+                conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/]{conc_bar} "
+            elif show_numbers:
+                conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+            elif show_bars:
+                conc_display = f"| [magenta]C:[/]{conc_bar} "
+            else:
+                # Default to showing numbers if neither is specified
+                conc_display = f"| [magenta]C:{concentration_count}/{concentration_limit}[/] "
+            status += conc_display
 
-        if effects:
-            status += f"| Effects: {effects}"
+        # Handle effects more intelligently
+        if effects_list:
+            if show_all_effects or len(effects_list) <= 3:
+                # Show all effects if requested or 3 or fewer
+                status += f"| {' '.join(effects_list)}"
+            else:
+                # Show first 2 effects + count of remaining
+                remaining_count = len(effects_list) - 2
+                status += f"| {' '.join(effects_list[:2])} [dim]+{remaining_count} more[/]"
+        
         return status
+
+    def get_detailed_effects(self) -> str:
+        """Get a detailed multi-line view of all active effects."""
+        if not self.effect_manager.active_effects:
+            return "No active effects"
+        
+        effects_info = []
+        for e in self.effect_manager.active_effects:
+            color = get_effect_color(e.effect)
+            effects_info.append(f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}")
+        
+        return "Active Effects:\n" + "\n".join(effects_info)
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the character to a dictionary representation."""

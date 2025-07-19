@@ -67,8 +67,12 @@ class CombatManager:
         cprint("[bold green]Combat initialized![/]")
         cprint("[bold yellow]Turn Order:[/]")
         for participant in self.participants:
+            # Use bars only for turn order display to keep it compact
+            # Show AC for player and allies, hide for enemies
+            show_ac = participant.type != CharacterType.ENEMY
+            status_line = participant.get_status_line(show_bars=True, show_ac=show_ac)
             cprint(
-                f"    🎲 {self.initiatives[participant]:3}  {participant.get_status_line()}"
+                f"    🎲 {self.initiatives[participant]:3}  {status_line}"
             )
 
     def get_alive_participants(self) -> list[Character]:
@@ -154,8 +158,15 @@ class CombatManager:
             # Reset the participant's turn flags to allow for new actions.
             participant.reset_turn_flags()
 
-            # Print the participant's status line.
-            cprint(participant.get_status_line())
+            # Print the participant's status line with appropriate display mode
+            if participant == self.player:
+                # Player gets full display: numbers + bars + AC
+                cprint(participant.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+            else:
+                # NPCs get bars only for cleaner display
+                # Show AC for allies, hide for enemies
+                show_ac = participant.type != CharacterType.ENEMY
+                cprint(participant.get_status_line(show_bars=True, show_ac=show_ac))
 
             # Execute the participant's action based on whether they are the player or an NPC.
             if participant == self.player:
@@ -546,7 +557,8 @@ class CombatManager:
         # Otherwise, allow to perform healing actions.
         while True:
             for ally in self.get_alive_friendlies(self.player):
-                cprint(ally.get_status_line())
+                # Show full details for healing phase (allies show AC)
+                cprint(ally.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
             if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
@@ -556,12 +568,12 @@ class CombatManager:
 
     def final_report(self) -> None:
         crule("📊  Final Battle Report", style="bold blue")
-        # Player
-        cprint(self.player.get_status_line())
-        # Allies
+        # Player gets full display in final report
+        cprint(self.player.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
+        # Allies get full display too in final report
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
-                cprint(ally.get_status_line())
+                cprint(ally.get_status_line(show_numbers=True, show_bars=True, show_ac=True))
         # Fallen foes
         defeated = [
             c
