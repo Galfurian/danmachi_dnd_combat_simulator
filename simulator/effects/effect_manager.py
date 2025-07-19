@@ -16,7 +16,7 @@ class ActiveEffect:
 
 
 class EffectManager:
-    def __init__(self, owner: Any):
+    def __init__(self, owner: Any) -> None:
         self.owner: Any = owner
         self.active_effects: list[ActiveEffect] = []
         self.active_modifiers: dict[BonusType, ActiveEffect] = {}
@@ -49,7 +49,7 @@ class EffectManager:
         self.active_effects.append(new_effect)
         return True
 
-    def remove_effect(self, active_effect: ActiveEffect):
+    def remove_effect(self, active_effect: ActiveEffect) -> None:
         if active_effect in self.active_effects:
             self.active_effects.remove(active_effect)
         # Clean up from active_modifiers
@@ -164,7 +164,7 @@ class EffectManager:
 
         return list(best_by_type.values()) + consume_on_hit
 
-    def turn_update(self):
+    def turn_update(self) -> None:
         updated = []
         for ae in self.active_effects:
             if ae.consume_on_hit:

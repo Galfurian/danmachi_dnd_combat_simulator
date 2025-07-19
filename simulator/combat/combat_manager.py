@@ -223,11 +223,6 @@ class CombatManager:
         if not isinstance(target, Character):
             return
 
-        # Show what's about to happen
-        cprint(
-            f"    🗡️ Performing full attack with [bold blue]{attack.name}[/] ({self.player.number_of_attacks} attacks)"
-        )
-
         # Execute the full attack sequence using the same attack type
         attacks_made = 0
         for attack_num in range(self.player.number_of_attacks):

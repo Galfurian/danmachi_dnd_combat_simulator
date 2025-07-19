@@ -110,37 +110,37 @@ class Character:
         return mind_max
 
     @property
-    def STR(self):
+    def STR(self) -> int:
         """Returns the DnD strength modifier."""
         return get_stat_modifier(self.stats["strength"])
 
     @property
-    def DEX(self):
+    def DEX(self) -> int:
         """Returns the DnD dexterity modifier."""
         return get_stat_modifier(self.stats["dexterity"])
 
     @property
-    def CON(self):
+    def CON(self) -> int:
         """Returns the DnD constitution modifier."""
         return get_stat_modifier(self.stats["constitution"])
 
     @property
-    def INT(self):
+    def INT(self) -> int:
         """Returns the DnD intelligence modifier."""
         return get_stat_modifier(self.stats["intelligence"])
 
     @property
-    def WIS(self):
+    def WIS(self) -> int:
         """Returns the DnD wisdom modifier."""
         return get_stat_modifier(self.stats["wisdom"])
 
     @property
-    def CHA(self):
+    def CHA(self) -> int:
         """Returns the DnD charisma modifier."""
         return get_stat_modifier(self.stats["charisma"])
 
     @property
-    def SPELLCASTING(self):
+    def SPELLCASTING(self) -> int:
         """Returns the DnD spellcasting ability modifier."""
         if self.spellcasting_ability and self.spellcasting_ability in self.stats:
             return get_stat_modifier(self.stats[self.spellcasting_ability])
@@ -197,19 +197,19 @@ class Character:
             "CHA": self.CHA,
         }
 
-    def reset_turn_flags(self):
+    def reset_turn_flags(self) -> None:
         """Resets the turn flags for the character."""
         self.turn_flags["standard_action_used"] = False
         self.turn_flags["bonus_action_used"] = False
 
-    def use_action_type(self, action_type: ActionType):
+    def use_action_type(self, action_type: ActionType) -> None:
         """Marks an action type as used for the current turn."""
         if action_type == ActionType.STANDARD:
             self.turn_flags["standard_action_used"] = True
         elif action_type == ActionType.BONUS:
             self.turn_flags["bonus_action_used"] = True
 
-    def has_action_type(self, action_type: ActionType):
+    def has_action_type(self, action_type: ActionType) -> bool:
         """Checks if the character can use a specific action type this turn."""
         if action_type == ActionType.STANDARD:
             return not self.turn_flags["standard_action_used"]

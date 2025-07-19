@@ -7,15 +7,15 @@ from enum import Enum
 
 
 class ValidationResult:
-    def __init__(self, is_valid: bool = True, errors: List[str] = None):
+    def __init__(self, is_valid: bool = True, errors: Optional[List[str]] = None) -> None:
         self.is_valid = is_valid
         self.errors = errors or []
     
-    def add_error(self, error: str):
+    def add_error(self, error: str) -> None:
         self.is_valid = False
         self.errors.append(error)
     
-    def merge(self, other: 'ValidationResult'):
+    def merge(self, other: 'ValidationResult') -> None:
         if not other.is_valid:
             self.is_valid = False
             self.errors.extend(other.errors)

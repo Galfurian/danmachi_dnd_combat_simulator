@@ -9,12 +9,12 @@ from effects.effect import *
 from rich.padding import Padding
 
 
-def damage_to_string(damage: DamageComponent):
+def damage_to_string(damage: DamageComponent) -> str:
     damage_color = get_damage_type_color(damage.damage_type)
     return f"[{damage_color}]{damage.damage_roll} {damage.damage_type.name.lower()}[/]"
 
 
-def modifier_to_string(modifier: Modifier):
+def modifier_to_string(modifier: Modifier) -> str:
     """Converts a Modifier to a formatted string representation."""
     if isinstance(modifier.value, DamageComponent):
         return f"[{get_damage_type_color(modifier.value.damage_type)}]{modifier.value.damage_roll} {modifier.value.damage_type.name.lower()}[/] to {modifier.bonus_type.name.lower()}"
@@ -24,7 +24,7 @@ def modifier_to_string(modifier: Modifier):
         return f"[green]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
 
 
-def print_effect_sheet(effect: Effect, padding: int = 2):
+def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """Prints the details of an effect in a formatted way."""
     sheet: str = f"[blue]{effect.name}[/], "
     if effect.description:
@@ -48,7 +48,7 @@ def print_effect_sheet(effect: Effect, padding: int = 2):
     cprint(Padding(sheet, (0, padding)))
 
 
-def print_base_attack_sheet(attack: BaseAttack, padding: int = 2):
+def print_base_attack_sheet(attack: BaseAttack, padding: int = 2) -> None:
     """Prints the details of a base attack in a formatted way."""
     sheet = f"[green]{attack.name}[/], "
     sheet += f"roll: [blue]1D20+{attack.attack_roll}[/], "
@@ -60,7 +60,7 @@ def print_base_attack_sheet(attack: BaseAttack, padding: int = 2):
     cprint(Padding(sheet, (0, padding)))
 
 
-def print_weapon_sheet(weapon: Weapon, padding: int = 2):
+def print_weapon_sheet(weapon: Weapon, padding: int = 2) -> None:
     """Prints the details of a weapon in a formatted way."""
     sheet: str = f"[blue]{weapon.name}[/], "
     if weapon.hands_required:
@@ -71,7 +71,7 @@ def print_weapon_sheet(weapon: Weapon, padding: int = 2):
         print_base_attack_sheet(attack, padding + 2)
 
 
-def print_armor_sheet(armor: Armor, padding: int = 2):
+def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
     """Prints the details of an armor in a formatted way."""
     sheet: str = f"[blue]{armor.name}[/], "
     sheet += f"{get_armor_type_emoji(armor.armor_type)}, "
@@ -85,7 +85,7 @@ def print_armor_sheet(armor: Armor, padding: int = 2):
         print_effect_sheet(armor.effect, padding + 2)
 
 
-def print_spell_sheet(spell: Spell, padding: int = 2):
+def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """Prints the details of a spell in a formatted way."""
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
@@ -108,7 +108,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2):
         print_effect_sheet(spell.effect, padding)
 
 
-def print_action_sheet(action: BaseAction, padding: int = 2):
+def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     if isinstance(action, Spell):
         print_spell_sheet(action, padding)
     elif isinstance(action, BaseAttack):
@@ -118,11 +118,11 @@ def print_action_sheet(action: BaseAction, padding: int = 2):
         sheet += f"Type: [{get_action_type_color(action.type)}]{action.type.name}[/], "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
-        if action.effect:
+        if hasattr(action, "effect") and action.effect:
             print_effect_sheet(action.effect, padding + 2)
 
 
-def print_character_sheet(char: Character):
+def print_character_sheet(char: Character) -> None:
     """Prints the details of a character in a formatted way."""
 
     cprint(

@@ -34,7 +34,7 @@ class BaseAttack(BaseAction):
         self.damage: list[DamageComponent] = damage
         self.effect: Optional[Effect] = effect
 
-    def execute(self, actor: Any, target: Any):
+    def execute(self, actor: Any, target: Any) -> bool:
         actor_str = apply_character_type_color(actor.type, actor.name)
         target_str = apply_character_type_color(target.type, target.name)
 

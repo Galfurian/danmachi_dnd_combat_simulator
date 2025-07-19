@@ -481,7 +481,7 @@ class SpellHeal(Spell):
             substitute_variables(self.heal_roll, variables)
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
         # Add specific fields for SpellHeal
@@ -624,7 +624,7 @@ class SpellBuff(Spell):
                 expressions[bonus_type] = str(value)
         return expressions
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
         # Add specific fields for SpellBuff
@@ -758,7 +758,7 @@ class SpellDebuff(Spell):
             )
         return expressions
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
         data = super().to_dict()
         # Add specific fields for SpellDebuff
