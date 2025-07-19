@@ -197,6 +197,29 @@ class Character:
             "CHA": self.CHA,
         }
 
+    @property
+    def CONCENTRATION_LIMIT(self) -> int:
+        """Calculate the maximum number of concentration effects this character can maintain.
+
+        Returns:
+            int: Maximum concentration effects
+        """
+        base_limit = max(1, 1 + (self.SPELLCASTING // 2))
+        concentration_bonus = self.effect_manager.get_modifier(BonusType.CONCENTRATION)
+
+        # Handle different return types from get_modifier
+        if isinstance(concentration_bonus, list):
+            # Sum up all concentration bonuses if it's a list
+            bonus_value = sum(
+                bonus for bonus in concentration_bonus if isinstance(bonus, int)
+            )
+        elif isinstance(concentration_bonus, int):
+            bonus_value = concentration_bonus
+        else:
+            bonus_value = 0
+
+        return max(1, base_limit + bonus_value)
+
     def reset_turn_flags(self) -> None:
         """Resets the turn flags for the character."""
         self.turn_flags["standard_action_used"] = False
@@ -224,6 +247,7 @@ class Character:
             list[NaturalAttack]: A list of natural weapon attacks.
         """
         from actions.attack_action import NaturalAttack
+
         result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
         for weapon in self.natural_weapons:
@@ -240,6 +264,7 @@ class Character:
     def get_available_weapon_attacks(self) -> list["WeaponAttack"]:
         """Returns a list of weapon attacks that the character can use this turn."""
         from actions.attack_action import WeaponAttack
+
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
         for weapon in self.equipped_weapons:
@@ -626,6 +651,24 @@ class Character:
         if self.MIND_MAX > 0:
             mind_bar = make_bar(self.mind, self.MIND_MAX, color="blue")
             status += f"| MIND: [blue]{self.mind:>3}[/]/[bold blue]{self.MIND_MAX:<3}[/] {mind_bar} "
+
+        # Show concentration info only for the player
+        if (
+            self.type == CharacterType.PLAYER
+            and self.effect_manager.concentration_manager.get_concentration_count() > 0
+        ):
+            concentration_count = (
+                self.effect_manager.concentration_manager.get_concentration_count()
+            )
+            concentration_limit = self.CONCENTRATION_LIMIT
+            conc_bar = make_bar(
+                concentration_count,
+                maximum=concentration_limit,
+                length=concentration_limit,
+                color="purple",
+            )
+            status += f"| CONC: [purple]{concentration_count}[/]/[bold purple]{concentration_limit}[/] {conc_bar} "
+
         if effects:
             status += f"| Effects: {effects}"
         return status

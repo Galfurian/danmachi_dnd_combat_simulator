@@ -25,6 +25,7 @@ class BonusType(Enum):
     INITIATIVE = auto()
     ATTACK = auto()
     DAMAGE = auto()
+    CONCENTRATION = auto()  # For effects that modify concentration limit
 
 
 class ActionType(Enum):

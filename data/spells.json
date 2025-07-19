@@ -37,6 +37,7 @@
             3
         ],
         "target_expr": "1+[MIND]",
+        "requires_concentration": true,
         "effect": {
             "type": "Buff",
             "name": "Bless",
@@ -56,6 +57,7 @@
         "mind_cost": [
             1
         ],
+        "requires_concentration": true,
         "effect": {
             "type": "Buff",
             "name": "Shield of Faith",
@@ -75,6 +77,7 @@
         "mind_cost": [
             1
         ],
+        "requires_concentration": true,
         "effect": {
             "type": "Buff",
             "name": "Divine Favor",

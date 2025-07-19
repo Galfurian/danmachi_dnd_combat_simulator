@@ -37,11 +37,13 @@ class Spell(BaseAction):
         mind_cost: list[int],
         category: ActionCategory,
         target_expr: str = "",
+        requires_concentration: bool = False,
     ):
         super().__init__(name, type, category, description, cooldown, maximum_uses)
         self.level: int = level
         self.mind_cost: list[int] = mind_cost
         self.target_expr: str = target_expr
+        self.requires_concentration: bool = requires_concentration
 
     def is_single_target(self) -> bool:
         """Check if the spell is single-target.
@@ -93,6 +95,37 @@ class Spell(BaseAction):
             bool: True if the action was successfully executed, False otherwise.
         """
         pass
+    
+    def apply_effect(self, actor: Any, target: Any, effect: Optional[Effect], mind_level: Optional[int] = 0) -> bool:
+        """
+        Override apply_effect to handle concentration requirements from spells.
+        
+        Args:
+            actor: The character applying the effect.
+            target: The character receiving the effect.
+            effect: The effect to apply.
+            mind_level: The spell level used.
+            
+        Returns:
+            bool: True if the effect was successfully applied.
+        """
+        if not effect:
+            return False
+        if not actor.is_alive():
+            return False
+        if not target.is_alive():
+            return False
+        
+        # If this spell requires concentration and effect exists, mark it as requiring concentration
+        if self.requires_concentration and effect:
+            effect.requires_concentration = True
+        
+        # For spells, pass the spell reference to the effect manager
+        if target.effect_manager.add_effect(actor, effect, mind_level, self):
+            debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
+            return True
+        debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")
+        return False
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the spell to a dictionary representation."""
@@ -100,6 +133,7 @@ class Spell(BaseAction):
         # Add specific fields for Spell
         data["level"] = self.level
         data["mind_cost"] = self.mind_cost
+        data["requires_concentration"] = self.requires_concentration
         # Include the multi-target expression if it exists.
         if self.target_expr:
             data["target_expr"] = self.target_expr
@@ -119,6 +153,7 @@ class SpellAttack(Spell):
         damage: list[DamageComponent],
         effect: Optional[Effect] = None,
         target_expr: str = "",
+        requires_concentration: bool = False,
     ):
         super().__init__(
             name,
@@ -130,6 +165,7 @@ class SpellAttack(Spell):
             mind_cost,
             ActionCategory.OFFENSIVE,
             target_expr,
+            requires_concentration,
         )
         self.damage: list[DamageComponent] = damage
         self.effect: Optional[Effect] = effect
@@ -336,6 +372,7 @@ class SpellAttack(Spell):
             ],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
+            requires_concentration=data.get("requires_concentration", False),
         )
 
 
@@ -352,6 +389,7 @@ class SpellHeal(Spell):
         heal_roll: str,
         effect: Optional[Effect] = None,
         target_expr: str = "",
+        requires_concentration: bool = False,
     ):
         super().__init__(
             name,
@@ -363,6 +401,7 @@ class SpellHeal(Spell):
             mind_cost,
             ActionCategory.HEALING,
             target_expr,
+            requires_concentration,
         )
         self.heal_roll: str = heal_roll
         self.effect: Optional[Effect] = effect
@@ -511,6 +550,7 @@ class SpellHeal(Spell):
             heal_roll=data["heal_roll"],
             effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
+            requires_concentration=data.get("requires_concentration", False),
         )
 
 
@@ -526,6 +566,7 @@ class SpellBuff(Spell):
         mind_cost: list[int],
         effect: Buff,
         target_expr: str = "",
+        requires_concentration: bool = False,
     ):
         super().__init__(
             name,
@@ -537,6 +578,7 @@ class SpellBuff(Spell):
             mind_cost,
             ActionCategory.BUFF,
             target_expr,
+            requires_concentration,
         )
         self.effect: Buff = effect
         # Ensure the effect is provided.
@@ -650,6 +692,7 @@ class SpellBuff(Spell):
             mind_cost=data["mind_cost"],
             effect=Buff.from_dict(data["effect"]),
             target_expr=data.get("target_expr", ""),
+            requires_concentration=data.get("requires_concentration", False),
         )
 
 
@@ -665,6 +708,7 @@ class SpellDebuff(Spell):
         mind_cost: list[int],
         effect: Debuff,
         target_expr: str = "",
+        requires_concentration: bool = False,
     ):
         super().__init__(
             name,
@@ -676,6 +720,7 @@ class SpellDebuff(Spell):
             mind_cost,
             ActionCategory.DEBUFF,
             target_expr,
+            requires_concentration,
         )
         self.effect: Debuff = effect
         # Ensure the effect is provided.
@@ -784,6 +829,7 @@ class SpellDebuff(Spell):
             mind_cost=data["mind_cost"],
             effect=Debuff.from_dict(data["effect"]),
             target_expr=data.get("target_expr", ""),
+            requires_concentration=data.get("requires_concentration", False),
         )
 
 

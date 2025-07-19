@@ -6,10 +6,11 @@ from .modifier import Modifier
 
 
 class Effect:
-    def __init__(self, name: str, description: str = "", max_duration: int = 0):
+    def __init__(self, name: str, description: str = "", max_duration: int = 0, requires_concentration: bool = False):
         self.name: str = name
         self.description: str = description
         self.max_duration: int = max_duration
+        self.requires_concentration: bool = requires_concentration
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
@@ -46,12 +47,13 @@ class Effect:
         """
         return False
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.__class__.__name__,
             "name": self.name,
             "description": self.description,
             "max_duration": self.max_duration,
+            "requires_concentration": self.requires_concentration,
         }
 
     @staticmethod
@@ -83,8 +85,9 @@ class ModifierEffect(Effect):
         description: str,
         max_duration: int,
         modifiers: list[Modifier],
+        requires_concentration: bool = False,
     ):
-        super().__init__(name, description, max_duration)
+        super().__init__(name, description, max_duration, requires_concentration)
         self.modifiers: list[Modifier] = modifiers
         self.validate()
 

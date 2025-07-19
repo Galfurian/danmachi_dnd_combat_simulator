@@ -1,14 +1,17 @@
 # Revised effect_manager.py (per-BonusType tracking, 5e-style strict)
 
-from typing import Any, Generator, Iterator
+from typing import Any, Generator, Iterator, Optional
 from core.constants import *
+from core.utils import cprint
 from effects.effect import *
 from effects.modifier import Modifier
+from effects.concentration_manager import ConcentrationManager
 
 
 class ActiveEffect:
-    def __init__(self, source: Any, effect: Effect, mind_level: int) -> None:
-        self.source: Any = source
+    def __init__(self, source: Any, target: Any, effect: Effect, mind_level: int) -> None:
+        self.source: Any = source  # The caster
+        self.target: Any = target  # The recipient 
         self.effect: Effect = effect
         self.mind_level: int = mind_level
         self.duration: int = effect.max_duration
@@ -20,11 +23,20 @@ class EffectManager:
         self.owner: Any = owner
         self.active_effects: list[ActiveEffect] = []
         self.active_modifiers: dict[BonusType, ActiveEffect] = {}
+        self.concentration_manager: ConcentrationManager = ConcentrationManager(owner)
 
     # === Effect Management ===
 
-    def add_effect(self, source: Any, effect: Effect, mind_level: int) -> bool:
-        new_effect = ActiveEffect(source, effect, mind_level)
+    def add_effect(self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None) -> bool:
+        new_effect = ActiveEffect(source, self.owner, effect, mind_level)
+
+        # Check concentration limit if this effect requires concentration
+        if getattr(effect, 'requires_concentration', False) and spell:
+            # The concentration is managed by the SOURCE (caster), not the target
+            if not source.effect_manager.concentration_manager.add_concentration_effect(
+                spell, self.owner, new_effect, mind_level
+            ):
+                return False  # Could not add due to concentration limits
 
         if isinstance(effect, HoT):
             if self.has_effect(effect):
@@ -52,12 +64,39 @@ class EffectManager:
     def remove_effect(self, active_effect: ActiveEffect) -> None:
         if active_effect in self.active_effects:
             self.active_effects.remove(active_effect)
+        
         # Clean up from active_modifiers
         if isinstance(active_effect.effect, ModifierEffect):
             for modifier in active_effect.effect.modifiers:
                 bonus_type = modifier.bonus_type
                 if self.active_modifiers.get(bonus_type) == active_effect:
                     del self.active_modifiers[bonus_type]
+
+    # === Concentration Management Delegation ===
+    
+    def can_add_concentration_effect(self) -> bool:
+        """Check if we can add another concentration effect without exceeding the limit."""
+        return self.concentration_manager.can_add_concentration_spell()
+    
+    def break_concentration(self, effect: Optional[Effect] = None) -> bool:
+        """Break concentration on a specific effect or all concentration effects.
+        
+        Args:
+            effect: Specific effect to break concentration on. If None, breaks all.
+            
+        Returns:
+            bool: True if any concentration was broken
+        """
+        if effect:
+            # Try to find the spell that created this effect and break concentration on it
+            spell_name = getattr(effect, '_from_spell', None)
+            if spell_name:
+                return self.concentration_manager.break_concentration(spell_name.name)
+            return False
+        else:
+            # Break all concentration
+            return self.concentration_manager.break_concentration()
+        return False
 
     def get_effect_remaining_duration(self, effect: Effect) -> int:
         for ae in self.active_effects:
@@ -76,7 +115,7 @@ class EffectManager:
             return not self.has_effect(effect)
 
         if isinstance(effect, ModifierEffect):
-            candidate = ActiveEffect(source, effect, mind_level)
+            candidate = ActiveEffect(source, self.owner, effect, mind_level)
             for modifier in effect.modifiers:
                 bonus_type = modifier.bonus_type
                 existing = self.active_modifiers.get(bonus_type)
@@ -118,7 +157,13 @@ class EffectManager:
             BonusType.AC,
             BonusType.INITIATIVE,
         ]:
-            return int(modifier.value)
+            if isinstance(modifier.value, int):
+                return modifier.value
+            elif isinstance(modifier.value, str):
+                return int(modifier.value)
+            else:
+                # DamageComponent - shouldn't happen for these bonus types
+                return 0
         elif bonus_type == BonusType.ATTACK:
             return [modifier.value]
         elif bonus_type == BonusType.DAMAGE:
@@ -213,9 +258,19 @@ class EffectManager:
             BonusType.AC,
             BonusType.INITIATIVE,
         ]:
-            return int(modifier.value)
+            if isinstance(modifier.value, int):
+                return modifier.value
+            elif isinstance(modifier.value, str):
+                return int(modifier.value)
+            else:
+                # DamageComponent - shouldn't happen for these bonus types
+                return 0
         elif bonus_type == BonusType.ATTACK:
-            return get_max_roll(modifier.value, variables)
+            if isinstance(modifier.value, str):
+                return get_max_roll(modifier.value, variables)
+            else:
+                # int or DamageComponent - convert to string or return 0
+                return get_max_roll(str(modifier.value), variables) if isinstance(modifier.value, int) else 0
         elif bonus_type == BonusType.DAMAGE:
             if isinstance(modifier.value, DamageComponent):
                 return get_max_roll(modifier.value.damage_roll, variables)
