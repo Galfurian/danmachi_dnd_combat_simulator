@@ -160,40 +160,58 @@
         }
     },
     {
-        "class": "SpellAttack",
+        "class": "SpellBuff",
         "name": "Wrathful Smite",
         "type": "BONUS",
-        "description": "A smite that instills fear in the target, potentially causing them to flee.",
+        "description": "Your next weapon attack deals extra psychic damage and fills the target with dread.",
         "level": 1,
         "mind_cost": [
             1
         ],
-        "target_restrictions": ["ENEMY"],
-        "damage": [
-            {
-                "damage_type": "PSYCHIC",
-                "damage_roll": "[MIND]D6"
-            }
-        ]
+        "target_restrictions": ["SELF"],
+        "effect": {
+            "type": "OnHitTrigger",
+            "name": "Wrathful Smite",
+            "description": "Next weapon attack deals extra psychic damage and applies fear.",
+            "max_duration": 10,
+            "damage_bonus": [
+                {
+                    "damage_roll": "[MIND]D6",
+                    "damage_type": "PSYCHIC"
+                }
+            ],
+            "trigger_effects": [
+                {
+                    "type": "Debuff",
+                    "name": "Frightened",
+                    "description": "Filled with dread and terror.",
+                    "max_duration": 3,
+                    "modifiers": {
+                        "attack": "-2"
+                    }
+                }
+            ],
+            "consumes_on_trigger": true
+        }
     },
     {
         "class": "SpellAttack",
         "name": "Shatter",
         "type": "STANDARD",
-        "description": "A powerful spell that creates a loud noise, damaging and potentially deafening enemies.",
+        "description": "A powerful spell that creates a loud, thunderous noise that damages enemies in a wide area.",
         "level": 2,
         "cooldown": 2,
         "mind_cost": [
             2,
-            4,
-            6
+            3,
+            4
         ],
         "target_expr": "4",
         "target_restrictions": ["ENEMY"],
         "damage": [
             {
                 "damage_type": "LIGHTNING",
-                "damage_roll": "[MIND]D8"
+                "damage_roll": "3D8 + ([MIND] - 2)D8"
             }
         ]
     },
