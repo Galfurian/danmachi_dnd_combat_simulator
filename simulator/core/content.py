@@ -255,7 +255,7 @@ class ContentRepository(metaclass=Singleton):
             if not action:
                 action = from_dict_spell(action_data)
                 if not action:
-                    from actions.ability_action import from_dict_ability
+                    from actions.abilities import from_dict_ability
 
                     action = from_dict_ability(action_data)
                     if not action:
