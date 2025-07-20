@@ -250,5 +250,119 @@
                 }
             }
         ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Needle Spikes",
+        "description": "Sharp needle-like spikes that protrude from the creature's body.",
+        "attacks": [
+            {
+                "class": "NaturalAttack",
+                "name": "Needle Shot",
+                "type": "STANDARD",
+                "description": "Shoots sharp needles at the target.",
+                "attack_roll": "[DEX]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [DEX]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Wing Dust",
+        "description": "Fine powder released from moth wings that can cause drowsiness.",
+        "attacks": [
+            {
+                "class": "NaturalAttack",
+                "name": "Dust Cloud",
+                "type": "STANDARD",
+                "description": "Releases a cloud of sleep-inducing dust.",
+                "attack_roll": "[WIS]",
+                "damage": [
+                    {
+                        "damage_roll": "1D4 + [WIS]",
+                        "damage_type": "PSYCHIC"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Armored Claws",
+        "description": "Heavily armored claws that deal crushing damage.",
+        "attacks": [
+            {
+                "class": "NaturalAttack",
+                "name": "Armored Strike",
+                "type": "STANDARD",
+                "description": "A powerful strike with armored claws.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D8 + [STR]",
+                        "damage_type": "BLUDGEONING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Horn",
+        "description": "A sharp horn used for charging attacks.",
+        "attacks": [
+            {
+                "class": "NaturalAttack",
+                "name": "Horn Charge",
+                "type": "STANDARD",
+                "description": "A powerful charging attack with the horn.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D10 + [STR]",
+                        "damage_type": "PIERCING"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "class": "NaturalWeapon",
+        "name": "Flame Bite",
+        "description": "A bite attack infused with fire damage.",
+        "attacks": [
+            {
+                "class": "NaturalAttack",
+                "name": "Fire Bite",
+                "type": "STANDARD",
+                "description": "A bite attack that burns the target.",
+                "attack_roll": "[STR]",
+                "damage": [
+                    {
+                        "damage_roll": "1D6 + [STR]",
+                        "damage_type": "PIERCING"
+                    },
+                    {
+                        "damage_roll": "1D4",
+                        "damage_type": "FIRE"
+                    }
+                ],
+                "effect": {
+                    "type": "DoT",
+                    "name": "Burning",
+                    "description": "The target is on fire and takes damage each turn.",
+                    "max_duration": 3,
+                    "damage": {
+                        "damage_roll": "1D4",
+                        "damage_type": "FIRE"
+                    }
+                }
+            }
+        ]
     }
 ]

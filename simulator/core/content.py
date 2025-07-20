@@ -52,8 +52,6 @@ class ContentRepository(metaclass=Singleton):
     def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
 
-        crule("Reloading Database", style="bold green")
-
         cprint(f"Loading content from: [bold blue]{root}[/bold blue]")
 
         def load_json_file(filename: str, loader_func, description: str):

@@ -206,6 +206,151 @@
         ]
     },
     {
+        "name": "Needle Rabbit",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 1
+        },
+        "stats": {
+            "strength": 6,
+            "dexterity": 16,
+            "constitution": 8,
+            "intelligence": 2,
+            "wisdom": 12,
+            "charisma": 4
+        },
+        "natural_weapons": [
+            "Needle Spikes"
+        ]
+    },
+    {
+        "name": "Frog Shooter",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 2
+        },
+        "stats": {
+            "strength": 12,
+            "dexterity": 14,
+            "constitution": 12,
+            "intelligence": 4,
+            "wisdom": 10,
+            "charisma": 3
+        },
+        "natural_weapons": [
+            "Acid gland"
+        ]
+    },
+    {
+        "name": "Purple Moth",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 2
+        },
+        "stats": {
+            "strength": 8,
+            "dexterity": 18,
+            "constitution": 10,
+            "intelligence": 6,
+            "wisdom": 14,
+            "charisma": 8
+        },
+        "spellcasting_ability": "wisdom",
+        "natural_weapons": [
+            "Wing Dust"
+        ],
+        "spells": [
+            "Sleep Powder"
+        ]
+    },
+    {
+        "name": "Hard Armadillo",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 3
+        },
+        "stats": {
+            "strength": 16,
+            "dexterity": 8,
+            "constitution": 18,
+            "intelligence": 3,
+            "wisdom": 10,
+            "charisma": 4
+        },
+        "natural_ac": 4,
+        "natural_weapons": [
+            "Armored Claws"
+        ]
+    },
+    {
+        "name": "Almiraj",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 3
+        },
+        "stats": {
+            "strength": 14,
+            "dexterity": 16,
+            "constitution": 12,
+            "intelligence": 4,
+            "wisdom": 12,
+            "charisma": 6
+        },
+        "natural_weapons": [
+            "Horn"
+        ]
+    },
+    {
+        "name": "Hobgoblin",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 3
+        },
+        "stats": {
+            "strength": 14,
+            "dexterity": 12,
+            "constitution": 12,
+            "intelligence": 10,
+            "wisdom": 10,
+            "charisma": 8
+        },
+        "equipped_weapons": [
+            "Shortsword"
+        ],
+        "equipped_armor": [
+            "Leather Armor"
+        ]
+    },
+    {
+        "name": "Hellhound",
+        "type": "ENEMY",
+        "race": "Monster",
+        "levels": {
+            "Beast": 4
+        },
+        "stats": {
+            "strength": 16,
+            "dexterity": 14,
+            "constitution": 14,
+            "intelligence": 6,
+            "wisdom": 12,
+            "charisma": 8
+        },
+        "natural_weapons": [
+            "Flame Bite"
+        ],
+        "resistances": ["FIRE"],
+        "actions": [
+            "Flame Breath"
+        ]
+    },
+    {
         "name": "Minotaur Boss",
         "type": "ENEMY",
         "race": "Monster",

@@ -237,11 +237,29 @@ class Character:
 
     def has_action_type(self, action_type: ActionType) -> bool:
         """Checks if the character can use a specific action type this turn."""
+        # Check if incapacitated first
+        if self.is_incapacitated():
+            return False
+            
         if action_type == ActionType.STANDARD:
             return not self.turn_flags["standard_action_used"]
         elif action_type == ActionType.BONUS:
             return not self.turn_flags["bonus_action_used"]
         return True
+    
+    def is_incapacitated(self) -> bool:
+        """Check if the character is incapacitated and cannot take actions."""
+        from effects.incapacitation_effect import IncapacitatingEffect
+        
+        for ae in self.effect_manager.active_effects:
+            if isinstance(ae.effect, IncapacitatingEffect):
+                if ae.effect.prevents_actions():
+                    return True
+        return False
+    
+    def can_take_actions(self) -> bool:
+        """Check if character can take any actions this turn."""
+        return not self.is_incapacitated() and self.is_alive()
 
     def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
         """Returns a list of natural weapon attacks available to the character.

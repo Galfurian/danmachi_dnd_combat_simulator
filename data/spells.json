@@ -246,5 +246,28 @@
                 "damage_type": "POISON"
             }
         }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Sleep Powder",
+        "type": "STANDARD",
+        "description": "A magical powder that induces sleep in the target.",
+        "level": 1,
+        "mind_cost": [
+            1,
+            2,
+            3
+        ],
+        "target_restrictions": ["ENEMY"],
+        "effect": {
+            "type": "IncapacitatingEffect",
+            "name": "Sleeping",
+            "description": "The target falls asleep and cannot take actions.",
+            "max_duration": 3,
+            "incapacitation_type": "sleep",
+            "save_ends": true,
+            "save_dc": 13,
+            "save_stat": "CON"
+        }
     }
 ]

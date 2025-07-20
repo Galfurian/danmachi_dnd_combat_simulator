@@ -171,11 +171,15 @@ class CombatManager:
                 show_ac = participant.type != CharacterType.ENEMY
                 cprint(participant.get_status_line(show_bars=True, show_ac=show_ac))
 
-            # Execute the participant's action based on whether they are the player or an NPC.
-            if participant == self.player:
-                self.ask_for_player_action()
+            # Check if character is incapacitated
+            if participant.is_incapacitated():
+                cprint(f"    💤 {participant.name} is incapacitated and cannot act this turn.")
             else:
-                self.execute_npc_action(participant)
+                # Execute the participant's action based on whether they are the player or an NPC.
+                if participant == self.player:
+                    self.ask_for_player_action()
+                else:
+                    self.execute_npc_action(participant)
 
             # Apply end-of-turn updates and check for expiration
             participant.turn_update()

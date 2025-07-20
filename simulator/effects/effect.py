@@ -193,6 +193,9 @@ class Effect:
             return OnHitTrigger.from_dict(data)
         if effect_type == "OnLowHealthTrigger":
             return OnLowHealthTrigger.from_dict(data)
+        if effect_type == "IncapacitatingEffect":
+            from .incapacitation_effect import IncapacitatingEffect
+            return IncapacitatingEffect.from_dict(data)
         raise ValueError(f"Unknown effect type: {effect_type}")
 
 

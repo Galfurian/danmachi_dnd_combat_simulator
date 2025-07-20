@@ -104,6 +104,18 @@ class EffectManager:
                         self.remove_effect(existing)
                     self.active_modifiers[bonus_type] = new_effect
 
+            # Handle incapacitating effects
+            from effects.incapacitation_effect import IncapacitatingEffect
+            if isinstance(effect, IncapacitatingEffect):
+                # Remove any existing incapacitating effects of the same type
+                existing_incap = [
+                    ae for ae in self.active_effects 
+                    if isinstance(ae.effect, IncapacitatingEffect) and 
+                    ae.effect.incapacitation_type == effect.incapacitation_type
+                ]
+                for existing in existing_incap:
+                    self.remove_effect(existing)
+
             self.active_effects.append(new_effect)
             return True
 
