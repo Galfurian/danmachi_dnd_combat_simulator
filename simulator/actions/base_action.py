@@ -1,14 +1,47 @@
 from logging import debug
-from typing import Any, Optional
+from typing import Any
 
 from combat.damage import *
 from core.utils import *
 from core.constants import *
-from core.error_handling import log_error, log_warning
+from core.error_handling import (
+    log_error,
+    log_warning,
+    require_non_empty_string,
+    require_enum_type,
+    ensure_string,
+    ensure_non_negative_int,
+    ensure_int_in_range,
+    ensure_list_of_strings,
+    validate_required_object,
+    safe_get_attribute,
+)
 from effects.effect import *
 
 
 class BaseAction:
+    """
+    Base class for all character actions in the combat system.
+
+    This class provides the foundation for all actions that characters can perform,
+    including attacks, spells, abilities, and utility actions. It handles common
+    functionality like validation, targeting, and effect application.
+
+    Attributes:
+        name (str): The display name of the action
+        type (ActionType): The type of action (ATTACK, SPELL, ABILITY, etc.)
+        category (ActionCategory): The category for targeting logic (OFFENSIVE, HEALING, BUFF, etc.)
+        description (str): Human-readable description of the action
+        cooldown (int): Number of turns before action can be used again (0 = no cooldown)
+        maximum_uses (int): Max times action can be used (-1 = unlimited)
+        target_restrictions (list[str]): List of targeting restrictions ("SELF", "ALLY", "ENEMY", "ANY")
+
+    Note:
+        - This is an abstract base class. Subclasses must implement the execute() method.
+        - Targeting logic is automatically handled based on category unless target_restrictions are specified.
+        - All inputs are validated during initialization with helpful error messages.
+    """
+
     def __init__(
         self,
         name: str,
@@ -19,154 +52,161 @@ class BaseAction:
         maximum_uses: int = -1,
         target_restrictions: list[str] | None = None,
     ):
-        # Validate inputs
-        if not name or not isinstance(name, str):
-            log_error(
-                f"Action name must be a non-empty string, got: {name}",
-                {"name": name, "type": type},
-            )
-            raise ValueError(f"Invalid action name: {name}")
-
-        if not isinstance(type, ActionType):
-            log_error(
-                f"Action type must be ActionType enum, got: {type(type).__name__}",
-                {"name": name, "type": type},
-            )
-            raise ValueError(f"Invalid action type: {type}")
-
-        if not isinstance(category, ActionCategory):
-            log_error(
-                f"Action category must be ActionCategory enum, got: {type(category).__name__}",
-                {"name": name, "category": category},
-            )
-            raise ValueError(f"Invalid action category: {category}")
-
-        if not isinstance(description, str):
-            log_warning(
-                f"Action description must be string, got: {type(description).__name__}",
-                {"name": name, "description": description},
-            )
-            description = str(description) if description is not None else ""
-
-        if not isinstance(cooldown, int) or cooldown < 0:
-            log_warning(
-                f"Action cooldown must be non-negative integer, got: {cooldown}",
-                {"name": name, "cooldown": cooldown},
-            )
-            cooldown = max(
-                0, int(cooldown) if isinstance(cooldown, (int, float)) else 0
-            )
-
-        if not isinstance(maximum_uses, int) or maximum_uses < -1:
-            log_warning(
-                f"Action maximum_uses must be integer >= -1 (where -1 = unlimited), got: {maximum_uses}",
-                {"name": name, "maximum_uses": maximum_uses},
-            )
-            maximum_uses = max(
-                -1, int(maximum_uses) if isinstance(maximum_uses, (int, float)) else -1
-            )
-
-        self.name: str = name
-        self.type: ActionType = type
-        self.category: ActionCategory = category
-        self.description: str = description
-        self.cooldown: int = cooldown
-        self.maximum_uses: int = maximum_uses
-        self.target_restrictions: list[str] = target_restrictions or []
-
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Abstract method for executables.
+        """
+        Initialize a new BaseAction.
 
         Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
+            name: The display name of the action
+            type: The type of action (from ActionType enum)
+            category: The category for targeting logic (from ActionCategory enum)
+            description: Optional description of what the action does
+            cooldown: Turns to wait before reusing (0 = no cooldown)
+            maximum_uses: Max uses per encounter/day (-1 = unlimited)
+            target_restrictions: Override default targeting with specific rules
+                - "SELF": Can only target the actor
+                - "ALLY": Can target allies (including self)
+                - "ENEMY": Can target enemies only
+                - "ANY": Can target anyone
+
+        Raises:
+            ValueError: If name is empty or type/category are invalid
+
+        Note:
+            Non-critical validation errors (wrong types, out-of-range values) will be
+            logged as warnings and automatically corrected rather than raising exceptions.
+        """
+        # === CRITICAL VALIDATIONS ===
+        # These will raise ValueError if invalid - action cannot be created
+        self.name = require_non_empty_string(name, "action name", {"type": str(type)})
+        self.type = require_enum_type(type, ActionType, "action type", {"name": name})
+        self.category = require_enum_type(
+            category, ActionCategory, "action category", {"name": name}
+        )
+
+        # === NON-CRITICAL VALIDATIONS ===
+        # These will log warnings and auto-correct - action can still be created
+        self.description = ensure_string(
+            description, "action description", "", {"name": name}
+        )
+        self.cooldown = ensure_non_negative_int(
+            cooldown, "action cooldown", 0, {"name": name}
+        )
+        self.maximum_uses = ensure_int_in_range(
+            maximum_uses, "action maximum_uses", -1, None, -1, {"name": name}
+        )
+        self.target_restrictions = ensure_list_of_strings(
+            target_restrictions, "target restrictions", [], {"name": name}
+        )
+
+    def execute(self, actor: Any, target: Any) -> bool:
+        """
+        Execute this action with the given actor and target.
+
+        This is an abstract method that must be implemented by subclasses.
+        Each action type (attack, spell, ability, etc.) will have its own
+        specific implementation of how the action is performed.
+
+        Args:
+            actor: The character performing the action (must have is_alive method)
+            target: The character being targeted by the action (must have is_alive method)
 
         Returns:
-            bool: True if the action was successfully executed, False otherwise.
+            bool: True if the action was successfully executed, False otherwise
+
+        Note:
+            - Subclasses should call is_valid_target() before executing
+            - Subclasses should handle cooldowns and usage limits
+            - This method should return False for any failure condition
+
+        Example:
+            ```python
+            # In a subclass implementation:
+            def execute(self, actor, target) -> bool:
+                if not self.is_valid_target(actor, target):
+                    return False
+
+                # Perform the action...
+                # Return True if successful, False otherwise
+            ```
         """
-        ...
+        raise NotImplementedError("Subclasses must implement the execute method")
+
+    # ============================================================================
+    # EFFECT SYSTEM METHODS
+    # ============================================================================
 
     def apply_effect(
         self,
         actor: Any,
         target: Any,
-        effect: Optional[Effect],
-        mind_level: Optional[int] = 0,
+        effect: Effect | None,
+        mind_level: int | None = 0,
     ) -> bool:
-        """Applies an effect to a target character.
+        """
+        Apply an effect to a target character.
+
+        This method handles the safe application of effects, including validation
+        of all parameters and proper error handling. It's commonly used by actions
+        that apply buffs, debuffs, or other temporary effects.
 
         Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
-            effect (Optional[Effect]): The effect to apply.
-            mind_level (Optional[int], optional): The mind_cost level to use for the effect. Defaults to 0.
+            actor: The character applying the effect (must have is_alive method)
+            target: The character receiving the effect (must have is_alive and effect_manager)
+            effect: The effect to apply, or None to do nothing
+            mind_level: The mind cost level for scaling effects (0+ integer)
 
         Returns:
-            bool: True if the effect was successfully applied, False otherwise.
+            bool: True if effect was successfully applied, False otherwise
+
+        Note:
+            - Returns False immediately if effect is None
+            - Validates that both actor and target are alive
+            - Auto-corrects invalid mind_level values with warnings
+            - All validation errors are logged with context for debugging
+
+        Example:
+            ```python
+            # Apply a poison effect
+            poison_effect = Effect.create_poison(damage=10, duration=3)
+            success = action.apply_effect(caster, enemy, poison_effect, mind_level=2)
+            ```
         """
         try:
             if not effect:
                 return False
 
-            if not actor:
-                log_warning(
-                    f"Cannot apply effect {effect.name}: actor is None",
-                    {"effect": effect.name, "actor": actor},
-                )
+            # Validate required objects using helpers
+            validate_required_object(
+                actor,
+                "actor",
+                ["is_alive"],
+                {"effect": safe_get_attribute(effect, "name", "Unknown")},
+            )
+            validate_required_object(
+                target,
+                "target",
+                ["is_alive", "effect_manager"],
+                {
+                    "effect": safe_get_attribute(effect, "name", "Unknown"),
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                },
+            )
+
+            # Check if actors are alive
+            if not actor.is_alive() or not target.is_alive():
                 return False
 
-            if not target:
-                log_warning(
-                    f"Cannot apply effect {effect.name}: target is None",
-                    {
-                        "effect": effect.name,
-                        "actor": getattr(actor, "name", "Unknown"),
-                        "target": target,
-                    },
-                )
-                return False
-
-            if not hasattr(actor, "is_alive") or not callable(actor.is_alive):
-                log_error(
-                    f"Actor lacks is_alive method for effect {effect.name}",
-                    {"effect": effect.name, "actor": getattr(actor, "name", "Unknown")},
-                )
-                return False
-
-            if not hasattr(target, "is_alive") or not callable(target.is_alive):
-                log_error(
-                    f"Target lacks is_alive method for effect {effect.name}",
-                    {
-                        "effect": effect.name,
-                        "target": getattr(target, "name", "Unknown"),
-                    },
-                )
-                return False
-
-            if not actor.is_alive():
-                return False
-            if not target.is_alive():
-                return False
-
-            if not hasattr(target, "effect_manager"):
-                log_error(
-                    f"Target lacks effect_manager for effect {effect.name}",
-                    {
-                        "effect": effect.name,
-                        "target": getattr(target, "name", "Unknown"),
-                    },
-                )
-                return False
-
-            # Validate mind_level
-            if not isinstance(mind_level, int) or mind_level < 0:
-                log_warning(
-                    f"Invalid mind_level for effect {effect.name}: {mind_level}",
-                    {"effect": effect.name, "mind_level": mind_level},
-                )
-                mind_level = max(
-                    0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
-                )
+            # Validate and correct mind_level using helper
+            mind_level = ensure_non_negative_int(
+                mind_level,
+                "mind level",
+                0,
+                {
+                    "effect": safe_get_attribute(effect, "name", "Unknown"),
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                    "target": safe_get_attribute(target, "name", "Unknown"),
+                },
+            )
 
             if target.effect_manager.add_effect(actor, effect, mind_level):
                 debug(
@@ -180,69 +220,83 @@ class BaseAction:
 
         except Exception as e:
             log_error(
-                f"Error applying effect {getattr(effect, 'name', 'Unknown')}: {str(e)}",
+                f"Error applying effect {safe_get_attribute(effect, 'name', 'Unknown')}: {str(e)}",
                 {
-                    "effect": getattr(effect, "name", "Unknown"),
+                    "effect": safe_get_attribute(effect, "name", "Unknown"),
                     "error": str(e),
-                    "actor": getattr(actor, "name", "Unknown"),
-                    "target": getattr(target, "name", "Unknown"),
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                    "target": safe_get_attribute(target, "name", "Unknown"),
                 },
                 e,
             )
             return False
 
+    # ============================================================================
+    # COMBAT SYSTEM METHODS
+    # ============================================================================
+
     def roll_attack_with_crit(
         self, actor, attack_bonus_expr: str, bonus_list: list[str]
     ) -> Tuple[int, str, int]:
-        """Roll attack with critical hit detection."""
+        """
+        Roll an attack with critical hit detection.
+
+        This method handles the complete attack roll process, including building
+        the dice expression, applying bonuses, and detecting critical hits.
+        It's primarily used by attack actions and spell attack actions.
+
+        Args:
+            actor: The character making the attack (must have get_expression_variables method)
+            attack_bonus_expr: Base attack bonus expression (e.g., "STR + PROF")
+            bonus_list: Additional bonus expressions to add to the roll
+
+        Returns:
+            Tuple[int, str, int]: (total_result, description, raw_d20_roll)
+            - total_result: Final attack roll total
+            - description: Human-readable description of the roll
+            - raw_d20_roll: The natural d20 result (for crit detection)
+
+        Note:
+            - Auto-corrects invalid inputs with warnings
+            - Uses actor's expression variables for bonus calculations
+            - Returns safe fallback (1, "1D20: 1 (error)", 1) on errors
+            - Raw d20 roll of 20 indicates a critical hit
+
+        Example:
+            ```python
+            total, desc, d20 = action.roll_attack_with_crit(
+                fighter, "STR + PROF", ["RAGE", "BLESS"]
+            )
+            is_crit = (d20 == 20)
+            print(f"Attack: {desc} = {total}")
+            ```
+        """
         try:
-            if not actor:
-                log_error("Cannot roll attack: actor is None", {"actor": actor})
-                return 1, "1D20: 1", 1  # Return minimum valid roll
+            # Validate required actor object
+            validate_required_object(actor, "actor", ["get_expression_variables"])
 
-            if not hasattr(actor, "get_expression_variables"):
-                log_error(
-                    f"Actor {getattr(actor, 'name', 'Unknown')} lacks get_expression_variables method",
-                    {"actor": getattr(actor, "name", "Unknown")},
-                )
-                return 1, "1D20: 1", 1  # Return minimum valid roll
-
+            # Build attack expression
             expr = "1D20"
-            if attack_bonus_expr and isinstance(attack_bonus_expr, str):
+            attack_bonus_expr = ensure_string(
+                attack_bonus_expr, "attack bonus expression", ""
+            )
+            if attack_bonus_expr:
                 expr += f" + {attack_bonus_expr}"
-            elif attack_bonus_expr:
-                log_warning(
-                    f"Invalid attack_bonus_expr type: {type(attack_bonus_expr).__name__}",
-                    {
-                        "attack_bonus_expr": attack_bonus_expr,
-                        "type": type(attack_bonus_expr).__name__,
-                    },
-                )
 
-            if bonus_list:
-                if not isinstance(bonus_list, list):
-                    log_warning(
-                        f"bonus_list must be a list, got: {type(bonus_list).__name__}",
-                        {"bonus_list": bonus_list, "type": type(bonus_list).__name__},
-                    )
-                    bonus_list = []
-                else:
-                    for bonus in bonus_list:
-                        if isinstance(bonus, str):
-                            expr += f" + {bonus}"
-                        else:
-                            log_warning(
-                                f"Bonus in bonus_list must be string, got: {type(bonus).__name__}",
-                                {"bonus": bonus, "type": type(bonus).__name__},
-                            )
+            # Process bonus list
+            bonus_list = ensure_list_of_strings(bonus_list, "bonus list", [])
+            for bonus in bonus_list:
+                if bonus:  # Only add non-empty bonuses
+                    expr += f" + {bonus}"
 
+            # Get actor variables and ensure it's a dict
             variables = actor.get_expression_variables()
             if not isinstance(variables, dict):
                 log_warning(
-                    f"Actor expression variables must be dict, got: {type(variables).__name__}",
+                    f"Actor expression variables must be dict, got: {type(variables).__name__}, using empty dict",
                     {
                         "variables": variables,
-                        "actor": getattr(actor, "name", "Unknown"),
+                        "actor": safe_get_attribute(actor, "name", "Unknown"),
                     },
                 )
                 variables = {}
@@ -255,7 +309,7 @@ class BaseAction:
                 f"Error rolling attack: {str(e)}",
                 {
                     "error": str(e),
-                    "actor": getattr(actor, "name", "Unknown"),
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
                     "attack_bonus_expr": attack_bonus_expr,
                     "bonus_list": bonus_list,
                 },
@@ -263,106 +317,287 @@ class BaseAction:
             )
             return 1, "1D20: 1 (error)", 1  # Return safe fallback
 
+    # ============================================================================
+    # TARGETING SYSTEM METHODS
+    # ============================================================================
+
     def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Checks if the target is valid for the action.
+        """
+        Check if the target is valid for this action.
+
+        This method determines whether an action can target a specific character
+        based on the action's category and any custom target restrictions.
+        It handles both automatic targeting rules and explicit restrictions.
 
         Args:
-            actor (Any): The character performing the action.
-            target (Any): The character targeted by the action.
+            actor: The character performing the action (must have is_alive method)
+            target: The potential target character (must have is_alive method)
 
         Returns:
-            bool: True if the target is valid, False otherwise.
-        """
-        # If target_restrictions are defined, use the generic targeting system
-        if self.target_restrictions:
-            return self._check_target_restrictions(actor, target)
+            bool: True if the target is valid for this action, False otherwise
 
-        # Otherwise, fall back to category-based default targeting
-        return self._get_default_targeting_by_category(actor, target)
+        Targeting Logic:
+            1. If target_restrictions are defined: Uses explicit rules
+               - "SELF": Only the actor can be targeted
+               - "ALLY": Actor and allies can be targeted
+               - "ENEMY": Only enemies can be targeted
+               - "ANY": Anyone can be targeted
+
+            2. If no restrictions: Uses category-based defaults
+               - OFFENSIVE: Targets enemies only
+               - HEALING: Targets self/allies who aren't at full health
+               - BUFF: Targets self and allies
+               - DEBUFF: Targets enemies only
+               - UTILITY/DEBUG: Targets anyone
+
+        Note:
+            - Both characters must be alive to be valid
+            - Validation errors result in False (invalid target)
+            - All targeting decisions are logged for debugging
+
+        Example:
+            ```python
+            # Check if a healing spell can target an ally
+            if healing_spell.is_valid_target(caster, wounded_ally):
+                healing_spell.execute(caster, wounded_ally)
+            ```
+        """
+        try:
+            # Validate required objects have is_alive method
+            validate_required_object(
+                actor, "actor", ["is_alive"], {"action": self.name}
+            )
+            validate_required_object(
+                target,
+                "target",
+                ["is_alive"],
+                {
+                    "action": self.name,
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                },
+            )
+
+            # If target_restrictions are defined, use the generic targeting system
+            if self.target_restrictions:
+                return self._check_target_restrictions(actor, target)
+
+            # Otherwise, fall back to category-based default targeting
+            return self._get_default_targeting_by_category(actor, target)
+
+        except ValueError:
+            # If validation fails, target is invalid
+            return False
 
     def _check_target_restrictions(self, actor: Any, target: Any) -> bool:
-        """Check if target is valid based on target_restrictions."""
+        """
+        Check if target is valid based on explicit target_restrictions.
+
+        This method processes explicit targeting rules when target_restrictions
+        are defined, rather than using category-based defaults.
+
+        Args:
+            actor: The character performing the action
+            target: The potential target character
+
+        Returns:
+            bool: True if target matches any of the restrictions, False otherwise
+
+        Restriction Types:
+            - "SELF": Only the actor can be targeted
+            - "ALLY": Actor and allies (non-opponents) can be targeted
+            - "ENEMY": Only enemies (opponents) can be targeted
+            - "ANY": Anyone can be targeted (no restrictions)
+
+        Note:
+            - Both characters must be alive
+            - Returns True on first matching restriction (OR logic)
+            - Empty restrictions list means no valid targets
+        """
         # Basic validation - both must be alive
         if not actor.is_alive() or not target.is_alive():
             return False
 
-        # Check each restriction
+        # Check each restriction - return True on first match (OR logic)
         for restriction in self.target_restrictions:
             if restriction == "SELF" and actor == target:
                 return True
-            elif restriction == "ALLY" and self._is_relationship_valid(
+            if restriction == "ALLY" and self._is_relationship_valid(
                 actor, target, is_ally=True
             ):
                 return True
-            elif restriction == "ENEMY" and self._is_relationship_valid(
+            if restriction == "ENEMY" and self._is_relationship_valid(
                 actor, target, is_ally=False
             ):
                 return True
-            elif restriction == "ANY":
+            if restriction == "ANY":
                 return True
 
+        # No restrictions matched - target is invalid
         return False
 
     def _get_default_targeting_by_category(self, actor: Any, target: Any) -> bool:
         """Provide sensible default targeting based on action category."""
-        # Basic validation - both must be alive
-        if not actor.is_alive() or not target.is_alive():
-            return False
+        try:
+            # Basic validation - both must be alive
+            if not actor.is_alive() or not target.is_alive():
+                return False
 
-        from core.constants import ActionCategory
+            from core.constants import ActionCategory
 
-        if self.category == ActionCategory.OFFENSIVE:
-            # Offensive actions target enemies (not self, must be opponents)
-            return target != actor and is_oponent(actor.type, target.type)
+            if self.category == ActionCategory.OFFENSIVE:
+                # Offensive actions target enemies (not self, must be opponents)
+                return target != actor and is_oponent(
+                    safe_get_attribute(actor, "type", "UNKNOWN"),
+                    safe_get_attribute(target, "type", "UNKNOWN"),
+                )
 
-        elif self.category == ActionCategory.HEALING:
-            # Healing actions target self and allies (not enemies, not at full health for healing)
-            if target == actor:
-                return target.hp < target.HP_MAX  # Can heal self if not at full health
-            elif not is_oponent(actor.type, target.type):
-                return (
-                    target.hp < target.HP_MAX
-                )  # Can heal allies if not at full health
-            return False
+            if self.category == ActionCategory.HEALING:
+                # Healing actions target self and allies (not enemies, not at full health for healing)
+                if target == actor:
+                    return safe_get_attribute(target, "hp", 0) < safe_get_attribute(
+                        target, "HP_MAX", 1
+                    )  # Can heal self if not at full health
+                if not is_oponent(
+                    safe_get_attribute(actor, "type", "UNKNOWN"),
+                    safe_get_attribute(target, "type", "UNKNOWN"),
+                ):
+                    return safe_get_attribute(target, "hp", 0) < safe_get_attribute(
+                        target, "HP_MAX", 1
+                    )  # Can heal allies if not at full health
+                return False
 
-        elif self.category == ActionCategory.BUFF:
-            # Buff actions target self and allies
-            return target == actor or not is_oponent(actor.type, target.type)
+            if self.category == ActionCategory.BUFF:
+                # Buff actions target self and allies
+                return target == actor or not is_oponent(
+                    safe_get_attribute(actor, "type", "UNKNOWN"),
+                    safe_get_attribute(target, "type", "UNKNOWN"),
+                )
 
-        elif self.category == ActionCategory.DEBUFF:
-            # Debuff actions target enemies
-            return target != actor and is_oponent(actor.type, target.type)
+            if self.category == ActionCategory.DEBUFF:
+                # Debuff actions target enemies
+                return target != actor and is_oponent(
+                    safe_get_attribute(actor, "type", "UNKNOWN"),
+                    safe_get_attribute(target, "type", "UNKNOWN"),
+                )
 
-        elif self.category == ActionCategory.UTILITY:
-            # Utility actions can target anyone
-            return True
+            if self.category == ActionCategory.UTILITY:
+                # Utility actions can target anyone
+                return True
 
-        elif self.category == ActionCategory.DEBUG:
-            # Debug actions can target anyone
-            return True
+            if self.category == ActionCategory.DEBUG:
+                # Debug actions can target anyone
+                return True
 
-        else:
             # Unknown category - default to no targeting
             return False
 
-    def _is_relationship_valid(self, actor: Any, target: Any, is_ally: bool) -> bool:
-        """Helper to check if actor and target have the correct relationship."""
-        if actor == target:  # Self is neither ally nor enemy in this context
+        except Exception as e:
+            log_warning(
+                f"Error in default targeting for action {self.name}: {str(e)}",
+                {
+                    "action": self.name,
+                    "category": (
+                        self.category.name
+                        if hasattr(self.category, "name")
+                        else str(self.category)
+                    ),
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                    "target": safe_get_attribute(target, "name", "Unknown"),
+                    "error": str(e),
+                },
+                e,
+            )
             return False
 
-        # Check if they are opponents (enemies to each other)
-        are_opponents = is_oponent(actor.type, target.type)
+    def _is_relationship_valid(self, actor: Any, target: Any, is_ally: bool) -> bool:
+        """
+        Helper to check if actor and target have the correct relationship.
 
-        if is_ally:
-            return not are_opponents  # Allies are not opponents
-        else:
-            return are_opponents  # Enemies are opponents
+        This method determines whether two characters are allies or enemies
+        based on their character types. It's used by the targeting system
+        to validate relationship-based restrictions.
 
-    def to_dict(self) -> dict[str, Any]:
-        """Converts the action to a dictionary representation.
+        Args:
+            actor: The character performing the action
+            target: The potential target character
+            is_ally: True to check for ally relationship, False for enemy
 
         Returns:
-            dict: A dictionary containing the executable's data.
+            bool: True if the relationship matches the requested type
+
+        Relationship Logic:
+            - Self is considered neither ally nor enemy for targeting purposes
+            - Uses is_opponent() function to determine enemy relationships
+            - Allies are characters who are NOT opponents
+            - Enemies are characters who ARE opponents
+
+        Note:
+            - Uses safe attribute access to handle missing character types
+            - Logs warnings and returns False on any errors
+            - Character types come from the game's faction system
+        """
+        try:
+            if actor == target:  # Self is neither ally nor enemy in this context
+                return False
+
+            # Check if they are opponents (enemies to each other)
+            actor_type = safe_get_attribute(actor, "type", "UNKNOWN")
+            target_type = safe_get_attribute(target, "type", "UNKNOWN")
+            are_opponents = is_oponent(actor_type, target_type)
+
+            if is_ally:
+                return not are_opponents  # Allies are not opponents
+            else:
+                return are_opponents  # Enemies are opponents
+
+        except Exception as e:
+            log_warning(
+                f"Error checking relationship for action {self.name}: {str(e)}",
+                {
+                    "action": self.name,
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                    "target": safe_get_attribute(target, "name", "Unknown"),
+                    "is_ally": is_ally,
+                    "error": str(e),
+                },
+                e,
+            )
+            return False
+
+    # ============================================================================
+    # UTILITY METHODS
+    # ============================================================================
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Convert the action to a dictionary representation for serialization.
+
+        This method creates a JSON-serializable dictionary containing all the
+        action's data. It's used for saving actions to files, network transmission,
+        or debugging purposes.
+
+        Returns:
+            dict[str, Any]: Dictionary containing all action data
+            - class: The class name for reconstruction
+            - name: Action display name
+            - type: Action type (as string)
+            - category: Action category (as string)
+            - description: Action description
+            - cooldown: Cooldown in turns
+            - maximum_uses: Max uses (-1 for unlimited)
+            - target_restrictions: List of targeting rules (only if defined)
+
+        Note:
+            - Enum values are converted to strings for JSON compatibility
+            - Empty target_restrictions are omitted from the output
+            - This format can be used with from_dict methods for reconstruction
+
+        Example:
+            ```python
+            action_data = my_action.to_dict()
+            # Save to JSON, send over network, etc.
+            reconstructed = SomeAction.from_dict(action_data)
+            ```
         """
         data = {
             "class": self.__class__.__name__,

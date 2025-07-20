@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from actions.base_action import BaseAction
 from combat.damage import (
@@ -15,7 +15,16 @@ from core.constants import (
     get_effect_color,
     is_oponent,
 )
-from core.error_handling import log_error, log_warning, log_critical
+from core.error_handling import (
+    log_error,
+    log_warning,
+    log_critical,
+    ensure_non_negative_int,
+    ensure_string,
+    ensure_list_of_type,
+    safe_get_attribute,
+    validate_required_object,
+)
 from core.utils import (
     debug,
     parse_expr_and_assume_max_roll,
@@ -27,6 +36,44 @@ from effects.effect import Effect
 
 
 class BaseAttack(BaseAction):
+    """
+    Base class for all attack actions in the combat system.
+
+    This class represents physical and weapon-based attacks that deal damage to targets.
+    It handles attack rolls, damage calculation, critical hits, fumbles, and optional
+    effects that trigger on successful hits.
+
+    Attack Flow:
+        1. Validate actor and target
+        2. Check cooldowns and restrictions
+        3. Roll attack vs target's AC
+        4. On hit: Roll damage, apply effects, handle triggers
+        5. Display results with appropriate verbosity
+
+    Attributes:
+        hands_required (int): Number of hands needed to perform this attack (0+)
+        attack_roll (str): Expression for attack bonus (e.g., "STR + PROF")
+        damage (list[DamageComponent]): List of damage components to roll
+        effect (Effect | None): Optional effect applied on successful hits
+
+    Critical Hit Logic:
+        - Natural 20 on d20 = critical hit (double base damage)
+        - Natural 1 on d20 = fumble (automatic miss)
+        - Crits always hit regardless of AC
+
+    Damage System:
+        - Base damage from weapon/attack
+        - Bonus damage from effects and modifiers
+        - Trigger effects (like smite spells) activate on hit
+        - All damage is calculated and applied together
+
+    Note:
+        - Inherits targeting logic from BaseAction (category = OFFENSIVE)
+        - Supports both weapon attacks and natural attacks
+        - Integrates with effect system for buffs/debuffs
+        - Handles verbose output for combat logging
+    """
+
     def __init__(
         self,
         name: str,
@@ -37,9 +84,49 @@ class BaseAttack(BaseAction):
         hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
-        effect: Optional[Effect] = None,
+        effect: Effect | None = None,
         target_restrictions: list[str] | None = None,
     ):
+        """
+        Initialize a new BaseAttack.
+
+        Args:
+            name: The display name of the attack
+            type: The type of action (usually ActionType.ATTACK)
+            description: Description of what the attack does
+            cooldown: Turns to wait before reusing (0 = no cooldown)
+            maximum_uses: Max uses per encounter/day (-1 = unlimited)
+            hands_required: Number of hands needed (0 = no hands, 1 = one-handed, 2 = two-handed)
+            attack_roll: Attack bonus expression (e.g., "STR + PROF", "DEX + PROF + 2")
+            damage: List of damage components (base weapon damage, stat bonuses, etc.)
+            effect: Optional effect applied on successful hits (poison, bleeding, etc.)
+            target_restrictions: Override default offensive targeting if needed
+
+        Raises:
+            ValueError: If name is empty or type/category are invalid
+
+        Note:
+            - Category is automatically set to OFFENSIVE
+            - Invalid hands_required values are corrected to 0 with warnings
+            - Invalid attack_roll expressions are corrected to empty string
+            - Damage list is validated to ensure all components are DamageComponent instances
+            - Invalid effects are set to None with warnings
+
+        Example:
+            ```python
+            # Create a longsword attack
+            longsword = BaseAttack(
+                name="Longsword",
+                type=ActionType.ATTACK,
+                description="A versatile steel blade",
+                cooldown=0,
+                maximum_uses=-1,
+                hands_required=1,
+                attack_roll="STR + PROF",
+                damage=[DamageComponent("1d8", "slashing", "STR")],
+            )
+            ```
+        """
         try:
             super().__init__(
                 name,
@@ -51,61 +138,35 @@ class BaseAttack(BaseAction):
                 target_restrictions,
             )
 
-            # Validate hands_required
-            if not isinstance(hands_required, int) or hands_required < 0:
-                log_warning(
-                    f"Attack {name} hands_required must be non-negative integer, got: {hands_required}",
-                    {"name": name, "hands_required": hands_required},
-                )
-                hands_required = max(
-                    0,
-                    (
-                        int(hands_required)
-                        if isinstance(hands_required, (int, float))
-                        else 0
-                    ),
-                )
+            # Validate hands_required using helper
+            self.hands_required = ensure_non_negative_int(
+                hands_required, "hands required", 0, {"name": name}
+            )
 
-            # Validate attack_roll
-            if not isinstance(attack_roll, str):
-                log_error(
-                    f"Attack {name} attack_roll must be string, got: {attack_roll.__class__.__name__}",
-                    {"name": name, "attack_roll": attack_roll},
-                )
-                attack_roll = str(attack_roll) if attack_roll is not None else ""
+            # Validate attack_roll using helper
+            self.attack_roll = ensure_string(
+                attack_roll, "attack roll", "", {"name": name}
+            )
 
-            # Validate damage list
-            if not isinstance(damage, list):
-                log_error(
-                    f"Attack {name} damage must be list, got: {damage.__class__.__name__}",
-                    {"name": name, "damage": damage},
-                )
-                damage = []
-            else:
-                # Validate each damage component
-                for i, dmg_comp in enumerate(damage):
-                    if not isinstance(dmg_comp, DamageComponent):
-                        log_error(
-                            f"Attack {name} damage[{i}] must be DamageComponent, got: {dmg_comp.__class__.__name__}",
-                            {
-                                "name": name,
-                                "damage_index": i,
-                                "damage_component": dmg_comp,
-                            },
-                        )
+            # Validate damage list using helper
+            self.damage = ensure_list_of_type(
+                damage,
+                DamageComponent,
+                "damage components",
+                [],
+                validator=lambda x: isinstance(x, DamageComponent),
+                context={"name": name},
+            )
 
             # Validate effect
             if effect is not None and not isinstance(effect, Effect):
                 log_warning(
-                    f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}",
+                    f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}, setting to None",
                     {"name": name, "effect": effect},
                 )
                 effect = None
 
-            self.hands_required: int = hands_required
-            self.attack_roll: str = attack_roll
-            self.damage: list[DamageComponent] = damage
-            self.effect: Optional[Effect] = effect
+            self.effect: Effect | None = effect
 
         except Exception as e:
             log_critical(
@@ -115,36 +176,81 @@ class BaseAttack(BaseAction):
             )
             raise
 
+    # ============================================================================
+    # COMBAT EXECUTION METHODS
+    # ============================================================================
+
     def execute(self, actor: Any, target: Any) -> bool:
+        """
+        Execute this attack against a target.
+
+        This method handles the complete attack sequence from validation through
+        damage application. It includes attack rolls, critical hit detection,
+        damage calculation, effect application, and result display.
+
+        Attack Sequence:
+            1. Validate actor and target objects
+            2. Check cooldowns and usage restrictions
+            3. Build and roll attack vs target AC
+            4. Handle fumbles (natural 1) and misses
+            5. On hit: Calculate damage, apply effects, handle triggers
+            6. Display results with appropriate verbosity level
+
+        Args:
+            actor: The character performing the attack (must have combat methods)
+            target: The character being attacked (must have AC and combat methods)
+
+        Returns:
+            bool: True if attack was executed successfully, False on validation errors
+
+        Critical Hit System:
+            - Natural 20: Critical hit, double base damage, always hits
+            - Natural 1: Fumble, automatic miss regardless of bonuses
+            - Regular hit: Attack total >= target AC
+
+        Damage System:
+            - Base damage: From weapon/attack damage components
+            - Bonus damage: From effects, modifiers, and triggered abilities
+            - Critical hits: Double base damage only (not bonuses)
+            - All damage applied together after calculation
+
+        Effect System:
+            - On-hit trigger effects activate (like smite spells)
+            - Triggered effects apply to target with proper mind levels
+            - Attack's inherent effect applies if successful hit
+
+        Note:
+            - Returns True even for misses/fumbles (attack was executed)
+            - Returns False only for validation/system errors
+            - Uses global verbosity settings for output formatting
+            - Integrates with effect manager for damage bonuses
+
+        Example:
+            ```python
+            # Execute a sword attack
+            if sword.execute(fighter, goblin):
+                print("Attack completed successfully")
+            else:
+                print("Attack failed due to system error")
+            ```
+        """
         try:
-            # Validate inputs
-            if not actor:
-                log_error(
-                    f"Cannot execute {self.name}: actor is None", {"action": self.name}
-                )
-                return False
-
-            if not target:
-                log_error(
-                    f"Cannot execute {self.name}: target is None",
-                    {"action": self.name, "actor": getattr(actor, "name", "Unknown")},
-                )
-                return False
-
-            # Validate required attributes
-            if not hasattr(actor, "name") or not hasattr(actor, "type"):
-                log_error(
-                    f"Actor missing required attributes for {self.name}",
-                    {"action": self.name, "actor": actor},
-                )
-                return False
-
-            if not hasattr(target, "name") or not hasattr(target, "type"):
-                log_error(
-                    f"Target missing required attributes for {self.name}",
-                    {"action": self.name, "target": target},
-                )
-                return False
+            # Validate required objects using helpers
+            validate_required_object(
+                actor,
+                "actor",
+                ["name", "type", "is_on_cooldown", "get_expression_variables"],
+                {"action": self.name},
+            )
+            validate_required_object(
+                target,
+                "target",
+                ["name", "type"],
+                {
+                    "action": self.name,
+                    "actor": safe_get_attribute(actor, "name", "Unknown"),
+                },
+            )
 
             actor_str = apply_character_type_color(actor.type, actor.name)
             target_str = apply_character_type_color(target.type, target.name)
@@ -288,14 +394,37 @@ class BaseAttack(BaseAction):
             )
             return False
 
+    # ============================================================================
+    # DAMAGE CALCULATION METHODS
+    # ============================================================================
+
     def get_damage_expr(self, actor: Any) -> str:
-        """Returns the damage expression with variables substituted.
+        """
+        Returns the damage expression with variables substituted.
+
+        This method builds a complete damage expression string by substituting
+        all variable placeholders with their actual values from the actor's
+        current state. The result is a human-readable representation of the
+        total damage calculation.
+
+        Variable Substitution:
+            - {STR}, {DEX}, {CON}, {INT}, {WIS}, {CHA}: Ability modifiers
+            - {PROF}: Proficiency bonus
+            - {LEVEL}: Character level
+            - Custom variables from actor's expression_variables method
 
         Args:
-            actor (Any): The character performing the action.
+            actor: The character performing the action (must have expression variables)
 
         Returns:
-            str: The damage expression with variables substituted.
+            str: Complete damage expression with variables replaced by values
+
+        Example:
+            ```python
+            # For a longsword with STR modifier
+            damage_expr = weapon.get_damage_expr(fighter)
+            # Returns: "1d8 + 3" (if STR modifier is +3)
+            ```
         """
         return " + ".join(
             substitute_variables(component.damage_roll, actor)
@@ -303,13 +432,25 @@ class BaseAttack(BaseAction):
         )
 
     def get_min_damage(self, actor: Any) -> int:
-        """Returns the minimum damage value for the attack.
+        """
+        Returns the minimum possible damage value for the attack.
+
+        Calculates the theoretical minimum damage by assuming all dice
+        roll their minimum values (1 for each die). This is useful for
+        damage prediction and combat analysis.
 
         Args:
-            actor (Any): The character performing the action.
+            actor: The character performing the action
 
         Returns:
-            int: The minimum damage value for the attack.
+            int: Minimum total damage across all damage components
+
+        Example:
+            ```python
+            # For "2d6 + 4" damage
+            min_dmg = weapon.get_min_damage(fighter)
+            # Returns: 6 (2*1 + 4)
+            ```
         """
         return sum(
             parse_expr_and_assume_min_roll(
@@ -319,13 +460,25 @@ class BaseAttack(BaseAction):
         )
 
     def get_max_damage(self, actor: Any) -> int:
-        """Returns the maximum damage value for the attack.
+        """
+        Returns the maximum possible damage value for the attack.
+
+        Calculates the theoretical maximum damage by assuming all dice
+        roll their maximum values. This is useful for damage prediction,
+        combat planning, and threat assessment.
 
         Args:
-            actor (Any): The character performing the action.
+            actor: The character performing the action
 
         Returns:
-            int: The maximum damage value for the attack.
+            int: Maximum total damage across all damage components
+
+        Example:
+            ```python
+            # For "2d6 + 4" damage
+            max_dmg = weapon.get_max_damage(fighter)
+            # Returns: 16 (2*6 + 4)
+            ```
         """
         return sum(
             parse_expr_and_assume_max_roll(
@@ -334,7 +487,32 @@ class BaseAttack(BaseAction):
             for component in self.damage
         )
 
+    # ============================================================================
+    # SERIALIZATION METHODS
+    # ============================================================================
+
     def to_dict(self) -> dict[str, Any]:
+        """
+        Convert the attack to a dictionary representation.
+
+        Creates a complete serializable representation of the attack including
+        all properties from the base class plus attack-specific data like
+        damage components and required hands.
+
+        Returns:
+            dict: Complete dictionary representation suitable for JSON serialization
+
+        Dictionary Structure:
+            - Base properties: name, type, description, cooldown, maximum_uses
+            - Attack properties: hands_required, attack_roll, damage components
+            - Optional: effect data if an effect is attached
+
+        Example:
+            ```python
+            attack_data = sword.to_dict()
+            # Returns complete serializable dictionary
+            ```
+        """
         # Get the base dictionary representation.
         data = super().to_dict()
         # Add specific fields for BaseAttack
@@ -350,10 +528,35 @@ class BaseAttack(BaseAction):
     def from_dict(data: dict[str, Any]) -> "BaseAttack":
         """
         Creates a BaseAttack instance from a dictionary.
+
+        Reconstructs a complete BaseAttack object from its dictionary
+        representation, including all damage components and optional effects.
+        This enables loading attacks from JSON configuration files.
+
         Args:
-            data (dict): Dictionary containing the action data.
+            data: Dictionary containing complete attack specification
+
         Returns:
-            BaseAttack: An instance of BaseAttack.
+            BaseAttack: Fully initialized attack instance
+
+        Required Dictionary Keys:
+            - name: Attack name (str)
+            - type: ActionType enum value (str)
+            - attack_roll: Attack roll expression (str)
+            - damage: List of damage component dictionaries
+
+        Optional Dictionary Keys:
+            - description: Attack description (str, default: "")
+            - cooldown: Turns between uses (int, default: 0)
+            - maximum_uses: Max uses per encounter (int, default: -1)
+            - hands_required: Required hands (int, default: 0)
+            - effect: Effect dictionary (dict, default: None)
+
+        Example:
+            ```python
+            sword_data = {...}  # From JSON config
+            sword = BaseAttack.from_dict(sword_data)
+            ```
         """
         return BaseAttack(
             name=data["name"],
@@ -368,8 +571,46 @@ class BaseAttack(BaseAction):
         )
 
 
+# ============================================================================
+# WEAPON ATTACK CLASS
+# ============================================================================
+
+
 class WeaponAttack(BaseAttack):
-    """A weapon-based attack that can be equipped and unequipped."""
+    """
+    A weapon-based attack that can be equipped and unequipped.
+
+    WeaponAttacks represent attacks made with physical weapons that characters
+    can wield, equip, and unequip. They inherit all functionality from BaseAttack
+    but are specifically designed for weapon-based combat systems.
+
+    Key Characteristics:
+        - Requires specific hands to wield (tracked via hands_required)
+        - Can be equipped/unequipped from character inventories
+        - Represents manufactured weapons (swords, axes, bows, etc.)
+        - May have weapon-specific properties and restrictions
+
+    Usage Context:
+        - Player character weapons
+        - Lootable/tradeable weapons
+        - Equipment-based combat systems
+        - Weapon proficiency systems
+
+    Example:
+        ```python
+        longsword = WeaponAttack(
+            name="Longsword",
+            type=ActionType.ACTION,
+            description="A versatile martial weapon",
+            cooldown=0,
+            maximum_uses=-1,
+            hands_required=1,
+            attack_roll="1d20 + {STR} + {PROF}",
+            damage=[DamageComponent("slashing", "1d8 + {STR}")],
+            effect=None
+        )
+        ```
+    """
 
     def __init__(
         self,
@@ -381,8 +622,37 @@ class WeaponAttack(BaseAttack):
         hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
-        effect: Optional[Effect] = None,
+        effect: Effect | None = None,
     ):
+        """
+        Initialize a new WeaponAttack.
+
+        Args:
+            name: Weapon name (e.g., "Longsword", "Shortbow")
+            type: Action type (usually ACTION or BONUS_ACTION)
+            description: Flavor text describing the weapon
+            cooldown: Turns between uses (0 for most weapons)
+            maximum_uses: Max uses per encounter (-1 for unlimited)
+            hands_required: Number of hands needed to wield (1 or 2)
+            attack_roll: Attack roll expression with variables
+            damage: List of damage components for the weapon
+            effect: Optional effect applied on successful hit
+
+        Example:
+            ```python
+            greatsword = WeaponAttack(
+                name="Greatsword",
+                type=ActionType.ACTION,
+                description="A heavy two-handed sword",
+                cooldown=0,
+                maximum_uses=-1,
+                hands_required=2,
+                attack_roll="1d20 + {STR} + {PROF}",
+                damage=[DamageComponent("slashing", "2d6 + {STR}")],
+                effect=None
+            )
+            ```
+        """
         super().__init__(
             name,
             type,
@@ -397,7 +667,24 @@ class WeaponAttack(BaseAttack):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "WeaponAttack":
-        """Creates a WeaponAttack instance from a dictionary."""
+        """
+        Creates a WeaponAttack instance from a dictionary.
+
+        Reconstructs a complete WeaponAttack from its dictionary representation,
+        typically loaded from JSON weapon configuration files.
+
+        Args:
+            data: Dictionary with weapon specification
+
+        Returns:
+            WeaponAttack: Fully initialized weapon attack instance
+
+        Example:
+            ```python
+            weapon_data = load_weapon_from_json("longsword.json")
+            longsword = WeaponAttack.from_dict(weapon_data)
+            ```
+        """
         return WeaponAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -411,8 +698,46 @@ class WeaponAttack(BaseAttack):
         )
 
 
+# ============================================================================
+# NATURAL ATTACK CLASS
+# ============================================================================
+
+
 class NaturalAttack(BaseAttack):
-    """A natural/innate attack that is part of a creature's biology."""
+    """
+    A natural/innate attack that is part of a creature's biology.
+
+    NaturalAttacks represent attacks using natural weapons like claws, fangs,
+    horns, or tail strikes. These attacks are inherent to the creature and
+    cannot be disarmed or unequipped.
+
+    Key Characteristics:
+        - Always available (cannot be disarmed)
+        - Never requires hands (hands_required always 0)
+        - Represents biological weapons (claws, bite, sting, etc.)
+        - Often tied to creature race or species
+        - May have unique biological effects (poison, disease, etc.)
+
+    Usage Context:
+        - Monster and creature attacks
+        - Racial natural weapons (tiefling claws, dragonborn breath)
+        - Supernatural creature abilities
+        - Unarmed combat variants
+
+    Example:
+        ```python
+        claw_attack = NaturalAttack(
+            name="Claw",
+            type=ActionType.ACTION,
+            description="Sharp natural claws",
+            cooldown=0,
+            maximum_uses=-1,
+            attack_roll="1d20 + {STR} + {PROF}",
+            damage=[DamageComponent("slashing", "1d4 + {STR}")],
+            effect=None
+        )
+        ```
+    """
 
     def __init__(
         self,
@@ -423,8 +748,38 @@ class NaturalAttack(BaseAttack):
         maximum_uses: int,
         attack_roll: str,
         damage: list[DamageComponent],
-        effect: Optional[Effect] = None,
+        effect: Effect | None = None,
     ):
+        """
+        Initialize a new NaturalAttack.
+
+        Note that hands_required is automatically set to 0 since natural
+        attacks never require hands to use.
+
+        Args:
+            name: Natural weapon name (e.g., "Bite", "Claw", "Tail Slap")
+            type: Action type (usually ACTION, sometimes BONUS_ACTION)
+            description: Flavor text describing the natural weapon
+            cooldown: Turns between uses (0 for most natural attacks)
+            maximum_uses: Max uses per encounter (-1 for unlimited)
+            attack_roll: Attack roll expression with variables
+            damage: List of damage components for the natural weapon
+            effect: Optional effect like poison or disease
+
+        Example:
+            ```python
+            bite = NaturalAttack(
+                name="Bite",
+                type=ActionType.ACTION,
+                description="Savage bite with sharp teeth",
+                cooldown=0,
+                maximum_uses=-1,
+                attack_roll="1d20 + {STR} + {PROF}",
+                damage=[DamageComponent("piercing", "1d6 + {STR}")],
+                effect=poison_effect
+            )
+            ```
+        """
         super().__init__(
             name,
             type,
@@ -439,7 +794,24 @@ class NaturalAttack(BaseAttack):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "NaturalAttack":
-        """Creates a NaturalAttack instance from a dictionary."""
+        """
+        Creates a NaturalAttack instance from a dictionary.
+
+        Reconstructs a complete NaturalAttack from its dictionary representation,
+        typically loaded from creature/monster configuration files.
+
+        Args:
+            data: Dictionary with natural weapon specification
+
+        Returns:
+            NaturalAttack: Fully initialized natural attack instance
+
+        Example:
+            ```python
+            creature_data = load_creature_from_json("wolf.json")
+            bite = NaturalAttack.from_dict(creature_data["bite_attack"])
+            ```
+        """
         return NaturalAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -452,13 +824,50 @@ class NaturalAttack(BaseAttack):
         )
 
 
-def from_dict_attack(data: dict[str, Any]) -> Optional[BaseAttack]:
+# ============================================================================
+# FACTORY FUNCTIONS
+# ============================================================================
+
+
+def from_dict_attack(data: dict[str, Any]) -> BaseAttack | None:
     """
-    Creates a BaseAttack instance from a dictionary.
+    Creates a BaseAttack instance from a dictionary using the factory pattern.
+
+    This factory function automatically determines the correct attack class
+    based on the 'class' field in the data dictionary and creates an
+    appropriate instance. This enables polymorphic loading of different
+    attack types from configuration files.
+
+    Supported Attack Classes:
+        - "BaseAttack": Generic attack (default)
+        - "WeaponAttack": Equipable weapon attacks
+        - "NaturalAttack": Biological/innate attacks
+
     Args:
-        data (dict): Dictionary containing the action data.
+        data: Dictionary containing attack specification with 'class' field
+
     Returns:
-        BaseAttack: An instance of BaseAttack or its subclass.
+        BaseAttack | None: Appropriate attack subclass instance, or None if
+                          class is not recognized
+
+    Dictionary Requirements:
+        - Must contain a 'class' field specifying the attack type
+        - Must contain all required fields for the specified class
+        - Field names must match the class constructor parameters
+
+    Example:
+        ```python
+        # Load different attack types polymorphically
+        weapon_data = {"class": "WeaponAttack", "name": "Sword", ...}
+        natural_data = {"class": "NaturalAttack", "name": "Claws", ...}
+
+        sword = from_dict_attack(weapon_data)    # Returns WeaponAttack
+        claws = from_dict_attack(natural_data)   # Returns NaturalAttack
+        ```
+
+    Error Handling:
+        Returns None for unrecognized class names rather than raising
+        exceptions, allowing graceful handling of invalid data.
     """
     attack_class = data.get("class", "BaseAttack")
 
