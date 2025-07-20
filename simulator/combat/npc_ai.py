@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
-from actions.spell_action import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions.spells import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from entities.character import Character
 
 # =============================================================================

@@ -9,7 +9,7 @@ from prompt_toolkit import ANSI
 from entities.character import *
 from actions.base_action import *
 from combat.damage import DamageComponent
-from actions.spell_action import *
+from actions.spells import *
 from actions.attack_action import *
 from core.constants import *
 from core.utils import *

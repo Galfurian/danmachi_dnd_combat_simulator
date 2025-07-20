@@ -5,7 +5,7 @@ Tracks concentration by spell (not by individual effect instances).
 
 from typing import Any, Dict, List, Optional
 from core.utils import cprint
-from actions.spell_action import Spell
+from actions.spells import Spell
 
 
 class ConcentrationSpell:

@@ -10,7 +10,7 @@ from actions.attack_action import (
     WeaponAttack,
     from_dict_attack,
 )
-from actions.spell_action import (
+from actions.spells import (
     Spell,
     SpellAttack,
     SpellBuff,

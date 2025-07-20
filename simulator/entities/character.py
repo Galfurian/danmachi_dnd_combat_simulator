@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple
 
 from actions.base_action import BaseAction
 from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
-from actions.spell_action import Spell
+from actions.spells import Spell
 from core.error_handling import log_warning
 from core.constants import (
     ActionType,

@@ -8,7 +8,7 @@ from core.utils import cprint, crule
 from core.error_handling import log_warning
 from actions.base_action import BaseAction
 from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
-from actions.spell_action import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions.spells import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_base_attack_action,
