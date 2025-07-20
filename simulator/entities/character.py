@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Tuple
 
 from actions.base_action import BaseAction
-from actions.attack_action import BaseAttack, NaturalAttack, WeaponAttack
+from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
 from core.error_handling import log_warning
 from core.constants import (
@@ -249,7 +249,7 @@ class Character:
         Returns:
             list[NaturalAttack]: A list of natural weapon attacks.
         """
-        from actions.attack_action import NaturalAttack
+        from actions.attacks import NaturalAttack
 
         result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
@@ -266,7 +266,7 @@ class Character:
 
     def get_available_weapon_attacks(self) -> list["WeaponAttack"]:
         """Returns a list of weapon attacks that the character can use this turn."""
-        from actions.attack_action import WeaponAttack
+        from actions.attacks import WeaponAttack
 
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.

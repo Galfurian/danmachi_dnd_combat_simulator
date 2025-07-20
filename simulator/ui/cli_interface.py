@@ -10,7 +10,7 @@ from entities.character import *
 from actions.base_action import *
 from combat.damage import DamageComponent
 from actions.spells import *
-from actions.attack_action import *
+from actions.attacks import *
 from core.constants import *
 from core.utils import *
 

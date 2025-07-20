@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from actions.base_action import BaseAction
-from actions.attack_action import (
+from actions.attacks import (
     BaseAttack,
     NaturalAttack,
     WeaponAttack,
