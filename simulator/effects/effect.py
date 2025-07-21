@@ -1,8 +1,16 @@
-from core.utils import *
-from typing import Any
-from core.constants import *
+from typing import Any, Optional
+
+from core.constants import (
+    BonusType, 
+    get_effect_emoji, 
+    apply_character_type_color, 
+    apply_damage_type_color,
+    get_damage_type_emoji,
+    apply_effect_color
+)
 from core.error_handling import log_error, log_warning, log_critical
-from combat.damage import *
+from core.utils import cprint, roll_and_describe
+from combat.damage import DamageComponent
 from .modifier import Modifier
 
 

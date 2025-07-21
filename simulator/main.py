@@ -8,7 +8,7 @@ from core.content import ContentRepository
 from core.error_handling import log_error, log_warning
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
-from entities.character import Character, load_character, load_characters
+from character import Character, load_character, load_characters
 
 
 """Sets up basic logging configuration."""

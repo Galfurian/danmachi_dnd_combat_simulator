@@ -6,7 +6,7 @@ from rich.table import Table
 from prompt_toolkit import PromptSession
 from prompt_toolkit import ANSI
 
-from entities.character import *
+from character import *
 from actions.base_action import *
 from combat.damage import DamageComponent
 from actions.spells import *

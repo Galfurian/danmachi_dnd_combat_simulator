@@ -1,8 +1,9 @@
 from core.constants import *
 from core.utils import *
-from entities.character import *
+from character import *
 from actions.spells import *
 from actions.abilities import *
+from actions.base_action import BaseAction
 from items.weapon import *
 from items.armor import *
 from effects.effect import *
@@ -46,7 +47,30 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
     elif isinstance(effect, DoT):
         sheet += f"deals {damage_to_string(effect.damage)} per turn"
+    elif isinstance(effect, OnHitTrigger):
+        # Handle OnHitTrigger effects (like spell buffs that trigger on hit)
+        details = []
+        
+        # Show damage bonus if present
+        if hasattr(effect, 'damage_bonus') and effect.damage_bonus:
+            damage_strings = [damage_to_string(damage) for damage in effect.damage_bonus]
+            details.append(f"adds {', '.join(damage_strings)} to next hit")
+        
+        # Show trigger effects if present  
+        if hasattr(effect, 'trigger_effects') and effect.trigger_effects:
+            trigger_names = [f"[red]{trigger.name}[/]" for trigger in effect.trigger_effects]
+            details.append(f"applies {', '.join(trigger_names)}")
+            
+        if details:
+            sheet += ", ".join(details)
+    
     cprint(Padding(sheet, (0, padding)))
+    
+    # For OnHitTrigger, also show details of the triggered effects
+    if isinstance(effect, OnHitTrigger):
+        if hasattr(effect, 'trigger_effects') and effect.trigger_effects:
+            for trigger_effect in effect.trigger_effects:
+                print_effect_sheet(trigger_effect, padding + 2)
 
 
 def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
@@ -515,9 +539,9 @@ def print_action_types_reference() -> None:
 
 def create_test_character_sheet() -> None:
     """Create and display a test character with various abilities for demonstration."""
-    from entities.character import Character
-    from entities.character_race import CharacterRace
-    from entities.character_class import CharacterClass
+    from character import Character
+    from character.character_race import CharacterRace
+    from character.character_class import CharacterClass
     from core.constants import CharacterType, ActionType, ActionCategory, DamageType
     from actions.abilities import OffensiveAbility, HealingAbility
     from combat.damage import DamageComponent

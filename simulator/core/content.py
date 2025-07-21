@@ -19,8 +19,8 @@ from actions.spells import (
     from_dict_spell,
 )
 from core.utils import Singleton, cprint, crule
-from entities.character_class import CharacterClass
-from entities.character_race import CharacterRace
+from character.character_class import CharacterClass
+from character.character_race import CharacterRace
 from items.armor import Armor
 from items.weapon import Weapon
 from core.error_handling import log_critical, log_error

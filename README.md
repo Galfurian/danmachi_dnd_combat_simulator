@@ -4,6 +4,28 @@
 
 ---
 
+## 🎯 Project Objectives
+
+This project aims to create a comprehensive and accurate combat simulation system that combines the tactical depth of D&D 5e mechanics with the rich fantasy world of DanMachi (Is It Wrong to Try to Pick Up Girls in a Dungeon?). Key objectives include:
+
+### Core Gameplay Goals
+- **Tactical Combat System**: Implement authentic D&D 5e combat mechanics including turn-based action economy, attack rolls, damage calculations, and saving throws
+- **Status Effect Mastery**: Create a robust effect system that properly handles buffs, debuffs, and incapacitating effects with accurate duration tracking and mechanical impact
+- **Intelligent AI Opposition**: Develop smart NPC behavior that provides challenging and engaging combat encounters
+
+### DanMachi Universe Integration
+- **Authentic World Building**: Incorporate DanMachi creatures, characters, and lore into a mechanically sound D&D framework
+- **Dungeon Floor Progression**: Feature enemies and challenges representative of different dungeon floors (F1-F10 and beyond)
+
+### Technical Excellence
+- **Modular Architecture**: Maintain clean, extensible code structure that supports easy addition of new content and mechanics
+- **Data-Driven Design**: Utilize JSON configuration files for flexible content management and easy customization
+- **Comprehensive Testing**: Ensure all game mechanics work exactly as intended, from basic attacks to complex spell interactions
+
+The ultimate goal is to provide a simulation platform where players can experience tactical D&D combat within the DanMachi universe, complete with proper mechanical depth.
+
+---
+
 ## 📂 Project Structure
 
 ```bash

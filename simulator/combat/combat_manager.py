@@ -22,7 +22,7 @@ from combat.npc_ai import (
 )
 from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
 from core.sheets import print_character_sheet
-from entities.character import Character
+from character import Character
 from ui.cli_interface import PlayerInterface
 
 

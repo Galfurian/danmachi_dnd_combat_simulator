@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
-from entities.character import Character
+from character import Character
 
 # =============================================================================
 # Sorting Functions
