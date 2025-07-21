@@ -201,6 +201,16 @@ class EffectManager:
                     return True
             return False
 
+        # Check for IncapacitatingEffect - don't apply same type if already active
+        from effects.incapacitation_effect import IncapacitatingEffect
+        if isinstance(effect, IncapacitatingEffect):
+            # Don't apply the same incapacitation type if already present
+            for ae in self.active_effects:
+                if (isinstance(ae.effect, IncapacitatingEffect) and 
+                    ae.effect.incapacitation_type == effect.incapacitation_type):
+                    return False
+            return True
+
         return True
 
     # === Modifier Management ===
