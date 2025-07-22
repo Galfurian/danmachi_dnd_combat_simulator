@@ -21,6 +21,7 @@ from core.constants import (
 )
 from core.error_handling import (
     log_critical,
+    log_error,
     log_warning,
     ensure_string,
     ensure_list_of_type,
@@ -95,7 +96,7 @@ class BaseAbility(BaseAction, ABC):
                 )
                 effect = None
 
-            # Validate target_expr using helper
+            # Validate target_expr.
             self.target_expr = ensure_string(
                 target_expr, "target expression", "", {"name": name}
             )
@@ -147,54 +148,6 @@ class BaseAbility(BaseAction, ABC):
         return 1
 
     # ============================================================================
-    # COMMON EXECUTION HELPERS (SHARED BY ALL ABILITIES)
-    # ============================================================================
-
-    def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
-        """
-        Get formatted display strings for actor and target.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
-
-        Returns:
-            tuple[str, str]: (actor_display, target_display)
-        """
-        actor_str = apply_character_type_color(actor.type, actor.name)
-        target_str = apply_character_type_color(target.type, target.name)
-        return actor_str, target_str
-
-    def _apply_common_effects(self, actor: Any, target: Any) -> bool:
-        """
-        Apply the ability's inherent effect if present.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
-
-        Returns:
-            bool: True if effect was successfully applied, False otherwise
-        """
-        if self.effect:
-            return self._common_apply_effect(actor, target, self.effect)
-        return True
-
-    def _roll_bonus_damage(self, actor: Any, target: Any) -> tuple[int, list[str]]:
-        """
-        Roll any bonus damage from effects.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
-
-        Returns:
-            tuple[int, list[str]]: (bonus_damage, damage_descriptions)
-        """
-        all_damage_modifiers = actor.effects_module.get_damage_modifiers()
-        return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
-
-    # ============================================================================
     # ABSTRACT METHODS (MUST BE IMPLEMENTED BY SUBCLASSES)
     # ============================================================================
 
@@ -220,14 +173,27 @@ class BaseAbility(BaseAction, ABC):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert this ability to a dictionary representation."""
+        """
+        Convert this ability to a dictionary representation.
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the ability
+        """
         from actions.abilities.ability_serializer import AbilitySerializer
 
         return AbilitySerializer.serialize(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
-        """Create an ability instance from dictionary data."""
+        """
+        Create an ability instance from dictionary data.
+
+        Args:
+            data: Dictionary containing ability configuration data
+
+        Returns:
+            Any | None: Ability instance or None if creation fails
+        """
         from actions.abilities.ability_serializer import AbilityDeserializer
 
         return AbilityDeserializer.deserialize(data)

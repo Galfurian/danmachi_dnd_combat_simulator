@@ -14,7 +14,7 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from core.error_handling import log_critical
+from core.error_handling import log_critical, log_error, validate_required_object
 from core.utils import cprint
 from effects.effect import Effect
 
@@ -35,7 +35,7 @@ class BuffAbility(BaseAbility):
         description: str,
         cooldown: int,
         maximum_uses: int,
-        effect: Effect,  # Required for buff abilities
+        effect: Effect,
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
     ):
@@ -94,35 +94,33 @@ class BuffAbility(BaseAbility):
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
+        # Validate actor and target.
+        if not self._validate_actor_and_target(actor, target):
+            return False
+
+        # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
 
-        # Check cooldown and uses
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+        # Check cooldown.
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor_str, "ability": self.name},
+            )
+            return False
+
+        # Check the effect is valid.
+        if not isinstance(self.effect, Effect):
+            log_critical(
+                f"BuffAbility {self.name} has invalid effect type: {type(self.effect).__name__}",
+                {"name": self.name, "effect_type": type(self.effect).__name__},
+            )
+            return False
 
         # Apply the buff effect
-        effect_applied = self._apply_common_effects(actor, target)
+        effect_applied = self._common_apply_effect(actor, target, self.effect)
 
         # Display results
-        self._display_execution_result(actor_str, target_str, effect_applied)
-
-        return True
-
-    def _display_execution_result(
-        self,
-        actor_str: str,
-        target_str: str,
-        effect_applied: bool,
-    ) -> None:
-        """
-        Display the results of the buff ability execution.
-
-        Args:
-            actor_str: Formatted actor name string
-            target_str: Formatted target name string
-            effect_applied: Whether effect was successfully applied
-        """
-        # Effect is guaranteed to exist for BuffAbility
-        assert self.effect is not None, "BuffAbility must have an effect"
         effect_color = get_effect_color(self.effect)
 
         msg = f"    ✨ {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
@@ -146,6 +144,8 @@ class BuffAbility(BaseAbility):
                 msg += f"        Effect: {self.effect.description}"
 
         cprint(msg)
+
+        return True
 
     # ============================================================================
     # UTILITY METHODS

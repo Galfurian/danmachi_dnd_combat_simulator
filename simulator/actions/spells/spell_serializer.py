@@ -61,7 +61,15 @@ class SpellDeserializer:
 
     @staticmethod
     def _deserialize_spell_attack(data: dict[str, Any]) -> SpellAttack:
-        """Create SpellAttack from dictionary data."""
+        """
+        Create SpellAttack from dictionary data.
+
+        Args:
+            data: Dictionary containing spell attack configuration data
+
+        Returns:
+            SpellAttack: Configured spell attack instance
+        """
         return SpellAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -81,7 +89,15 @@ class SpellDeserializer:
 
     @staticmethod
     def _deserialize_spell_buff(data: dict[str, Any]) -> SpellBuff:
-        """Create SpellBuff from dictionary data."""
+        """
+        Create SpellBuff from dictionary data.
+
+        Args:
+            data: Dictionary containing spell buff configuration data
+
+        Returns:
+            SpellBuff: Configured spell buff instance
+        """
         return SpellBuff(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -98,7 +114,15 @@ class SpellDeserializer:
 
     @staticmethod
     def _deserialize_spell_debuff(data: dict[str, Any]) -> SpellDebuff:
-        """Create SpellDebuff from dictionary data."""
+        """
+        Create SpellDebuff from dictionary data.
+
+        Args:
+            data: Dictionary containing spell debuff configuration data
+
+        Returns:
+            SpellDebuff: Configured spell debuff instance
+        """
         return SpellDebuff(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -115,7 +139,15 @@ class SpellDeserializer:
 
     @staticmethod
     def _deserialize_spell_heal(data: dict[str, Any]) -> SpellHeal:
-        """Create SpellHeal from dictionary data."""
+        """
+        Create SpellHeal from dictionary data.
+
+        Args:
+            data: Dictionary containing spell heal configuration data
+
+        Returns:
+            SpellHeal: Configured spell heal instance
+        """
         return SpellHeal(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -162,7 +194,15 @@ class SpellSerializer:
 
     @staticmethod
     def _serialize_base_spell(spell: Spell) -> dict[str, Any]:
-        """Serialize common BaseSpell fields."""
+        """
+        Serialize common BaseSpell fields to dictionary.
+
+        Args:
+            spell: The base spell instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary containing common spell fields
+        """
         data = {
             "name": spell.name,
             "type": spell.type.name,
@@ -181,7 +221,15 @@ class SpellSerializer:
 
     @staticmethod
     def _serialize_spell_attack(spell: SpellAttack) -> dict[str, Any]:
-        """Serialize SpellAttack to dictionary."""
+        """
+        Serialize SpellAttack to dictionary format.
+
+        Args:
+            spell: The spell attack instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the spell attack
+        """
         data = SpellSerializer._serialize_base_spell(spell)
         data["damage"] = [component.to_dict() for component in spell.damage]
 
@@ -192,21 +240,45 @@ class SpellSerializer:
 
     @staticmethod
     def _serialize_spell_buff(spell: SpellBuff) -> dict[str, Any]:
-        """Serialize SpellBuff to dictionary."""
+        """
+        Serialize SpellBuff to dictionary format.
+
+        Args:
+            spell: The spell buff instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the spell buff
+        """
         data = SpellSerializer._serialize_base_spell(spell)
         data["effect"] = spell.effect.to_dict()
         return data
 
     @staticmethod
     def _serialize_spell_debuff(spell: SpellDebuff) -> dict[str, Any]:
-        """Serialize SpellDebuff to dictionary."""
+        """
+        Serialize SpellDebuff to dictionary format.
+
+        Args:
+            spell: The spell debuff instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the spell debuff
+        """
         data = SpellSerializer._serialize_base_spell(spell)
         data["effect"] = spell.effect.to_dict()
         return data
 
     @staticmethod
     def _serialize_spell_heal(spell: SpellHeal) -> dict[str, Any]:
-        """Serialize SpellHeal to dictionary."""
+        """
+        Serialize SpellHeal to dictionary format.
+
+        Args:
+            spell: The spell heal instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the spell heal
+        """
         data = SpellSerializer._serialize_base_spell(spell)
         data["heal_roll"] = spell.heal_roll
 

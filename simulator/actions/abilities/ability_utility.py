@@ -9,7 +9,7 @@ from typing import Any
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from core.error_handling import log_critical
+from core.error_handling import log_critical, log_error, validate_required_object
 from core.utils import cprint
 from effects.effect import Effect
 
@@ -89,21 +89,50 @@ class UtilityAbility(BaseAbility):
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
+        # Validate actor and target.
+        if not self._validate_actor_and_target(actor, target):
+            return False
+
+        # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
 
-        # Check cooldown and uses
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+        # Check cooldown.
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor_str, "ability": self.name},
+            )
+            return False
 
         # Execute utility function if present
         utility_result = self._execute_utility_function(actor, target)
 
         # Apply optional effect
-        effect_applied = self._apply_common_effects(actor, target)
+        effect_applied = self._common_apply_effect(actor, target, self.effect)
 
-        # Display results
-        self._display_execution_result(
-            actor_str, target_str, utility_result, effect_applied
-        )
+        # Display results.
+        msg = f"    🔧 {actor_str} uses [bold cyan]{self.name}[/]"
+
+        # Show target if different from actor
+        if actor_str != target_str:
+            msg += f" on {target_str}"
+
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            msg += f" - {utility_result}"
+            if self.effect and effect_applied:
+                msg += f" and applies [bold yellow]{self.effect.name}[/]"
+            msg += "."
+        elif GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += f".\n        Result: {utility_result}"
+
+            if self.effect:
+                if effect_applied:
+                    msg += f"\n        {target_str} is affected by [bold yellow]{self.effect.name}[/]"
+                else:
+                    msg += f"\n        {target_str} resists [bold yellow]{self.effect.name}[/]"
+            msg += "."
+
+        cprint(msg)
 
         return True
 
@@ -137,59 +166,56 @@ class UtilityAbility(BaseAbility):
             return f"Executed {self.utility_function}"
 
     def _detect_magic(self, actor: Any, target: Any) -> str:
-        """Placeholder for detect magic utility function."""
+        """
+        Execute detect magic utility function.
+
+        Args:
+            actor: The character using the ability
+            target: The target of the ability
+
+        Returns:
+            str: Description of magical auras detected
+        """
         return "Detected magical auras in the area"
 
     def _teleport(self, actor: Any, target: Any) -> str:
-        """Placeholder for teleportation utility function."""
+        """
+        Execute teleportation utility function.
+
+        Args:
+            actor: The character using the ability
+            target: The target of the ability
+
+        Returns:
+            str: Description of teleportation result
+        """
         return "Teleported to a nearby location"
 
     def _investigate(self, actor: Any, target: Any) -> str:
-        """Placeholder for investigation utility function."""
+        """
+        Execute investigation utility function.
+
+        Args:
+            actor: The character using the ability
+            target: The target of the ability
+
+        Returns:
+            str: Description of investigation results
+        """
         return "Gained insight about the surroundings"
 
     def _identify(self, actor: Any, target: Any) -> str:
-        """Placeholder for identify utility function."""
-        return "Identified the properties of a magical item"
-
-    def _display_execution_result(
-        self,
-        actor_str: str,
-        target_str: str,
-        utility_result: str,
-        effect_applied: bool,
-    ) -> None:
         """
-        Display the results of the utility ability execution.
+        Execute identify utility function.
 
         Args:
-            actor_str: Formatted actor name string
-            target_str: Formatted target name string
-            utility_result: Description of utility function result
-            effect_applied: Whether effect was successfully applied
+            actor: The character using the ability
+            target: The target of the ability
+
+        Returns:
+            str: Description of identified properties
         """
-        msg = f"    🔧 {actor_str} uses [bold cyan]{self.name}[/]"
-
-        # Show target if different from actor
-        if actor_str != target_str:
-            msg += f" on {target_str}"
-
-        if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" - {utility_result}"
-            if self.effect and effect_applied:
-                msg += f" and applies [bold yellow]{self.effect.name}[/]"
-            msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f".\n        Result: {utility_result}"
-
-            if self.effect:
-                if effect_applied:
-                    msg += f"\n        {target_str} is affected by [bold yellow]{self.effect.name}[/]"
-                else:
-                    msg += f"\n        {target_str} resists [bold yellow]{self.effect.name}[/]"
-            msg += "."
-
-        cprint(msg)
+        return "Identified the properties of a magical item"
 
     # ============================================================================
     # UTILITY METHODS

@@ -20,6 +20,7 @@ from core.error_handling import (
     ensure_string,
     ensure_list_of_type,
     safe_get_attribute,
+    validate_required_object,
 )
 from core.utils import evaluate_expression
 from effects.effect import Effect
@@ -182,23 +183,8 @@ class Spell(BaseAction):
         """
         Check if the spell targets a single entity.
 
-        Determines targeting mode based on the target_expr property. Empty or
-        whitespace-only expressions indicate single-target spells, while
-        any meaningful expression indicates multi-target spells.
-
         Returns:
             bool: True if spell targets one entity, False for multi-target
-
-        Examples:
-            ```python
-            # Single target examples
-            single_spell.target_expr = ""        # True
-            single_spell.target_expr = "   "     # True
-
-            # Multi-target examples
-            multi_spell.target_expr = "3"        # False
-            multi_spell.target_expr = "MIND"     # False
-            ```
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
@@ -206,43 +192,12 @@ class Spell(BaseAction):
         """
         Calculate the number of targets this spell can affect.
 
-        Evaluates the target_expr with the actor's current variables and the
-        specified mind level to determine the actual number of targets. This
-        supports dynamic scaling based on character level, spell level, ability
-        scores, or other factors.
-
         Args:
             actor: The character casting the spell (must have expression variables)
             mind_level: The spell level being used for casting
 
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions)
-
-        Variable Substitution:
-            - {MIND}: The mind level (spell level) being used
-            - {LEVEL}: Character level
-            - {STR}, {DEX}, {CON}, {INT}, {WIS}, {CHA}: Ability modifiers
-            - {PROF}: Proficiency bonus
-            - Custom variables from actor's get_expression_variables method
-
-        Examples:
-            ```python
-            # Static target count
-            spell.target_expr = "3"           # Always 3 targets
-
-            # Spell level scaling
-            spell.target_expr = "MIND"        # 1 target per spell level
-            spell.target_expr = "1 + MIND//2" # Extra target every 2 levels
-
-            # Character level based
-            spell.target_expr = "1 + LEVEL//4" # Scales with character level
-
-            # Ability score based
-            spell.target_expr = "max(1, CHA)" # CHA modifier minimum 1
-            ```
-
-        Error Handling:
-            Returns 1 if target_expr is empty, invalid, or evaluates to 0 or less.
         """
         if self.target_expr:
             variables = actor.get_expression_variables()
@@ -259,10 +214,6 @@ class Spell(BaseAction):
         """
         Execute spell - delegates to cast_spell method.
 
-        This method is required by the BaseAction interface but for spells we use
-        the cast_spell method instead, which takes an additional mind_level parameter
-        for spell level scaling.
-
         Args:
             actor: The character casting the spell
             target: The target of the spell
@@ -272,10 +223,6 @@ class Spell(BaseAction):
 
         Raises:
             NotImplementedError: Always raised to enforce using cast_spell()
-
-        Note:
-            Spells should always be cast using the cast_spell() method which allows
-            specifying the spell level for proper mind cost and scaling calculations.
         """
         raise NotImplementedError("Spells must use the cast_spell method.")
 
@@ -284,10 +231,6 @@ class Spell(BaseAction):
         """
         Abstract method for casting spells with level-specific behavior.
 
-        This is the primary method for executing spells. Unlike the base execute()
-        method, cast_spell() takes a mind_level parameter that determines the
-        spell's power level, mind cost, and scaling effects.
-
         Args:
             actor: The character casting the spell (must have mind points)
             target: The character targeted by the spell
@@ -295,52 +238,72 @@ class Spell(BaseAction):
 
         Returns:
             bool: True if spell was cast successfully, False on failure
-
-        Implementation Requirements:
-            Subclasses must implement this method to define their specific behavior:
-            - Check mind point availability against mind_cost[mind_level-1]
-            - Validate cooldowns and usage restrictions
-            - Apply level-specific scaling to damage/healing/effects
-            - Handle concentration requirements if applicable
-            - Display appropriate combat messages
-            - Return success/failure status
-
-        Mind Level System:
-            The mind_level parameter indexes into the mind_cost array:
-            - mind_level=1 uses mind_cost[0]
-            - mind_level=2 uses mind_cost[1]
-            - etc.
-
-        Example Implementation Pattern:
-            ```python
-            def cast_spell(self, actor, target, mind_level):
-                # Validate mind cost
-                if actor.mind < self.mind_cost[mind_level-1]:
-                    return False
-
-                # Apply spell effects with level scaling
-                damage = base_damage + (mind_level * scaling)
-
-                # Deduct mind cost and apply effects
-                actor.mind -= self.mind_cost[mind_level-1]
-                return True
-            ```
         """
-        pass
+        if not self._validate_actor_and_target(actor, target):
+            return False
+
+        # Validate mind cost against the specified level.
+        if mind_level not in self.mind_cost:
+            log_error(
+                f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_level": mind_level,
+                    "valid_levels": self.mind_cost,
+                },
+            )
+            return False
+
+        # Check if actor has enough mind points to cast the spell.
+        if actor.mind < mind_level:
+            log_error(
+                f"{actor.name} does not have enough mind to cast {self.name}",
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_level": mind_level,
+                    "valid_levels": self.mind_cost,
+                },
+            )
+            return False
+
+        # Check cooldown restrictions.
+        if actor.is_on_cooldown(self):
+            log_warning(
+                f"Cannot cast {self.name} - spell is on cooldown",
+                {"actor": actor.name, "spell": self.name},
+            )
+            return False
+
+        return True
 
     # ============================================================================
     # SERIALIZATION METHODS
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """Transform this Spell into a dictionary representation."""
+        """
+        Transform this Spell into a dictionary representation.
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the spell
+        """
         from actions.spells.spell_serializer import SpellSerializer
 
         return SpellSerializer.serialize(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
-        """Create a Spell instance from a dictionary."""
+        """
+        Create a Spell instance from a dictionary.
+
+        Args:
+            data: Dictionary containing spell configuration data
+
+        Returns:
+            Any | None: Spell instance or None if creation fails
+        """
         from actions.spells.spell_serializer import SpellDeserializer
 
         return SpellDeserializer.deserialize(data)

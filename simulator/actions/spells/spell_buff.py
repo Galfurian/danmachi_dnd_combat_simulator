@@ -13,7 +13,6 @@ from core.constants import (
     ActionCategory,
     ActionType,
     BonusType,
-    get_character_type_color,
     get_effect_color,
 )
 from core.error_handling import (
@@ -62,7 +61,25 @@ class SpellBuff(Spell):
         requires_concentration: bool = False,
         target_restrictions: list[str] | None = None,
     ):
-        """Initialize a new SpellBuff."""
+        """
+        Initialize a new SpellBuff.
+
+        Args:
+            name: Display name of the spell
+            type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
+            description: Flavor text describing what the spell does
+            cooldown: Turns to wait before reusing (0 = no cooldown)
+            maximum_uses: Max uses per encounter/day (-1 = unlimited)
+            level: Base spell level (1-9 for most spells, 0 for cantrips)
+            mind_cost: List of mind point costs per casting level
+            effect: Required beneficial effect applied to targets
+            target_expr: Expression determining number of targets
+            requires_concentration: Whether spell requires concentration
+            target_restrictions: Override default targeting if needed
+
+        Raises:
+            ValueError: If effect is None or invalid
+        """
         try:
             super().__init__(
                 name,
@@ -104,57 +121,28 @@ class SpellBuff(Spell):
     # BUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(self, actor: Any, target: Any, mind_level: int | None = 1) -> bool:
-        """Execute a buff spell with automatic success and beneficial effects."""
-        if mind_level is None:
-            mind_level = 1
+    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
+        """
+        Execute a buff spell with automatic success and beneficial effects.
 
-        debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
+        Args:
+            actor: The character casting the spell
+            target: The character targeted by the spell
+            mind_level: The spell level to cast at (affects cost and power)
 
-        # Validate mind cost against the specified level
-        if mind_level < 1 or mind_level > len(self.mind_cost):
-            log_error(
-                f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_level": mind_level,
-                    "max_levels": len(self.mind_cost),
-                },
-            )
-            return False
-
-        required_mind = self.mind_cost[mind_level - 1]
-        if actor.mind < required_mind:
-            log_error(
-                f"{actor.name} does not have enough mind to cast {self.name}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_required": required_mind,
-                    "mind_current": actor.mind,
-                },
-            )
-            return False
-
-        # Check cooldown restrictions
-        if actor.is_on_cooldown(self):
-            log_warning(
-                f"Cannot cast {self.name} - spell is on cooldown",
-                {"actor": actor.name, "spell": self.name},
-            )
+        Returns:
+            bool: True if spell was cast successfully, False on failure
+        """
+        # Call the base class cast_spell to handle common checks.
+        if super().cast_spell(actor, target, mind_level) is False:
             return False
 
         # Handle concentration requirements
         if self.requires_concentration:
             actor.concentration_module.break_concentration()
 
-        # Deduct mind cost
-        actor.mind -= required_mind
-
-        # Format character strings for output
-        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
-        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
+        # Format character strings for output.
+        actor_str, target_str = self._get_display_strings(actor, target)
 
         # Apply the beneficial effect
         effect_applied = False
@@ -182,7 +170,16 @@ class SpellBuff(Spell):
     def get_modifier_expressions(
         self, actor: Any, mind_level: int | None = 1
     ) -> dict[BonusType, str]:
-        """Get modifier expressions with variables substituted for display."""
+        """
+        Get modifier expressions with variables substituted for display.
+
+        Args:
+            actor: The character casting the spell
+            mind_level: The spell level to use for MIND variable substitution
+
+        Returns:
+            dict[BonusType, str]: Dictionary mapping bonus types to their expressions
+        """
         if mind_level is None:
             mind_level = 1
 

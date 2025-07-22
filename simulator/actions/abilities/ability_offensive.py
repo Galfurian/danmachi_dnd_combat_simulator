@@ -10,7 +10,12 @@ from typing import Any
 from actions.abilities.base_ability import BaseAbility
 from combat.damage import DamageComponent, roll_damage_components_no_mind
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from core.error_handling import ensure_list_of_type, log_critical
+from core.error_handling import (
+    ensure_list_of_type,
+    log_critical,
+    log_error,
+    validate_required_object,
+)
 from core.utils import cprint
 from effects.effect import Effect
 
@@ -98,10 +103,20 @@ class OffensiveAbility(BaseAbility):
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
+        # Validate actor and target.
+        if not self._validate_actor_and_target(actor, target):
+            return False
+
+        # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
 
         # Check cooldown and uses
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor_str, "ability": self.name},
+            )
+            return False
 
         # Roll base damage from the ability
         base_damage, base_damage_details = roll_damage_components_no_mind(
@@ -122,35 +137,9 @@ class OffensiveAbility(BaseAbility):
         is_dead = not target.is_alive()
 
         # Apply effects if target is still alive (or if effect works on dead targets)
-        effect_applied = self._apply_common_effects(actor, target)
+        effect_applied = self._common_apply_effect(actor, target, self.effect)
 
-        # Display results
-        self._display_execution_result(
-            actor_str, target_str, total_damage, damage_details, is_dead, effect_applied
-        )
-
-        return True
-
-    def _display_execution_result(
-        self,
-        actor_str: str,
-        target_str: str,
-        total_damage: int,
-        damage_details: list[str],
-        is_dead: bool,
-        effect_applied: bool,
-    ) -> None:
-        """
-        Display the results of the offensive ability execution.
-
-        Args:
-            actor_str: Formatted actor name string
-            target_str: Formatted target name string
-            total_damage: Total damage dealt
-            damage_details: List of damage component descriptions
-            is_dead: Whether the target was defeated
-            effect_applied: Whether effect was successfully applied
-        """
+        # Display results.
         msg = f"    🔥 {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
 
         if GLOBAL_VERBOSE_LEVEL == 0:
@@ -182,6 +171,8 @@ class OffensiveAbility(BaseAbility):
                 msg += f" [bold yellow]{self.effect.name}[/]."
 
         cprint(msg)
+
+        return True
 
     # ============================================================================
     # DAMAGE CALCULATION METHODS

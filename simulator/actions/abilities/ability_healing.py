@@ -9,7 +9,12 @@ from typing import Any
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from core.error_handling import ensure_string, log_critical
+from core.error_handling import (
+    ensure_string,
+    log_critical,
+    log_error,
+    validate_required_object,
+)
 from core.utils import (
     cprint,
     parse_expr_and_assume_max_roll,
@@ -131,10 +136,20 @@ class HealingAbility(BaseAbility):
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
+        # Validate actor and target.
+        if not self._validate_actor_and_target(actor, target):
+            return False
+
+        # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
 
-        # Check cooldown and uses
-        assert not actor.is_on_cooldown(self), f"Action {self.name} is on cooldown."
+        # Check cooldown.
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor_str, "ability": self.name},
+            )
+            return False
 
         # Roll healing amount
         variables = actor.get_expression_variables()
@@ -146,40 +161,9 @@ class HealingAbility(BaseAbility):
         actual_healing = target.hp - old_hp
 
         # Apply effects
-        effect_applied = self._apply_common_effects(actor, target)
+        effect_applied = self._common_apply_effect(actor, target, self.effect)
 
-        # Display results
-        self._display_execution_result(
-            actor_str,
-            target_str,
-            healing_amount,
-            actual_healing,
-            healing_desc,
-            effect_applied,
-        )
-
-        return True
-
-    def _display_execution_result(
-        self,
-        actor_str: str,
-        target_str: str,
-        healing_amount: int,
-        actual_healing: int,
-        healing_desc: str,
-        effect_applied: bool,
-    ) -> None:
-        """
-        Display the results of the healing ability execution.
-
-        Args:
-            actor_str: Formatted actor name string
-            target_str: Formatted target name string
-            healing_amount: Amount of healing rolled
-            actual_healing: Actual healing applied (may be less due to max HP)
-            healing_desc: Description of the healing roll
-            effect_applied: Whether effect was successfully applied
-        """
+        # Display results.
         msg = f"    💚 {actor_str} uses [bold green]{self.name}[/] on {target_str}"
 
         if GLOBAL_VERBOSE_LEVEL == 0:
@@ -202,6 +186,8 @@ class HealingAbility(BaseAbility):
                 msg += f" [bold yellow]{self.effect.name}[/]."
 
         cprint(msg)
+
+        return True
 
     # ============================================================================
     # HEALING CALCULATION METHODS

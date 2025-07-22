@@ -57,7 +57,15 @@ class AttackDeserializer:
 
     @staticmethod
     def _deserialize_base_attack(data: dict[str, Any]) -> BaseAttack:
-        """Create BaseAttack from dictionary data."""
+        """
+        Create BaseAttack from dictionary data.
+
+        Args:
+            data: Dictionary containing base attack configuration data
+
+        Returns:
+            BaseAttack: Configured base attack instance
+        """
         return BaseAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -72,7 +80,15 @@ class AttackDeserializer:
 
     @staticmethod
     def _deserialize_weapon_attack(data: dict[str, Any]) -> WeaponAttack:
-        """Create WeaponAttack from dictionary data."""
+        """
+        Create WeaponAttack from dictionary data.
+
+        Args:
+            data: Dictionary containing weapon attack configuration data
+
+        Returns:
+            WeaponAttack: Configured weapon attack instance
+        """
         return WeaponAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -87,7 +103,15 @@ class AttackDeserializer:
 
     @staticmethod
     def _deserialize_natural_attack(data: dict[str, Any]) -> NaturalAttack:
-        """Create NaturalAttack from dictionary data."""
+        """
+        Create NaturalAttack from dictionary data.
+
+        Args:
+            data: Dictionary containing natural attack configuration data
+
+        Returns:
+            NaturalAttack: Configured natural attack instance
+        """
         return NaturalAttack(
             name=data["name"],
             type=ActionType[data["type"]],
@@ -128,7 +152,15 @@ class AttackSerializer:
 
     @staticmethod
     def _serialize_base_attack(attack: BaseAttack) -> dict[str, Any]:
-        """Serialize BaseAttack to dictionary."""
+        """
+        Serialize BaseAttack to dictionary format.
+
+        Args:
+            attack: The base attack instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the base attack
+        """
         data = {
             "class": attack.__class__.__name__,
             "name": attack.name,
@@ -148,12 +180,28 @@ class AttackSerializer:
 
     @staticmethod
     def _serialize_weapon_attack(attack: WeaponAttack) -> dict[str, Any]:
-        """Serialize WeaponAttack to dictionary."""
+        """
+        Serialize WeaponAttack to dictionary format.
+
+        Args:
+            attack: The weapon attack instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the weapon attack
+        """
         # WeaponAttack has same fields as BaseAttack
         return AttackSerializer._serialize_base_attack(attack)
 
     @staticmethod
     def _serialize_natural_attack(attack: NaturalAttack) -> dict[str, Any]:
-        """Serialize NaturalAttack to dictionary."""
+        """
+        Serialize NaturalAttack to dictionary format.
+
+        Args:
+            attack: The natural attack instance to serialize
+
+        Returns:
+            dict[str, Any]: Dictionary representation of the natural attack
+        """
         # NaturalAttack has same fields as BaseAttack
         return AttackSerializer._serialize_base_attack(attack)

@@ -15,7 +15,6 @@ from core.constants import (
     ActionType,
     BonusType,
     GLOBAL_VERBOSE_LEVEL,
-    get_character_type_color,
     get_effect_color,
 )
 from core.error_handling import (
@@ -108,10 +107,6 @@ class SpellAttack(Spell):
         """
         Initialize a new SpellAttack.
 
-        Creates an offensive spell that combines spell attack mechanics with
-        level-scaling damage components. The spell uses mind points for casting
-        and can optionally apply effects on successful hits.
-
         Args:
             name: Display name of the spell
             type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
@@ -122,9 +117,12 @@ class SpellAttack(Spell):
             mind_cost: List of mind point costs per casting level
             damage: List of damage components with scaling expressions
             effect: Optional effect applied on successful spell attacks
-            target_expr: Expression for multi-target spells ("" = single target)
+            target_expr: Expression for multi-target spells
             requires_concentration: Whether spell needs ongoing mental focus
             target_restrictions: Override default targeting restrictions
+
+        Raises:
+            ValueError: If damage list is empty or contains invalid components
         """
         try:
             super().__init__(
@@ -184,11 +182,6 @@ class SpellAttack(Spell):
         """
         Execute an offensive spell attack with complete combat resolution.
 
-        Performs a full spell attack sequence including mind cost validation,
-        spell attack rolls, damage calculation, and effect application. This
-        method handles all aspects of offensive spell casting from resource
-        management to combat feedback.
-
         Args:
             actor: The character casting the spell (must have mind points)
             target: The character being attacked
@@ -196,95 +189,24 @@ class SpellAttack(Spell):
 
         Returns:
             bool: True if spell was successfully cast (regardless of hit/miss)
-
-        Attack Resolution Process:
-            1. Validate mind cost and cooldowns
-            2. Calculate spell attack bonus and modifiers
-            3. Roll 1d20 + spell attack bonus vs target AC
-            4. Handle special cases (critical hits, fumbles)
-            5. Calculate and apply damage on successful hits
-            6. Apply optional effects if damage dealt
-            7. Display detailed combat feedback
-
-        Mind Cost System:
-            Uses the mind_cost list to determine resource consumption:
-            - mind_level=1 uses mind_cost[0]
-            - mind_level=2 uses mind_cost[1]
-            - Higher levels increase both cost and damage potential
-
-        Critical Hit Mechanics:
-            - Natural 20: Always hits, triggers critical damage
-            - Natural 1: Always misses (fumble)
-            - Critical damage: All damage dice are maximized
-
-        Damage Scaling:
-            Each damage component can use the MIND variable for level scaling:
-            - "3d6": Static damage
-            - "3d6 + MIND": Adds spell level to damage
-            - "MIND d6": Dice count scales with level
-
-        Multi-Target Support:
-            For spells with target_expr, this method is called once per target
-            with separate attack rolls and damage calculations for each.
-
-        Error Handling:
-            - Returns False if insufficient mind points
-            - Raises AssertionError if spell is on cooldown
-            - Logs all failures with detailed context
         """
-        debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
-
-        # Validate mind cost against the specified level
-        if mind_level < 1 or mind_level > len(self.mind_cost):
-            log_error(
-                f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_level": mind_level,
-                    "max_levels": len(self.mind_cost),
-                },
-            )
-            return False
-
-        required_mind = self.mind_cost[mind_level - 1]
-        if actor.mind < required_mind:
-            log_error(
-                f"{actor.name} does not have enough mind to cast {self.name}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_required": required_mind,
-                    "mind_current": actor.mind,
-                },
-            )
-            return False
-
-        # Check cooldown restrictions
-        if actor.is_on_cooldown(self):
-            log_warning(
-                f"Cannot cast {self.name} - spell is on cooldown",
-                {"actor": actor.name, "spell": self.name},
-            )
+        # Call the base class cast_spell to handle common checks.
+        if super().cast_spell(actor, target, mind_level) is False:
             return False
 
         # Handle concentration requirements
         if self.requires_concentration:
             actor.concentration_module.break_concentration()
 
-        # Deduct mind cost
-        actor.mind -= required_mind
-
-        # Format character strings for output
-        actor_str = f"[{get_character_type_color(actor.type)}]{actor.name}[/]"
-        target_str = f"[{get_character_type_color(target.type)}]{target.name}[/]"
+        # Format character strings for output.
+        actor_str, target_str = self._get_display_strings(actor, target)
 
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
         attack_modifier = actor.effects_module.get_modifier(BonusType.ATTACK)
 
         # Roll spell attack vs target AC
-        attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
+        attack_total, attack_roll_desc, d20_roll = self._roll_attack_with_crit(
             actor, spell_attack_bonus, attack_modifier
         )
 
