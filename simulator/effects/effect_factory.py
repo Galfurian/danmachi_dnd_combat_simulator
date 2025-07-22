@@ -183,7 +183,6 @@ class EffectFactory:
             trigger_effects=trigger_effects,
             damage_bonus=damage_bonus,
             consumes_on_trigger=data.get("consumes_on_trigger", True),
-            requires_concentration=data.get("requires_concentration", False),
         )
 
     @staticmethod
@@ -228,7 +227,6 @@ class EffectFactory:
             save_ends=data.get("save_ends", False),
             save_dc=data.get("save_dc", 0),
             save_stat=data.get("save_stat", "CON"),
-            requires_concentration=data.get("requires_concentration", False),
         )
 
 
@@ -251,7 +249,6 @@ class EffectSerializer:
             "name": effect.name,
             "description": effect.description,
             "max_duration": effect.max_duration,
-            "requires_concentration": effect.requires_concentration,
         }
 
         # Handle specific effect types using getattr for safe access

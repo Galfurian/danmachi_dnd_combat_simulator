@@ -247,15 +247,15 @@ class ContentRepository(metaclass=Singleton):
 
     def _load_actions(self, data) -> dict[str, BaseAction]:
         """Load actions from the given data."""
+        from actions.abilities.ability_serializer import AbilityDeserializer
+
         actions: dict[str, BaseAction] = {}
         for action_data in data:
             action = from_dict_attack(action_data)
             if not action:
                 action = from_dict_spell(action_data)
                 if not action:
-                    from actions.abilities import from_dict_ability
-
-                    action = from_dict_ability(action_data)
+                    action = AbilityDeserializer.deserialize(action_data)
                     if not action:
                         raise ValueError(f"Invalid action data: {action_data}")
             actions[action.name] = action

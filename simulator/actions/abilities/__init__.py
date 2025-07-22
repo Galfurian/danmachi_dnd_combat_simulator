@@ -7,7 +7,7 @@ specialized behavior while sharing common functionality through BaseAbility.
 """
 
 from actions.abilities.ability_buff import BuffAbility
-from actions.abilities.ability_factory import from_dict_ability
+from actions.abilities.ability_serializer import AbilityDeserializer, AbilitySerializer
 from actions.abilities.ability_healing import HealingAbility
 from actions.abilities.ability_offensive import OffensiveAbility
 from actions.abilities.ability_utility import UtilityAbility
@@ -24,5 +24,6 @@ __all__ = [
     "UtilityAbility",
     
     # Factory function
-    "from_dict_ability",
+    "AbilityDeserializer",
+    "AbilitySerializer",
 ]

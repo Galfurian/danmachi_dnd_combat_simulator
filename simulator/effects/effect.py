@@ -19,7 +19,6 @@ class Effect:
         name: str,
         description: str = "",
         max_duration: int = 0,
-        requires_concentration: bool = False,
     ):
         # Validate inputs
         if not name or not isinstance(name, str):
@@ -45,17 +44,9 @@ class Effect:
                 0, int(max_duration) if isinstance(max_duration, (int, float)) else 0
             )
 
-        if not isinstance(requires_concentration, bool):
-            log_warning(
-                f"Effect requires_concentration must be boolean, got: {type(requires_concentration).__name__}",
-                {"name": name, "requires_concentration": requires_concentration},
-            )
-            requires_concentration = bool(requires_concentration)
-
         self.name: str = name
         self.description: str = description
         self.max_duration: int = max_duration
-        self.requires_concentration: bool = requires_concentration
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
@@ -263,9 +254,8 @@ class ModifierEffect(Effect):
         description: str,
         max_duration: int,
         modifiers: list[Modifier],
-        requires_concentration: bool = False,
     ):
-        super().__init__(name, description, max_duration, requires_concentration)
+        super().__init__(name, description, max_duration)
         self.modifiers: list[Modifier] = modifiers
         self.validate()
 
@@ -415,9 +405,8 @@ class OnHitTrigger(Effect):
         trigger_effects: list["Effect"],
         damage_bonus: list[DamageComponent] | None = None,
         consumes_on_trigger: bool = True,
-        requires_concentration: bool = False,
     ):
-        super().__init__(name, description, max_duration, requires_concentration)
+        super().__init__(name, description, max_duration)
         self.trigger_effects: list[Effect] = trigger_effects or []
         self.damage_bonus: list[DamageComponent] = damage_bonus or []
         self.consumes_on_trigger: bool = consumes_on_trigger
@@ -454,9 +443,7 @@ class OnLowHealthTrigger(Effect):
         consumes_on_trigger: bool = True,
     ):
         # No max_duration - these are permanent passive abilities
-        super().__init__(
-            name, description, max_duration=0, requires_concentration=False
-        )
+        super().__init__(name, description, 0)
         self.hp_threshold_percent: float = hp_threshold_percent
         self.trigger_effects: list[Effect] = trigger_effects or []
         self.damage_bonus: list[DamageComponent] = damage_bonus or []
@@ -521,9 +508,8 @@ class IncapacitatingEffect(Effect):
         save_ends: bool = False,
         save_dc: int = 0,
         save_stat: str = "CON",
-        requires_concentration: bool = False,
     ):
-        super().__init__(name, description, max_duration, requires_concentration)
+        super().__init__(name, description, max_duration)
         self.incapacitation_type = incapacitation_type
         self.save_ends = save_ends
         self.save_dc = save_dc

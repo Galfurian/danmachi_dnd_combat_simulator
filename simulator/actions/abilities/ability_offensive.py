@@ -164,8 +164,7 @@ class OffensiveAbility(BaseAbility):
 
         # Display results
         self._display_execution_result(
-            actor_str, target_str, total_damage, damage_details, 
-            is_dead, effect_applied
+            actor_str, target_str, total_damage, damage_details, is_dead, effect_applied
         )
 
         return True
@@ -210,7 +209,7 @@ class OffensiveAbility(BaseAbility):
             else:
                 msg += f" dealing {total_damage} damage"
             msg += ".\n"
-            
+
             if is_dead:
                 msg += f"        {target_str} is defeated."
             elif self.effect:
@@ -267,48 +266,14 @@ class OffensiveAbility(BaseAbility):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the offensive ability to a dictionary representation.
+        """Convert offensive ability to dictionary using AbilitySerializer."""
+        from actions.abilities.ability_serializer import AbilitySerializer
 
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
-        """
-        data = super().to_dict()
-        data["damage"] = [component.to_dict() for component in self.damage]
-        return data
+        return AbilitySerializer.serialize(self)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "OffensiveAbility":
-        """
-        Creates an OffensiveAbility instance from a dictionary.
+    def from_dict(data: dict[str, Any]) -> "OffensiveAbility | None":
+        """Create OffensiveAbility from dictionary using AbilityDeserializer."""
+        from actions.abilities.ability_serializer import AbilityDeserializer
 
-        Args:
-            data: Dictionary containing complete ability specification
-
-        Returns:
-            OffensiveAbility: Fully initialized offensive ability instance
-
-        Required Dictionary Keys:
-            - name: Ability name (str)
-            - type: ActionType enum value (str)
-            - damage: List of damage component dictionaries
-
-        Optional Dictionary Keys:
-            - description: Ability description (str, default: "")
-            - cooldown: Turns between uses (int, default: 0)
-            - maximum_uses: Max uses per encounter (int, default: -1)
-            - effect: Effect dictionary (dict, default: None)
-            - target_expr: Target count expression (str, default: "")
-            - target_restrictions: Custom targeting rules (list, default: None)
-        """
-        return OffensiveAbility(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            target_expr=data.get("target_expr", ""),
-            target_restrictions=data.get("target_restrictions"),
-        )
+        return AbilityDeserializer.deserialize(data)

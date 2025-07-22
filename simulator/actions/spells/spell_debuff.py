@@ -32,21 +32,22 @@ from combat.damage import DamageComponent
 class SpellDebuff(Spell):
     """
     Detrimental spell that weakens enemies with negative effects.
-    
+
     SpellDebuff represents magical debuffing spells that apply harmful effects
     to enemies to reduce their combat effectiveness. Unlike offensive damage
     spells, debuff spells focus on applying persistent penalties, conditions,
     or restrictions that hinder enemy capabilities over time.
-    
+
     Attributes:
         effect: Required detrimental effect that defines the penalty/condition
-        
+
     Note:
         SpellDebuff inherits all spell mechanics (mind costs, concentration,
         targeting) from the base Spell class while adding debuff-specific
         logic that always succeeds initially but may allow saves to resist
         or reduce the effect's impact and duration.
     """
+
     def __init__(
         self,
         name: str,
@@ -79,18 +80,17 @@ class SpellDebuff(Spell):
 
             # Validate required effect
             if effect is None:
-                log_critical(
-                    f"SpellDebuff {name} must have an effect",
-                    {"name": name}
-                )
+                log_critical(f"SpellDebuff {name} must have an effect", {"name": name})
                 raise ValueError(f"SpellDebuff {name} must have an effect")
 
             if not isinstance(effect, Effect):
                 log_critical(
                     f"SpellDebuff {name} effect must be an Effect instance, got: {type(effect).__name__}",
-                    {"name": name, "effect_type": type(effect).__name__}
+                    {"name": name, "effect_type": type(effect).__name__},
                 )
-                raise ValueError(f"SpellDebuff {name} effect must be an Effect instance")
+                raise ValueError(
+                    f"SpellDebuff {name} effect must be an Effect instance"
+                )
 
             self.effect = effect
 
@@ -106,20 +106,23 @@ class SpellDebuff(Spell):
     # DEBUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(
-        self, actor: Any, target: Any, mind_level: int | None = 1
-    ) -> bool:
+    def cast_spell(self, actor: Any, target: Any, mind_level: int | None = 1) -> bool:
         """Execute a debuff spell with automatic application and optional saves."""
         if mind_level is None:
             mind_level = 1
-            
+
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
 
         # Validate mind cost against the specified level
         if mind_level < 1 or mind_level > len(self.mind_cost):
             log_error(
                 f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
-                {"actor": actor.name, "spell": self.name, "mind_level": mind_level, "max_levels": len(self.mind_cost)}
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_level": mind_level,
+                    "max_levels": len(self.mind_cost),
+                },
             )
             return False
 
@@ -127,7 +130,12 @@ class SpellDebuff(Spell):
         if actor.mind < required_mind:
             log_error(
                 f"{actor.name} does not have enough mind to cast {self.name}",
-                {"actor": actor.name, "spell": self.name, "mind_required": required_mind, "mind_current": actor.mind}
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_required": required_mind,
+                    "mind_current": actor.mind,
+                },
             )
             return False
 
@@ -135,7 +143,7 @@ class SpellDebuff(Spell):
         if actor.is_on_cooldown(self):
             log_warning(
                 f"Cannot cast {self.name} - spell is on cooldown",
-                {"actor": actor.name, "spell": self.name}
+                {"actor": actor.name, "spell": self.name},
             )
             return False
 
@@ -154,10 +162,12 @@ class SpellDebuff(Spell):
         effect_applied = False
         save_result = None
         if self.effect:
-            effect_applied = self.apply_effect(actor, target, self.effect, mind_level)
-            
+            effect_applied = self._common_apply_effect(
+                actor, target, self.effect, mind_level
+            )
+
             # Check if target made a successful save (effect-dependent)
-            if hasattr(self.effect, 'save_type') and hasattr(self.effect, 'save_dc'):
+            if hasattr(self.effect, "save_type") and hasattr(self.effect, "save_dc"):
                 # This would be handled within apply_effect, but we can track the result
                 # for better feedback messages
                 pass
@@ -177,7 +187,7 @@ class SpellDebuff(Spell):
         return True
 
     # ============================================================================
-    # EFFECT ANALYSIS METHODS  
+    # EFFECT ANALYSIS METHODS
     # ============================================================================
 
     def get_modifier_expressions(
@@ -186,14 +196,14 @@ class SpellDebuff(Spell):
         """Get modifier expressions with variables substituted for display."""
         if mind_level is None:
             mind_level = 1
-            
+
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
 
         # Handle effects that have modifiers (ModifierEffect)
-        if hasattr(self.effect, 'modifiers'):
-            modifiers = getattr(self.effect, 'modifiers', [])
+        if hasattr(self.effect, "modifiers"):
+            modifiers = getattr(self.effect, "modifiers", [])
             for modifier in modifiers:
                 bonus_type = modifier.bonus_type
                 value = modifier.value

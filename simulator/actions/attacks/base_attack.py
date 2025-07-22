@@ -328,7 +328,7 @@ class BaseAttack(BaseAction):
                 if is_dead:
                     msg += f" defeating {target_str}"
                 elif self.effect:
-                    if self.apply_effect(actor, target, self.effect):
+                    if self._common_apply_effect(actor, target, self.effect):
                         msg += f" and applying"
                     else:
                         msg += f" and failing to apply"
@@ -342,7 +342,7 @@ class BaseAttack(BaseAction):
                 if is_dead:
                     msg += f"        {target_str} is defeated."
                 elif self.effect:
-                    if self.apply_effect(actor, target, self.effect):
+                    if self._common_apply_effect(actor, target, self.effect):
                         msg += f"        {target_str} is affected by"
                     else:
                         msg += f"        {target_str} is not affected by"

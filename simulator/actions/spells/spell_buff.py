@@ -32,21 +32,22 @@ from combat.damage import DamageComponent
 class SpellBuff(Spell):
     """
     Beneficial spell that enhances targets with positive effects.
-    
+
     SpellBuff represents magical enhancement spells that apply beneficial effects
     to allies or the caster. These spells automatically succeed without requiring
     attack rolls, making them reliable support options for improving combat
     effectiveness and providing tactical advantages.
-    
+
     Attributes:
         effect: Required beneficial effect that defines the enhancement
-        
+
     Note:
         SpellBuff inherits all spell mechanics (mind costs, concentration,
         targeting) from the base Spell class while adding buff-specific
         logic that always succeeds and focuses on positive enhancements.
         The effect parameter is required as buffs without effects serve no purpose.
     """
+
     def __init__(
         self,
         name: str,
@@ -79,16 +80,13 @@ class SpellBuff(Spell):
 
             # Validate required effect
             if effect is None:
-                log_critical(
-                    f"SpellBuff {name} must have an effect",
-                    {"name": name}
-                )
+                log_critical(f"SpellBuff {name} must have an effect", {"name": name})
                 raise ValueError(f"SpellBuff {name} must have an effect")
 
             if not isinstance(effect, Effect):
                 log_critical(
                     f"SpellBuff {name} effect must be an Effect instance, got: {type(effect).__name__}",
-                    {"name": name, "effect_type": type(effect).__name__}
+                    {"name": name, "effect_type": type(effect).__name__},
                 )
                 raise ValueError(f"SpellBuff {name} effect must be an Effect instance")
 
@@ -106,36 +104,44 @@ class SpellBuff(Spell):
     # BUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(
-        self, actor: Any, target: Any, mind_level: int | None = 1
-    ) -> bool:
+    def cast_spell(self, actor: Any, target: Any, mind_level: int | None = 1) -> bool:
         """Execute a buff spell with automatic success and beneficial effects."""
         if mind_level is None:
             mind_level = 1
-            
+
         debug(f"{actor.name} attempts to cast {self.name} on {target.name}.")
 
         # Validate mind cost against the specified level
         if mind_level < 1 or mind_level > len(self.mind_cost):
             log_error(
                 f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
-                {"actor": actor.name, "spell": self.name, "mind_level": mind_level, "max_levels": len(self.mind_cost)}
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_level": mind_level,
+                    "max_levels": len(self.mind_cost),
+                },
             )
             return False
-            
+
         required_mind = self.mind_cost[mind_level - 1]
         if actor.mind < required_mind:
             log_error(
                 f"{actor.name} does not have enough mind to cast {self.name}",
-                {"actor": actor.name, "spell": self.name, "mind_required": required_mind, "mind_current": actor.mind}
+                {
+                    "actor": actor.name,
+                    "spell": self.name,
+                    "mind_required": required_mind,
+                    "mind_current": actor.mind,
+                },
             )
             return False
 
-        # Check cooldown restrictions  
+        # Check cooldown restrictions
         if actor.is_on_cooldown(self):
             log_warning(
                 f"Cannot cast {self.name} - spell is on cooldown",
-                {"actor": actor.name, "spell": self.name}
+                {"actor": actor.name, "spell": self.name},
             )
             return False
 
@@ -153,7 +159,9 @@ class SpellBuff(Spell):
         # Apply the beneficial effect
         effect_applied = False
         if self.effect:
-            effect_applied = self.apply_effect(actor, target, self.effect, mind_level)
+            effect_applied = self._common_apply_effect(
+                actor, target, self.effect, mind_level
+            )
 
         # Display enhancement results
         msg = f"    ✨ {actor_str} casts [bold]{self.name}[/] on {target_str} "
@@ -177,7 +185,7 @@ class SpellBuff(Spell):
         """Get modifier expressions with variables substituted for display."""
         if mind_level is None:
             mind_level = 1
-            
+
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}

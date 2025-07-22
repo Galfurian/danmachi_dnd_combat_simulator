@@ -217,7 +217,7 @@ class UtilityAbility(BaseAbility):
             effect_applied: Whether effect was successfully applied
         """
         msg = f"    🔧 {actor_str} uses [bold cyan]{self.name}[/]"
-        
+
         # Show target if different from actor
         if actor_str != target_str:
             msg += f" on {target_str}"
@@ -229,7 +229,7 @@ class UtilityAbility(BaseAbility):
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f".\n        Result: {utility_result}"
-            
+
             if self.effect:
                 if effect_applied:
                     msg += f"\n        {target_str} is affected by [bold yellow]{self.effect.name}[/]"
@@ -264,9 +264,7 @@ class UtilityAbility(BaseAbility):
         Returns:
             bool: True if commonly self-targeted, False otherwise
         """
-        self_targeted_functions = {
-            "teleport", "investigate", "detect_magic", "stealth"
-        }
+        self_targeted_functions = {"teleport", "investigate", "detect_magic", "stealth"}
         return self.utility_function in self_targeted_functions
 
     # ============================================================================
@@ -274,49 +272,14 @@ class UtilityAbility(BaseAbility):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the utility ability to a dictionary representation.
+        """Convert utility ability to dictionary using AbilitySerializer."""
+        from actions.abilities.ability_serializer import AbilitySerializer
 
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
-        """
-        data = super().to_dict()
-        if self.utility_function:
-            data["utility_function"] = self.utility_function
-        return data
+        return AbilitySerializer.serialize(self)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "UtilityAbility":
-        """
-        Creates a UtilityAbility instance from a dictionary.
+    def from_dict(data: dict[str, Any]) -> "UtilityAbility | None":
+        """Create UtilityAbility from dictionary using AbilityDeserializer."""
+        from actions.abilities.ability_serializer import AbilityDeserializer
 
-        Args:
-            data: Dictionary containing complete ability specification
-
-        Returns:
-            UtilityAbility: Fully initialized utility ability instance
-
-        Required Dictionary Keys:
-            - name: Ability name (str)
-            - type: ActionType enum value (str)
-
-        Optional Dictionary Keys:
-            - description: Ability description (str, default: "")
-            - cooldown: Turns between uses (int, default: 0)
-            - maximum_uses: Max uses per encounter (int, default: -1)
-            - utility_function: Utility function name (str, default: "")
-            - effect: Effect dictionary (dict, default: None)
-            - target_expr: Target count expression (str, default: "")
-            - target_restrictions: Custom targeting rules (list, default: None)
-        """
-        return UtilityAbility(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            utility_function=data.get("utility_function", ""),
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            target_expr=data.get("target_expr", ""),
-            target_restrictions=data.get("target_restrictions"),
-        )
+        return AbilityDeserializer.deserialize(data)

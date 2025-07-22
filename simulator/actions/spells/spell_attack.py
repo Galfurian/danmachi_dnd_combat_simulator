@@ -80,33 +80,6 @@ class SpellAttack(Spell):
         - Status conditions (paralyzed, stunned, etc.)
         - Temporary debuffs or ongoing damage
 
-    Example Usage:
-        ```python
-        # Single-target damage spell
-        magic_missile = SpellAttack(
-            name="Magic Missile",
-            type=ActionType.ACTION,
-            description="Unerring bolts of magical force",
-            level=1,
-            mind_cost=[2, 4, 6],
-            damage=[DamageComponent("force", "1d4 + 1 + MIND")],
-            requires_concentration=False
-        )
-
-        # Multi-target area spell with effect
-        fireball = SpellAttack(
-            name="Fireball",
-            type=ActionType.ACTION,
-            description="A bright flash followed by explosive flame",
-            level=3,
-            mind_cost=[6, 8, 10, 12],
-            damage=[DamageComponent("fire", "8d6 + MIND")],
-            effect=BurnEffect(duration=3),
-            target_expr="MIND + 2",  # Affects spell level + 2 targets
-            requires_concentration=False
-        )
-        ```
-
     Attributes:
         damage: List of damage components defining damage dice and types
         effect: Optional effect applied on successful spell attacks
@@ -152,61 +125,6 @@ class SpellAttack(Spell):
             target_expr: Expression for multi-target spells ("" = single target)
             requires_concentration: Whether spell needs ongoing mental focus
             target_restrictions: Override default targeting restrictions
-
-        Damage Components:
-            Each DamageComponent defines a damage type and scaling expression:
-            - damage_type: "fire", "cold", "force", "necrotic", etc.
-            - damage_roll: Expression supporting MIND variable scaling
-
-        Examples:
-            ```python
-            # Single-target spell with static damage
-            magic_missile = SpellAttack(
-                name="Magic Missile",
-                type=ActionType.ACTION,
-                description="Unerring bolts of force",
-                level=1,
-                mind_cost=[2, 4, 6],
-                damage=[DamageComponent("force", "1d4 + 1")]
-            )
-
-            # Multi-target spell with level scaling
-            fireball = SpellAttack(
-                name="Fireball",
-                type=ActionType.ACTION,
-                description="Explosive blast of flame",
-                level=3,
-                mind_cost=[6, 8, 10, 12],
-                damage=[DamageComponent("fire", "8d6 + MIND")],
-                target_expr="MIND + 1",  # Extra targets per level
-                effect=BurnEffect(duration=2)
-            )
-
-            # Mixed damage spell with concentration effect
-            chromatic_orb = SpellAttack(
-                name="Chromatic Orb",
-                type=ActionType.ACTION,
-                description="Sphere of crackling energy",
-                level=1,
-                mind_cost=[3, 5, 7],
-                damage=[
-                    DamageComponent("fire", "2d8"),
-                    DamageComponent("cold", "1d4 + MIND//2")
-                ],
-                effect=SlowEffect(duration=3),
-                requires_concentration=True
-            )
-            ```
-
-        Raises:
-            ValueError: If name is empty, damage list is empty, or invalid types
-            AssertionError: If damage components are malformed
-
-        Note:
-            - Automatically sets category to ActionCategory.OFFENSIVE
-            - Validates all damage components during initialization
-            - Empty damage list raises an error as attack spells must deal damage
-            - Effect is optional but commonly used for status conditions
         """
         try:
             super().__init__(
@@ -404,7 +322,9 @@ class SpellAttack(Spell):
         # Apply optional effect on successful hit
         effect_applied = False
         if self.effect:
-            effect_applied = self.apply_effect(actor, target, self.effect, mind_level)
+            effect_applied = self._common_apply_effect(
+                actor, target, self.effect, mind_level
+            )
 
         # Display combat results with appropriate detail level
         if GLOBAL_VERBOSE_LEVEL == 0:

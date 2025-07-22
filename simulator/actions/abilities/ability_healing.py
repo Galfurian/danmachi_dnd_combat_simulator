@@ -118,9 +118,7 @@ class HealingAbility(BaseAbility):
             )
 
             # Validate heal_roll using helper
-            self.heal_roll = ensure_string(
-                heal_roll, "heal roll", "0", {"name": name}
-            )
+            self.heal_roll = ensure_string(heal_roll, "heal roll", "0", {"name": name})
 
         except Exception as e:
             log_critical(
@@ -186,8 +184,12 @@ class HealingAbility(BaseAbility):
 
         # Display results
         self._display_execution_result(
-            actor_str, target_str, healing_amount, actual_healing, 
-            healing_desc, effect_applied
+            actor_str,
+            target_str,
+            healing_amount,
+            actual_healing,
+            healing_desc,
+            effect_applied,
         )
 
         return True
@@ -225,7 +227,7 @@ class HealingAbility(BaseAbility):
             else:
                 msg += f" healing {actual_healing} HP → {healing_desc}"
             msg += ".\n"
-            
+
             if self.effect:
                 if effect_applied:
                     msg += f"        {target_str} is affected by"
@@ -285,48 +287,14 @@ class HealingAbility(BaseAbility):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the healing ability to a dictionary representation.
+        """Convert healing ability to dictionary using AbilitySerializer."""
+        from actions.abilities.ability_serializer import AbilitySerializer
 
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
-        """
-        data = super().to_dict()
-        data["heal_roll"] = self.heal_roll
-        return data
+        return AbilitySerializer.serialize(self)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "HealingAbility":
-        """
-        Creates a HealingAbility instance from a dictionary.
+    def from_dict(data: dict[str, Any]) -> "HealingAbility | None":
+        """Create HealingAbility from dictionary using AbilityDeserializer."""
+        from actions.abilities.ability_serializer import AbilityDeserializer
 
-        Args:
-            data: Dictionary containing complete ability specification
-
-        Returns:
-            HealingAbility: Fully initialized healing ability instance
-
-        Required Dictionary Keys:
-            - name: Ability name (str)
-            - type: ActionType enum value (str)
-            - heal_roll: Healing expression (str)
-
-        Optional Dictionary Keys:
-            - description: Ability description (str, default: "")
-            - cooldown: Turns between uses (int, default: 0)
-            - maximum_uses: Max uses per encounter (int, default: -1)
-            - effect: Effect dictionary (dict, default: None)
-            - target_expr: Target count expression (str, default: "")
-            - target_restrictions: Custom targeting rules (list, default: None)
-        """
-        return HealingAbility(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            heal_roll=data["heal_roll"],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            target_expr=data.get("target_expr", ""),
-            target_restrictions=data.get("target_restrictions"),
-        )
+        return AbilityDeserializer.deserialize(data)

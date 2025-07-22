@@ -52,29 +52,7 @@ class BaseAction:
         maximum_uses: int = -1,
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new BaseAction.
-
-        Args:
-            name: The display name of the action
-            type: The type of action (from ActionType enum)
-            category: The category for targeting logic (from ActionCategory enum)
-            description: Optional description of what the action does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            target_restrictions: Override default targeting with specific rules
-                - "SELF": Can only target the actor
-                - "ALLY": Can target allies (including self)
-                - "ENEMY": Can target enemies only
-                - "ANY": Can target anyone
-
-        Raises:
-            ValueError: If name is empty or type/category are invalid
-
-        Note:
-            Non-critical validation errors (wrong types, out-of-range values) will be
-            logged as warnings and automatically corrected rather than raising exceptions.
-        """
+        """Initialize a new BaseAction."""
         # === CRITICAL VALIDATIONS ===
         # These will raise ValueError if invalid - action cannot be created
         self.name = require_non_empty_string(name, "action name", {"type": str(type)})
@@ -99,25 +77,17 @@ class BaseAction:
         )
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this action with the given actor and target.
-
-        This is an abstract method that must be implemented by subclasses.
-        Each action type (attack, spell, ability, etc.) will have its own
-        specific implementation of how the action is performed.
+        """Execute the action against a target character.
 
         Args:
-            actor: The character performing the action (must have is_alive method)
-            target: The character being targeted by the action (must have is_alive method)
+            actor (Any): The character performing the action (must have is_alive method)
+            target (Any): The character being targeted (must have is_alive method and effects_module)
+
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses.
 
         Returns:
-            bool: True if the action was successfully executed, False otherwise
-
-        Note:
-            - Subclasses should call is_valid_target() before executing
-            - Subclasses should handle cooldowns and usage limits
-            - This method should return False for any failure condition
-
+            bool: True if action executed successfully, False otherwise.
         """
         raise NotImplementedError("Subclasses must implement the execute method")
 
@@ -125,35 +95,25 @@ class BaseAction:
     # EFFECT SYSTEM METHODS
     # ============================================================================
 
-    def apply_effect(
+    def _common_apply_effect(
         self,
         actor: Any,
         target: Any,
         effect: Effect | None,
-        mind_level: int | None = 0,
+        mind_level: int | None = None,
     ) -> bool:
         """
         Apply an effect to a target character.
-
-        This method handles the safe application of effects, including validation
-        of all parameters and proper error handling. It's commonly used by actions
-        that apply buffs, debuffs, or other temporary effects.
 
         Args:
             actor: The character applying the effect (must have is_alive method)
             target: The character receiving the effect (must have is_alive and effects_module)
             effect: The effect to apply, or None to do nothing
             mind_level: The mind cost level for scaling effects (0+ integer)
+            spell: The spell or action reference for concentration handling
 
         Returns:
             bool: True if effect was successfully applied, False otherwise
-
-        Note:
-            - Returns False immediately if effect is None
-            - Validates that both actor and target are alive
-            - Auto-corrects invalid mind_level values with warnings
-            - All validation errors are logged with context for debugging
-
         """
         try:
             if not effect:
@@ -192,7 +152,7 @@ class BaseAction:
                 },
             )
 
-            if target.effects_module.add_effect(actor, effect, mind_level):
+            if target.effects_module.add_effect(actor, effect, mind_level, self):
                 debug(
                     f"Applied effect {effect.name} from {actor.name} to {target.name}."
                 )
@@ -239,13 +199,6 @@ class BaseAction:
             - total_result: Final attack roll total
             - description: Human-readable description of the roll
             - raw_d20_roll: The natural d20 result (for crit detection)
-
-        Note:
-            - Auto-corrects invalid inputs with warnings
-            - Uses actor's expression variables for bonus calculations
-            - Returns safe fallback (1, "1D20: 1 (error)", 1) on errors
-            - Raw d20 roll of 20 indicates a critical hit
-
         """
         try:
             # Validate required actor object
@@ -436,26 +389,6 @@ class BaseAction:
 
         Returns:
             bool: True if the target is valid for this action, False otherwise
-
-        Targeting Logic:
-            1. If target_restrictions are defined: Uses explicit rules
-               - "SELF": Only the actor can be targeted
-               - "ALLY": Actor and allies can be targeted
-               - "ENEMY": Only enemies can be targeted
-               - "ANY": Anyone can be targeted
-
-            2. If no restrictions: Uses category-based defaults
-               - OFFENSIVE: Targets enemies only
-               - HEALING: Targets self/allies who aren't at full health
-               - BUFF: Targets self and allies
-               - DEBUFF: Targets enemies only
-               - UTILITY/DEBUG: Targets anyone
-
-        Note:
-            - Both characters must be alive to be valid
-            - Validation errors result in False (invalid target)
-            - All targeting decisions are logged for debugging
-
         """
         try:
             # Validate required objects have is_alive method
@@ -477,7 +410,7 @@ class BaseAction:
                 return self._check_target_restrictions(actor, target)
 
             # Otherwise, fall back to category-based default targeting
-            return self._get_default_targeting_by_category(actor, target)
+            return self._is_valid_target_default(actor, target)
 
         except ValueError:
             # If validation fails, target is invalid
@@ -496,17 +429,6 @@ class BaseAction:
 
         Returns:
             bool: True if target matches any of the restrictions, False otherwise
-
-        Restriction Types:
-            - "SELF": Only the actor can be targeted
-            - "ALLY": Actor and allies (non-opponents) can be targeted
-            - "ENEMY": Only enemies (opponents) can be targeted
-            - "ANY": Anyone can be targeted (no restrictions)
-
-        Note:
-            - Both characters must be alive
-            - Returns True on first matching restriction (OR logic)
-            - Empty restrictions list means no valid targets
         """
         # Basic validation - both must be alive
         if not actor.is_alive() or not target.is_alive():
@@ -530,8 +452,16 @@ class BaseAction:
         # No restrictions matched - target is invalid
         return False
 
-    def _get_default_targeting_by_category(self, actor: Any, target: Any) -> bool:
-        """Provide sensible default targeting based on action category."""
+    def _is_valid_target_default(self, actor: Any, target: Any) -> bool:
+        """Provide sensible default targeting based on action category.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The potential target character.
+
+        Returns:
+            bool: True if the target is valid for the action, False otherwise.
+        """
         try:
             # Basic validation - both must be alive
             if not actor.is_alive() or not target.is_alive():
@@ -619,17 +549,6 @@ class BaseAction:
 
         Returns:
             bool: True if the relationship matches the requested type
-
-        Relationship Logic:
-            - Self is considered neither ally nor enemy for targeting purposes
-            - Uses is_opponent() function to determine enemy relationships
-            - Allies are characters who are NOT opponents
-            - Enemies are characters who ARE opponents
-
-        Note:
-            - Uses safe attribute access to handle missing character types
-            - Logs warnings and returns False on any errors
-            - Character types come from the game's faction system
         """
         try:
             if actor == target:  # Self is neither ally nor enemy in this context
@@ -673,20 +592,6 @@ class BaseAction:
 
         Returns:
             dict[str, Any]: Dictionary containing all action data
-            - class: The class name for reconstruction
-            - name: Action display name
-            - type: Action type (as string)
-            - category: Action category (as string)
-            - description: Action description
-            - cooldown: Cooldown in turns
-            - maximum_uses: Max uses (-1 for unlimited)
-            - target_restrictions: List of targeting rules (only if defined)
-
-        Note:
-            - Enum values are converted to strings for JSON compatibility
-            - Empty target_restrictions are omitted from the output
-            - This format can be used with from_dict methods for reconstruction
-
         """
         data = {
             "class": self.__class__.__name__,

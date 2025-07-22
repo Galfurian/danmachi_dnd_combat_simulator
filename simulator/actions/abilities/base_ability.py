@@ -2,7 +2,7 @@
 Base ability class for all special character abilities.
 
 This module provides the abstract BaseAbility class that serves as the foundation
-for all ability types including offensive, healing, buff, utility, and 
+for all ability types including offensive, healing, buff, utility, and
 DanMachi-specific development abilities.
 """
 
@@ -252,7 +252,7 @@ class BaseAbility(BaseAction, ABC):
             bool: True if effect was successfully applied, False otherwise
         """
         if self.effect:
-            return self.apply_effect(actor, target, self.effect)
+            return self._common_apply_effect(actor, target, self.effect)
         return True
 
     def _roll_bonus_damage(self, actor: Any, target: Any) -> tuple[int, list[str]]:
@@ -289,27 +289,3 @@ class BaseAbility(BaseAction, ABC):
             bool: True if ability was executed successfully, False on system errors
         """
         pass
-
-    # ============================================================================
-    # SERIALIZATION METHODS (SHARED BY ALL ABILITIES)
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the ability to a dictionary representation.
-
-        Creates a complete serializable representation of the ability including
-        all properties from the base class plus ability-specific data.
-
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
-
-        Note:
-            Concrete subclasses should override this to add their specific fields.
-        """
-        data = super().to_dict()
-        if self.target_expr:
-            data["target_expr"] = self.target_expr
-        if self.effect:
-            data["effect"] = self.effect.to_dict()
-        return data
