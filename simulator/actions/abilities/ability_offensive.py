@@ -42,24 +42,6 @@ class OffensiveAbility(BaseAbility):
         - Racial abilities (dragonborn breath, tiefling hellish rebuke)
         - Environmental hazard abilities
         - Activated magic item powers
-
-    Example:
-        ```python
-        # Create a fire breath ability
-        fire_breath = OffensiveAbility(
-            name="Fire Breath",
-            type=ActionType.STANDARD,
-            description="Exhale destructive flames in a cone",
-            cooldown=2,
-            maximum_uses=-1,
-            damage=[
-                DamageComponent("fire", "3d8"),
-                DamageComponent("fire", "CON")  # CON modifier bonus
-            ],
-            target_expr="3",  # Affects up to 3 targets
-            effect=burning_effect
-        )
-        ```
     """
 
     def __init__(
@@ -153,15 +135,6 @@ class OffensiveAbility(BaseAbility):
             - Base damage: From ability's damage components
             - Bonus damage: From effects and modifiers
             - All damage calculated and applied together
-
-        Example:
-            ```python
-            # Execute a dragon breath ability
-            if fire_breath.execute(dragon, adventurer):
-                print("Breath weapon activated successfully")
-            else:
-                print("System error during ability execution")
-            ```
         """
         actor_str, target_str = self._get_display_strings(actor, target)
 
@@ -263,7 +236,7 @@ class OffensiveAbility(BaseAbility):
         Returns:
             str: Complete damage expression with variables replaced by values
         """
-        return super().get_damage_expr(actor, self.damage)
+        return super()._common_get_damage_expr(actor, self.damage)
 
     def get_min_damage(self, actor: Any) -> int:
         """
@@ -275,7 +248,7 @@ class OffensiveAbility(BaseAbility):
         Returns:
             int: Minimum total damage across all damage components
         """
-        return super().get_min_damage(actor, self.damage)
+        return super()._common_get_min_damage(actor, self.damage)
 
     def get_max_damage(self, actor: Any) -> int:
         """
@@ -287,7 +260,7 @@ class OffensiveAbility(BaseAbility):
         Returns:
             int: Maximum total damage across all damage components
         """
-        return super().get_max_damage(actor, self.damage)
+        return super()._common_get_max_damage(actor, self.damage)
 
     # ============================================================================
     # SERIALIZATION METHODS

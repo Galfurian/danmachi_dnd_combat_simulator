@@ -26,20 +26,6 @@ class NaturalAttack(BaseAttack):
         - Racial natural weapons (tiefling claws, dragonborn breath)
         - Supernatural creature abilities
         - Unarmed combat variants
-
-    Example:
-        ```python
-        claw_attack = NaturalAttack(
-            name="Claw",
-            type=ActionType.ACTION,
-            description="Sharp natural claws",
-            cooldown=0,
-            maximum_uses=-1,
-            attack_roll="1d20 + {STR} + {PROF}",
-            damage=[DamageComponent("slashing", "1d4 + {STR}")],
-            effect=None
-        )
-        ```
     """
 
     def __init__(
@@ -68,20 +54,6 @@ class NaturalAttack(BaseAttack):
             attack_roll: Attack roll expression with variables
             damage: List of damage components for the natural weapon
             effect: Optional effect like poison or disease
-
-        Example:
-            ```python
-            bite = NaturalAttack(
-                name="Bite",
-                type=ActionType.ACTION,
-                description="Savage bite with sharp teeth",
-                cooldown=0,
-                maximum_uses=-1,
-                attack_roll="1d20 + {STR} + {PROF}",
-                damage=[DamageComponent("piercing", "1d6 + {STR}")],
-                effect=poison_effect
-            )
-            ```
         """
         super().__init__(
             name,
@@ -108,12 +80,6 @@ class NaturalAttack(BaseAttack):
 
         Returns:
             NaturalAttack: Fully initialized natural attack instance
-
-        Example:
-            ```python
-            creature_data = load_creature_from_json("wolf.json")
-            bite = NaturalAttack.from_dict(creature_data["bite_attack"])
-            ```
         """
         return NaturalAttack(
             name=data["name"],

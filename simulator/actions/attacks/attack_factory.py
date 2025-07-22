@@ -31,16 +31,6 @@ def from_dict_attack(data: dict[str, Any]) -> BaseAttack | None:
         - Must contain all required fields for the specified class
         - Field names must match the class constructor parameters
 
-    Example:
-        ```python
-        # Load different attack types polymorphically
-        weapon_data = {"class": "WeaponAttack", "name": "Sword", ...}
-        natural_data = {"class": "NaturalAttack", "name": "Claws", ...}
-
-        sword = from_dict_attack(weapon_data)    # Returns WeaponAttack
-        claws = from_dict_attack(natural_data)   # Returns NaturalAttack
-        ```
-
     Error Handling:
         Returns None for unrecognized class names rather than raising
         exceptions, allowing graceful handling of invalid data.

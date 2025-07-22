@@ -41,20 +41,6 @@ class UtilityAbility(BaseAbility):
         - Thieves' Tools Expertise (improved lock picking)
         - Animal Handling (calm or communicate with animals)
         - Investigation (enhanced searching abilities)
-
-    Example:
-        ```python
-        # Create a detect magic ability
-        detect_magic = UtilityAbility(
-            name="Detect Magic",
-            type=ActionType.STANDARD,
-            description="Sense magical auras within 30 feet",
-            cooldown=0,
-            maximum_uses=-1,  # At-will ability
-            utility_function="detect_magic",  # Custom utility function
-            effect=None  # Pure mechanical effect
-        )
-        ```
     """
 
     def __init__(
@@ -146,15 +132,6 @@ class UtilityAbility(BaseAbility):
             - Effect application: Optional effects for ongoing benefits
             - Information gathering: May provide information to the user
             - Environmental interaction: May affect the game world
-
-        Example:
-            ```python
-            # Execute a detect magic ability
-            if detect_magic.execute(wizard, wizard):  # Self-targeted
-                print("Detect magic activated successfully")
-            else:
-                print("System error during ability execution")
-            ```
         """
         actor_str, target_str = self._get_display_strings(actor, target)
 

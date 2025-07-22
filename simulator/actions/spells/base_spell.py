@@ -136,23 +136,6 @@ class Spell(BaseAction):
             - Invalid mind_cost values are corrected with warnings
             - Invalid target_expr is corrected to empty string
             - Concentration flag is auto-corrected to boolean
-            
-        Example:
-            ```python
-            # Create a scalable area damage spell
-            fireball = SpellAttack(
-                name="Fireball",
-                type=ActionType.ACTION,
-                description="A bright flash followed by explosive flame",
-                cooldown=0,
-                maximum_uses=-1,
-                level=3,
-                mind_cost=[6, 8, 10, 12, 15],  # Levels 1-5
-                category=ActionCategory.OFFENSIVE,
-                target_expr="MIND + 1",  # Extra targets per level
-                requires_concentration=False
-            )
-            ```
         """
         try:
             super().__init__(
@@ -396,16 +379,6 @@ class Spell(BaseAction):
             - Returns False immediately if effect is None
             - Returns False if actor or target is not alive
             - Uses effect manager's validation for effect application
-            
-        Example:
-            ```python
-            # Concentration spell effect
-            if self.requires_concentration:
-                actor.concentration_module.break_concentration()  # Break existing
-                
-            success = self.apply_effect(actor, target, buff_effect, mind_level)
-            # Effect is now marked as requiring concentration
-            ```
         """
         if not effect:
             return False
@@ -444,12 +417,6 @@ class Spell(BaseAction):
             - Base properties: name, type, description, cooldown, maximum_uses
             - Spell properties: level, mind_cost, requires_concentration
             - Optional: target_expr if multi-target
-            
-        Example:
-            ```python
-            spell_data = fireball.to_dict()
-            # Returns complete serializable dictionary with all spell properties
-            ```
         """
         data = super().to_dict()
         # Add specific fields for Spell

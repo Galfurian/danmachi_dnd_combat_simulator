@@ -111,21 +111,6 @@ class BaseAttack(BaseAction):
             - Invalid attack_roll expressions are corrected to empty string
             - Damage list is validated to ensure all components are DamageComponent instances
             - Invalid effects are set to None with warnings
-
-        Example:
-            ```python
-            # Create a longsword attack
-            longsword = BaseAttack(
-                name="Longsword",
-                type=ActionType.ATTACK,
-                description="A versatile steel blade",
-                cooldown=0,
-                maximum_uses=-1,
-                hands_required=1,
-                attack_roll="STR + PROF",
-                damage=[DamageComponent("1d8", "slashing", "STR")],
-            )
-            ```
         """
         try:
             super().__init__(
@@ -224,15 +209,6 @@ class BaseAttack(BaseAction):
             - Returns False only for validation/system errors
             - Uses global verbosity settings for output formatting
             - Integrates with effect manager for damage bonuses
-
-        Example:
-            ```python
-            # Execute a sword attack
-            if sword.execute(fighter, goblin):
-                print("Attack completed successfully")
-            else:
-                print("Attack failed due to system error")
-            ```
         """
         try:
             # Validate required objects using helpers
@@ -402,90 +378,37 @@ class BaseAttack(BaseAction):
         """
         Returns the damage expression with variables substituted.
 
-        This method builds a complete damage expression string by substituting
-        all variable placeholders with their actual values from the actor's
-        current state. The result is a human-readable representation of the
-        total damage calculation.
-
-        Variable Substitution:
-            - {STR}, {DEX}, {CON}, {INT}, {WIS}, {CHA}: Ability modifiers
-            - {PROF}: Proficiency bonus
-            - {LEVEL}: Character level
-            - Custom variables from actor's expression_variables method
-
         Args:
             actor: The character performing the action (must have expression variables)
 
         Returns:
             str: Complete damage expression with variables replaced by values
-
-        Example:
-            ```python
-            # For a longsword with STR modifier
-            damage_expr = weapon.get_damage_expr(fighter)
-            # Returns: "1d8 + 3" (if STR modifier is +3)
-            ```
         """
-        return " + ".join(
-            substitute_variables(component.damage_roll, actor)
-            for component in self.damage
-        )
+        return super()._common_get_damage_expr(actor, self.damage)
 
     def get_min_damage(self, actor: Any) -> int:
         """
         Returns the minimum possible damage value for the attack.
-
-        Calculates the theoretical minimum damage by assuming all dice
-        roll their minimum values (1 for each die). This is useful for
-        damage prediction and combat analysis.
 
         Args:
             actor: The character performing the action
 
         Returns:
             int: Minimum total damage across all damage components
-
-        Example:
-            ```python
-            # For "2d6 + 4" damage
-            min_dmg = weapon.get_min_damage(fighter)
-            # Returns: 6 (2*1 + 4)
-            ```
         """
-        return sum(
-            parse_expr_and_assume_min_roll(
-                substitute_variables(component.damage_roll, actor)
-            )
-            for component in self.damage
-        )
+        return super()._common_get_min_damage(actor, self.damage)
 
     def get_max_damage(self, actor: Any) -> int:
         """
         Returns the maximum possible damage value for the attack.
-
-        Calculates the theoretical maximum damage by assuming all dice
-        roll their maximum values. This is useful for damage prediction,
-        combat planning, and threat assessment.
 
         Args:
             actor: The character performing the action
 
         Returns:
             int: Maximum total damage across all damage components
-
-        Example:
-            ```python
-            # For "2d6 + 4" damage
-            max_dmg = weapon.get_max_damage(fighter)
-            # Returns: 16 (2*6 + 4)
-            ```
         """
-        return sum(
-            parse_expr_and_assume_max_roll(
-                substitute_variables(component.damage_roll, actor)
-            )
-            for component in self.damage
-        )
+        return super()._common_get_max_damage(actor, self.damage)
 
     # ============================================================================
     # SERIALIZATION METHODS
@@ -506,12 +429,6 @@ class BaseAttack(BaseAction):
             - Base properties: name, type, description, cooldown, maximum_uses
             - Attack properties: hands_required, attack_roll, damage components
             - Optional: effect data if an effect is attached
-
-        Example:
-            ```python
-            attack_data = sword.to_dict()
-            # Returns complete serializable dictionary
-            ```
         """
         # Get the base dictionary representation.
         data = super().to_dict()
@@ -551,12 +468,6 @@ class BaseAttack(BaseAction):
             - maximum_uses: Max uses per encounter (int, default: -1)
             - hands_required: Required hands (int, default: 0)
             - effect: Effect dictionary (dict, default: None)
-
-        Example:
-            ```python
-            sword_data = {...}  # From JSON config
-            sword = BaseAttack.from_dict(sword_data)
-            ```
         """
         return BaseAttack(
             name=data["name"],

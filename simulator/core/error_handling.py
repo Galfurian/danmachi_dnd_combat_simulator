@@ -190,9 +190,6 @@ def require_non_empty_string(
 
     Raises:
         ValueError: If validation fails
-
-    Example:
-        name = require_non_empty_string(user_input, "character name")
     """
     if not value or not isinstance(value, str):
         log_error(
@@ -225,9 +222,6 @@ def require_enum_type(
 
     Raises:
         ValueError: If validation fails
-
-    Example:
-        action_type = require_enum_type(user_input, ActionType, "action type")
     """
     if not isinstance(value, enum_class):
         log_error(
@@ -264,9 +258,6 @@ def ensure_string(
 
     Returns:
         str: The string value or default
-
-    Example:
-        description = ensure_string(user_input, "description", "No description provided")
     """
     if not isinstance(value, str):
         log_warning(
@@ -297,9 +288,6 @@ def ensure_non_negative_int(
 
     Returns:
         int: The corrected integer value
-
-    Example:
-        cooldown = ensure_non_negative_int(user_input, "cooldown")
     """
     if not isinstance(value, int) or value < 0:
         log_warning(
@@ -337,10 +325,6 @@ def ensure_int_in_range(
 
     Returns:
         int: The corrected integer value
-
-    Example:
-        uses = ensure_int_in_range(user_input, "maximum uses", -1, None, -1)  # -1 means unlimited
-        level = ensure_int_in_range(user_input, "character level", 1, 20, 1)
     """
     if default is None:
         default = min_val
@@ -403,11 +387,6 @@ def ensure_list_of_type(
 
     Returns:
         list: The validated/corrected list
-
-    Example:
-        restrictions = ensure_list_of_type(user_input, str, "target restrictions", [])
-        numbers = ensure_list_of_type(data, int, "scores", [], int, lambda x: x > 0)
-        enums = ensure_list_of_type(data, ActionType, "types", [], ActionType.from_string)
     """
     if default is None:
         default = []
@@ -578,9 +557,6 @@ def ensure_list_of_strings(
 
     Returns:
         list[str]: The validated/corrected list of strings
-
-    Example:
-        restrictions = ensure_list_of_strings(user_input, "target restrictions", [])
     """
     return ensure_list_of_type(
         value=value,
@@ -612,9 +588,6 @@ def validate_required_object(
 
     Raises:
         ValueError: If validation fails
-
-    Example:
-        validate_required_object(actor, "actor", ["is_alive", "get_expression_variables"])
     """
     if obj is None:
         log_error(
@@ -661,9 +634,6 @@ def safe_get_attribute(
 
     Returns:
         Any: The attribute value or default
-
-    Example:
-        name = safe_get_attribute(character, "name", "Unknown", "character")
     """
     if obj is None:
         return default

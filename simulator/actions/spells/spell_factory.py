@@ -41,19 +41,6 @@ def from_dict_spell(data: dict[str, Any]) -> Any:
     Raises:
         ValueError: If the class/category is invalid or missing required fields
         KeyError: If required data fields are missing
-        
-    Example:
-        >>> spell_data = {
-        ...     "name": "Magic Missile",
-        ...     "type": "STANDARD",
-        ...     "level": 1,
-        ...     "mind_cost": [2, 3, 4],
-        ...     "class": "SpellAttack",
-        ...     "damage": {"dice": "1d4+1", "type": "force"}
-        ... }
-        >>> spell = from_dict_spell(spell_data)
-        >>> isinstance(spell, SpellAttack)
-        True
     """
     try:
         # Check for legacy 'class' field first, then modern 'category' field

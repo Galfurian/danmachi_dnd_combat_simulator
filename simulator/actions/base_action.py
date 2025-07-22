@@ -246,14 +246,6 @@ class BaseAction:
             - Returns safe fallback (1, "1D20: 1 (error)", 1) on errors
             - Raw d20 roll of 20 indicates a critical hit
 
-        Example:
-            ```python
-            total, desc, d20 = action.roll_attack_with_crit(
-                fighter, "STR + PROF", ["RAGE", "BLESS"]
-            )
-            is_crit = (d20 == 20)
-            print(f"Attack: {desc} = {total}")
-            ```
         """
         try:
             # Validate required actor object
@@ -302,6 +294,131 @@ class BaseAction:
             return 1, "1D20: 1 (error)", 1  # Return safe fallback
 
     # ============================================================================
+    # COMMON UTILITY METHODS (SHARED BY DAMAGE-DEALING ABILITIES)
+    # ============================================================================
+
+    def _common_get_damage_expr(
+        self,
+        actor: Any,
+        damage_components: list[DamageComponent],
+        extra_variables: dict[str, int] = {},
+    ) -> str:
+        """
+        Returns the damage expression with variables substituted.
+
+        Args:
+            actor: The character using the ability (must have expression variables)
+            damage_components: List of damage components to build expression from
+            extra_variables: Additional variables to include in the expression
+
+        Returns:
+            str: Complete damage expression with variables replaced by values
+        """
+        if not isinstance(damage_components, list) or not damage_components:
+            log_warning(
+                "Damage components must be a non-empty list",
+                {"damage_components": damage_components, "actor": actor.name},
+            )
+            return "0"
+        if not isinstance(extra_variables, dict):
+            log_warning(
+                "Extra variables must be a dictionary",
+                {"extra_variables": extra_variables, "actor": actor.name},
+            )
+            extra_variables = {}
+        # Get the base character variables.
+        variables = actor.get_expression_variables()
+        # Add the extra variables for this action.
+        variables.update(extra_variables)
+        # Build the full expression by substituting each component's damage roll.
+        return " + ".join(
+            substitute_variables(component.damage_roll, variables)
+            for component in damage_components
+        )
+
+    def _common_get_min_damage(
+        self,
+        actor: Any,
+        damage_components: list[DamageComponent],
+        extra_variables: dict[str, int] = {},
+    ) -> int:
+        """
+        Returns the minimum possible damage value for the ability.
+
+        Args:
+            actor: The character using the ability
+            damage_components: List of damage components to calculate from
+            extra_variables: Additional variables to include in the calculation
+
+        Returns:
+            int: Minimum total damage across all damage components
+        """
+        if not isinstance(damage_components, list) or not damage_components:
+            log_warning(
+                "Damage components must be a non-empty list",
+                {"damage_components": damage_components, "actor": actor.name},
+            )
+            return 0
+        if not isinstance(extra_variables, dict):
+            log_warning(
+                "Extra variables must be a dictionary",
+                {"extra_variables": extra_variables, "actor": actor.name},
+            )
+            extra_variables = {}
+        # Get the base character variables.
+        variables = actor.get_expression_variables()
+        # Add the extra variables for this action.
+        variables.update(extra_variables)
+        # Calculate the minimum damage by assuming all dice roll their minimum values.
+        return sum(
+            parse_expr_and_assume_min_roll(
+                substitute_variables(component.damage_roll, variables)
+            )
+            for component in damage_components
+        )
+
+    def _common_get_max_damage(
+        self,
+        actor: Any,
+        damage_components: list[DamageComponent],
+        extra_variables: dict[str, int] = {},
+    ) -> int:
+        """
+        Returns the maximum possible damage value for the ability.
+
+        Args:
+            actor: The character using the ability
+            damage_components: List of damage components to calculate from
+            extra_variables: Additional variables to include in the calculation
+
+        Returns:
+            int: Maximum total damage across all damage components
+        """
+        if not isinstance(damage_components, list) or not damage_components:
+            log_warning(
+                "Damage components must be a non-empty list",
+                {"damage_components": damage_components, "actor": actor.name},
+            )
+            return 0
+        if not isinstance(extra_variables, dict):
+            log_warning(
+                "Extra variables must be a dictionary",
+                {"extra_variables": extra_variables, "actor": actor.name},
+            )
+            extra_variables = {}
+        # Get the base character variables.
+        variables = actor.get_expression_variables()
+        # Add the extra variables for this action.
+        variables.update(extra_variables)
+        # Calculate the maximum damage by assuming all dice roll their maximum values.
+        return sum(
+            parse_expr_and_assume_max_roll(
+                substitute_variables(component.damage_roll, variables)
+            )
+            for component in damage_components
+        )
+
+    # ============================================================================
     # TARGETING SYSTEM METHODS
     # ============================================================================
 
@@ -339,12 +456,6 @@ class BaseAction:
             - Validation errors result in False (invalid target)
             - All targeting decisions are logged for debugging
 
-        Example:
-            ```python
-            # Check if a healing spell can target an ally
-            if healing_spell.is_valid_target(caster, wounded_ally):
-                healing_spell.execute(caster, wounded_ally)
-            ```
         """
         try:
             # Validate required objects have is_alive method
@@ -576,12 +687,6 @@ class BaseAction:
             - Empty target_restrictions are omitted from the output
             - This format can be used with from_dict methods for reconstruction
 
-        Example:
-            ```python
-            action_data = my_action.to_dict()
-            # Save to JSON, send over network, etc.
-            reconstructed = SomeAction.from_dict(action_data)
-            ```
         """
         data = {
             "class": self.__class__.__name__,

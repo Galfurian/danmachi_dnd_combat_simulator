@@ -25,21 +25,6 @@ class WeaponAttack(BaseAttack):
         - Lootable/tradeable weapons
         - Equipment-based combat systems
         - Weapon proficiency systems
-
-    Example:
-        ```python
-        longsword = WeaponAttack(
-            name="Longsword",
-            type=ActionType.ACTION,
-            description="A versatile martial weapon",
-            cooldown=0,
-            maximum_uses=-1,
-            hands_required=1,
-            attack_roll="1d20 + {STR} + {PROF}",
-            damage=[DamageComponent("slashing", "1d8 + {STR}")],
-            effect=None
-        )
-        ```
     """
 
     def __init__(
@@ -67,21 +52,6 @@ class WeaponAttack(BaseAttack):
             attack_roll: Attack roll expression with variables
             damage: List of damage components for the weapon
             effect: Optional effect applied on successful hit
-
-        Example:
-            ```python
-            greatsword = WeaponAttack(
-                name="Greatsword",
-                type=ActionType.ACTION,
-                description="A heavy two-handed sword",
-                cooldown=0,
-                maximum_uses=-1,
-                hands_required=2,
-                attack_roll="1d20 + {STR} + {PROF}",
-                damage=[DamageComponent("slashing", "2d6 + {STR}")],
-                effect=None
-            )
-            ```
         """
         super().__init__(
             name,
@@ -108,12 +78,6 @@ class WeaponAttack(BaseAttack):
 
         Returns:
             WeaponAttack: Fully initialized weapon attack instance
-
-        Example:
-            ```python
-            weapon_data = load_weapon_from_json("longsword.json")
-            longsword = WeaponAttack.from_dict(weapon_data)
-            ```
         """
         return WeaponAttack(
             name=data["name"],
