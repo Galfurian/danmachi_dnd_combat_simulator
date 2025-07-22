@@ -23,6 +23,7 @@ from character.character_inventory import CharacterInventory
 from character.character_actions import CharacterActions
 from character.character_serialization import CharacterSerialization
 from character.character_display import CharacterDisplay
+from character.character_concentration import CharacterConcentration
 from items.armor import Armor
 from items.weapon import Weapon
 
@@ -81,8 +82,6 @@ class Character:
         }
         # Manages active effects on the character.
         self.effect_manager: EffectManager = EffectManager(self)
-        # Passive effects that are always active (like boss phase triggers)
-        self.passive_effects: list[Effect] = []
         
         # Initialize stats module for calculated properties
         self.stats_module = CharacterStats(self)
@@ -94,6 +93,8 @@ class Character:
         self.serialization_module = CharacterSerialization(self)
         # Initialize display module for UI and formatting
         self.display_module = CharacterDisplay(self)
+        # Initialize concentration module for spell concentration management
+        self.concentration_module = CharacterConcentration(self)
         
         # Keep track of abilitiies cooldown.
         self.cooldowns: dict[str, int] = {}
@@ -177,6 +178,19 @@ class Character:
         """Calculate the maximum number of concentration effects this character can maintain."""
         return self.stats_module.CONCENTRATION_LIMIT
 
+    @property 
+    def passive_effects(self) -> list[Effect]:
+        """Get the list of passive effects from the effect manager."""
+        return self.effect_manager.passive_effects
+
+    def add_passive_effect(self, effect: Effect) -> bool:
+        """Add a passive effect that is always active (like boss phase triggers)."""
+        return self.effect_manager.add_passive_effect(effect)
+
+    def remove_passive_effect(self, effect: Effect) -> bool:
+        """Remove a passive effect."""
+        return self.effect_manager.remove_passive_effect(effect)
+
     def reset_turn_flags(self) -> None:
         """Resets the turn flags for the character."""
         return self.actions_module.reset_turn_flags()
@@ -242,37 +256,7 @@ class Character:
         Returns:
             list[str]: Messages for effects that were triggered this check.
         """
-        activation_messages = []
-
-        for effect in self.passive_effects:
-            # Check for OnLowHealthTrigger specifically
-            if effect.__class__.__name__ == "OnLowHealthTrigger":
-                # Import here to avoid circular imports
-                from effects.effect import OnLowHealthTrigger
-
-                trigger_effect: OnLowHealthTrigger = effect  # type: ignore
-
-                if trigger_effect.should_trigger(self):
-                    # Activate the trigger
-                    damage_bonuses, trigger_effects_with_levels = (
-                        trigger_effect.activate(self)
-                    )
-
-                    # Apply triggered effects to self
-                    for triggered_effect, mind_level in trigger_effects_with_levels:
-                        if triggered_effect.can_apply(self, self):
-                            self.effect_manager.add_effect(
-                                self, triggered_effect, mind_level
-                            )
-
-                    # Create activation message
-                    from core.constants import get_effect_color
-
-                    activation_messages.append(
-                        f"🔥 {self.name}'s [bold][{get_effect_color(effect)}]{effect.name}[/][/] activates!"
-                    )
-
-        return activation_messages
+        return self.effect_manager.check_passive_triggers()
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
         """

@@ -6,7 +6,6 @@ from core.utils import cprint
 from core.error_handling import log_error, log_warning, log_critical
 from effects.effect import *
 from effects.modifier import Modifier
-from effects.concentration_manager import ConcentrationManager
 
 
 class ActiveEffect:
@@ -25,7 +24,8 @@ class EffectManager:
         self.owner: Any = owner
         self.active_effects: list[ActiveEffect] = []
         self.active_modifiers: dict[BonusType, ActiveEffect] = {}
-        self.concentration_manager: ConcentrationManager = ConcentrationManager(owner)
+        # Passive effects that are always active (like boss phase triggers)
+        self.passive_effects: list[Effect] = []
 
     # === Effect Management ===
 
@@ -62,7 +62,7 @@ class EffectManager:
             # Check concentration limit if this effect requires concentration
             if getattr(effect, "requires_concentration", False) and spell:
                 # The concentration is managed by the SOURCE (caster), not the target
-                if not source.effect_manager.concentration_manager.add_concentration_effect(
+                if not source.concentration_module.add_concentration_effect(
                     spell, self.owner, new_effect, mind_level
                 ):
                     return False  # Could not add due to concentration limits
@@ -148,31 +148,63 @@ class EffectManager:
             )
             return False
 
-    # === Concentration Management Delegation ===
+    # === Passive Effect Management ===
 
-    def can_add_concentration_effect(self) -> bool:
-        """Check if we can add another concentration effect without exceeding the limit."""
-        return self.concentration_manager.can_add_concentration_spell()
+    def add_passive_effect(self, effect: Effect) -> bool:
+        """Add a passive effect that is always active (like boss phase triggers)."""
+        if effect not in self.passive_effects:
+            self.passive_effects.append(effect)
+            return True
+        return False
 
-    def break_concentration(self, effect: Optional[Effect] = None) -> bool:
-        """Break concentration on a specific effect or all concentration effects.
+    def remove_passive_effect(self, effect: Effect) -> bool:
+        """Remove a passive effect."""
+        if effect in self.passive_effects:
+            self.passive_effects.remove(effect)
+            return True
+        return False
 
-        Args:
-            effect: Specific effect to break concentration on. If None, breaks all.
+    def check_passive_triggers(self) -> list[str]:
+        """
+        Checks all passive effects for trigger conditions and activates them.
+        Returns a list of activation messages for triggered effects.
 
         Returns:
-            bool: True if any concentration was broken
+            list[str]: Messages for effects that were triggered this check.
         """
-        if effect:
-            # Try to find the spell that created this effect and break concentration on it
-            spell_name = getattr(effect, "_from_spell", None)
-            if spell_name:
-                return self.concentration_manager.break_concentration(spell_name.name)
-            return False
-        else:
-            # Break all concentration
-            return self.concentration_manager.break_concentration()
-        return False
+        activation_messages = []
+
+        for effect in self.passive_effects:
+            # Check for OnLowHealthTrigger specifically
+            if effect.__class__.__name__ == "OnLowHealthTrigger":
+                # Import here to avoid circular imports
+                from effects.effect import OnLowHealthTrigger
+
+                trigger_effect: OnLowHealthTrigger = effect  # type: ignore
+
+                if trigger_effect.should_trigger(self.owner):
+                    # Activate the trigger
+                    damage_bonuses, trigger_effects_with_levels = (
+                        trigger_effect.activate(self.owner)
+                    )
+
+                    # Apply triggered effects to self
+                    for triggered_effect, mind_level in trigger_effects_with_levels:
+                        if triggered_effect.can_apply(self.owner, self.owner):
+                            self.add_effect(
+                                self.owner, triggered_effect, mind_level
+                            )
+
+                    # Create activation message
+                    from core.constants import get_effect_color
+
+                    activation_messages.append(
+                        f"🔥 {self.owner.name}'s [bold][{get_effect_color(effect)}]{effect.name}[/][/] activates!"
+                    )
+
+        return activation_messages
+
+    # === Regular Effect Management ===
 
     def get_effect_remaining_duration(self, effect: Effect) -> int:
         for ae in self.active_effects:

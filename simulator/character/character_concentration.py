@@ -1,6 +1,8 @@
 """
-Concentration Manager for D&D 5e-style concentration tracking.
-Tracks concentration by spell (not by individual effect instances).
+Character concentration management module.
+
+This module handles concentration tracking for D&D 5e-style spellcasting,
+tracking concentration by spell (not by individual effect instances).
 """
 
 from typing import Any, Dict, List, Optional
@@ -36,18 +38,19 @@ class ConcentrationSpell:
         return len(self.active_effects) == 0
 
 
-class ConcentrationManager:
+class CharacterConcentration:
     """Manages concentration spells for a character (typically a spellcaster)."""
 
-    def __init__(self, owner: Any):
-        self.owner: Any = owner
+    def __init__(self, character_ref):
+        """Initialize with reference to parent Character object."""
+        self._character = character_ref
         self.concentration_spells: Dict[str, ConcentrationSpell] = (
             {}
         )  # spell_name -> ConcentrationSpell
 
     def can_add_concentration_spell(self) -> bool:
         """Check if we can add another concentration spell without exceeding the limit."""
-        return len(self.concentration_spells) < self.owner.CONCENTRATION_LIMIT
+        return len(self.concentration_spells) < self._character.CONCENTRATION_LIMIT
 
     def add_concentration_effect(
         self, spell: Spell, target: Any, active_effect: Any, mind_level: int
@@ -73,7 +76,7 @@ class ConcentrationManager:
             self.drop_oldest_concentration_spell()
 
         # Create new concentration spell entry
-        conc_spell = ConcentrationSpell(spell, self.owner, mind_level)
+        conc_spell = ConcentrationSpell(spell, self._character, mind_level)
         conc_spell.add_target(target, active_effect)
         self.concentration_spells[spell_key] = conc_spell
 

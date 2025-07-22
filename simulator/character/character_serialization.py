@@ -195,7 +195,7 @@ class CharacterSerialization:
         for effect_data in data.get("passive_effects", []):
             try:
                 effect = Effect.from_dict(effect_data)
-                char.passive_effects.append(effect)
+                char.add_passive_effect(effect)
             except Exception as e:
                 log_warning(
                     f"Invalid passive effect for character {data['name']}: {e}",

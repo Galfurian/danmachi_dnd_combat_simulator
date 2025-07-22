@@ -401,7 +401,7 @@ class Spell(BaseAction):
             ```python
             # Concentration spell effect
             if self.requires_concentration:
-                actor.effect_manager.break_concentration(actor)  # Break existing
+                actor.concentration_module.break_concentration()  # Break existing
                 
             success = self.apply_effect(actor, target, buff_effect, mind_level)
             # Effect is now marked as requiring concentration

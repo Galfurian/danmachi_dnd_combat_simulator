@@ -108,11 +108,11 @@ class CharacterDisplay:
         # Show concentration info only for the player with magenta/purple color
         if (
             self._character.type == CharacterType.PLAYER
-            and self._character.effect_manager.concentration_manager.get_concentration_count()
+            and self._character.concentration_module.get_concentration_count()
             > 0
         ):
             concentration_count = (
-                self._character.effect_manager.concentration_manager.get_concentration_count()
+                self._character.concentration_module.get_concentration_count()
             )
             concentration_limit = self._character.CONCENTRATION_LIMIT
             conc_bar = (

@@ -141,7 +141,7 @@ class SpellBuff(Spell):
 
         # Handle concentration requirements
         if self.requires_concentration:
-            actor.effect_manager.break_concentration(actor)
+            actor.concentration_module.break_concentration()
 
         # Deduct mind cost
         actor.mind -= required_mind
