@@ -1,10 +1,4 @@
-"""
-Base ability class for all special character abilities.
-
-This module provides the abstract BaseAbility class that serves as the foundation
-for all ability types including offensive, healing, buff, utility, and
-DanMachi-specific development abilities.
-"""
+"""Base ability class for all special character abilities."""
 
 from abc import ABC, abstractmethod
 from typing import Any
@@ -39,14 +33,7 @@ from effects.effect import Effect
 
 
 class BaseAbility(BaseAction, ABC):
-    """
-    Abstract base class for all character abilities and special powers.
-
-    BaseAbility represents special powers, racial abilities, monster attacks, and
-    other unique actions that don't fall into standard weapon attacks or spells.
-    These abilities typically have limited uses per encounter or cooldown periods
-    rather than consuming spell slots or mind points.
-    """
+    """Abstract base class for all character abilities and special powers."""
 
     def __init__(
         self,
@@ -60,9 +47,8 @@ class BaseAbility(BaseAction, ABC):
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new BaseAbility.
-
+        """Initialize a new BaseAbility.
+        
         Args:
             name: Display name of the ability
             type: Action type (STANDARD, BONUS, REACTION, etc.)
@@ -73,7 +59,7 @@ class BaseAbility(BaseAction, ABC):
             effect: Optional effect applied to targets on use
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If name is empty or type/category are invalid
         """
@@ -116,29 +102,19 @@ class BaseAbility(BaseAction, ABC):
     # ============================================================================
 
     def is_single_target(self) -> bool:
-        """
-        Check if the ability targets a single entity.
-
-        Determines targeting mode based on the target_expr property. Empty or
-        whitespace-only expressions indicate single-target abilities, while
-        any meaningful expression indicates multi-target abilities.
-
+        """Check if the ability targets a single entity.
+        
         Returns:
             bool: True if ability targets one entity, False for multi-target
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
     def target_count(self, actor: Any) -> int:
-        """
-        Calculate the number of targets this ability can affect.
-
-        Evaluates the target_expr with the actor's current variables to determine
-        the actual number of targets. This supports dynamic scaling based on
-        character level, ability scores, or other factors.
-
+        """Calculate the number of targets this ability can affect.
+        
         Args:
-            actor: The character using the ability (must have expression variables)
-
+            actor: The character using the ability
+            
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions)
         """
@@ -153,16 +129,12 @@ class BaseAbility(BaseAction, ABC):
 
     @abstractmethod
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this ability against a target.
-
-        This method must be implemented by each concrete ability subclass to
-        handle their specific execution logic (damage dealing, healing, buffing, etc.).
-
+        """Execute this ability against a target.
+        
         Args:
             actor: The character using the ability
             target: The target character
-
+            
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
@@ -173,9 +145,8 @@ class BaseAbility(BaseAction, ABC):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert this ability to a dictionary representation.
-
+        """Convert this ability to a dictionary representation.
+        
         Returns:
             dict[str, Any]: Dictionary representation of the ability
         """
@@ -185,12 +156,11 @@ class BaseAbility(BaseAction, ABC):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
-        """
-        Create an ability instance from dictionary data.
-
+        """Create an ability instance from dictionary data.
+        
         Args:
             data: Dictionary containing ability configuration data
-
+            
         Returns:
             Any | None: Ability instance or None if creation fails
         """

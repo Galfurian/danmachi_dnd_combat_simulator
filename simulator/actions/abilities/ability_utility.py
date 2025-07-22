@@ -1,9 +1,4 @@
-"""
-Utility abilities that provide non-combat benefits.
-
-This module contains the UtilityAbility class for non-combat special abilities
-like Detect Magic, Misty Step, and other utility powers.
-"""
+"""Utility abilities that provide non-combat benefits."""
 
 from typing import Any
 
@@ -15,13 +10,7 @@ from effects.effect import Effect
 
 
 class UtilityAbility(BaseAbility):
-    """
-    Utility abilities that provide non-combat benefits.
-
-    UtilityAbility represents non-combat special powers like Detect Magic,
-    Misty Step, Investigation abilities, and other utility functions. These
-    abilities typically don't deal damage or heal but provide other benefits.
-    """
+    """Utility abilities that provide non-combat benefits."""
 
     def __init__(
         self,
@@ -35,9 +24,8 @@ class UtilityAbility(BaseAbility):
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new UtilityAbility.
-
+        """Initialize a new UtilityAbility.
+        
         Args:
             name: Display name of the ability
             type: Action type (STANDARD, BONUS, REACTION, etc.)
@@ -48,7 +36,7 @@ class UtilityAbility(BaseAbility):
             effect: Optional effect applied to targets on use
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If name is empty or required parameters are invalid
         """
@@ -76,16 +64,12 @@ class UtilityAbility(BaseAbility):
             raise
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this utility ability on a target.
-
-        This method handles the complete utility ability activation sequence
-        focusing on the utility function and optional effect application.
-
+        """Execute this utility ability on a target.
+        
         Args:
-            actor: The character using the ability (must have combat methods)
-            target: The character/object being affected (may be actor for self-targeted utilities)
-
+            actor: The character using the ability
+            target: The character/object being affected
+            
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
@@ -137,13 +121,12 @@ class UtilityAbility(BaseAbility):
         return True
 
     def _execute_utility_function(self, actor: Any, target: Any) -> str:
-        """
-        Execute the specific utility function for this ability.
-
+        """Execute the specific utility function for this ability.
+        
         Args:
             actor: The character using the ability
             target: The target of the ability
-
+            
         Returns:
             str: Description of what the utility function accomplished
         """
@@ -166,52 +149,48 @@ class UtilityAbility(BaseAbility):
             return f"Executed {self.utility_function}"
 
     def _detect_magic(self, actor: Any, target: Any) -> str:
-        """
-        Execute detect magic utility function.
-
+        """Execute detect magic utility function.
+        
         Args:
             actor: The character using the ability
             target: The target of the ability
-
+            
         Returns:
             str: Description of magical auras detected
         """
         return "Detected magical auras in the area"
 
     def _teleport(self, actor: Any, target: Any) -> str:
-        """
-        Execute teleportation utility function.
-
+        """Execute teleportation utility function.
+        
         Args:
             actor: The character using the ability
             target: The target of the ability
-
+            
         Returns:
             str: Description of teleportation result
         """
         return "Teleported to a nearby location"
 
     def _investigate(self, actor: Any, target: Any) -> str:
-        """
-        Execute investigation utility function.
-
+        """Execute investigation utility function.
+        
         Args:
             actor: The character using the ability
             target: The target of the ability
-
+            
         Returns:
             str: Description of investigation results
         """
         return "Gained insight about the surroundings"
 
     def _identify(self, actor: Any, target: Any) -> str:
-        """
-        Execute identify utility function.
-
+        """Execute identify utility function.
+        
         Args:
             actor: The character using the ability
             target: The target of the ability
-
+            
         Returns:
             str: Description of identified properties
         """
@@ -222,9 +201,8 @@ class UtilityAbility(BaseAbility):
     # ============================================================================
 
     def get_utility_description(self) -> str:
-        """
-        Get a description of what this utility ability does.
-
+        """Get a description of what this utility ability does.
+        
         Returns:
             str: Description of the utility function
         """
@@ -236,9 +214,8 @@ class UtilityAbility(BaseAbility):
             return "General utility ability"
 
     def is_self_targeted(self) -> bool:
-        """
-        Check if this utility ability typically targets the user.
-
+        """Check if this utility ability typically targets the user.
+        
         Returns:
             bool: True if commonly self-targeted, False otherwise
         """

@@ -1,9 +1,4 @@
-"""
-Offensive spell attack implementation.
-
-This module contains the SpellAttack class for damage-dealing magical spells
-that require attack rolls and can apply additional effects on successful hits.
-"""
+"""Offensive spell attack implementation."""
 
 from logging import debug
 from typing import Any
@@ -33,61 +28,7 @@ from effects.effect import Effect
 
 
 class SpellAttack(Spell):
-    """
-    Offensive spell that deals damage through magical attacks.
-
-    SpellAttack represents damage-dealing spells that require spell attack rolls
-    against the target's Armor Class (AC). These spells combine the targeting
-    mechanics of weapon attacks with the level scaling and mind cost system
-    of magical spells.
-
-    Core Mechanics:
-        - Spell Attack Rolls: Uses caster's spell attack bonus vs target AC
-        - Critical Hits: Natural 20 always hits and triggers critical damage
-        - Fumbles: Natural 1 always misses regardless of bonuses
-        - Level Scaling: Damage expressions can use MIND variable for scaling
-        - Optional Effects: Can apply additional effects on successful hits
-
-    Damage System:
-        Each spell has a list of DamageComponent objects that define:
-        - Damage type (fire, cold, force, etc.)
-        - Damage expression with level scaling support
-        - Critical hit behavior
-
-    Attack Resolution:
-        1. Check mind point availability and cooldowns
-        2. Roll 1d20 + spell attack bonus + modifiers
-        3. Compare against target's AC (nat 20 always hits)
-        4. On hit: Roll damage components and apply effects
-        5. Display detailed combat feedback
-
-    Level Scaling Examples:
-        - "3d6": Static damage regardless of spell level
-        - "2d6 + MIND": Adds spell level to damage
-        - "MIND d6": Number of dice scales with spell level
-        - "3d6 + MIND * 2": Damage increases by 2 per level
-
-    Multi-Target Support:
-        SpellAttack supports multi-target spells through target_expr:
-        - Single target: target_expr = "" (default)
-        - Multiple targets: target_expr = "3" or "MIND"
-        - Each target gets separate attack rolls and damage
-
-    Effect Integration:
-        Optional effects can be applied on successful hits:
-        - Damage over time effects
-        - Status conditions (paralyzed, stunned, etc.)
-        - Temporary debuffs or ongoing damage
-
-    Attributes:
-        damage: List of damage components defining damage dice and types
-        effect: Optional effect applied on successful spell attacks
-
-    Note:
-        SpellAttack inherits all spell mechanics (mind costs, concentration,
-        targeting) from the base Spell class while adding attack roll logic
-        and damage application specific to offensive magic.
-    """
+    """Offensive spell that deals damage through magical attacks."""
 
     def __init__(
         self,
@@ -104,9 +45,8 @@ class SpellAttack(Spell):
         requires_concentration: bool = False,
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new SpellAttack.
-
+        """Initialize a new SpellAttack.
+        
         Args:
             name: Display name of the spell
             type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
@@ -120,7 +60,7 @@ class SpellAttack(Spell):
             target_expr: Expression for multi-target spells
             requires_concentration: Whether spell needs ongoing mental focus
             target_restrictions: Override default targeting restrictions
-
+            
         Raises:
             ValueError: If damage list is empty or contains invalid components
         """
@@ -179,14 +119,13 @@ class SpellAttack(Spell):
     # ============================================================================
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """
-        Execute an offensive spell attack with complete combat resolution.
-
+        """Execute an offensive spell attack with complete combat resolution.
+        
         Args:
-            actor: The character casting the spell (must have mind points)
+            actor: The character casting the spell
             target: The character being attacked
             mind_level: The spell level to cast at (affects cost and damage)
-
+            
         Returns:
             bool: True if spell was successfully cast (regardless of hit/miss)
         """
@@ -275,39 +214,36 @@ class SpellAttack(Spell):
     # ============================================================================
 
     def get_damage_expr(self, actor: Any, mind_level: int = 1) -> str:
-        """
-        Get damage expression with variables substituted for display.
-
+        """Get damage expression with variables substituted for display.
+        
         Args:
             actor: The character casting the spell
             mind_level: The spell level to use for MIND variable substitution
-
+            
         Returns:
             str: Complete damage expression with variables substituted
         """
         return super()._common_get_damage_expr(actor, self.damage, {"MIND": mind_level})
 
     def get_min_damage(self, actor: Any, mind_level: int = 1) -> int:
-        """
-        Calculate the minimum possible damage for the spell.
-
+        """Calculate the minimum possible damage for the spell.
+        
         Args:
             actor: The character casting the spell
             mind_level: The spell level to use for scaling calculations
-
+            
         Returns:
             int: Minimum possible damage (sum of all components' minimums)
         """
         return super()._common_get_min_damage(actor, self.damage, {"MIND": mind_level})
 
     def get_max_damage(self, actor: Any, mind_level: int = 1) -> int:
-        """
-        Calculate the maximum possible damage for the spell.
-
+        """Calculate the maximum possible damage for the spell.
+        
         Args:
             actor: The character casting the spell
             mind_level: The spell level to use for scaling calculations
-
+            
         Returns:
             int: Maximum possible damage (sum of all components' maximums)
         """

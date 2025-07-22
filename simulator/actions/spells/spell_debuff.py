@@ -1,9 +1,4 @@
-"""
-Detrimental spell debuff implementation.
-
-This module contains the SpellDebuff class for weakening spells that apply
-harmful effects to enemies to reduce their combat effectiveness.
-"""
+"""Detrimental spell debuff implementation."""
 
 from logging import debug
 from typing import Any
@@ -29,23 +24,7 @@ from combat.damage import DamageComponent
 
 
 class SpellDebuff(Spell):
-    """
-    Detrimental spell that weakens enemies with negative effects.
-
-    SpellDebuff represents magical debuffing spells that apply harmful effects
-    to enemies to reduce their combat effectiveness. Unlike offensive damage
-    spells, debuff spells focus on applying persistent penalties, conditions,
-    or restrictions that hinder enemy capabilities over time.
-
-    Attributes:
-        effect: Required detrimental effect that defines the penalty/condition
-
-    Note:
-        SpellDebuff inherits all spell mechanics (mind costs, concentration,
-        targeting) from the base Spell class while adding debuff-specific
-        logic that always succeeds initially but may allow saves to resist
-        or reduce the effect's impact and duration.
-    """
+    """Detrimental spell that weakens enemies with negative effects."""
 
     def __init__(
         self,
@@ -61,9 +40,8 @@ class SpellDebuff(Spell):
         requires_concentration: bool = False,
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new SpellDebuff.
-
+        """Initialize a new SpellDebuff.
+        
         Args:
             name: Display name of the spell
             type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
@@ -76,7 +54,7 @@ class SpellDebuff(Spell):
             target_expr: Expression determining number of targets
             requires_concentration: Whether spell requires concentration
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If effect is None or invalid
         """
@@ -124,14 +102,13 @@ class SpellDebuff(Spell):
     # ============================================================================
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """
-        Execute a debuff spell with automatic application and optional saves.
-
+        """Execute a debuff spell with automatic application and optional saves.
+        
         Args:
             actor: The character casting the spell
             target: The character targeted by the spell
             mind_level: The spell level to cast at (affects cost and power)
-
+            
         Returns:
             bool: True if spell was cast successfully, False on failure
         """
@@ -181,13 +158,12 @@ class SpellDebuff(Spell):
     def get_modifier_expressions(
         self, actor: Any, mind_level: int | None = 1
     ) -> dict[BonusType, str]:
-        """
-        Get modifier expressions with variables substituted for display.
-
+        """Get modifier expressions with variables substituted for display.
+        
         Args:
             actor: The character casting the spell
             mind_level: The spell level to use for MIND variable substitution
-
+            
         Returns:
             dict[BonusType, str]: Dictionary mapping bonus types to their expressions
         """

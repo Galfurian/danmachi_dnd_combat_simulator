@@ -1,9 +1,4 @@
-"""
-Buff abilities that provide beneficial effects to allies.
-
-This module contains the BuffAbility class for beneficial special abilities
-like Bardic Inspiration, Guidance, and other enhancement powers.
-"""
+"""Buff abilities that provide beneficial effects to allies."""
 
 from typing import Any
 
@@ -20,13 +15,7 @@ from effects.effect import Effect
 
 
 class BuffAbility(BaseAbility):
-    """
-    Buff abilities that provide beneficial effects to targets.
-
-    BuffAbility represents beneficial special powers like Bardic Inspiration,
-    Guidance, Bless, and other enhancement abilities. These abilities apply
-    positive effects to allies without dealing damage.
-    """
+    """Buff abilities that provide beneficial effects to targets."""
 
     def __init__(
         self,
@@ -39,9 +28,8 @@ class BuffAbility(BaseAbility):
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new BuffAbility.
-
+        """Initialize a new BuffAbility.
+        
         Args:
             name: Display name of the ability
             type: Action type (STANDARD, BONUS, REACTION, etc.)
@@ -51,7 +39,7 @@ class BuffAbility(BaseAbility):
             effect: Effect to apply to targets (required for buff abilities)
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If name is empty, effect is None, or other parameters are invalid
         """
@@ -81,16 +69,12 @@ class BuffAbility(BaseAbility):
             raise
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this buff ability on a target.
-
-        This method handles the complete buff ability activation sequence
-        focusing on effect application since buffs don't deal damage.
-
+        """Execute this buff ability on a target.
+        
         Args:
-            actor: The character using the ability (must have combat methods)
-            target: The character being buffed (must have combat methods)
-
+            actor: The character using the ability
+            target: The character being buffed
+            
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
@@ -152,9 +136,8 @@ class BuffAbility(BaseAbility):
     # ============================================================================
 
     def get_effect_description(self) -> str:
-        """
-        Get a description of the effect this ability provides.
-
+        """Get a description of the effect this ability provides.
+        
         Returns:
             str: Description of the buff effect
         """

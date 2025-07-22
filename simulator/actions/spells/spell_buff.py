@@ -1,9 +1,4 @@
-"""
-Beneficial spell buff implementation.
-
-This module contains the SpellBuff class for enhancement spells that apply
-positive effects to allies and the caster.
-"""
+"""Beneficial spell buff implementation."""
 
 from logging import debug
 from typing import Any
@@ -29,23 +24,7 @@ from combat.damage import DamageComponent
 
 
 class SpellBuff(Spell):
-    """
-    Beneficial spell that enhances targets with positive effects.
-
-    SpellBuff represents magical enhancement spells that apply beneficial effects
-    to allies or the caster. These spells automatically succeed without requiring
-    attack rolls, making them reliable support options for improving combat
-    effectiveness and providing tactical advantages.
-
-    Attributes:
-        effect: Required beneficial effect that defines the enhancement
-
-    Note:
-        SpellBuff inherits all spell mechanics (mind costs, concentration,
-        targeting) from the base Spell class while adding buff-specific
-        logic that always succeeds and focuses on positive enhancements.
-        The effect parameter is required as buffs without effects serve no purpose.
-    """
+    """Beneficial spell that enhances targets with positive effects."""
 
     def __init__(
         self,
@@ -61,9 +40,8 @@ class SpellBuff(Spell):
         requires_concentration: bool = False,
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new SpellBuff.
-
+        """Initialize a new SpellBuff.
+        
         Args:
             name: Display name of the spell
             type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
@@ -76,7 +54,7 @@ class SpellBuff(Spell):
             target_expr: Expression determining number of targets
             requires_concentration: Whether spell requires concentration
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If effect is None or invalid
         """
@@ -122,14 +100,13 @@ class SpellBuff(Spell):
     # ============================================================================
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """
-        Execute a buff spell with automatic success and beneficial effects.
-
+        """Execute a buff spell with automatic success and beneficial effects.
+        
         Args:
             actor: The character casting the spell
             target: The character targeted by the spell
             mind_level: The spell level to cast at (affects cost and power)
-
+            
         Returns:
             bool: True if spell was cast successfully, False on failure
         """
@@ -170,13 +147,12 @@ class SpellBuff(Spell):
     def get_modifier_expressions(
         self, actor: Any, mind_level: int | None = 1
     ) -> dict[BonusType, str]:
-        """
-        Get modifier expressions with variables substituted for display.
-
+        """Get modifier expressions with variables substituted for display.
+        
         Args:
             actor: The character casting the spell
             mind_level: The spell level to use for MIND variable substitution
-
+            
         Returns:
             dict[BonusType, str]: Dictionary mapping bonus types to their expressions
         """

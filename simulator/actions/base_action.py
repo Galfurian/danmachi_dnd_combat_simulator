@@ -20,27 +20,7 @@ from effects.effect import *
 
 
 class BaseAction:
-    """
-    Base class for all character actions in the combat system.
-
-    This class provides the foundation for all actions that characters can perform,
-    including attacks, spells, abilities, and utility actions. It handles common
-    functionality like validation, targeting, and effect application.
-
-    Attributes:
-        name (str): The display name of the action
-        type (ActionType): The type of action (ATTACK, SPELL, ABILITY, etc.)
-        category (ActionCategory): The category for targeting logic (OFFENSIVE, HEALING, BUFF, etc.)
-        description (str): Human-readable description of the action
-        cooldown (int): Number of turns before action can be used again (0 = no cooldown)
-        maximum_uses (int): Max times action can be used (-1 = unlimited)
-        target_restrictions (list[str]): List of targeting restrictions ("SELF", "ALLY", "ENEMY", "ANY")
-
-    Note:
-        - This is an abstract base class. Subclasses must implement the execute() method.
-        - Targeting logic is automatically handled based on category unless target_restrictions are specified.
-        - All inputs are validated during initialization with helpful error messages.
-    """
+    """Base class for all character actions in the combat system."""
 
     def __init__(
         self,
@@ -78,16 +58,16 @@ class BaseAction:
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute the action against a target character.
-
+        
         Args:
-            actor (Any): The character performing the action (must have is_alive method)
-            target (Any): The character being targeted (must have is_alive method and effects_module)
-
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-
+            actor: The character performing the action
+            target: The character being targeted
+            
         Returns:
-            bool: True if action executed successfully, False otherwise.
+            bool: True if action executed successfully, False otherwise
+            
+        Raises:
+            NotImplementedError: This method must be implemented by subclasses
         """
         raise NotImplementedError("Subclasses must implement the execute method")
 
@@ -96,12 +76,12 @@ class BaseAction:
     # ===========================================================================
 
     def _validate_actor_and_target(self, actor: Any, target: Any) -> bool:
-        """
-        Validate that actor and target are valid characters with required methods.
-
+        """Validate that actor and target are valid characters with required methods.
+        
         Args:
             actor: The character using the ability
             target: The target character
+            
         Returns:
             bool: True if both actor and target are valid, False otherwise
         """
@@ -153,13 +133,12 @@ class BaseAction:
         return True
 
     def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
-        """
-        Get formatted display strings for actor and target.
-
+        """Get formatted display strings for actor and target.
+        
         Args:
             actor: The character using the ability
             target: The target character
-
+            
         Returns:
             tuple[str, str]: (actor_display, target_display)
         """
@@ -178,16 +157,14 @@ class BaseAction:
         effect: Effect | None,
         mind_level: int | None = None,
     ) -> bool:
-        """
-        Apply an effect to a target character.
-
+        """Apply an effect to a target character.
+        
         Args:
-            actor: The character applying the effect (must have is_alive method)
-            target: The character receiving the effect (must have is_alive and effects_module)
+            actor: The character applying the effect
+            target: The character receiving the effect
             effect: The effect to apply, or None to do nothing
-            mind_level: The mind cost level for scaling effects (0+ integer)
-            spell: The spell or action reference for concentration handling
-
+            mind_level: The mind cost level for scaling effects
+            
         Returns:
             bool: True if effect was successfully applied, False otherwise
         """
@@ -212,13 +189,12 @@ class BaseAction:
     # ============================================================================
 
     def _roll_bonus_damage(self, actor: Any, target: Any) -> tuple[int, list[str]]:
-        """
-        Roll any bonus damage from effects.
-
+        """Roll any bonus damage from effects.
+        
         Args:
             actor: The character using the ability
             target: The target character
-
+            
         Returns:
             tuple[int, list[str]]: (bonus_damage, damage_descriptions)
         """
@@ -228,23 +204,15 @@ class BaseAction:
     def _roll_attack_with_crit(
         self, actor, attack_bonus_expr: str, bonus_list: list[str]
     ) -> Tuple[int, str, int]:
-        """
-        Roll an attack with critical hit detection.
-
-        This method handles the complete attack roll process, including building
-        the dice expression, applying bonuses, and detecting critical hits.
-        It's primarily used by attack actions and spell attack actions.
-
+        """Roll an attack with critical hit detection.
+        
         Args:
-            actor: The character making the attack (must have get_expression_variables method)
-            attack_bonus_expr: Base attack bonus expression (e.g., "STR + PROF")
+            actor: The character making the attack
+            attack_bonus_expr: Base attack bonus expression
             bonus_list: Additional bonus expressions to add to the roll
-
+            
         Returns:
             Tuple[int, str, int]: (total_result, description, raw_d20_roll)
-            - total_result: Final attack roll total
-            - description: Human-readable description of the roll
-            - raw_d20_roll: The natural d20 result (for crit detection)
         """
         if not self._validate_actor_and_target(actor, None):
             return 1, "1D20: 1 (error)", 1
@@ -285,14 +253,13 @@ class BaseAction:
         damage_components: list[DamageComponent],
         extra_variables: dict[str, int] = {},
     ) -> str:
-        """
-        Returns the damage expression with variables substituted.
-
+        """Returns the damage expression with variables substituted.
+        
         Args:
-            actor: The character using the ability (must have expression variables)
+            actor: The character using the ability
             damage_components: List of damage components to build expression from
             extra_variables: Additional variables to include in the expression
-
+            
         Returns:
             str: Complete damage expression with variables replaced by values
         """
@@ -328,14 +295,13 @@ class BaseAction:
         damage_components: list[DamageComponent],
         extra_variables: dict[str, int] = {},
     ) -> int:
-        """
-        Returns the minimum possible damage value for the ability.
-
+        """Returns the minimum possible damage value for the ability.
+        
         Args:
             actor: The character using the ability
             damage_components: List of damage components to calculate from
             extra_variables: Additional variables to include in the calculation
-
+            
         Returns:
             int: Minimum total damage across all damage components
         """
@@ -373,14 +339,13 @@ class BaseAction:
         damage_components: list[DamageComponent],
         extra_variables: dict[str, int] = {},
     ) -> int:
-        """
-        Returns the maximum possible damage value for the ability.
-
+        """Returns the maximum possible damage value for the ability.
+        
         Args:
             actor: The character using the ability
             damage_components: List of damage components to calculate from
             extra_variables: Additional variables to include in the calculation
-
+            
         Returns:
             int: Maximum total damage across all damage components
         """
@@ -417,17 +382,12 @@ class BaseAction:
     # ============================================================================
 
     def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """
-        Check if the target is valid for this action.
-
-        This method determines whether an action can target a specific character
-        based on the action's category and any custom target restrictions.
-        It handles both automatic targeting rules and explicit restrictions.
-
+        """Check if the target is valid for this action.
+        
         Args:
-            actor: The character performing the action (must have is_alive method)
-            target: The potential target character (must have is_alive method)
-
+            actor: The character performing the action
+            target: The potential target character
+            
         Returns:
             bool: True if the target is valid for this action, False otherwise
         """
@@ -499,36 +459,27 @@ class BaseAction:
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the action to a dictionary representation for serialization.
-
-        This method creates a JSON-serializable dictionary containing all the
-        action's data. It's used for saving actions to files, network transmission,
-        or debugging purposes.
-
+        """Convert the action to a dictionary representation for serialization.
+        
         Returns:
             dict[str, Any]: Dictionary containing all action data
-
+            
         Raises:
-            NotImplementedError: If the subclass does not implement this method.
+            NotImplementedError: If the subclass does not implement this method
         """
         raise NotImplementedError("Subclasses must implement the to_dict")
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any":
-        """
-        Create an action instance from a dictionary representation.
-
-        This method is used to deserialize actions from saved data. It should
-        be implemented by subclasses to handle their specific data formats.
-
+        """Create an action instance from a dictionary representation.
+        
         Args:
             data: Dictionary containing action data
-
+            
         Returns:
-            Any: An instance of the action class represented by the data.
-
+            Any: An instance of the action class represented by the data
+            
         Raises:
-            NotImplementedError: If the subclass does not implement this method.
+            NotImplementedError: If the subclass does not implement this method
         """
         raise NotImplementedError("Subclasses must implement the from_dict method")

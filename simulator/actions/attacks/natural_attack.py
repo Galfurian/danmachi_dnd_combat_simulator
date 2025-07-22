@@ -7,26 +7,7 @@ from effects.effect import Effect
 
 
 class NaturalAttack(BaseAttack):
-    """
-    A natural/innate attack that is part of a creature's biology.
-
-    NaturalAttacks represent attacks using natural weapons like claws, fangs,
-    horns, or tail strikes. These attacks are inherent to the creature and
-    cannot be disarmed or unequipped.
-
-    Key Characteristics:
-        - Always available (cannot be disarmed)
-        - Never requires hands (hands_required always 0)
-        - Represents biological weapons (claws, bite, sting, etc.)
-        - Often tied to creature race or species
-        - May have unique biological effects (poison, disease, etc.)
-
-    Usage Context:
-        - Monster and creature attacks
-        - Racial natural weapons (tiefling claws, dragonborn breath)
-        - Supernatural creature abilities
-        - Unarmed combat variants
-    """
+    """A natural/innate attack that is part of a creature's biology."""
 
     def __init__(
         self,
@@ -39,12 +20,8 @@ class NaturalAttack(BaseAttack):
         damage: list[DamageComponent],
         effect: Effect | None = None,
     ):
-        """
-        Initialize a new NaturalAttack.
-
-        Note that hands_required is automatically set to 0 since natural
-        attacks never require hands to use.
-
+        """Initialize a new NaturalAttack.
+        
         Args:
             name: Natural weapon name (e.g., "Bite", "Claw", "Tail Slap")
             type: Action type (usually ACTION, sometimes BONUS_ACTION)

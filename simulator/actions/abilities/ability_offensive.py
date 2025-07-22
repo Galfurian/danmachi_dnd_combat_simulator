@@ -1,9 +1,4 @@
-"""
-Offensive abilities that deal damage to enemies.
-
-This module contains the OffensiveAbility class for damage-dealing special
-abilities like breath weapons, natural attacks, and combat techniques.
-"""
+"""Offensive abilities that deal damage to enemies."""
 
 from typing import Any
 
@@ -21,13 +16,7 @@ from effects.effect import Effect
 
 
 class OffensiveAbility(BaseAbility):
-    """
-    Offensive abilities that deal damage to targets.
-
-    OffensiveAbility represents damage-dealing special powers like dragon breath
-    weapons, natural attacks, monster abilities, and combat techniques. These
-    abilities deal direct damage without requiring attack rolls in most cases.
-    """
+    """Offensive abilities that deal damage to targets."""
 
     def __init__(
         self,
@@ -41,9 +30,8 @@ class OffensiveAbility(BaseAbility):
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new OffensiveAbility.
-
+        """Initialize a new OffensiveAbility.
+        
         Args:
             name: Display name of the ability
             type: Action type (STANDARD, BONUS, REACTION, etc.)
@@ -54,7 +42,7 @@ class OffensiveAbility(BaseAbility):
             effect: Optional effect applied to targets on successful hits
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
-
+            
         Raises:
             ValueError: If name is empty or required parameters are invalid
         """
@@ -90,16 +78,12 @@ class OffensiveAbility(BaseAbility):
             raise
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this offensive ability against a target.
-
-        This method handles the complete offensive ability activation sequence
-        from damage calculation through effect application.
-
+        """Execute this offensive ability against a target.
+        
         Args:
-            actor: The character using the ability (must have combat methods)
-            target: The character being damaged (must have combat methods)
-
+            actor: The character using the ability
+            target: The character being damaged
+            
         Returns:
             bool: True if ability was executed successfully, False on system errors
         """
@@ -179,36 +163,33 @@ class OffensiveAbility(BaseAbility):
     # ============================================================================
 
     def get_damage_expr(self, actor: Any) -> str:
-        """
-        Returns the damage expression with variables substituted.
-
+        """Returns the damage expression with variables substituted.
+        
         Args:
             actor: The character using the ability
-
+            
         Returns:
             str: Complete damage expression with variables replaced by values
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
     def get_min_damage(self, actor: Any) -> int:
-        """
-        Returns the minimum possible damage value for the ability.
-
+        """Returns the minimum possible damage value for the ability.
+        
         Args:
             actor: The character using the ability
-
+            
         Returns:
             int: Minimum total damage across all damage components
         """
         return super()._common_get_min_damage(actor, self.damage)
 
     def get_max_damage(self, actor: Any) -> int:
-        """
-        Returns the maximum possible damage value for the ability.
-
+        """Returns the maximum possible damage value for the ability.
+        
         Args:
             actor: The character using the ability
-
+            
         Returns:
             int: Maximum total damage across all damage components
         """

@@ -7,25 +7,7 @@ from effects.effect import Effect
 
 
 class WeaponAttack(BaseAttack):
-    """
-    A weapon-based attack that can be equipped and unequipped.
-
-    WeaponAttacks represent attacks made with physical weapons that characters
-    can wield, equip, and unequip. They inherit all functionality from BaseAttack
-    but are specifically designed for weapon-based combat systems.
-
-    Key Characteristics:
-        - Requires specific hands to wield (tracked via hands_required)
-        - Can be equipped/unequipped from character inventories
-        - Represents manufactured weapons (swords, axes, bows, etc.)
-        - May have weapon-specific properties and restrictions
-
-    Usage Context:
-        - Player character weapons
-        - Lootable/tradeable weapons
-        - Equipment-based combat systems
-        - Weapon proficiency systems
-    """
+    """A weapon-based attack that can be equipped and unequipped."""
 
     def __init__(
         self,
@@ -39,9 +21,8 @@ class WeaponAttack(BaseAttack):
         damage: list[DamageComponent],
         effect: Effect | None = None,
     ):
-        """
-        Initialize a new WeaponAttack.
-
+        """Initialize a new WeaponAttack.
+        
         Args:
             name: Weapon name (e.g., "Longsword", "Shortbow")
             type: Action type (usually ACTION or BONUS_ACTION)

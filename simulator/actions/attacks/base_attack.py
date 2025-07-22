@@ -36,43 +36,7 @@ from effects.effect import Effect
 
 
 class BaseAttack(BaseAction):
-    """
-    Base class for all attack actions in the combat system.
-
-    This class represents physical and weapon-based attacks that deal damage to targets.
-    It handles attack rolls, damage calculation, critical hits, fumbles, and optional
-    effects that trigger on successful hits.
-
-    Attack Flow:
-        1. Validate actor and target
-        2. Check cooldowns and restrictions
-        3. Roll attack vs target's AC
-        4. On hit: Roll damage, apply effects, handle triggers
-        5. Display results with appropriate verbosity
-
-    Attributes:
-        hands_required (int): Number of hands needed to perform this attack (0+)
-        attack_roll (str): Expression for attack bonus (e.g., "STR + PROF")
-        damage (list[DamageComponent]): List of damage components to roll
-        effect (Effect | None): Optional effect applied on successful hits
-
-    Critical Hit Logic:
-        - Natural 20 on d20 = critical hit (double base damage)
-        - Natural 1 on d20 = fumble (automatic miss)
-        - Crits always hit regardless of AC
-
-    Damage System:
-        - Base damage from weapon/attack
-        - Bonus damage from effects and modifiers
-        - Trigger effects (like smite spells) activate on hit
-        - All damage is calculated and applied together
-
-    Note:
-        - Inherits targeting logic from BaseAction (category = OFFENSIVE)
-        - Supports both weapon attacks and natural attacks
-        - Integrates with effect system for buffs/debuffs
-        - Handles verbose output for combat logging
-    """
+    """Base class for all attack actions in the combat system."""
 
     def __init__(
         self,
@@ -87,30 +51,22 @@ class BaseAttack(BaseAction):
         effect: Effect | None = None,
         target_restrictions: list[str] | None = None,
     ):
-        """
-        Initialize a new BaseAttack.
-
+        """Initialize a new BaseAttack.
+        
         Args:
             name: The display name of the attack
             type: The type of action (usually ActionType.ATTACK)
             description: Description of what the attack does
             cooldown: Turns to wait before reusing (0 = no cooldown)
             maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            hands_required: Number of hands needed (0 = no hands, 1 = one-handed, 2 = two-handed)
-            attack_roll: Attack bonus expression (e.g., "STR + PROF", "DEX + PROF + 2")
-            damage: List of damage components (base weapon damage, stat bonuses, etc.)
-            effect: Optional effect applied on successful hits (poison, bleeding, etc.)
+            hands_required: Number of hands needed
+            attack_roll: Attack bonus expression
+            damage: List of damage components
+            effect: Optional effect applied on successful hits
             target_restrictions: Override default offensive targeting if needed
-
+            
         Raises:
             ValueError: If name is empty or type/category are invalid
-
-        Note:
-            - Category is automatically set to OFFENSIVE
-            - Invalid hands_required values are corrected to 0 with warnings
-            - Invalid attack_roll expressions are corrected to empty string
-            - Damage list is validated to ensure all components are DamageComponent instances
-            - Invalid effects are set to None with warnings
         """
         try:
             super().__init__(
@@ -166,17 +122,12 @@ class BaseAttack(BaseAction):
     # ============================================================================
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """
-        Execute this attack against a target.
-
-        This method handles the complete attack sequence from validation through
-        damage application. It includes attack rolls, critical hit detection,
-        damage calculation, effect application, and result display.
-
+        """Execute this attack against a target.
+        
         Args:
-            actor: The character performing the attack (must have combat methods)
-            target: The character being attacked (must have AC and combat methods)
-
+            actor: The character performing the attack
+            target: The character being attacked
+            
         Returns:
             bool: True if attack was executed successfully, False on validation errors
         """
@@ -316,36 +267,33 @@ class BaseAttack(BaseAction):
     # ============================================================================
 
     def get_damage_expr(self, actor: Any) -> str:
-        """
-        Returns the damage expression with variables substituted.
-
+        """Returns the damage expression with variables substituted.
+        
         Args:
-            actor: The character performing the action (must have expression variables)
-
+            actor: The character performing the action
+            
         Returns:
             str: Complete damage expression with variables replaced by values
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
     def get_min_damage(self, actor: Any) -> int:
-        """
-        Returns the minimum possible damage value for the attack.
-
+        """Returns the minimum possible damage value for the attack.
+        
         Args:
             actor: The character performing the action
-
+            
         Returns:
             int: Minimum total damage across all damage components
         """
         return super()._common_get_min_damage(actor, self.damage)
 
     def get_max_damage(self, actor: Any) -> int:
-        """
-        Returns the maximum possible damage value for the attack.
-
+        """Returns the maximum possible damage value for the attack.
+        
         Args:
             actor: The character performing the action
-
+            
         Returns:
             int: Maximum total damage across all damage components
         """
@@ -356,9 +304,8 @@ class BaseAttack(BaseAction):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert attack to dictionary representation using AttackSerializer.
-
+        """Convert attack to dictionary representation using AttackSerializer.
+        
         Returns:
             dict[str, Any]: Dictionary representation of the attack
         """
@@ -368,12 +315,11 @@ class BaseAttack(BaseAction):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "BaseAttack":
-        """
-        Create BaseAttack from dictionary data using AttackDeserializer.
-
+        """Create BaseAttack from dictionary data using AttackDeserializer.
+        
         Args:
             data: Dictionary containing attack configuration data
-
+            
         Returns:
             BaseAttack: Configured attack instance
         """
