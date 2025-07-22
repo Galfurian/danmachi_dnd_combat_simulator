@@ -222,20 +222,3 @@ class OffensiveAbility(BaseAbility):
             int: Maximum total damage across all damage components
         """
         return super()._common_get_max_damage(actor, self.damage)
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert offensive ability to dictionary using AbilitySerializer."""
-        from actions.abilities.ability_serializer import AbilitySerializer
-
-        return AbilitySerializer.serialize(self)
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "OffensiveAbility | None":
-        """Create OffensiveAbility from dictionary using AbilityDeserializer."""
-        from actions.abilities.ability_serializer import AbilityDeserializer
-
-        return AbilityDeserializer.deserialize(data)

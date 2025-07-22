@@ -417,10 +417,12 @@ class BaseAttack(BaseAction):
     def to_dict(self) -> dict[str, Any]:
         """Convert attack to dictionary using AttackSerializer."""
         from actions.attacks.attack_serializer import AttackSerializer
+
         return AttackSerializer.serialize(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "BaseAttack":
         """Create BaseAttack from dictionary using AttackDeserializer."""
         from actions.attacks.attack_serializer import AttackDeserializer
+
         return AttackDeserializer._deserialize_base_attack(data)

@@ -130,6 +130,7 @@ class AttackSerializer:
     def _serialize_base_attack(attack: BaseAttack) -> dict[str, Any]:
         """Serialize BaseAttack to dictionary."""
         data = {
+            "class": attack.__class__.__name__,
             "name": attack.name,
             "type": attack.type.name,
             "description": attack.description,

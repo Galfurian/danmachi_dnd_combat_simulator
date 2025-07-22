@@ -205,31 +205,3 @@ class SpellBuff(Spell):
                     expressions[bonus_type] = str(value)
 
         return expressions
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the buff spell to a dictionary representation."""
-        data = super().to_dict()
-        # Add SpellBuff-specific properties
-        data["effect"] = self.effect.to_dict()
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "SpellBuff":
-        """Create a SpellBuff instance from a dictionary."""
-        return SpellBuff(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            level=data["level"],
-            mind_cost=data["mind_cost"],
-            effect=Effect.from_dict(data["effect"]),
-            target_expr=data.get("target_expr", ""),
-            requires_concentration=data.get("requires_concentration", False),
-            target_restrictions=data.get("target_restrictions", []),
-        )

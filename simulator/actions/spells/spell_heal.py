@@ -285,35 +285,3 @@ class SpellHeal(Spell):
         return parse_expr_and_assume_max_roll(
             substitute_variables(self.heal_roll, variables)
         )
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the healing spell to a dictionary representation."""
-        data = super().to_dict()
-        # Add SpellHeal-specific properties
-        data["heal_roll"] = self.heal_roll
-        # Include optional effect if present
-        if self.effect:
-            data["effect"] = self.effect.to_dict()
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "SpellHeal":
-        """Create a SpellHeal instance from a dictionary."""
-        return SpellHeal(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            level=data["level"],
-            mind_cost=data["mind_cost"],
-            heal_roll=data["heal_roll"],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            target_expr=data.get("target_expr", ""),
-            requires_concentration=data.get("requires_concentration", False),
-            target_restrictions=data.get("target_restrictions", []),
-        )

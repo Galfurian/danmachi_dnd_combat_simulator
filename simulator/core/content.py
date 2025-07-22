@@ -4,16 +4,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 from actions.base_action import BaseAction
-from actions.attacks import (
-    BaseAttack,
-)
 from actions.spells import (
-    Spell,
     SpellAttack,
     SpellBuff,
     SpellDebuff,
     SpellHeal,
-    from_dict_spell,
 )
 from core.utils import Singleton, cprint, crule
 from character.character_class import CharacterClass
@@ -127,7 +122,7 @@ class ContentRepository(metaclass=Singleton):
             )
 
             self.armors = load_json_file("armors.json", self._load_armors, "armors")
-            self.spells = load_json_file("spells.json", self._load_spells, "spells")
+            self.spells = load_json_file("spells.json", self._load_actions, "spells")
             self.actions = load_json_file("actions.json", self._load_actions, "actions")
 
             cprint("Content loaded successfully!\n")
@@ -246,27 +241,16 @@ class ContentRepository(metaclass=Singleton):
         """Load actions from the given data."""
         from actions.abilities.ability_serializer import AbilityDeserializer
         from actions.attacks.attack_serializer import AttackDeserializer
+        from actions.spells.spell_serializer import SpellDeserializer
 
         actions: dict[str, BaseAction] = {}
         for action_data in data:
             action = AttackDeserializer.deserialize(action_data)
             if not action:
-                action = from_dict_spell(action_data)
+                action = SpellDeserializer.deserialize(action_data)
                 if not action:
                     action = AbilityDeserializer.deserialize(action_data)
                     if not action:
                         raise ValueError(f"Invalid action data: {action_data}")
             actions[action.name] = action
         return actions
-
-    def _load_spells(self, data) -> dict[str, BaseAction]:
-        """Load spells from the given data."""
-        spells: dict[str, BaseAction] = {}
-        for spell_data in data:
-            spell = from_dict_spell(spell_data)
-            if not spell:
-                raise ValueError(f"Invalid spell data: {spell_data}")
-            if spell.name in spells:
-                raise ValueError(f"Duplicate spell name: {spell.name}")
-            spells[spell.name] = spell
-        return spells

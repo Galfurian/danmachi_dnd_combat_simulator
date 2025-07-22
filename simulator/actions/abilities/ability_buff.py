@@ -161,20 +161,3 @@ class BuffAbility(BaseAbility):
         if self.effect and hasattr(self.effect, "description"):
             return self.effect.description
         return f"Applies {self.effect.name}" if self.effect else "No effect"
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert buff ability to dictionary using AbilitySerializer."""
-        from actions.abilities.ability_serializer import AbilitySerializer
-
-        return AbilitySerializer.serialize(self)
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "BuffAbility | None":
-        """Create BuffAbility from dictionary using AbilityDeserializer."""
-        from actions.abilities.ability_serializer import AbilityDeserializer
-
-        return AbilityDeserializer.deserialize(data)

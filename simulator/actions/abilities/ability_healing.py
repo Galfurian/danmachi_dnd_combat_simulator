@@ -247,20 +247,3 @@ class HealingAbility(BaseAbility):
         variables = actor.get_expression_variables()
         substituted = substitute_variables(self.heal_roll, variables)
         return parse_expr_and_assume_max_roll(substituted)
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert healing ability to dictionary using AbilitySerializer."""
-        from actions.abilities.ability_serializer import AbilitySerializer
-
-        return AbilitySerializer.serialize(self)
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "HealingAbility | None":
-        """Create HealingAbility from dictionary using AbilityDeserializer."""
-        from actions.abilities.ability_serializer import AbilityDeserializer
-
-        return AbilityDeserializer.deserialize(data)

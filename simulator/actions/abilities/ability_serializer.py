@@ -159,6 +159,7 @@ class AbilitySerializer:
     def _serialize_base_ability(ability: BaseAbility) -> dict[str, Any]:
         """Serialize common BaseAbility fields."""
         data = {
+            "class": ability.__class__.__name__,
             "name": ability.name,
             "type": ability.type.name,
             "description": ability.description,

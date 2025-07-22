@@ -214,3 +214,20 @@ class BaseAbility(BaseAction, ABC):
             bool: True if ability was executed successfully, False on system errors
         """
         pass
+
+    # ============================================================================
+    # SERIALIZATION METHODS
+    # ============================================================================
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert this ability to a dictionary representation."""
+        from actions.abilities.ability_serializer import AbilitySerializer
+
+        return AbilitySerializer.serialize(self)
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Any | None":
+        """Create an ability instance from dictionary data."""
+        from actions.abilities.ability_serializer import AbilityDeserializer
+
+        return AbilityDeserializer.deserialize(data)

@@ -592,16 +592,27 @@ class BaseAction:
 
         Returns:
             dict[str, Any]: Dictionary containing all action data
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        data = {
-            "class": self.__class__.__name__,
-            "name": self.name,
-            "type": self.type.name,
-            "category": self.category.name,
-            "description": self.description,
-            "cooldown": self.cooldown,
-            "maximum_uses": self.maximum_uses,
-        }
-        if self.target_restrictions:
-            data["target_restrictions"] = self.target_restrictions
-        return data
+        raise NotImplementedError("Subclasses must implement the to_dict")
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Any":
+        """
+        Create an action instance from a dictionary representation.
+
+        This method is used to deserialize actions from saved data. It should
+        be implemented by subclasses to handle their specific data formats.
+
+        Args:
+            data: Dictionary containing action data
+
+        Returns:
+            Any: An instance of the action class represented by the data.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
+        """
+        raise NotImplementedError("Subclasses must implement the from_dict method")

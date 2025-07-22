@@ -66,9 +66,3 @@ class NaturalAttack(BaseAttack):
             damage,
             effect,
         )
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "NaturalAttack":
-        """Create NaturalAttack from dictionary using AttackDeserializer."""
-        from actions.attacks.attack_serializer import AttackDeserializer
-        return AttackDeserializer._deserialize_natural_attack(data)

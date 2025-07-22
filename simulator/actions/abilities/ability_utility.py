@@ -218,20 +218,3 @@ class UtilityAbility(BaseAbility):
         """
         self_targeted_functions = {"teleport", "investigate", "detect_magic", "stealth"}
         return self.utility_function in self_targeted_functions
-
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert utility ability to dictionary using AbilitySerializer."""
-        from actions.abilities.ability_serializer import AbilitySerializer
-
-        return AbilitySerializer.serialize(self)
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "UtilityAbility | None":
-        """Create UtilityAbility from dictionary using AbilityDeserializer."""
-        from actions.abilities.ability_serializer import AbilityDeserializer
-
-        return AbilityDeserializer.deserialize(data)

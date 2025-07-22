@@ -64,9 +64,3 @@ class WeaponAttack(BaseAttack):
             damage,
             effect,
         )
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "WeaponAttack":
-        """Create WeaponAttack from dictionary using AttackDeserializer."""
-        from actions.attacks.attack_serializer import AttackDeserializer
-        return AttackDeserializer._deserialize_weapon_attack(data)

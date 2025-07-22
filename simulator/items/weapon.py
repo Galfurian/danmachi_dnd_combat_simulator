@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from actions.attacks import BaseAttack, from_dict_attack
+from actions.attacks import BaseAttack
 
 
 class Weapon:
@@ -43,10 +43,12 @@ class Weapon:
         Returns:
             Weapon: An instance of Weapon.
         """
+        from actions.attacks.attack_serializer import AttackDeserializer
+
         # Load attacks using the dynamic attack factory
         attack_list = []
         for action_data in data.get("attacks", []):
-            attack = from_dict_attack(action_data)
+            attack = AttackDeserializer.deserialize(action_data)
             if attack is not None:
                 attack_list.append(attack)
 

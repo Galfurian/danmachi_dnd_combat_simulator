@@ -333,27 +333,14 @@ class Spell(BaseAction):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the spell to a dictionary representation.
+        """Transform this Spell into a dictionary representation."""
+        from actions.spells.spell_serializer import SpellSerializer
 
-        Creates a complete serializable representation of the spell including
-        all properties from the base class plus spell-specific data like
-        level, mind costs, concentration requirements, and targeting expressions.
+        return SpellSerializer.serialize(self)
 
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Any | None":
+        """Create a Spell instance from a dictionary."""
+        from actions.spells.spell_serializer import SpellDeserializer
 
-        Dictionary Structure:
-            - Base properties: name, type, description, cooldown, maximum_uses
-            - Spell properties: level, mind_cost, requires_concentration
-            - Optional: target_expr if multi-target
-        """
-        data = super().to_dict()
-        # Add specific fields for Spell
-        data["level"] = self.level
-        data["mind_cost"] = self.mind_cost
-        data["requires_concentration"] = self.requires_concentration
-        # Include the multi-target expression if it exists.
-        if self.target_expr:
-            data["target_expr"] = self.target_expr
-        return data
+        return SpellDeserializer.deserialize(data)
