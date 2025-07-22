@@ -1,8 +1,9 @@
 """
-Factory module for creating and serializing Effect instances.
+Factory pattern implementation for effect creation and serialization.
 
-This module contains all the from_dict and to_dict methods for Effect classes,
-centralized for better maintainability and separation of concerns.
+This module provides centralized factory classes for creating and serializing
+effect instances, maintaining clean separation of concerns by removing
+serialization logic from individual effect classes.
 """
 
 from typing import Any, Dict, Union, TYPE_CHECKING
@@ -23,44 +24,49 @@ if TYPE_CHECKING:
     )
 
 
-class EffectFactory:
-    """Factory class for creating Effect instances from dictionaries."""
+class EffectDeserializer:
+    """Factory for creating effect instances from dictionary data."""
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "Effect":
-        """Creates an Effect instance from a dictionary representation.
+    def deserialize(data: Dict[str, Any]) -> Any | None:
+        """
+        Deserialize effect data from dictionary to appropriate effect instance.
+
+        This method dynamically creates the correct effect subclass based on
+        the 'type' field in the data dictionary.
 
         Args:
-            data (Dict[str, Any]): The dictionary representation of the effect.
+            data: Dictionary containing effect configuration data.
 
         Returns:
-            Effect: An instance of the appropriate Effect subclass.
-
-        Raises:
-            ValueError: If the effect type is unknown.
+            Effect instance of the appropriate subclass, or None if not recognized.
         """
-        assert data is not None, "Data must not be None."
-        effect_type = data.get("type")
+        try:
+            assert data is not None, "Data must not be None."
+            effect_type = data.get("type")
 
-        if effect_type == "Buff":
-            return EffectFactory._create_buff(data)
-        elif effect_type == "Debuff":
-            return EffectFactory._create_debuff(data)
-        elif effect_type == "DoT":
-            return EffectFactory._create_dot(data)
-        elif effect_type == "HoT":
-            return EffectFactory._create_hot(data)
-        elif effect_type == "OnHitTrigger":
-            return EffectFactory._create_on_hit_trigger(data)
-        elif effect_type == "OnLowHealthTrigger":
-            return EffectFactory._create_on_low_health_trigger(data)
-        elif effect_type == "IncapacitatingEffect":
-            return EffectFactory._create_incapacitating_effect(data)
-        else:
-            raise ValueError(f"Unknown effect type: {effect_type}")
+            if effect_type == "Buff":
+                return EffectDeserializer._deserialize_buff(data)
+            elif effect_type == "Debuff":
+                return EffectDeserializer._deserialize_debuff(data)
+            elif effect_type == "DoT":
+                return EffectDeserializer._deserialize_dot(data)
+            elif effect_type == "HoT":
+                return EffectDeserializer._deserialize_hot(data)
+            elif effect_type == "OnHitTrigger":
+                return EffectDeserializer._deserialize_on_hit_trigger(data)
+            elif effect_type == "OnLowHealthTrigger":
+                return EffectDeserializer._deserialize_on_low_health_trigger(data)
+            elif effect_type == "IncapacitatingEffect":
+                return EffectDeserializer._deserialize_incapacitating_effect(data)
+            else:
+                raise ValueError(f"Unknown effect type: {effect_type}")
+        except Exception as e:
+            effect_name = data.get("name", "Unknown")
+            raise ValueError(f"Error creating effect '{effect_name}': {str(e)}") from e
 
     @staticmethod
-    def _create_buff(data: Dict[str, Any]) -> "Buff":
+    def _deserialize_buff(data: Dict[str, Any]) -> "Buff":
         """Create a Buff instance from dictionary data."""
         from .effect import Buff, Modifier
 
@@ -88,7 +94,8 @@ class EffectFactory:
             elif isinstance(modifier_data, list):
                 # New format: list of modifier dicts
                 modifiers = [
-                    ModifierFactory.from_dict(mod_data) for mod_data in modifier_data
+                    ModifierDeserializer.deserialize(mod_data)
+                    for mod_data in modifier_data
                 ]
 
         return Buff(
@@ -99,7 +106,7 @@ class EffectFactory:
         )
 
     @staticmethod
-    def _create_debuff(data: Dict[str, Any]) -> "Debuff":
+    def _deserialize_debuff(data: Dict[str, Any]) -> "Debuff":
         """Create a Debuff instance from dictionary data."""
         from .effect import Debuff, Modifier
 
@@ -127,7 +134,8 @@ class EffectFactory:
             elif isinstance(modifier_data, list):
                 # New format: list of modifier dicts
                 modifiers = [
-                    ModifierFactory.from_dict(mod_data) for mod_data in modifier_data
+                    ModifierDeserializer.deserialize(mod_data)
+                    for mod_data in modifier_data
                 ]
 
         return Debuff(
@@ -138,7 +146,7 @@ class EffectFactory:
         )
 
     @staticmethod
-    def _create_dot(data: Dict[str, Any]) -> "DoT":
+    def _deserialize_dot(data: Dict[str, Any]) -> "DoT":
         """Create a DoT (Damage over Time) instance from dictionary data."""
         from .effect import DoT
 
@@ -150,7 +158,7 @@ class EffectFactory:
         )
 
     @staticmethod
-    def _create_hot(data: Dict[str, Any]) -> "HoT":
+    def _deserialize_hot(data: Dict[str, Any]) -> "HoT":
         """Create a HoT (Heal over Time) instance from dictionary data."""
         from .effect import HoT
 
@@ -162,14 +170,14 @@ class EffectFactory:
         )
 
     @staticmethod
-    def _create_on_hit_trigger(data: Dict[str, Any]) -> "OnHitTrigger":
+    def _deserialize_on_hit_trigger(data: Dict[str, Any]) -> "OnHitTrigger":
         """Create an OnHitTrigger instance from dictionary data."""
         from .effect import OnHitTrigger
 
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(EffectFactory.from_dict(effect_data))
+            trigger_effects.append(EffectDeserializer.deserialize(effect_data))
 
         # Parse damage bonus components
         damage_bonus = []
@@ -186,14 +194,16 @@ class EffectFactory:
         )
 
     @staticmethod
-    def _create_on_low_health_trigger(data: Dict[str, Any]) -> "OnLowHealthTrigger":
+    def _deserialize_on_low_health_trigger(
+        data: Dict[str, Any],
+    ) -> "OnLowHealthTrigger":
         """Create an OnLowHealthTrigger instance from dictionary data."""
         from .effect import OnLowHealthTrigger
 
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(EffectFactory.from_dict(effect_data))
+            trigger_effects.append(EffectDeserializer.deserialize(effect_data))
 
         # Parse damage bonus components
         damage_bonus = []
@@ -215,7 +225,9 @@ class EffectFactory:
         return trigger
 
     @staticmethod
-    def _create_incapacitating_effect(data: Dict[str, Any]) -> "IncapacitatingEffect":
+    def _deserialize_incapacitating_effect(
+        data: Dict[str, Any],
+    ) -> "IncapacitatingEffect":
         """Create an IncapacitatingEffect instance from dictionary data."""
         from .effect import IncapacitatingEffect
 
@@ -231,75 +243,140 @@ class EffectFactory:
 
 
 class EffectSerializer:
-    """Handles serialization of Effect instances to dictionaries."""
+    """Serializer for converting effect instances to dictionary format."""
 
     @staticmethod
-    def to_dict(effect) -> Dict[str, Any]:
-        """Convert an Effect instance to dictionary representation.
+    def serialize(effect) -> Dict[str, Any]:
+        """
+        Serialize effect instance to dictionary format.
+
+        This method handles common fields for all effect types and delegates
+        specific serialization to the appropriate subclass methods.
 
         Args:
-            effect: The Effect instance to serialize.
+            effect: The effect instance to serialize.
 
         Returns:
-            Dict[str, Any]: Dictionary representation of the effect.
+            dict: Dictionary representation of the effect.
         """
-        # Base effect data
-        data = {
+        # Import effect classes for isinstance checks
+        from .effect import (
+            Buff,
+            Debuff,
+            DoT,
+            HoT,
+            OnHitTrigger,
+            OnLowHealthTrigger,
+            IncapacitatingEffect,
+        )
+
+        if isinstance(effect, Buff):
+            return EffectSerializer._serialize_buff(effect)
+        elif isinstance(effect, Debuff):
+            return EffectSerializer._serialize_debuff(effect)
+        elif isinstance(effect, DoT):
+            return EffectSerializer._serialize_dot(effect)
+        elif isinstance(effect, HoT):
+            return EffectSerializer._serialize_hot(effect)
+        elif isinstance(effect, OnHitTrigger):
+            return EffectSerializer._serialize_on_hit_trigger(effect)
+        elif isinstance(effect, OnLowHealthTrigger):
+            return EffectSerializer._serialize_on_low_health_trigger(effect)
+        elif isinstance(effect, IncapacitatingEffect):
+            return EffectSerializer._serialize_incapacitating_effect(effect)
+        else:
+            raise ValueError(f"Unsupported effect type: {type(effect)}")
+
+    @staticmethod
+    def _serialize_base_effect(effect) -> Dict[str, Any]:
+        """Serialize common base effect fields."""
+        return {
             "type": effect.__class__.__name__,
             "name": effect.name,
             "description": effect.description,
             "max_duration": effect.max_duration,
         }
 
-        # Handle specific effect types using getattr for safe access
-        if hasattr(effect, "modifiers"):
-            # ModifierEffect subclasses (Buff, Debuff)
-            data["modifiers"] = [
-                ModifierSerializer.to_dict(modifier) for modifier in effect.modifiers
-            ]
+    @staticmethod
+    def _serialize_buff(effect) -> Dict[str, Any]:
+        """Serialize Buff to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["modifiers"] = [
+            ModifierSerializer.serialize(modifier) for modifier in effect.modifiers
+        ]
+        return data
 
-        if hasattr(effect, "damage"):
-            # DoT
-            data["damage"] = effect.damage.to_dict()
+    @staticmethod
+    def _serialize_debuff(effect) -> Dict[str, Any]:
+        """Serialize Debuff to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["modifiers"] = [
+            ModifierSerializer.serialize(modifier) for modifier in effect.modifiers
+        ]
+        return data
 
-        if hasattr(effect, "heal_per_turn"):
-            # HoT
-            data["heal_per_turn"] = effect.heal_per_turn
+    @staticmethod
+    def _serialize_dot(effect) -> Dict[str, Any]:
+        """Serialize DoT to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["damage"] = effect.damage.to_dict()
+        return data
 
-        if hasattr(effect, "trigger_effects"):
-            # OnHitTrigger, OnLowHealthTrigger
-            data["trigger_effects"] = [
-                EffectSerializer.to_dict(trigger_effect)
-                for trigger_effect in effect.trigger_effects
-            ]
-            data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
-            data["consumes_on_trigger"] = effect.consumes_on_trigger
+    @staticmethod
+    def _serialize_hot(effect) -> Dict[str, Any]:
+        """Serialize HoT to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["heal_per_turn"] = effect.heal_per_turn
+        return data
 
-        if hasattr(effect, "hp_threshold_percent"):
-            # OnLowHealthTrigger
-            data["hp_threshold_percent"] = effect.hp_threshold_percent
-            data["has_triggered"] = effect.has_triggered
+    @staticmethod
+    def _serialize_on_hit_trigger(effect) -> Dict[str, Any]:
+        """Serialize OnHitTrigger to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["trigger_effects"] = [
+            EffectSerializer.serialize(trigger_effect)
+            for trigger_effect in effect.trigger_effects
+        ]
+        data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
+        data["consumes_on_trigger"] = effect.consumes_on_trigger
+        return data
 
-        if hasattr(effect, "incapacitation_type"):
-            # IncapacitatingEffect
-            data.update(
-                {
-                    "incapacitation_type": effect.incapacitation_type,
-                    "save_ends": effect.save_ends,
-                    "save_dc": effect.save_dc,
-                    "save_stat": effect.save_stat,
-                }
-            )
+    @staticmethod
+    def _serialize_on_low_health_trigger(effect) -> Dict[str, Any]:
+        """Serialize OnLowHealthTrigger to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data["trigger_effects"] = [
+            EffectSerializer.serialize(trigger_effect)
+            for trigger_effect in effect.trigger_effects
+        ]
+        data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
+        data["consumes_on_trigger"] = effect.consumes_on_trigger
+        data["hp_threshold_percent"] = effect.hp_threshold_percent
+        data["has_triggered"] = effect.has_triggered
+        return data
 
+    @staticmethod
+    def _serialize_incapacitating_effect(effect) -> Dict[str, Any]:
+        """Serialize IncapacitatingEffect to dictionary."""
+        data = EffectSerializer._serialize_base_effect(effect)
+        data.update(
+            {
+                "incapacitation_type": effect.incapacitation_type,
+                "save_ends": effect.save_ends,
+                "save_dc": effect.save_dc,
+                "save_stat": effect.save_stat,
+            }
+        )
         return data
 
 
-class ModifierFactory:
-    """Factory class for creating Modifier instances from dictionaries."""
+class ModifierDeserializer:
+    """Factory for creating modifier instances from dictionary data."""
 
     @staticmethod
-    def from_dict(data: Dict[str, Any]) -> "Modifier":
+    def deserialize(data: Dict[str, Any]) -> "Modifier":
         """Create a Modifier instance from a dictionary representation."""
+        from .effect import Modifier
 
         assert data is not None, "Data must not be None."
 
@@ -328,10 +405,10 @@ class ModifierFactory:
 
 
 class ModifierSerializer:
-    """Handles serialization of Modifier instances to dictionaries."""
+    """Serializer for converting modifier instances to dictionary format."""
 
     @staticmethod
-    def to_dict(modifier) -> Dict[str, Any]:
+    def serialize(modifier) -> Dict[str, Any]:
         """Convert the modifier to a dictionary representation."""
         return {
             "bonus_type": modifier.bonus_type.name.lower(),

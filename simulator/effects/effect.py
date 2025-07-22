@@ -159,12 +159,12 @@ class Effect:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the effect to a dictionary representation."""
-        from .effect_factory import EffectSerializer
+        from .effect_serializer import EffectSerializer
 
-        return EffectSerializer.to_dict(self)
+        return EffectSerializer.serialize(self)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Effect":
+    def from_dict(data: dict[str, Any]) -> "Effect | None":
         """Creates an Effect instance from a dictionary representation.
 
         Args:
@@ -173,9 +173,9 @@ class Effect:
         Returns:
             Effect: An instance of the Effect class.
         """
-        from .effect_factory import EffectFactory
+        from .effect_serializer import EffectDeserializer
 
-        return EffectFactory.from_dict(data)
+        return EffectDeserializer.deserialize(data)
 
 
 class Modifier:
@@ -216,16 +216,16 @@ class Modifier:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the modifier to a dictionary representation."""
-        from .effect_factory import ModifierSerializer
+        from .effect_serializer import ModifierSerializer
 
-        return ModifierSerializer.to_dict(self)
+        return ModifierSerializer.serialize(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Modifier":
         """Create a Modifier instance from a dictionary representation."""
-        from .effect_factory import ModifierFactory
+        from .effect_serializer import ModifierDeserializer
 
-        return ModifierFactory.from_dict(data)
+        return ModifierDeserializer.deserialize(data)
 
     def __eq__(self, other) -> bool:
         """Check if two modifiers are equal."""
