@@ -6,9 +6,6 @@ from typing import Any, Optional
 from actions.base_action import BaseAction
 from actions.attacks import (
     BaseAttack,
-    NaturalAttack,
-    WeaponAttack,
-    from_dict_attack,
 )
 from actions.spells import (
     Spell,
@@ -248,10 +245,11 @@ class ContentRepository(metaclass=Singleton):
     def _load_actions(self, data) -> dict[str, BaseAction]:
         """Load actions from the given data."""
         from actions.abilities.ability_serializer import AbilityDeserializer
+        from actions.attacks.attack_serializer import AttackDeserializer
 
         actions: dict[str, BaseAction] = {}
         for action_data in data:
-            action = from_dict_attack(action_data)
+            action = AttackDeserializer.deserialize(action_data)
             if not action:
                 action = from_dict_spell(action_data)
                 if not action:
@@ -272,16 +270,3 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Duplicate spell name: {spell.name}")
             spells[spell.name] = spell
         return spells
-
-    @staticmethod
-    def _load_base_attacks(data) -> dict[str, BaseAttack]:
-        attacks: dict[str, BaseAttack] = {}
-        # Load base attacks.
-        for attack_data in data:
-            base_attack = from_dict_attack(attack_data)
-            if base_attack is None:
-                continue  # Skip invalid attacks
-            if base_attack.name in attacks:
-                raise ValueError(f"Duplicate attack name: {base_attack.name}")
-            attacks[base_attack.name] = base_attack
-        return attacks

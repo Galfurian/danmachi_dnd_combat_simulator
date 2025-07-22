@@ -9,11 +9,12 @@ instances from data.
 from .base_attack import BaseAttack
 from .weapon_attack import WeaponAttack
 from .natural_attack import NaturalAttack
-from .attack_factory import from_dict_attack
+from .attack_serializer import AttackSerializer, AttackDeserializer
 
 __all__ = [
     "BaseAttack",
     "WeaponAttack", 
     "NaturalAttack",
-    "from_dict_attack"
+    "AttackSerializer",
+    "AttackDeserializer",
 ]

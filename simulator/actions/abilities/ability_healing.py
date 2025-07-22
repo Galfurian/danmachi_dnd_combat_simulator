@@ -90,19 +90,8 @@ class HealingAbility(BaseAbility):
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
 
-        Healing Expression Examples:
-            - "1d8 + 3": Fixed healing with static bonus
-            - "2d4 + WIS": Healing scaled by Wisdom modifier
-            - "LEVEL": Healing equal to character level
-            - "1d4 + PROF": Healing scaled by proficiency bonus
-
         Raises:
             ValueError: If name is empty or required parameters are invalid
-
-        Note:
-            - Category is automatically set to HEALING
-            - Invalid heal_roll expressions are corrected to "0"
-            - Target restrictions default to allies only
         """
         try:
             super().__init__(
@@ -135,35 +124,12 @@ class HealingAbility(BaseAbility):
         This method handles the complete healing ability activation sequence
         from healing calculation through effect application.
 
-        Execution Sequence:
-            1. Validate cooldown and usage restrictions
-            2. Calculate base healing from ability expression
-            3. Apply healing modifiers from effects
-            4. Restore hit points to target (capped at maximum)
-            5. Apply optional effect to target
-            6. Display results with appropriate verbosity
-
         Args:
             actor: The character using the ability (must have combat methods)
             target: The character being healed (must have combat methods)
 
         Returns:
             bool: True if ability was executed successfully, False on system errors
-
-        Healing System:
-            - Automatic success: No rolls needed, healing always applies
-            - Variable healing: Uses dice expressions with scaling support
-            - Capped healing: Cannot exceed target's maximum hit points
-            - Effect application: Optional effects like regeneration
-
-        Example:
-            ```python
-            # Execute a healing word ability
-            if healing_word.execute(cleric, wounded_fighter):
-                print("Healing word activated successfully")
-            else:
-                print("System error during ability execution")
-            ```
         """
         actor_str, target_str = self._get_display_strings(actor, target)
 

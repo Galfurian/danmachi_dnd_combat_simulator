@@ -415,68 +415,12 @@ class BaseAttack(BaseAction):
     # ============================================================================
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the attack to a dictionary representation.
-
-        Creates a complete serializable representation of the attack including
-        all properties from the base class plus attack-specific data like
-        damage components and required hands.
-
-        Returns:
-            dict: Complete dictionary representation suitable for JSON serialization
-
-        Dictionary Structure:
-            - Base properties: name, type, description, cooldown, maximum_uses
-            - Attack properties: hands_required, attack_roll, damage components
-            - Optional: effect data if an effect is attached
-        """
-        # Get the base dictionary representation.
-        data = super().to_dict()
-        # Add specific fields for BaseAttack
-        data["hands_required"] = self.hands_required
-        data["attack_roll"] = self.attack_roll
-        data["damage"] = [component.to_dict() for component in self.damage]
-        # Include the effect if it exists.
-        if self.effect:
-            data["effect"] = self.effect.to_dict()
-        return data
+        """Convert attack to dictionary using AttackSerializer."""
+        from actions.attacks.attack_serializer import AttackSerializer
+        return AttackSerializer.serialize(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "BaseAttack":
-        """
-        Creates a BaseAttack instance from a dictionary.
-
-        Reconstructs a complete BaseAttack object from its dictionary
-        representation, including all damage components and optional effects.
-        This enables loading attacks from JSON configuration files.
-
-        Args:
-            data: Dictionary containing complete attack specification
-
-        Returns:
-            BaseAttack: Fully initialized attack instance
-
-        Required Dictionary Keys:
-            - name: Attack name (str)
-            - type: ActionType enum value (str)
-            - attack_roll: Attack roll expression (str)
-            - damage: List of damage component dictionaries
-
-        Optional Dictionary Keys:
-            - description: Attack description (str, default: "")
-            - cooldown: Turns between uses (int, default: 0)
-            - maximum_uses: Max uses per encounter (int, default: -1)
-            - hands_required: Required hands (int, default: 0)
-            - effect: Effect dictionary (dict, default: None)
-        """
-        return BaseAttack(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            hands_required=data.get("hands_required", 0),
-            attack_roll=data["attack_roll"],
-            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-        )
+        """Create BaseAttack from dictionary using AttackDeserializer."""
+        from actions.attacks.attack_serializer import AttackDeserializer
+        return AttackDeserializer._deserialize_base_attack(data)

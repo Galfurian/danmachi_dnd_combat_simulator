@@ -45,37 +45,6 @@ class BaseAbility(BaseAction, ABC):
     other unique actions that don't fall into standard weapon attacks or spells.
     These abilities typically have limited uses per encounter or cooldown periods
     rather than consuming spell slots or mind points.
-
-    Key Characteristics:
-        - Category-specific behavior (offensive, healing, utility, etc.)
-        - No resource costs (no mind points or spell slots)
-        - Often have uses per day/encounter or cooldown restrictions
-        - Can affect single or multiple targets based on target_expr
-        - May deal damage, heal, buff, or provide utility effects
-        - Represent inherent powers rather than learned techniques
-
-    Target System:
-        - Single target: Empty or blank target_expr (default)
-        - Multi-target: target_expr evaluates to number of targets
-        - Example: target_expr="LEVEL//2" affects half character level targets
-
-    Damage/Effect System:
-        - Direct application (no attack rolls by default for most abilities)
-        - Multiple damage/healing components supported
-        - Integrates with effect manager for bonuses
-        - Category-specific execution behavior
-
-    Usage Context:
-        - Dragon breath weapons (offensive)
-        - Healing Word abilities (healing)
-        - Bardic Inspiration (buff)
-        - Detect Magic (utility)
-        - DanMachi development abilities (development)
-
-    Subclass Implementation:
-        Each concrete ability type must implement:
-        - execute(): Category-specific execution logic
-        - Additional methods as needed for their category
     """
 
     def __init__(
@@ -104,20 +73,8 @@ class BaseAbility(BaseAction, ABC):
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
 
-        Target Expression Examples:
-            - "": Single target (default)
-            - "3": Always affects 3 targets
-            - "LEVEL//2": Affects half character level targets (minimum 1)
-            - "CON": Affects targets equal to CON modifier
-
         Raises:
             ValueError: If name is empty or type/category are invalid
-
-        Note:
-            - Invalid effects are set to None with warnings
-            - Invalid target_expr is corrected to empty string
-            - Uses enhanced validation helpers for robust error handling
-            - Concrete subclasses may add additional parameters
         """
         try:
             super().__init__(
@@ -167,17 +124,6 @@ class BaseAbility(BaseAction, ABC):
 
         Returns:
             bool: True if ability targets one entity, False for multi-target
-
-        Examples:
-            ```python
-            # Single target examples
-            single_ability.target_expr = ""        # True
-            single_ability.target_expr = "   "     # True
-
-            # Multi-target examples
-            multi_ability.target_expr = "3"        # False
-            multi_ability.target_expr = "LEVEL"    # False
-            ```
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
@@ -194,27 +140,6 @@ class BaseAbility(BaseAction, ABC):
 
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions)
-
-        Variable Substitution:
-            - {LEVEL}: Character level
-            - {STR}, {DEX}, {CON}, {INT}, {WIS}, {CHA}: Ability modifiers
-            - {PROF}: Proficiency bonus
-            - Custom variables from actor's get_expression_variables method
-
-        Examples:
-            ```python
-            # Static target count
-            ability.target_expr = "3"           # Always 3 targets
-
-            # Level-scaled targeting
-            ability.target_expr = "1 + LEVEL//4"  # 1 + (level / 4)
-
-            # Ability score based
-            ability.target_expr = "max(1, CHA)"   # CHA modifier minimum 1
-            ```
-
-        Error Handling:
-            Returns 1 if target_expr is empty, invalid, or evaluates to 0 or less.
         """
         if self.target_expr:
             variables = actor.get_expression_variables()

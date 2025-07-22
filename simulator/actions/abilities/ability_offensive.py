@@ -22,26 +22,6 @@ class OffensiveAbility(BaseAbility):
     OffensiveAbility represents damage-dealing special powers like dragon breath
     weapons, natural attacks, monster abilities, and combat techniques. These
     abilities deal direct damage without requiring attack rolls in most cases.
-
-    Key Features:
-        - Direct damage application
-        - Multiple damage types and components
-        - Critical hit potential (if implemented)
-        - Effect application on successful hits
-        - Multi-target support through target expressions
-
-    Damage System:
-        - Base damage from ability's damage components
-        - Bonus damage from effects and modifiers
-        - All damage calculated and applied together
-        - No attack rolls by default (direct application)
-
-    Usage Examples:
-        - Dragon breath weapons
-        - Monster special attacks (mind blast, tail sweep)
-        - Racial abilities (dragonborn breath, tiefling hellish rebuke)
-        - Environmental hazard abilities
-        - Activated magic item powers
     """
 
     def __init__(
@@ -72,11 +52,6 @@ class OffensiveAbility(BaseAbility):
 
         Raises:
             ValueError: If name is empty or required parameters are invalid
-
-        Note:
-            - Category is automatically set to OFFENSIVE
-            - Invalid damage components are filtered out with warnings
-            - At least one damage component is recommended for offensive abilities
         """
         try:
             super().__init__(
@@ -116,25 +91,12 @@ class OffensiveAbility(BaseAbility):
         This method handles the complete offensive ability activation sequence
         from damage calculation through effect application.
 
-        Execution Sequence:
-            1. Validate cooldown and usage restrictions
-            2. Calculate base damage from ability components
-            3. Apply damage modifiers from effects
-            4. Apply optional effect to target
-            5. Display results with appropriate verbosity
-
         Args:
             actor: The character using the ability (must have combat methods)
             target: The character being damaged (must have combat methods)
 
         Returns:
             bool: True if ability was executed successfully, False on system errors
-
-        Damage System:
-            - Direct damage: No attack rolls, damage is automatically applied
-            - Base damage: From ability's damage components
-            - Bonus damage: From effects and modifiers
-            - All damage calculated and applied together
         """
         actor_str, target_str = self._get_display_strings(actor, target)
 

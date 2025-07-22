@@ -69,25 +69,6 @@ class NaturalAttack(BaseAttack):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "NaturalAttack":
-        """
-        Creates a NaturalAttack instance from a dictionary.
-
-        Reconstructs a complete NaturalAttack from its dictionary representation,
-        typically loaded from creature/monster configuration files.
-
-        Args:
-            data: Dictionary with natural weapon specification
-
-        Returns:
-            NaturalAttack: Fully initialized natural attack instance
-        """
-        return NaturalAttack(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            attack_roll=data["attack_roll"],
-            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-        )
+        """Create NaturalAttack from dictionary using AttackDeserializer."""
+        from actions.attacks.attack_serializer import AttackDeserializer
+        return AttackDeserializer._deserialize_natural_attack(data)

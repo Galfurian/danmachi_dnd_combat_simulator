@@ -67,26 +67,6 @@ class WeaponAttack(BaseAttack):
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "WeaponAttack":
-        """
-        Creates a WeaponAttack instance from a dictionary.
-
-        Reconstructs a complete WeaponAttack from its dictionary representation,
-        typically loaded from JSON weapon configuration files.
-
-        Args:
-            data: Dictionary with weapon specification
-
-        Returns:
-            WeaponAttack: Fully initialized weapon attack instance
-        """
-        return WeaponAttack(
-            name=data["name"],
-            type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            hands_required=data.get("hands_required", 0),
-            attack_roll=data["attack_roll"],
-            damage=[DamageComponent.from_dict(comp) for comp in data["damage"]],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-        )
+        """Create WeaponAttack from dictionary using AttackDeserializer."""
+        from actions.attacks.attack_serializer import AttackDeserializer
+        return AttackDeserializer._deserialize_weapon_attack(data)

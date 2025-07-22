@@ -21,26 +21,6 @@ class UtilityAbility(BaseAbility):
     UtilityAbility represents non-combat special powers like Detect Magic,
     Misty Step, Investigation abilities, and other utility functions. These
     abilities typically don't deal damage or heal but provide other benefits.
-
-    Key Features:
-        - No damage or healing components
-        - Utility effects (teleportation, detection, etc.)
-        - Information gathering capabilities
-        - Environmental interaction
-        - Problem-solving applications
-
-    Effect System:
-        - Optional effects (some utilities are pure mechanical functions)
-        - Informational effects (like revealing information)
-        - Movement effects (teleportation, dimension door)
-        - Detection effects (magic, poison, traps)
-
-    Usage Examples:
-        - Detect Magic (reveals magical auras)
-        - Misty Step (short-range teleportation)
-        - Thieves' Tools Expertise (improved lock picking)
-        - Animal Handling (calm or communicate with animals)
-        - Investigation (enhanced searching abilities)
     """
 
     def __init__(
@@ -69,20 +49,8 @@ class UtilityAbility(BaseAbility):
             target_expr: Expression determining number of targets ("" = single target)
             target_restrictions: Override default targeting if needed
 
-        Utility Function Examples:
-            - "detect_magic": Reveals magical auras
-            - "teleport": Short-range teleportation
-            - "investigate": Enhanced searching
-            - "animal_handling": Communicate with animals
-            - "identify": Identify magical items
-
         Raises:
             ValueError: If name is empty or required parameters are invalid
-
-        Note:
-            - Category is automatically set to UTILITY
-            - utility_function is optional (some utilities just apply effects)
-            - Target restrictions vary based on utility type
         """
         try:
             super().__init__(
@@ -114,24 +82,12 @@ class UtilityAbility(BaseAbility):
         This method handles the complete utility ability activation sequence
         focusing on the utility function and optional effect application.
 
-        Execution Sequence:
-            1. Validate cooldown and usage restrictions
-            2. Execute the utility function if present
-            3. Apply optional effect to target
-            4. Display results with appropriate verbosity
-
         Args:
             actor: The character using the ability (must have combat methods)
             target: The character/object being affected (may be actor for self-targeted utilities)
 
         Returns:
             bool: True if ability was executed successfully, False on system errors
-
-        Utility System:
-            - Utility functions: Custom logic for specific utility types
-            - Effect application: Optional effects for ongoing benefits
-            - Information gathering: May provide information to the user
-            - Environmental interaction: May affect the game world
         """
         actor_str, target_str = self._get_display_strings(actor, target)
 
@@ -161,10 +117,6 @@ class UtilityAbility(BaseAbility):
 
         Returns:
             str: Description of what the utility function accomplished
-
-        Note:
-            This is a placeholder implementation. In a full system, this would
-            dispatch to specific utility handlers based on utility_function.
         """
         if not self.utility_function:
             return "No specific utility function"
