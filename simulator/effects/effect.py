@@ -168,13 +168,9 @@ class Effect:
             return False
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "type": self.__class__.__name__,
-            "name": self.name,
-            "description": self.description,
-            "max_duration": self.max_duration,
-            "requires_concentration": self.requires_concentration,
-        }
+        """Convert the effect to a dictionary representation."""
+        from .effect_factory import EffectSerializer
+        return EffectSerializer.to_dict(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Effect":
@@ -186,25 +182,8 @@ class Effect:
         Returns:
             Effect: An instance of the Effect class.
         """
-        assert data is not None, "Data must not be None."
-        effect_type = data.get("type")
-
-        if effect_type == "Buff":
-            return Buff.from_dict(data)
-        if effect_type == "Debuff":
-            return Debuff.from_dict(data)
-        if effect_type == "DoT":
-            return DoT.from_dict(data)
-        if effect_type == "HoT":
-            return HoT.from_dict(data)
-        if effect_type == "OnHitTrigger":
-            return OnHitTrigger.from_dict(data)
-        if effect_type == "OnLowHealthTrigger":
-            return OnLowHealthTrigger.from_dict(data)
-        if effect_type == "IncapacitatingEffect":
-            from .incapacitation_effect import IncapacitatingEffect
-            return IncapacitatingEffect.from_dict(data)
-        raise ValueError(f"Unknown effect type: {effect_type}")
+        from .effect_factory import EffectFactory
+        return EffectFactory.from_dict(data)
 
 
 class ModifierEffect(Effect):
@@ -241,20 +220,6 @@ class ModifierEffect(Effect):
                 return False
         return True
 
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["modifiers"] = [modifier.to_dict() for modifier in self.modifiers]
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Buff | Debuff":
-        assert data is not None, "Data must not be None."
-        if data.get("type") == "Buff":
-            return Buff.from_dict(data)
-        if data.get("type") == "Debuff":
-            return Debuff.from_dict(data)
-        raise ValueError(f"Unknown modifier effect type: {data.get('type')}")
-
 
 class Buff(ModifierEffect):
     def __init__(
@@ -266,47 +231,6 @@ class Buff(ModifierEffect):
     ):
         super().__init__(name, description, max_duration, modifiers)
 
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Buff":
-        assert data is not None, "Data must not be None."
-        modifiers: list[Modifier] = []
-
-        # Handle both old dict format and new list format for backward compatibility
-        if "modifiers" in data:
-            modifier_data = data["modifiers"]
-            if isinstance(modifier_data, dict):
-                # Old format: convert dict to list of Modifier objects
-                for k, v in modifier_data.items():
-                    bonus_type = BonusType[k.upper()]
-                    if bonus_type == BonusType.DAMAGE:
-                        value = DamageComponent.from_dict(v)
-                    elif bonus_type in [
-                        BonusType.HP,
-                        BonusType.MIND,
-                        BonusType.AC,
-                        BonusType.INITIATIVE,
-                    ]:
-                        value = int(v)
-                    elif bonus_type == BonusType.ATTACK:
-                        value = str(v)
-                    else:
-                        value = str(v)
-                    modifiers.append(Modifier(bonus_type, value))
-            elif isinstance(modifier_data, list):
-                # New format: list of modifier dicts
-                modifiers = [Modifier.from_dict(mod_data) for mod_data in modifier_data]
-
-        return Buff(
-            name=data["name"],
-            description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
-            modifiers=modifiers,
-        )
-
 
 class Debuff(ModifierEffect):
     def __init__(
@@ -317,43 +241,6 @@ class Debuff(ModifierEffect):
         modifiers: list[Modifier],
     ):
         super().__init__(name, description, max_duration, modifiers)
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Debuff":
-        assert data is not None, "Data must not be None."
-        modifiers: list[Modifier] = []
-
-        # Handle both old dict format and new list format for backward compatibility
-        if "modifiers" in data:
-            modifier_data = data["modifiers"]
-            if isinstance(modifier_data, dict):
-                # Old format: convert dict to list of Modifier objects
-                for k, v in modifier_data.items():
-                    bonus_type = BonusType[k.upper()]
-                    if bonus_type == BonusType.DAMAGE:
-                        value = DamageComponent.from_dict(v)
-                    elif bonus_type in [
-                        BonusType.HP,
-                        BonusType.MIND,
-                        BonusType.AC,
-                        BonusType.INITIATIVE,
-                    ]:
-                        value = int(v)
-                    elif bonus_type == BonusType.ATTACK:
-                        value = str(v)
-                    else:
-                        value = str(v)
-                    modifiers.append(Modifier(bonus_type, value))
-            elif isinstance(modifier_data, list):
-                # New format: list of modifier dicts
-                modifiers = [Modifier.from_dict(mod_data) for mod_data in modifier_data]
-
-        return Debuff(
-            name=data["name"],
-            description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
-            modifiers=modifiers,
-        )
 
 
 class DoT(Effect):
@@ -407,21 +294,6 @@ class DoT(Effect):
             self.damage, DamageComponent
         ), "Damage must be of type DamageComponent."
 
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["damage"] = self.damage.to_dict()
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "DoT":
-        assert data is not None, "Data must not be None."
-        return DoT(
-            name=data["name"],
-            description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
-            damage=DamageComponent.from_dict(data["damage"]),
-        )
-
 
 class HoT(Effect):
     def __init__(
@@ -461,21 +333,6 @@ class HoT(Effect):
             self.heal_per_turn, str
         ), "Heal per turn must be a string expression."
 
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["heal_per_turn"] = self.heal_per_turn
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "HoT":
-        assert data is not None, "Data must not be None."
-        return HoT(
-            name=data["name"],
-            description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
-            heal_per_turn=data["heal_per_turn"],
-        )
-
 
 class OnHitTrigger(Effect):
     """Effect that activates when the character makes their next weapon/natural attack."""
@@ -512,37 +369,6 @@ class OnHitTrigger(Effect):
     def can_apply(self, actor: Any, target: Any) -> bool:
         """OnHitTrigger can be applied to any living target."""
         return target.is_alive()
-
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["trigger_effects"] = [effect.to_dict() for effect in self.trigger_effects]
-        data["damage_bonus"] = [damage.to_dict() for damage in self.damage_bonus]
-        data["consumes_on_trigger"] = self.consumes_on_trigger
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "OnHitTrigger":
-        assert data is not None, "Data must not be None."
-
-        # Parse trigger effects
-        trigger_effects = []
-        for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(Effect.from_dict(effect_data))
-
-        # Parse damage bonus components
-        damage_bonus = []
-        for damage_data in data.get("damage_bonus", []):
-            damage_bonus.append(DamageComponent.from_dict(damage_data))
-
-        return OnHitTrigger(
-            name=data["name"],
-            description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
-            trigger_effects=trigger_effects,
-            damage_bonus=damage_bonus,
-            consumes_on_trigger=data.get("consumes_on_trigger", True),
-            requires_concentration=data.get("requires_concentration", False),
-        )
 
 
 class OnLowHealthTrigger(Effect):
@@ -607,39 +433,44 @@ class OnLowHealthTrigger(Effect):
 
         return self.damage_bonus.copy(), trigger_effects_with_levels
 
-    def to_dict(self) -> dict[str, Any]:
-        data = super().to_dict()
-        data["hp_threshold_percent"] = self.hp_threshold_percent
-        data["trigger_effects"] = [effect.to_dict() for effect in self.trigger_effects]
-        data["damage_bonus"] = [damage.to_dict() for damage in self.damage_bonus]
-        data["consumes_on_trigger"] = self.consumes_on_trigger
-        data["has_triggered"] = self.has_triggered
-        return data
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "OnLowHealthTrigger":
-        assert data is not None, "Data must not be None."
-
-        # Parse trigger effects
-        trigger_effects = []
-        for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(Effect.from_dict(effect_data))
-
-        # Parse damage bonus components
-        damage_bonus = []
-        for damage_data in data.get("damage_bonus", []):
-            damage_bonus.append(DamageComponent.from_dict(damage_data))
-
-        trigger = OnLowHealthTrigger(
-            name=data["name"],
-            description=data.get("description", ""),
-            hp_threshold_percent=data.get("hp_threshold_percent", 0.25),
-            trigger_effects=trigger_effects,
-            damage_bonus=damage_bonus,
-            consumes_on_trigger=data.get("consumes_on_trigger", True),
-        )
-
-        # Restore triggered state if loading from save
-        trigger.has_triggered = data.get("has_triggered", False)
-
-        return trigger
+class IncapacitatingEffect(Effect):
+    """
+    Effect that prevents a character from taking actions.
+    
+    Unlike ModifierEffect which only applies stat penalties, IncapacitatingEffect
+    completely prevents the character from acting during their turn.
+    """
+    
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        max_duration: int,
+        incapacitation_type: str = "general",  # "sleep", "paralyzed", "stunned", etc.
+        save_ends: bool = False,
+        save_dc: int = 0,
+        save_stat: str = "CON",
+        requires_concentration: bool = False,
+    ):
+        super().__init__(name, description, max_duration, requires_concentration)
+        self.incapacitation_type = incapacitation_type
+        self.save_ends = save_ends
+        self.save_dc = save_dc
+        self.save_stat = save_stat
+    
+    def prevents_actions(self) -> bool:
+        """Check if this effect prevents the character from taking actions."""
+        return True
+    
+    def prevents_movement(self) -> bool:
+        """Check if this effect prevents movement."""
+        return self.incapacitation_type in ["paralyzed", "stunned", "unconscious"]
+    
+    def auto_fails_saves(self) -> bool:
+        """Check if character automatically fails certain saves."""
+        return self.incapacitation_type in ["unconscious"]
+    
+    def can_apply(self, actor: Any, target: Any) -> bool:
+        """Incapacitating effects can be applied to any living target."""
+        return target.is_alive()

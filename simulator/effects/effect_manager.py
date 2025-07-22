@@ -2,7 +2,7 @@
 
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
-from core.utils import cprint
+from core.utils import cprint, get_max_roll
 from core.error_handling import log_error, log_warning, log_critical
 from effects.effect import *
 from effects.modifier import Modifier
@@ -105,13 +105,13 @@ class EffectManager:
                     self.active_modifiers[bonus_type] = new_effect
 
             # Handle incapacitating effects
-            from effects.incapacitation_effect import IncapacitatingEffect
             if isinstance(effect, IncapacitatingEffect):
                 # Remove any existing incapacitating effects of the same type
                 existing_incap = [
-                    ae for ae in self.active_effects 
-                    if isinstance(ae.effect, IncapacitatingEffect) and 
-                    ae.effect.incapacitation_type == effect.incapacitation_type
+                    ae
+                    for ae in self.active_effects
+                    if isinstance(ae.effect, IncapacitatingEffect)
+                    and ae.effect.incapacitation_type == effect.incapacitation_type
                 ]
                 for existing in existing_incap:
                     self.remove_effect(existing)
@@ -191,9 +191,7 @@ class EffectManager:
                     # Apply triggered effects to self
                     for triggered_effect, mind_level in trigger_effects_with_levels:
                         if triggered_effect.can_apply(self.owner, self.owner):
-                            self.add_effect(
-                                self.owner, triggered_effect, mind_level
-                            )
+                            self.add_effect(self.owner, triggered_effect, mind_level)
 
                     # Create activation message
                     from core.constants import get_effect_color
@@ -234,12 +232,14 @@ class EffectManager:
             return False
 
         # Check for IncapacitatingEffect - don't apply same type if already active
-        from effects.incapacitation_effect import IncapacitatingEffect
+
         if isinstance(effect, IncapacitatingEffect):
             # Don't apply the same incapacitation type if already present
             for ae in self.active_effects:
-                if (isinstance(ae.effect, IncapacitatingEffect) and 
-                    ae.effect.incapacitation_type == effect.incapacitation_type):
+                if (
+                    isinstance(ae.effect, IncapacitatingEffect)
+                    and ae.effect.incapacitation_type == effect.incapacitation_type
+                ):
                     return False
             return True
 

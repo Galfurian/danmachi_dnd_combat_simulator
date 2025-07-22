@@ -41,42 +41,14 @@ class Modifier:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the modifier to a dictionary representation."""
-        return {
-            "bonus_type": self.bonus_type.name.lower(),
-            "value": (
-                self.value.to_dict()
-                if isinstance(self.value, DamageComponent)
-                else str(self.value)
-            ),
-        }
+        from .effect_factory import ModifierSerializer
+        return ModifierSerializer.to_dict(self)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Modifier":
         """Create a Modifier instance from a dictionary representation."""
-        assert data is not None, "Data must not be None."
-
-        bonus_type = BonusType[data["bonus_type"].upper()]
-        value_data = data["value"]
-
-        if bonus_type == BonusType.DAMAGE:
-            value = DamageComponent.from_dict(value_data)
-        elif bonus_type == BonusType.ATTACK:
-            value = str(value_data)
-        elif bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ]:
-            # Try to convert to int if possible, otherwise keep as string
-            try:
-                value = int(value_data)
-            except (ValueError, TypeError):
-                value = str(value_data)
-        else:
-            raise ValueError(f"Unknown bonus type: {bonus_type}")
-
-        return Modifier(bonus_type, value)
+        from .effect_factory import ModifierFactory
+        return ModifierFactory.from_dict(data)
 
     def __eq__(self, other) -> bool:
         """Check if two modifiers are equal."""
