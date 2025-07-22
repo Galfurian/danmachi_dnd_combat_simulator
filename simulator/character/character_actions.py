@@ -221,7 +221,7 @@ class CharacterActions:
         """Updates the duration of all active effects, and cooldowns. Removes
         expired effects. This should be called at the end of a character's turn
         or a round."""
-        self._character.effect_manager.turn_update()
+        self._character.effects_module.turn_update()
         # Iterate the cooldowns and decrement them.
         for action_name in list(self._character.cooldowns.keys()):
             if self._character.cooldowns[action_name] > 0:

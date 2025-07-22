@@ -116,7 +116,7 @@ class CharacterConcentration:
 
         # Remove all effects for this concentration spell
         for active_effect in oldest_conc_spell.active_effects:
-            active_effect.target.effect_manager.remove_effect(active_effect)
+            active_effect.target.effects_module.remove_effect(active_effect)
 
         # Remove the concentration spell
         del self.concentration_spells[oldest_spell_key]
@@ -151,7 +151,7 @@ class CharacterConcentration:
 
                 # Remove all effects for this spell
                 for active_effect in conc_spell.active_effects:
-                    active_effect.target.effect_manager.remove_effect(active_effect)
+                    active_effect.target.effects_module.remove_effect(active_effect)
 
                 # Remove the concentration spell
                 del self.concentration_spells[spell_key]
@@ -166,7 +166,7 @@ class CharacterConcentration:
 
                     # Remove all effects
                     for active_effect in conc_spell.active_effects:
-                        active_effect.target.effect_manager.remove_effect(active_effect)
+                        active_effect.target.effects_module.remove_effect(active_effect)
 
                 # Show message
                 if len(spell_info) == 1:

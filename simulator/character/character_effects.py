@@ -1,11 +1,10 @@
-# Revised effect_manager.py (per-BonusType tracking, 5e-style strict)
+# Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint, get_max_roll
 from core.error_handling import log_error, log_warning, log_critical
 from effects.effect import *
-from effects.modifier import Modifier
 
 
 class ActiveEffect:
@@ -19,12 +18,11 @@ class ActiveEffect:
         self.duration: int = effect.max_duration
 
 
-class EffectManager:
+class CharacterEffects:
     def __init__(self, owner: Any) -> None:
         self.owner: Any = owner
         self.active_effects: list[ActiveEffect] = []
         self.active_modifiers: dict[BonusType, ActiveEffect] = {}
-        # Passive effects that are always active (like boss phase triggers)
         self.passive_effects: list[Effect] = []
 
     # === Effect Management ===

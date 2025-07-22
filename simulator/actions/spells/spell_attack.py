@@ -356,7 +356,7 @@ class SpellAttack(Spell):
 
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
-        attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+        attack_modifier = actor.effects_module.get_modifier(BonusType.ATTACK)
 
         # Roll spell attack vs target AC
         attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(

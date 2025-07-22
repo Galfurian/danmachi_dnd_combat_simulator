@@ -330,9 +330,9 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [red]Vulnerabilities[/]: {', '.join(vulnerability_list)}")
     
     # Active Effects
-    if char.effect_manager.active_effects:
+    if char.effects_module.active_effects:
         cprint(f"  [yellow]Active Effects[/]:")
-        for active_effect in char.effect_manager.active_effects:
+        for active_effect in char.effects_module.active_effects:
             effect_info = f"[{get_effect_color(active_effect.effect)}]{active_effect.effect.name}[/]"
             if active_effect.duration > 0:
                 effect_info += f" ({active_effect.duration} turns remaining)"

@@ -275,14 +275,14 @@ class BaseAttack(BaseAction):
             # --- Build & resolve attack roll ---
 
             # Get attack modifier from the actor's effect manager.
-            if not hasattr(actor, "effect_manager"):
+            if not hasattr(actor, "effects_module"):
                 log_error(
-                    f"Actor lacks effect_manager for {self.name}",
+                    f"Actor lacks effects_module for {self.name}",
                     {"action": self.name, "actor": actor.name},
                 )
                 return False
 
-            attack_modifier = actor.effect_manager.get_modifier(BonusType.ATTACK)
+            attack_modifier = actor.effects_module.get_modifier(BonusType.ATTACK)
 
             # Roll the attack.
             attack_total, attack_roll_desc, d20_roll = self.roll_attack_with_crit(
@@ -324,17 +324,17 @@ class BaseAttack(BaseAction):
 
             # Trigger OnHitTrigger effects (like Searing Smite)
             trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = (
-                actor.effect_manager.trigger_on_hit_effects(target)
+                actor.effects_module.trigger_on_hit_effects(target)
             )
 
             # Apply trigger effects to target with proper mind levels
             for effect, mind_level in trigger_effects_with_levels:
                 if effect.can_apply(actor, target):
-                    target.effect_manager.add_effect(actor, effect, mind_level)
+                    target.effects_module.add_effect(actor, effect, mind_level)
 
             # Then roll any additional damage from effects (including triggered damage bonuses).
             all_damage_modifiers = (
-                actor.effect_manager.get_damage_modifiers() + trigger_damage_bonuses
+                actor.effects_module.get_damage_modifiers() + trigger_damage_bonuses
             )
             bonus_damage, bonus_damage_details = roll_damage_components(
                 actor, target, all_damage_modifiers

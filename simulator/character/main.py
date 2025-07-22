@@ -14,8 +14,8 @@ from core.constants import (
     DamageType,
 )
 from core.utils import get_stat_modifier
-from effects.effect import Effect
-from effects.effect_manager import EffectManager
+from effects.effect import Effect, IncapacitatingEffect
+from character.character_effects import CharacterEffects
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
@@ -81,8 +81,8 @@ class Character:
             "bonus_action_used": False,
         }
         # Manages active effects on the character.
-        self.effect_manager: EffectManager = EffectManager(self)
-        
+        self.effects_module: CharacterEffects = CharacterEffects(self)
+
         # Initialize stats module for calculated properties
         self.stats_module = CharacterStats(self)
         # Initialize inventory module for equipment management
@@ -95,7 +95,7 @@ class Character:
         self.display_module = CharacterDisplay(self)
         # Initialize concentration module for spell concentration management
         self.concentration_module = CharacterConcentration(self)
-        
+
         # Keep track of abilitiies cooldown.
         self.cooldowns: dict[str, int] = {}
         # Keep track of the uses of abilities.
@@ -178,18 +178,18 @@ class Character:
         """Calculate the maximum number of concentration effects this character can maintain."""
         return self.stats_module.CONCENTRATION_LIMIT
 
-    @property 
+    @property
     def passive_effects(self) -> list[Effect]:
         """Get the list of passive effects from the effect manager."""
-        return self.effect_manager.passive_effects
+        return self.effects_module.passive_effects
 
     def add_passive_effect(self, effect: Effect) -> bool:
         """Add a passive effect that is always active (like boss phase triggers)."""
-        return self.effect_manager.add_passive_effect(effect)
+        return self.effects_module.add_passive_effect(effect)
 
     def remove_passive_effect(self, effect: Effect) -> bool:
         """Remove a passive effect."""
-        return self.effect_manager.remove_passive_effect(effect)
+        return self.effects_module.remove_passive_effect(effect)
 
     def reset_turn_flags(self) -> None:
         """Resets the turn flags for the character."""
@@ -202,17 +202,15 @@ class Character:
     def has_action_type(self, action_type: ActionType) -> bool:
         """Checks if the character can use a specific action type this turn."""
         return self.actions_module.has_action_type(action_type)
-    
+
     def is_incapacitated(self) -> bool:
         """Check if the character is incapacitated and cannot take actions."""
-        from effects.incapacitation_effect import IncapacitatingEffect
-        
-        for ae in self.effect_manager.active_effects:
+        for ae in self.effects_module.active_effects:
             if isinstance(ae.effect, IncapacitatingEffect):
                 if ae.effect.prevents_actions():
                     return True
         return False
-    
+
     def can_take_actions(self) -> bool:
         """Check if character can take any actions this turn."""
         return not self.is_incapacitated() and self.is_alive()
@@ -256,7 +254,7 @@ class Character:
         Returns:
             list[str]: Messages for effects that were triggered this check.
         """
-        return self.effect_manager.check_passive_triggers()
+        return self.effects_module.check_passive_triggers()
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
         """
@@ -535,6 +533,7 @@ def load_character(file_path: Path) -> Character | None:
         Character | None: A Character instance if the file is valid, None otherwise.
     """
     from .character_serialization import load_character as load_char_impl
+
     return load_char_impl(file_path)
 
 
@@ -548,4 +547,5 @@ def load_characters(file_path: Path) -> dict[str, Character]:
         dict[str, Character]: A dictionary mapping character names to Character instances.
     """
     from .character_serialization import load_characters as load_chars_impl
+
     return load_chars_impl(file_path)

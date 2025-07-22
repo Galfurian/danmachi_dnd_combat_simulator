@@ -419,7 +419,7 @@ class Spell(BaseAction):
             effect.requires_concentration = True
 
         # For spells, pass the spell reference to the effect manager
-        if target.effect_manager.add_effect(actor, effect, mind_level, self):
+        if target.effects_module.add_effect(actor, effect, mind_level, self):
             debug(f"Applied effect {effect.name} from {actor.name} to {target.name}.")
             return True
         debug(f"Not applied effect {effect.name} from {actor.name} to {target.name}.")

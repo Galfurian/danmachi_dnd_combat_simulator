@@ -380,7 +380,7 @@ class BaseAbility(BaseAction, ABC):
         Returns:
             tuple[int, list[str]]: (bonus_damage, damage_descriptions)
         """
-        all_damage_modifiers = actor.effect_manager.get_damage_modifiers()
+        all_damage_modifiers = actor.effects_module.get_damage_modifiers()
         return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
 
     # ============================================================================

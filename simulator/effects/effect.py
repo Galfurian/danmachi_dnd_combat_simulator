@@ -1,17 +1,16 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from core.constants import (
-    BonusType, 
-    get_effect_emoji, 
-    apply_character_type_color, 
+    BonusType,
+    get_effect_emoji,
+    apply_character_type_color,
     apply_damage_type_color,
     get_damage_type_emoji,
-    apply_effect_color
+    apply_effect_color,
 )
 from core.error_handling import log_error, log_warning, log_critical
 from core.utils import cprint, roll_and_describe
 from combat.damage import DamageComponent
-from .modifier import Modifier
 
 
 class Effect:
@@ -170,6 +169,7 @@ class Effect:
     def to_dict(self) -> dict[str, Any]:
         """Convert the effect to a dictionary representation."""
         from .effect_factory import EffectSerializer
+
         return EffectSerializer.to_dict(self)
 
     @staticmethod
@@ -183,7 +183,77 @@ class Effect:
             Effect: An instance of the Effect class.
         """
         from .effect_factory import EffectFactory
+
         return EffectFactory.from_dict(data)
+
+
+class Modifier:
+    """Handles different types of modifiers that can be applied to characters."""
+
+    def __init__(self, bonus_type: BonusType, value: Union[str, int, DamageComponent]):
+        self.bonus_type = bonus_type
+        self.value = value
+        self.validate()
+
+    def validate(self):
+        """Validate the modifier's properties."""
+        assert isinstance(
+            self.bonus_type, BonusType
+        ), f"Bonus type '{self.bonus_type}' must be of type BonusType."
+
+        if self.bonus_type == BonusType.DAMAGE:
+            assert isinstance(
+                self.value, DamageComponent
+            ), f"Modifier value for '{self.bonus_type}' must be a DamageComponent."
+        elif self.bonus_type == BonusType.ATTACK:
+            assert isinstance(
+                self.value, str
+            ), f"Modifier value for '{self.bonus_type}' must be a string expression."
+        elif self.bonus_type in [
+            BonusType.HP,
+            BonusType.MIND,
+            BonusType.AC,
+            BonusType.INITIATIVE,
+        ]:
+            # Should be either an integer or a string expression
+            if not isinstance(self.value, (int, str)):
+                raise ValueError(
+                    f"Modifier value for '{self.bonus_type}' must be an integer or string expression."
+                )
+        else:
+            raise ValueError(f"Unknown bonus type: {self.bonus_type}")
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the modifier to a dictionary representation."""
+        from .effect_factory import ModifierSerializer
+
+        return ModifierSerializer.to_dict(self)
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Modifier":
+        """Create a Modifier instance from a dictionary representation."""
+        from .effect_factory import ModifierFactory
+
+        return ModifierFactory.from_dict(data)
+
+    def __eq__(self, other) -> bool:
+        """Check if two modifiers are equal."""
+        if not isinstance(other, Modifier):
+            return False
+        return self.bonus_type == other.bonus_type and self.value == other.value
+
+    def __hash__(self) -> int:
+        """Make the modifier hashable for use in sets and dictionaries."""
+        if isinstance(self.value, DamageComponent):
+            # For DamageComponent, use its string representation for hashing
+            return hash(
+                (self.bonus_type, self.value.damage_roll, self.value.damage_type)
+            )
+        return hash((self.bonus_type, self.value))
+
+    def __repr__(self) -> str:
+        """String representation of the modifier."""
+        return f"Modifier({self.bonus_type.name}, {self.value})"
 
 
 class ModifierEffect(Effect):
@@ -212,7 +282,7 @@ class ModifierEffect(Effect):
             return False
         # Check if the target is already affected by the same modifiers.
         for modifier in self.modifiers:
-            existing_modifiers = target.effect_manager.get_modifier(modifier.bonus_type)
+            existing_modifiers = target.effects_module.get_modifier(modifier.bonus_type)
             if not existing_modifiers:
                 continue
             # Check if the target already has this exact modifier
@@ -437,11 +507,11 @@ class OnLowHealthTrigger(Effect):
 class IncapacitatingEffect(Effect):
     """
     Effect that prevents a character from taking actions.
-    
+
     Unlike ModifierEffect which only applies stat penalties, IncapacitatingEffect
     completely prevents the character from acting during their turn.
     """
-    
+
     def __init__(
         self,
         name: str,
@@ -458,19 +528,19 @@ class IncapacitatingEffect(Effect):
         self.save_ends = save_ends
         self.save_dc = save_dc
         self.save_stat = save_stat
-    
+
     def prevents_actions(self) -> bool:
         """Check if this effect prevents the character from taking actions."""
         return True
-    
+
     def prevents_movement(self) -> bool:
         """Check if this effect prevents movement."""
         return self.incapacitation_type in ["paralyzed", "stunned", "unconscious"]
-    
+
     def auto_fails_saves(self) -> bool:
         """Check if character automatically fails certain saves."""
         return self.incapacitation_type in ["unconscious"]
-    
+
     def can_apply(self, actor: Any, target: Any) -> bool:
         """Incapacitating effects can be applied to any living target."""
         return target.is_alive()

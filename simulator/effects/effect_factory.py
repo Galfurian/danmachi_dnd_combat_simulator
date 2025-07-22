@@ -10,13 +10,22 @@ from core.constants import BonusType
 from combat.damage import DamageComponent
 
 if TYPE_CHECKING:
-    from .effect import Effect, Buff, Debuff, DoT, HoT, OnHitTrigger, OnLowHealthTrigger, IncapacitatingEffect
-    from .modifier import Modifier
+    from .effect import (
+        Effect,
+        Buff,
+        Debuff,
+        DoT,
+        HoT,
+        OnHitTrigger,
+        OnLowHealthTrigger,
+        IncapacitatingEffect,
+        Modifier,
+    )
 
 
 class EffectFactory:
     """Factory class for creating Effect instances from dictionaries."""
-    
+
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Effect":
         """Creates an Effect instance from a dictionary representation.
@@ -26,7 +35,7 @@ class EffectFactory:
 
         Returns:
             Effect: An instance of the appropriate Effect subclass.
-        
+
         Raises:
             ValueError: If the effect type is unknown.
         """
@@ -54,7 +63,7 @@ class EffectFactory:
     def _create_buff(data: Dict[str, Any]) -> "Buff":
         """Create a Buff instance from dictionary data."""
         from .effect import Buff, Modifier
-        
+
         modifiers = []
         if "modifiers" in data:
             modifier_data = data["modifiers"]
@@ -78,7 +87,9 @@ class EffectFactory:
                     modifiers.append(Modifier(bonus_type, value))
             elif isinstance(modifier_data, list):
                 # New format: list of modifier dicts
-                modifiers = [ModifierFactory.from_dict(mod_data) for mod_data in modifier_data]
+                modifiers = [
+                    ModifierFactory.from_dict(mod_data) for mod_data in modifier_data
+                ]
 
         return Buff(
             name=data["name"],
@@ -91,7 +102,7 @@ class EffectFactory:
     def _create_debuff(data: Dict[str, Any]) -> "Debuff":
         """Create a Debuff instance from dictionary data."""
         from .effect import Debuff, Modifier
-        
+
         modifiers = []
         if "modifiers" in data:
             modifier_data = data["modifiers"]
@@ -115,7 +126,9 @@ class EffectFactory:
                     modifiers.append(Modifier(bonus_type, value))
             elif isinstance(modifier_data, list):
                 # New format: list of modifier dicts
-                modifiers = [ModifierFactory.from_dict(mod_data) for mod_data in modifier_data]
+                modifiers = [
+                    ModifierFactory.from_dict(mod_data) for mod_data in modifier_data
+                ]
 
         return Debuff(
             name=data["name"],
@@ -128,7 +141,7 @@ class EffectFactory:
     def _create_dot(data: Dict[str, Any]) -> "DoT":
         """Create a DoT (Damage over Time) instance from dictionary data."""
         from .effect import DoT
-        
+
         return DoT(
             name=data["name"],
             description=data.get("description", ""),
@@ -140,7 +153,7 @@ class EffectFactory:
     def _create_hot(data: Dict[str, Any]) -> "HoT":
         """Create a HoT (Heal over Time) instance from dictionary data."""
         from .effect import HoT
-        
+
         return HoT(
             name=data["name"],
             description=data.get("description", ""),
@@ -152,7 +165,7 @@ class EffectFactory:
     def _create_on_hit_trigger(data: Dict[str, Any]) -> "OnHitTrigger":
         """Create an OnHitTrigger instance from dictionary data."""
         from .effect import OnHitTrigger
-        
+
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
@@ -177,7 +190,7 @@ class EffectFactory:
     def _create_on_low_health_trigger(data: Dict[str, Any]) -> "OnLowHealthTrigger":
         """Create an OnLowHealthTrigger instance from dictionary data."""
         from .effect import OnLowHealthTrigger
-        
+
         # Parse trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
@@ -206,7 +219,7 @@ class EffectFactory:
     def _create_incapacitating_effect(data: Dict[str, Any]) -> "IncapacitatingEffect":
         """Create an IncapacitatingEffect instance from dictionary data."""
         from .effect import IncapacitatingEffect
-        
+
         return IncapacitatingEffect(
             name=data["name"],
             description=data.get("description", ""),
@@ -221,14 +234,14 @@ class EffectFactory:
 
 class EffectSerializer:
     """Handles serialization of Effect instances to dictionaries."""
-    
+
     @staticmethod
     def to_dict(effect) -> Dict[str, Any]:
         """Convert an Effect instance to dictionary representation.
-        
+
         Args:
             effect: The Effect instance to serialize.
-            
+
         Returns:
             Dict[str, Any]: Dictionary representation of the effect.
         """
@@ -240,51 +253,57 @@ class EffectSerializer:
             "max_duration": effect.max_duration,
             "requires_concentration": effect.requires_concentration,
         }
-        
+
         # Handle specific effect types using getattr for safe access
-        if hasattr(effect, 'modifiers'):
+        if hasattr(effect, "modifiers"):
             # ModifierEffect subclasses (Buff, Debuff)
-            data["modifiers"] = [ModifierSerializer.to_dict(modifier) for modifier in effect.modifiers]
-        
-        if hasattr(effect, 'damage'):
+            data["modifiers"] = [
+                ModifierSerializer.to_dict(modifier) for modifier in effect.modifiers
+            ]
+
+        if hasattr(effect, "damage"):
             # DoT
             data["damage"] = effect.damage.to_dict()
-            
-        if hasattr(effect, 'heal_per_turn'):
+
+        if hasattr(effect, "heal_per_turn"):
             # HoT
             data["heal_per_turn"] = effect.heal_per_turn
-            
-        if hasattr(effect, 'trigger_effects'):
+
+        if hasattr(effect, "trigger_effects"):
             # OnHitTrigger, OnLowHealthTrigger
-            data["trigger_effects"] = [EffectSerializer.to_dict(trigger_effect) for trigger_effect in effect.trigger_effects]
+            data["trigger_effects"] = [
+                EffectSerializer.to_dict(trigger_effect)
+                for trigger_effect in effect.trigger_effects
+            ]
             data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
             data["consumes_on_trigger"] = effect.consumes_on_trigger
-            
-        if hasattr(effect, 'hp_threshold_percent'):
+
+        if hasattr(effect, "hp_threshold_percent"):
             # OnLowHealthTrigger
             data["hp_threshold_percent"] = effect.hp_threshold_percent
             data["has_triggered"] = effect.has_triggered
-            
-        if hasattr(effect, 'incapacitation_type'):
+
+        if hasattr(effect, "incapacitation_type"):
             # IncapacitatingEffect
-            data.update({
-                "incapacitation_type": effect.incapacitation_type,
-                "save_ends": effect.save_ends,
-                "save_dc": effect.save_dc,
-                "save_stat": effect.save_stat,
-            })
-            
+            data.update(
+                {
+                    "incapacitation_type": effect.incapacitation_type,
+                    "save_ends": effect.save_ends,
+                    "save_dc": effect.save_dc,
+                    "save_stat": effect.save_stat,
+                }
+            )
+
         return data
 
 
 class ModifierFactory:
     """Factory class for creating Modifier instances from dictionaries."""
-    
+
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Modifier":
         """Create a Modifier instance from a dictionary representation."""
-        from .modifier import Modifier
-        
+
         assert data is not None, "Data must not be None."
 
         bonus_type = BonusType[data["bonus_type"].upper()]
@@ -313,7 +332,7 @@ class ModifierFactory:
 
 class ModifierSerializer:
     """Handles serialization of Modifier instances to dictionaries."""
-    
+
     @staticmethod
     def to_dict(modifier) -> Dict[str, Any]:
         """Convert the modifier to a dictionary representation."""

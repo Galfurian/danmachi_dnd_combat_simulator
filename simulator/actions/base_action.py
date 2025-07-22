@@ -118,16 +118,6 @@ class BaseAction:
             - Subclasses should handle cooldowns and usage limits
             - This method should return False for any failure condition
 
-        Example:
-            ```python
-            # In a subclass implementation:
-            def execute(self, actor, target) -> bool:
-                if not self.is_valid_target(actor, target):
-                    return False
-
-                # Perform the action...
-                # Return True if successful, False otherwise
-            ```
         """
         raise NotImplementedError("Subclasses must implement the execute method")
 
@@ -151,7 +141,7 @@ class BaseAction:
 
         Args:
             actor: The character applying the effect (must have is_alive method)
-            target: The character receiving the effect (must have is_alive and effect_manager)
+            target: The character receiving the effect (must have is_alive and effects_module)
             effect: The effect to apply, or None to do nothing
             mind_level: The mind cost level for scaling effects (0+ integer)
 
@@ -164,12 +154,6 @@ class BaseAction:
             - Auto-corrects invalid mind_level values with warnings
             - All validation errors are logged with context for debugging
 
-        Example:
-            ```python
-            # Apply a poison effect
-            poison_effect = Effect.create_poison(damage=10, duration=3)
-            success = action.apply_effect(caster, enemy, poison_effect, mind_level=2)
-            ```
         """
         try:
             if not effect:
@@ -185,7 +169,7 @@ class BaseAction:
             validate_required_object(
                 target,
                 "target",
-                ["is_alive", "effect_manager"],
+                ["is_alive", "effects_module"],
                 {
                     "effect": safe_get_attribute(effect, "name", "Unknown"),
                     "actor": safe_get_attribute(actor, "name", "Unknown"),
@@ -208,7 +192,7 @@ class BaseAction:
                 },
             )
 
-            if target.effect_manager.add_effect(actor, effect, mind_level):
+            if target.effects_module.add_effect(actor, effect, mind_level):
                 debug(
                     f"Applied effect {effect.name} from {actor.name} to {target.name}."
                 )

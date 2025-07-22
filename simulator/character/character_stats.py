@@ -12,7 +12,7 @@ from core.utils import get_stat_modifier
 if TYPE_CHECKING:
     from character.character_class import CharacterClass
     from character.character_race import CharacterRace
-    from effects.effect_manager import EffectManager
+    from character.character_effects import CharacterEffects
     from items.armor import Armor
 
 
@@ -77,7 +77,7 @@ class CharacterStats:
         for cls, lvl in self._character.levels.items():
             hp_max += lvl * (cls.hp_mult + self.CON)
         # Add the effect modifiers to the max HP.
-        hp_max += self._character.effect_manager.get_modifier(BonusType.HP)
+        hp_max += self._character.effects_module.get_modifier(BonusType.HP)
         return hp_max
 
     @property
@@ -88,7 +88,7 @@ class CharacterStats:
         for cls, lvl in self._character.levels.items():
             mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
         # Add the effect modifiers to the max Mind.
-        mind_max += self._character.effect_manager.get_modifier(BonusType.MIND)
+        mind_max += self._character.effects_module.get_modifier(BonusType.MIND)
         return mind_max
 
     @property
@@ -107,7 +107,7 @@ class CharacterStats:
             base_ac = sum(armor.get_ac(self.DEX) for armor in self._character.equipped_armor)
 
         # Add effect bonuses to AC.
-        effect_ac = self._character.effect_manager.get_modifier(BonusType.AC)
+        effect_ac = self._character.effects_module.get_modifier(BonusType.AC)
 
         # Determine final AC.
         race_bonus = self._character.race.natural_ac if self._character.race else 0
@@ -123,7 +123,7 @@ class CharacterStats:
         # Base initiative is DEX modifier.
         initiative = self.DEX
         # Add any initiative bonuses from active effects.
-        initiative += self._character.effect_manager.get_modifier(BonusType.INITIATIVE)
+        initiative += self._character.effects_module.get_modifier(BonusType.INITIATIVE)
         return initiative
 
     @property
@@ -134,7 +134,7 @@ class CharacterStats:
             int: Maximum concentration effects
         """
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
-        concentration_bonus = self._character.effect_manager.get_modifier(BonusType.CONCENTRATION)
+        concentration_bonus = self._character.effects_module.get_modifier(BonusType.CONCENTRATION)
 
         # Handle different return types from get_modifier
         if isinstance(concentration_bonus, list):

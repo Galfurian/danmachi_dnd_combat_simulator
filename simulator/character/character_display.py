@@ -35,8 +35,8 @@ class CharacterDisplay:
         """Get a formatted status line for the character with health, mana, effects, etc."""
         # Collect all effects with better formatting
         effects_list = []
-        if self._character.effect_manager.active_effects:
-            for e in self._character.effect_manager.active_effects:
+        if self._character.effects_module.active_effects:
+            for e in self._character.effects_module.active_effects:
                 color = get_effect_color(e.effect)
                 # Truncate long effect names and show duration more compactly
                 effect_name = (
@@ -159,11 +159,11 @@ class CharacterDisplay:
 
     def get_detailed_effects(self) -> str:
         """Get a detailed multi-line view of all active effects."""
-        if not self._character.effect_manager.active_effects:
+        if not self._character.effects_module.active_effects:
             return "No active effects"
 
         effects_info = []
-        for e in self._character.effect_manager.active_effects:
+        for e in self._character.effects_module.active_effects:
             color = get_effect_color(e.effect)
             effects_info.append(
                 f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"

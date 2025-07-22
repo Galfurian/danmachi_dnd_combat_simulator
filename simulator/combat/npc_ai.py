@@ -21,7 +21,7 @@ def _sort_targets_by_usefulness_and_hp(targets: list[Character], action, mind_le
     """
     useful = [
         t for t in targets
-        if action.effect is None or t.effect_manager.can_add_effect(action.effect, t, mind_level)
+        if action.effect is None or t.effects_module.can_add_effect(action.effect, t, mind_level)
     ]
     not_useful = [t for t in targets if t not in useful]
     
@@ -50,7 +50,7 @@ def _sort_for_spell_heal(
     
     def priority_key(t: Character) -> Tuple[float, bool]:
         hp_ratio = _hp_ratio(t)
-        usefulness = spell.effect is None or t.effect_manager.can_add_effect(
+        usefulness = spell.effect is None or t.effects_module.can_add_effect(
             spell.effect, t, spell.mind_cost[0]
         )
         return (hp_ratio, not usefulness)
@@ -107,7 +107,7 @@ def choose_best_weapon_for_situation(
             
             # Effect score
             effect_score = 0
-            if weapon.effect and target.effect_manager.can_add_effect(weapon.effect, target, 0):
+            if weapon.effect and target.effects_module.can_add_effect(weapon.effect, target, 0):
                 effect_score = 10
             
             # Damage potential score
@@ -201,7 +201,7 @@ def choose_best_base_attack_action(
             # Score based on how much the effect helps and how close the target is to death
             effect_score = 0
             if attack.effect:
-                if target.effect_manager.can_add_effect(attack.effect, target, 0):
+                if target.effects_module.can_add_effect(attack.effect, target, 0):
                     effect_score += 10
             # HP-based vulnerability (lower is better)
             hp_ratio = target.hp / target.HP_MAX if target.HP_MAX > 0 else 1
@@ -263,7 +263,7 @@ def choose_best_attack_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect is None
-                or t.effect_manager.can_add_effect(spell.effect, t, mind_level)
+                or t.effects_module.can_add_effect(spell.effect, t, mind_level)
             )
 
             # Prioritize high usefulness, low cost.
@@ -323,7 +323,7 @@ def choose_best_healing_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect
-                and t.effect_manager.can_add_effect(spell.effect, t, mind_level)
+                and t.effects_module.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = total_hp_missing + useful_effects * 10 - mind_level
@@ -380,7 +380,7 @@ def choose_best_buff_spell_action(
             usefulness = sum(
                 1
                 for t in candidate_targets
-                if t.effect_manager.can_add_effect(spell.effect, t, mind_level)
+                if t.effects_module.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = usefulness * 10 - mind_level
@@ -438,7 +438,7 @@ def choose_best_debuff_spell_action(
                 1
                 for t in candidate_targets
                 if spell.effect
-                and t.effect_manager.can_add_effect(spell.effect, t, mind_level)
+                and t.effects_module.can_add_effect(spell.effect, t, mind_level)
             )
 
             score = usefulness * 10 - mind_level
