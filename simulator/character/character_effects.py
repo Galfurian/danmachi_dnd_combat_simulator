@@ -93,13 +93,13 @@ class CharacterEffects:
                 if self.has_effect(effect):
                     return False
 
-            elif isinstance(effect, OnHitTrigger):
-                # Only allow one OnHitTrigger spell at a time (like D&D 5e smite spells)
-                # Remove any existing OnHitTrigger effects first
+            elif isinstance(effect, OnTriggerEffect) and effect.trigger_condition.trigger_type.value == "on_hit":
+                # Only allow one OnHit trigger spell at a time (like D&D 5e smite spells)
+                # Remove any existing OnHit trigger effects first
                 existing_triggers = [
                     ae
                     for ae in self.active_effects
-                    if isinstance(ae.effect, OnHitTrigger)
+                    if isinstance(ae.effect, OnTriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit"
                 ]
                 for existing_trigger in existing_triggers:
                     self.remove_effect(existing_trigger)
@@ -216,17 +216,21 @@ class CharacterEffects:
         activation_messages = []
 
         for effect in self.passive_effects:
-            # Check for OnLowHealthTrigger specifically
-            if effect.__class__.__name__ == "OnLowHealthTrigger":
-                # Import here to avoid circular imports
-                from effects.effect import OnLowHealthTrigger
+            # Check for low health triggers using the new OnTriggerEffect system
+            if isinstance(effect, OnTriggerEffect) and effect.trigger_condition.trigger_type.value == "on_low_health":
 
-                trigger_effect: OnLowHealthTrigger = effect  # type: ignore
+                trigger_effect: OnTriggerEffect = effect  # type: ignore
 
-                if trigger_effect.should_trigger(self.owner):
+                # Create event data for health check
+                event_data = {
+                    "event_type": "health_check",
+                    "character": self.owner
+                }
+
+                if trigger_effect.check_trigger(self.owner, event_data):
                     # Activate the trigger
                     damage_bonuses, trigger_effects_with_levels = (
-                        trigger_effect.activate(self.owner)
+                        trigger_effect.activate_trigger(self.owner, event_data)
                     )
 
                     # Apply triggered effects to self
@@ -496,28 +500,28 @@ class CharacterEffects:
         """
         yield from self.active_effects
 
-    # === OnHitTrigger Management ===
+    # === OnHit Trigger Management (OnTriggerEffect) ===
 
     def get_on_hit_triggers(self) -> list[ActiveEffect]:
         """
-        Get all active OnHitTrigger effects.
+        Get all active OnTriggerEffect effects with on_hit condition.
 
         Returns:
-            list[ActiveEffect]: List of active OnHitTrigger effects.
+            list[ActiveEffect]: List of active OnHit trigger effects.
         """
         triggers = []
         for ae in self.active_effects:
-            if isinstance(ae.effect, OnHitTrigger):
+            if isinstance(ae.effect, OnTriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit":
                 triggers.append(ae)
         return triggers
 
     def trigger_on_hit_effects(
         self, target: Any
     ) -> tuple[
-        list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnHitTrigger]
+        list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnTriggerEffect]
     ]:
         """
-        Trigger all OnHitTrigger effects and return damage bonuses and effects to apply.
+        Trigger all OnHit trigger effects and return damage bonuses and effects to apply.
 
         Args:
             target (Any): The target being hit.
@@ -526,31 +530,43 @@ class CharacterEffects:
             tuple: (damage_bonuses, effects_to_apply, consumed_triggers)
                 - damage_bonuses: List of (DamageComponent, mind_level) tuples.
                 - effects_to_apply: List of (Effect, mind_level) tuples.
-                - consumed_triggers: List of OnHitTrigger effects that were consumed.
+                - consumed_triggers: List of OnTriggerEffect effects that were consumed.
         """
         damage_bonuses: list[tuple[DamageComponent, int]] = []
         effects_to_apply: list[tuple[Effect, int]] = []
         effects_to_remove: list[ActiveEffect] = []
-        consumed_triggers: list[OnHitTrigger] = []
+        consumed_triggers: list[OnTriggerEffect] = []
 
         for ae in self.get_on_hit_triggers():
-            if not isinstance(ae.effect, OnHitTrigger):
+            if not isinstance(ae.effect, OnTriggerEffect):
                 continue
 
             trigger = ae.effect
 
-            # Add damage bonuses from this trigger
-            for damage_comp in trigger.damage_bonus:
-                damage_bonuses.append((damage_comp, ae.mind_level))
+            # Create event data for the hit
+            event_data = {
+                "event_type": "on_hit",
+                "target": target,
+                "mind_level": ae.mind_level
+            }
 
-            # Add effects to apply to target (with mind level)
-            for effect in trigger.trigger_effects:
-                effects_to_apply.append((effect, ae.mind_level))
+            # Check if the trigger should activate
+            if trigger.check_trigger(self.owner, event_data):
+                # Activate the trigger and get results
+                damage_bonus, trigger_effects_with_levels = trigger.activate_trigger(self.owner, event_data)
+                
+                # Add damage bonuses from this trigger
+                for damage_comp in damage_bonus:
+                    damage_bonuses.append((damage_comp, ae.mind_level))
 
-            # Mark for removal if it consumes on trigger
-            if trigger.consumes_on_trigger:
-                effects_to_remove.append(ae)
-                consumed_triggers.append(trigger)
+                # Add effects to apply to target (with mind level)
+                for effect, mind_level in trigger_effects_with_levels:
+                    effects_to_apply.append((effect, mind_level))
+
+                # Mark for removal if it consumes on trigger
+                if trigger.consumes_on_trigger:
+                    effects_to_remove.append(ae)
+                    consumed_triggers.append(trigger)
 
         # Remove consumed effects
         for ae in effects_to_remove:

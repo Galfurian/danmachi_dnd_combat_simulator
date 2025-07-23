@@ -70,46 +70,47 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
     elif isinstance(effect, DoT):
         sheet += f"deals {damage_to_string(effect.damage)} per turn"
-    elif isinstance(effect, OnHitTrigger):
-        # Handle OnHitTrigger effects (like spell buffs that trigger on hit)
+    elif isinstance(effect, OnTriggerEffect):
+        # Handle OnTriggerEffect effects (like spell buffs that trigger on events)
         details = []
         
         # Show damage bonus if present
-        if hasattr(effect, 'damage_bonus') and effect.damage_bonus:
+        if effect.damage_bonus:
             damage_strings = [damage_to_string(damage) for damage in effect.damage_bonus]
-            details.append(f"adds {', '.join(damage_strings)} to next hit")
+            details.append(f"adds {', '.join(damage_strings)} on trigger")
         
         # Show trigger effects if present  
-        if hasattr(effect, 'trigger_effects') and effect.trigger_effects:
+        if effect.trigger_effects:
             trigger_names = [f"[red]{trigger.name}[/]" for trigger in effect.trigger_effects]
             details.append(f"applies {', '.join(trigger_names)}")
             
         if details:
             sheet += ", ".join(details)
+        else:
+            sheet += effect.trigger_condition.description
     
     cprint(Padding(sheet, (0, padding)))
     
-    # For OnHitTrigger, also show details of the triggered effects
-    if isinstance(effect, OnHitTrigger):
-        if hasattr(effect, 'trigger_effects') and effect.trigger_effects:
+    # For OnTriggerEffect, also show details of the triggered effects
+    if isinstance(effect, OnTriggerEffect):
+        if effect.trigger_effects:
             for trigger_effect in effect.trigger_effects:
                 print_effect_sheet(trigger_effect, padding + 2)
 
 
 def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """Prints the details of a passive effect in a formatted way."""
-    from effects.effect import OnLowHealthTrigger, OnHitTrigger
+    from effects.effect import OnTriggerEffect
     
     sheet: str = f"[{get_effect_color(effect)}]{effect.name}[/]"
     if effect.description:
         sheet += f" - [italic]{effect.description}[/]"
     cprint(Padding(sheet, (0, padding)))
     
-    # Handle specific passive effect types
-    if isinstance(effect, OnLowHealthTrigger):
-        trigger_info = f"Activates when HP ≤ {int(effect.hp_threshold_percent * 100)}%"
-        if effect.has_triggered:
-            trigger_info += " [dim](already triggered)[/dim]"
+    # Handle OnTriggerEffect effects
+    if isinstance(effect, OnTriggerEffect):
+        # Show trigger condition
+        trigger_info = effect.get_status_text()
         cprint(Padding(trigger_info, (0, padding + 2)))
         
         # Show what it triggers
@@ -122,12 +123,6 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
         if effect.damage_bonus:
             damage_str = ", ".join([damage_to_string(damage) for damage in effect.damage_bonus])
             cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
-    
-    elif isinstance(effect, OnHitTrigger):
-        trigger_info = f"Activates on next hit"
-        if effect.max_duration > 0:
-            trigger_info += f" (lasts {effect.max_duration} turns)"
-        cprint(Padding(trigger_info, (0, padding + 2)))
         
         # Show what it triggers
         if effect.trigger_effects:

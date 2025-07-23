@@ -17,8 +17,7 @@ if TYPE_CHECKING:
         Debuff,
         DoT,
         HoT,
-        OnHitTrigger,
-        OnLowHealthTrigger,
+        OnTriggerEffect,
         IncapacitatingEffect,
         Modifier,
     )
@@ -54,9 +53,13 @@ class EffectDeserializer:
             elif effect_type == "HoT":
                 return EffectDeserializer._deserialize_hot(data)
             elif effect_type == "OnHitTrigger":
-                return EffectDeserializer._deserialize_on_hit_trigger(data)
+                # Convert legacy OnHitTrigger to OnTriggerEffect
+                return EffectDeserializer._convert_legacy_on_hit_trigger(data)
             elif effect_type == "OnLowHealthTrigger":
-                return EffectDeserializer._deserialize_on_low_health_trigger(data)
+                # Convert legacy OnLowHealthTrigger to OnTriggerEffect
+                return EffectDeserializer._convert_legacy_low_health_trigger(data)
+            elif effect_type == "OnTriggerEffect":
+                return EffectDeserializer._deserialize_universal_trigger(data)
             elif effect_type == "IncapacitatingEffect":
                 return EffectDeserializer._deserialize_incapacitating_effect(data)
             else:
@@ -202,73 +205,152 @@ class EffectDeserializer:
         )
 
     @staticmethod
-    def _deserialize_on_hit_trigger(data: Dict[str, Any]) -> "OnHitTrigger":
+    def _convert_legacy_on_hit_trigger(data: Dict[str, Any]) -> "OnTriggerEffect":
         """
-        Create an OnHitTrigger instance from dictionary data.
+        Convert legacy OnHitTrigger data to OnTriggerEffect.
         
         Args:
-            data (Dict[str, Any]): Dictionary containing OnHitTrigger configuration data.
+            data (Dict[str, Any]): Dictionary containing legacy OnHitTrigger configuration data.
             
         Returns:
-            OnHitTrigger: An OnHitTrigger effect instance.
+            OnTriggerEffect: A OnTriggerEffect effect instance.
         """
-        from .effect import OnHitTrigger
-
-        # Parse trigger effects
+        from .effect import OnTriggerEffect, TriggerCondition, TriggerType, DamageComponent
+        
+        # Deserialize trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(EffectDeserializer.deserialize(effect_data))
+            trigger_effect = EffectDeserializer.deserialize(effect_data)
+            if trigger_effect:
+                trigger_effects.append(trigger_effect)
 
-        # Parse damage bonus components
+        # Deserialize damage bonus
         damage_bonus = []
         for damage_data in data.get("damage_bonus", []):
             damage_bonus.append(DamageComponent.from_dict(damage_data))
 
-        return OnHitTrigger(
+        # Create on-hit trigger condition
+        condition = TriggerCondition(
+            trigger_type=TriggerType.ON_HIT,
+            description="when hitting with an attack"
+        )
+
+        return OnTriggerEffect(
             name=data["name"],
             description=data.get("description", ""),
             max_duration=data.get("max_duration", 0),
+            trigger_condition=condition,
             trigger_effects=trigger_effects,
             damage_bonus=damage_bonus,
             consumes_on_trigger=data.get("consumes_on_trigger", True),
+            cooldown_turns=0,  # Legacy behavior
+            max_triggers=-1,   # Legacy behavior
         )
 
     @staticmethod
-    def _deserialize_on_low_health_trigger(
-        data: Dict[str, Any],
-    ) -> "OnLowHealthTrigger":
+    def _convert_legacy_low_health_trigger(data: Dict[str, Any]) -> "OnTriggerEffect":
         """
-        Create an OnLowHealthTrigger instance from dictionary data.
+        Convert legacy OnLowHealthTrigger data to OnTriggerEffect.
         
         Args:
-            data (Dict[str, Any]): Dictionary containing OnLowHealthTrigger configuration data.
+            data (Dict[str, Any]): Dictionary containing legacy OnLowHealthTrigger configuration data.
             
         Returns:
-            OnLowHealthTrigger: An OnLowHealthTrigger effect instance.
+            OnTriggerEffect: A OnTriggerEffect effect instance.
         """
-        from .effect import OnLowHealthTrigger
-
-        # Parse trigger effects
+        from .effect import OnTriggerEffect, TriggerCondition, TriggerType, DamageComponent
+        
+        # Deserialize trigger effects
         trigger_effects = []
         for effect_data in data.get("trigger_effects", []):
-            trigger_effects.append(EffectDeserializer.deserialize(effect_data))
+            trigger_effect = EffectDeserializer.deserialize(effect_data)
+            if trigger_effect:
+                trigger_effects.append(trigger_effect)
 
-        # Parse damage bonus components
+        # Deserialize damage bonus
         damage_bonus = []
         for damage_data in data.get("damage_bonus", []):
             damage_bonus.append(DamageComponent.from_dict(damage_data))
 
-        trigger = OnLowHealthTrigger(
+        # Create low health trigger condition
+        hp_threshold = data.get("hp_threshold_percent", 0.25)
+        condition = TriggerCondition(
+            trigger_type=TriggerType.ON_LOW_HEALTH,
+            threshold=hp_threshold,
+            description=f"when HP drops below {hp_threshold * 100:.0f}%"
+        )
+
+        trigger = OnTriggerEffect(
             name=data["name"],
             description=data.get("description", ""),
-            hp_threshold_percent=data.get("hp_threshold_percent", 0.25),
+            max_duration=0,  # Legacy behavior (permanent)
+            trigger_condition=condition,
             trigger_effects=trigger_effects,
             damage_bonus=damage_bonus,
             consumes_on_trigger=data.get("consumes_on_trigger", True),
+            cooldown_turns=0,  # Legacy behavior
+            max_triggers=-1,   # Legacy behavior
         )
 
-        # Restore triggered state if loading from save
-        trigger.has_triggered = data.get("has_triggered", False)
+        # Restore runtime state if available
+        trigger.triggers_used = data.get("triggers_used", 0)
+        trigger.cooldown_remaining = data.get("cooldown_remaining", 0)
+        trigger.has_triggered_this_turn = data.get("has_triggered_this_turn", False)
+
+        return trigger
+
+    @staticmethod
+    def _deserialize_universal_trigger(data: Dict[str, Any]) -> "OnTriggerEffect":
+        """
+        Create a OnTriggerEffect instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing OnTriggerEffect configuration data.
+            
+        Returns:
+            OnTriggerEffect: A OnTriggerEffect effect instance.
+        """
+        from .effect import OnTriggerEffect, TriggerCondition, TriggerType, DamageComponent
+        
+        # Deserialize trigger effects
+        trigger_effects = []
+        for effect_data in data.get("trigger_effects", []):
+            trigger_effect = EffectDeserializer.deserialize(effect_data)
+            if trigger_effect:
+                trigger_effects.append(trigger_effect)
+
+        # Deserialize damage bonus
+        damage_bonus = []
+        for damage_data in data.get("damage_bonus", []):
+            damage_bonus.append(DamageComponent.from_dict(damage_data))
+
+        # Deserialize trigger condition
+        condition_data = data.get("trigger_condition", {})
+        trigger_type = TriggerType(condition_data.get("trigger_type", "ON_HIT"))
+        condition = TriggerCondition(
+            trigger_type=trigger_type,
+            threshold=condition_data.get("threshold"),
+            damage_type=condition_data.get("damage_type"),
+            spell_category=condition_data.get("spell_category"),
+            description=condition_data.get("description", "")
+        )
+
+        trigger = OnTriggerEffect(
+            name=data["name"],
+            description=data.get("description", ""),
+            max_duration=data.get("max_duration", 0),
+            trigger_condition=condition,
+            trigger_effects=trigger_effects,
+            damage_bonus=damage_bonus,
+            consumes_on_trigger=data.get("consumes_on_trigger", True),
+            cooldown_turns=data.get("cooldown_turns", 0),
+            max_triggers=data.get("max_triggers", -1),
+        )
+
+        # Restore runtime state
+        trigger.triggers_used = data.get("triggers_used", 0)
+        trigger.cooldown_remaining = data.get("cooldown_remaining", 0)
+        trigger.has_triggered_this_turn = data.get("has_triggered_this_turn", False)
 
         return trigger
 
@@ -321,8 +403,7 @@ class EffectSerializer:
             Debuff,
             DoT,
             HoT,
-            OnHitTrigger,
-            OnLowHealthTrigger,
+            OnTriggerEffect,
             IncapacitatingEffect,
         )
 
@@ -334,10 +415,10 @@ class EffectSerializer:
             return EffectSerializer._serialize_dot(effect)
         elif isinstance(effect, HoT):
             return EffectSerializer._serialize_hot(effect)
-        elif isinstance(effect, OnHitTrigger):
-            return EffectSerializer._serialize_on_hit_trigger(effect)
-        elif isinstance(effect, OnLowHealthTrigger):
-            return EffectSerializer._serialize_on_low_health_trigger(effect)
+        elif isinstance(effect, OnTriggerEffect):
+            return EffectSerializer._serialize_universal_trigger(effect)
+        elif isinstance(effect, OnTriggerEffect):
+            return EffectSerializer._serialize_universal_trigger(effect)
         elif isinstance(effect, IncapacitatingEffect):
             return EffectSerializer._serialize_incapacitating_effect(effect)
         else:
@@ -426,45 +507,45 @@ class EffectSerializer:
         return data
 
     @staticmethod
-    def _serialize_on_hit_trigger(effect: "OnHitTrigger") -> Dict[str, Any]:
+    def _serialize_universal_trigger(effect: "OnTriggerEffect") -> Dict[str, Any]:
         """
-        Serialize OnHitTrigger to dictionary.
+        Serialize OnTriggerEffect to dictionary.
         
         Args:
-            effect (OnHitTrigger): The OnHitTrigger effect to serialize.
+            effect (OnTriggerEffect): The OnTriggerEffect effect to serialize.
             
         Returns:
-            Dict[str, Any]: Dictionary representation of the OnHitTrigger effect.
+            Dict[str, Any]: Dictionary representation of the OnTriggerEffect effect.
         """
         data = EffectSerializer._serialize_base_effect(effect)
+        
+        # Serialize trigger condition
+        condition = effect.trigger_condition
+        data["trigger_condition"] = {
+            "trigger_type": condition.trigger_type.value,
+            "threshold": condition.threshold,
+            "damage_type": condition.damage_type,
+            "spell_category": condition.spell_category,
+            "description": condition.description
+        }
+        
+        # Serialize trigger effects and damage bonus
         data["trigger_effects"] = [
             EffectSerializer.serialize(trigger_effect)
             for trigger_effect in effect.trigger_effects
         ]
         data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
-        data["consumes_on_trigger"] = effect.consumes_on_trigger
-        return data
-
-    @staticmethod
-    def _serialize_on_low_health_trigger(effect: "OnLowHealthTrigger") -> Dict[str, Any]:
-        """
-        Serialize OnLowHealthTrigger to dictionary.
         
-        Args:
-            effect (OnLowHealthTrigger): The OnLowHealthTrigger effect to serialize.
-            
-        Returns:
-            Dict[str, Any]: Dictionary representation of the OnLowHealthTrigger effect.
-        """
-        data = EffectSerializer._serialize_base_effect(effect)
-        data["trigger_effects"] = [
-            EffectSerializer.serialize(trigger_effect)
-            for trigger_effect in effect.trigger_effects
-        ]
-        data["damage_bonus"] = [damage.to_dict() for damage in effect.damage_bonus]
+        # Serialize configuration
         data["consumes_on_trigger"] = effect.consumes_on_trigger
-        data["hp_threshold_percent"] = effect.hp_threshold_percent
-        data["has_triggered"] = effect.has_triggered
+        data["cooldown_turns"] = effect.cooldown_turns
+        data["max_triggers"] = effect.max_triggers
+        
+        # Serialize runtime state
+        data["triggers_used"] = effect.triggers_used
+        data["cooldown_remaining"] = effect.cooldown_remaining
+        data["has_triggered_this_turn"] = effect.has_triggered_this_turn
+        
         return data
 
     @staticmethod

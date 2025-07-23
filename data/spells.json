@@ -109,18 +109,24 @@
         ],
         "target_restrictions": ["SELF"],
         "effect": {
-            "type": "OnHitTrigger",
+            "type": "OnTriggerEffect",
             "name": "Divine Smite",
             "description": "Next weapon attack deals extra radiant damage.",
             "max_duration": 10,
+            "trigger_condition": {
+                "trigger_type": "on_hit",
+                "description": "when hitting with an attack"
+            },
+            "trigger_effects": [],
             "damage_bonus": [
                 {
                     "damage_roll": "1D8 + [MIND]D8",
                     "damage_type": "RADIANT"
                 }
             ],
-            "trigger_effects": [],
-            "consumes_on_trigger": true
+            "consumes_on_trigger": true,
+            "cooldown_turns": 0,
+            "max_triggers": -1
         }
     },
     {
@@ -136,16 +142,14 @@
         ],
         "target_restrictions": ["SELF"],
         "effect": {
-            "type": "OnHitTrigger",
+            "type": "OnTriggerEffect",
             "name": "Searing Smite",
             "description": "Next weapon attack deals extra fire damage and applies burning.",
             "max_duration": 10,
-            "damage_bonus": [
-                {
-                    "damage_roll": "[MIND]D6",
-                    "damage_type": "FIRE"
-                }
-            ],
+            "trigger_condition": {
+                "trigger_type": "on_hit",
+                "description": "when hitting with an attack"
+            },
             "trigger_effects": [
                 {
                     "type": "DoT",
@@ -158,7 +162,15 @@
                     }
                 }
             ],
-            "consumes_on_trigger": true
+            "damage_bonus": [
+                {
+                    "damage_roll": "[MIND]D6",
+                    "damage_type": "FIRE"
+                }
+            ],
+            "consumes_on_trigger": true,
+            "cooldown_turns": 0,
+            "max_triggers": -1
         }
     },
     {
@@ -174,16 +186,14 @@
         ],
         "target_restrictions": ["SELF"],
         "effect": {
-            "type": "OnHitTrigger",
+            "type": "OnTriggerEffect",
             "name": "Wrathful Smite",
             "description": "Next weapon attack deals extra psychic damage and applies fear.",
             "max_duration": 10,
-            "damage_bonus": [
-                {
-                    "damage_roll": "[MIND]D6",
-                    "damage_type": "PSYCHIC"
-                }
-            ],
+            "trigger_condition": {
+                "trigger_type": "on_hit",
+                "description": "when hitting with an attack"
+            },
             "trigger_effects": [
                 {
                     "type": "Debuff",
@@ -195,7 +205,15 @@
                     }
                 }
             ],
-            "consumes_on_trigger": true
+            "damage_bonus": [
+                {
+                    "damage_roll": "[MIND]D6",
+                    "damage_type": "PSYCHIC"
+                }
+            ],
+            "consumes_on_trigger": true,
+            "cooldown_turns": 0,
+            "max_triggers": -1
         }
     },
     {

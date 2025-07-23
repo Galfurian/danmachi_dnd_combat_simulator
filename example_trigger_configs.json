@@ -1,0 +1,118 @@
+{
+  "triggers": [
+    {
+      "class": "OnTriggerEffect",
+      "name": "Divine Smite",
+      "description": "Deal radiant damage on next hit",
+      "max_duration": 0,
+      "trigger_condition": {
+        "trigger_type": "on_hit",
+        "description": "when hitting with an attack"
+      },
+      "damage_bonus": [
+        {
+          "damage_roll": "2d8",
+          "damage_type": "radiant"
+        }
+      ],
+      "consumes_on_trigger": true,
+      "cooldown_turns": 0,
+      "max_triggers": 1
+    },
+    {
+      "class": "OnTriggerEffect", 
+      "name": "Berserker Rage",
+      "description": "Gain strength when health is low",
+      "max_duration": 0,
+      "trigger_condition": {
+        "trigger_type": "on_low_health",
+        "threshold": 0.25,
+        "description": "when HP drops below 25%"
+      },
+      "trigger_effects": [
+        {
+          "class": "Buff",
+          "name": "Rage",
+          "description": "Increased damage and resistance",
+          "max_duration": 10,
+          "modifiers": [
+            {
+              "bonus_type": "damage",
+              "value": {
+                "damage_roll": "1d6",
+                "damage_type": "slashing"
+              }
+            }
+          ]
+        }
+      ],
+      "consumes_on_trigger": false,
+      "cooldown_turns": 5,
+      "max_triggers": 3
+    },
+    {
+      "class": "OnTriggerEffect",
+      "name": "Counterspell",
+      "description": "Interrupt enemy spellcasting",
+      "max_duration": 600,
+      "trigger_condition": {
+        "trigger_type": "on_spell_cast",
+        "spell_category": "offensive",
+        "description": "when enemy casts offensive spell"
+      },
+      "trigger_effects": [
+        {
+          "class": "IncapacitatingEffect",
+          "name": "Silenced",
+          "description": "Cannot cast spells",
+          "max_duration": 2,
+          "incapacitation_type": "silenced"
+        }
+      ],
+      "consumes_on_trigger": true,
+      "cooldown_turns": 10,
+      "max_triggers": -1
+    },
+    {
+      "class": "OnTriggerEffect",
+      "name": "Guardian's Resolve",
+      "description": "Heal when an ally is hurt",
+      "max_duration": 300,
+      "trigger_condition": {
+        "trigger_type": "on_damage_taken",
+        "description": "when ally takes damage"
+      },
+      "trigger_effects": [
+        {
+          "class": "HoT",
+          "name": "Regeneration",
+          "description": "Heal over time",
+          "max_duration": 5,
+          "heal_per_turn": "1d4+2"
+        }
+      ],
+      "consumes_on_trigger": false,
+      "cooldown_turns": 2,
+      "max_triggers": -1
+    },
+    {
+      "class": "OnTriggerEffect",
+      "name": "Explosive Death",
+      "description": "Deal area damage when defeated",
+      "max_duration": 0,
+      "trigger_condition": {
+        "trigger_type": "on_death",
+        "description": "when reduced to 0 HP"
+      },
+      "damage_bonus": [
+        {
+          "damage_roll": "3d6",
+          "damage_type": "fire"
+        }
+      ],
+      "consumes_on_trigger": true,
+      "cooldown_turns": 0,
+      "max_triggers": 1
+    }
+  ]
+}
