@@ -15,13 +15,13 @@ class IncapacitatingEffect(Effect):
         self,
         name: str,
         description: str,
-        max_duration: int,
+        duration: int,
         incapacitation_type: str = "general",  # "sleep", "paralyzed", "stunned", etc.
         save_ends: bool = False,
         save_dc: int = 0,
         save_stat: str = "CON",
     ):
-        super().__init__(name, description, max_duration)
+        super().__init__(name, description, duration)
         self.incapacitation_type = incapacitation_type
         self.save_ends = save_ends
         self.save_dc = save_dc

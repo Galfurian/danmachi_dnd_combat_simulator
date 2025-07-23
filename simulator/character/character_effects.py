@@ -20,7 +20,7 @@ class ActiveEffect:
         self.target: Any = target  # The recipient
         self.effect: Effect = effect
         self.mind_level: int = mind_level
-        self.duration: int = effect.max_duration
+        self.duration: int = effect.duration
 
 
 class CharacterEffects:

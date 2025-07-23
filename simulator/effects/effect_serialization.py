@@ -54,7 +54,7 @@ class EffectSerializer:
                 "class": "Effect",
                 "name": effect.name,
                 "description": effect.description,
-                "max_duration": effect.max_duration,
+                "duration": effect.duration,
             }
 
     @staticmethod
@@ -64,7 +64,7 @@ class EffectSerializer:
             "class": "BuffEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
         }
 
@@ -75,7 +75,7 @@ class EffectSerializer:
             "class": "DebuffEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
         }
 
@@ -86,7 +86,7 @@ class EffectSerializer:
             "class": "ModifierEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
         }
 
@@ -97,7 +97,7 @@ class EffectSerializer:
             "class": "DamageOverTimeEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "damage": effect.damage.to_dict(),
         }
 
@@ -108,7 +108,7 @@ class EffectSerializer:
             "class": "HealingOverTimeEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "heal_per_turn": effect.heal_per_turn,
         }
 
@@ -119,7 +119,7 @@ class EffectSerializer:
             "class": "TriggerEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "trigger_condition": TriggerConditionSerializer.serialize(effect.trigger_condition),
             "trigger_effects": [EffectSerializer.serialize(te) for te in effect.trigger_effects],
             "damage_bonus": [dmg.to_dict() for dmg in effect.damage_bonus],
@@ -135,7 +135,7 @@ class EffectSerializer:
             "class": "IncapacitatingEffect",
             "name": effect.name,
             "description": effect.description,
-            "max_duration": effect.max_duration,
+            "duration": effect.duration,
             "incapacitation_type": effect.incapacitation_type,
             "save_ends": effect.save_ends,
             "save_dc": effect.save_dc,
@@ -198,7 +198,7 @@ class EffectDeserializer:
         return BuffEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
+            duration=data.get("duration", 0),
             modifiers=modifiers,
         )
 
@@ -209,7 +209,7 @@ class EffectDeserializer:
         return DebuffEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
+            duration=data.get("duration", 0),
             modifiers=modifiers,
         )
 
@@ -220,7 +220,7 @@ class EffectDeserializer:
         return ModifierEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
+            duration=data.get("duration", 0),
             modifiers=modifiers,
         )
 
@@ -235,7 +235,7 @@ class EffectDeserializer:
         return DamageOverTimeEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 1),
+            duration=data.get("duration", 1),
             damage=damage,
         )
 
@@ -245,7 +245,7 @@ class EffectDeserializer:
         return HealingOverTimeEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 1),
+            duration=data.get("duration", 1),
             heal_per_turn=data.get("heal_per_turn", "1"),
         )
 
@@ -275,7 +275,7 @@ class EffectDeserializer:
         return TriggerEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 0),
+            duration=data.get("duration", 0),
             trigger_condition=trigger_condition,
             trigger_effects=trigger_effects,
             damage_bonus=damage_bonus,
@@ -290,7 +290,7 @@ class EffectDeserializer:
         return IncapacitatingEffect(
             name=data["name"],
             description=data.get("description", ""),
-            max_duration=data.get("max_duration", 1),
+            duration=data.get("duration", 1),
             incapacitation_type=data.get("incapacitation_type", "general"),
             save_ends=data.get("save_ends", False),
             save_dc=data.get("save_dc", 0),

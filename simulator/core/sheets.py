@@ -56,8 +56,8 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
     sheet: str = f"[blue]{effect.name}[/], "
     if effect.description:
         sheet += f"[italic]{effect.description}[/], "
-    if effect.max_duration:
-        sheet += f"{effect.max_duration} turns, "
+    if effect.duration:
+        sheet += f"{effect.duration} turns, "
     if isinstance(effect, BuffEffect):
         modifiers_str = ", ".join(
             [modifier_to_string(modifier) for modifier in effect.modifiers]

@@ -241,7 +241,7 @@
                 "effect": {
                     "name": "Poison",
                     "description": "A venomous toxin that causes ongoing damage over time.",
-                    "max_duration": 3,
+                    "duration": 3,
                     "damage": {
                         "damage_roll": "1D4",
                         "damage_type": "POISON"
@@ -355,7 +355,7 @@
                 "effect": {
                     "name": "Burning",
                     "description": "The target is on fire and takes damage each turn.",
-                    "max_duration": 3,
+                    "duration": 3,
                     "damage": {
                         "damage_roll": "1D4",
                         "damage_type": "FIRE"

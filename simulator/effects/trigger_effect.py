@@ -155,7 +155,7 @@ class TriggerEffect(Effect):
         self,
         name: str,
         description: str,
-        max_duration: int,
+        duration: int,
         trigger_condition: TriggerCondition,
         trigger_effects: list["Effect"],
         damage_bonus: list[DamageComponent] | None = None,
@@ -169,7 +169,7 @@ class TriggerEffect(Effect):
         Args:
             name (str): Name of the effect.
             description (str): Description of what the effect does.
-            max_duration (int): Maximum duration in turns (0 for permanent).
+            duration (int): Maximum duration in turns (0 for permanent).
             trigger_condition (TriggerCondition): Condition that activates the trigger.
             trigger_effects (list[Effect]): Effects to apply when triggered.
             damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
@@ -177,7 +177,7 @@ class TriggerEffect(Effect):
             cooldown_turns (int): Number of turns before trigger can activate again.
             max_triggers (int): Maximum number of times trigger can activate (-1 for unlimited).
         """
-        super().__init__(name, description, max_duration)
+        super().__init__(name, description, duration)
         self.trigger_condition = trigger_condition
         self.trigger_effects: list[Effect] = trigger_effects or []
         self.damage_bonus: list[DamageComponent] = damage_bonus or []
@@ -286,17 +286,6 @@ class TriggerEffect(Effect):
         trigger_effects_with_levels = [
             (effect, mind_level) for effect in self.trigger_effects
         ]
-
-        # Log the trigger activation
-        log_warning(
-            f"Trigger activated: {self.name}",
-            {
-                "character": character.name,
-                "trigger_type": self.trigger_condition.trigger_type.value,
-                "triggers_used": self.triggers_used,
-                "cooldown_set": self.cooldown_turns,
-            },
-        )
 
         return self.damage_bonus.copy(), trigger_effects_with_levels
 
@@ -755,7 +744,7 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
     return TriggerEffect(
         name=config["name"],
         description=config["description"],
-        max_duration=config.get("duration", 0),
+        duration=config.get("duration", 0),
         trigger_condition=condition,
         trigger_effects=trigger_effects,
         damage_bonus=damage_bonus,

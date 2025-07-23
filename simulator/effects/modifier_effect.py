@@ -15,10 +15,10 @@ class ModifierEffect(Effect):
         self,
         name: str,
         description: str,
-        max_duration: int,
+        duration: int,
         modifiers: list[Modifier],
     ):
-        super().__init__(name, description, max_duration)
+        super().__init__(name, description, duration)
         self.modifiers: list[Modifier] = modifiers
         self.validate()
 
@@ -72,10 +72,10 @@ class BuffEffect(ModifierEffect):
         self,
         name: str,
         description: str,
-        max_duration: int,
+        duration: int,
         modifiers: list[Modifier],
     ):
-        super().__init__(name, description, max_duration, modifiers)
+        super().__init__(name, description, duration, modifiers)
 
 
 class DebuffEffect(ModifierEffect):
@@ -90,7 +90,7 @@ class DebuffEffect(ModifierEffect):
         self,
         name: str,
         description: str,
-        max_duration: int,
+        duration: int,
         modifiers: list[Modifier],
     ):
-        super().__init__(name, description, max_duration, modifiers)
+        super().__init__(name, description, duration, modifiers)

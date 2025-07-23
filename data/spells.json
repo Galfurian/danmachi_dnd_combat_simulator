@@ -52,15 +52,15 @@
         ],
         "effect": {
             "name": "Bless",
+            "class": "BuffEffect",
             "description": "Adds a dice to the attack rolls.",
-            "max_duration": 10,
+            "duration": 10,
             "modifiers": [
                 {
                     "bonus_type": "ATTACK",
                     "value": "1D4"
                 }
-            ],
-            "class": "BuffEffect"
+            ]
         }
     },
     {
@@ -79,15 +79,15 @@
         "requires_concentration": true,
         "effect": {
             "name": "Shield of Faith",
+            "class": "BuffEffect",
             "description": "Increases the target's armor class.",
-            "max_duration": 10,
+            "duration": 10,
             "modifiers": [
                 {
                     "bonus_type": "AC",
                     "value": "2"
                 }
-            ],
-            "class": "BuffEffect"
+            ]
         }
     },
     {
@@ -105,8 +105,9 @@
         ],
         "effect": {
             "name": "Divine Favor",
+            "class": "BuffEffect",
             "description": "Adds radiant damage to successful attacks.",
-            "max_duration": 10,
+            "duration": 10,
             "modifiers": [
                 {
                     "bonus_type": "DAMAGE",
@@ -115,8 +116,7 @@
                         "damage_type": "RADIANT"
                     }
                 }
-            ],
-            "class": "BuffEffect"
+            ]
         }
     },
     {
@@ -135,8 +135,9 @@
         ],
         "effect": {
             "name": "Divine Smite",
+            "class": "TriggerEffect",
             "description": "Next weapon attack deals extra radiant damage.",
-            "max_duration": 10,
+            "duration": 10,
             "trigger_condition": {
                 "trigger_type": "on_hit",
                 "description": "when hitting with an attack"
@@ -150,8 +151,7 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1,
-            "class": "TriggerEffect"
+            "max_triggers": -1
         }
     },
     {
@@ -170,8 +170,9 @@
         ],
         "effect": {
             "name": "Searing Smite",
+            "class": "TriggerEffect",
             "description": "Next weapon attack deals extra fire damage and applies burning.",
-            "max_duration": 10,
+            "duration": 10,
             "trigger_condition": {
                 "trigger_type": "on_hit",
                 "description": "when hitting with an attack"
@@ -180,7 +181,7 @@
                 {
                     "name": "Burning",
                     "description": "Deals fire damage over time.",
-                    "max_duration": 3,
+                    "duration": 3,
                     "damage": {
                         "damage_roll": "[MIND]D6",
                         "damage_type": "FIRE"
@@ -196,8 +197,7 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1,
-            "class": "TriggerEffect"
+            "max_triggers": -1
         }
     },
     {
@@ -216,8 +216,9 @@
         ],
         "effect": {
             "name": "Wrathful Smite",
+            "class": "TriggerEffect",
             "description": "Next weapon attack deals extra psychic damage and applies fear.",
-            "max_duration": 10,
+            "duration": 10,
             "trigger_condition": {
                 "trigger_type": "on_hit",
                 "description": "when hitting with an attack"
@@ -226,7 +227,7 @@
                 {
                     "name": "Frightened",
                     "description": "Filled with dread and terror.",
-                    "max_duration": 3,
+                    "duration": 3,
                     "modifiers": [
                         {
                             "bonus_type": "ATTACK",
@@ -244,13 +245,12 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1,
-            "class": "TriggerEffect"
+            "max_triggers": -1
         }
     },
     {
-        "class": "SpellAttack",
         "name": "Shatter",
+        "class": "SpellAttack",
         "type": "STANDARD",
         "description": "A powerful spell that creates a loud, thunderous noise that damages enemies in a wide area.",
         "level": 2,
@@ -290,13 +290,13 @@
         ],
         "effect": {
             "name": "Poisoned",
+            "class": "DamageOverTimeEffect",
             "description": "Deals poison damage over time.",
-            "max_duration": 3,
+            "duration": 3,
             "damage": {
                 "damage_roll": "[MIND]D4",
                 "damage_type": "POISON"
-            },
-            "class": "DamageOverTimeEffect"
+            }
         }
     },
     {
@@ -316,7 +316,7 @@
         "effect": {
             "name": "Sleeping",
             "description": "The target falls asleep and cannot take actions.",
-            "max_duration": 3,
+            "duration": 3,
             "incapacitation_type": "sleep",
             "save_ends": true,
             "save_dc": 13,

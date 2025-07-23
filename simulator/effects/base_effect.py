@@ -15,9 +15,9 @@ class Effect:
     def __init__(
         self,
         name: str,
-        description: str = "",
-        max_duration: int = 0,
-    ):
+        description: str,
+        duration: int = 0,
+    ) -> None:
         # Validate inputs
         if not name or not isinstance(name, str):
             log_error(
@@ -33,18 +33,18 @@ class Effect:
             )
             description = str(description) if description is not None else ""
 
-        if not isinstance(max_duration, int) or max_duration < 0:
+        if not isinstance(duration, int) or duration < 0:
             log_error(
-                f"Effect max_duration must be a non-negative integer, got: {max_duration}",
-                {"name": name, "max_duration": max_duration},
+                f"Effect duration must be a non-negative integer, got: {duration}",
+                {"name": name, "duration": duration},
             )
-            max_duration = max(
-                0, int(max_duration) if isinstance(max_duration, (int, float)) else 0
+            duration = max(
+                0, int(duration) if isinstance(duration, (int, float)) else 0
             )
 
         self.name: str = name
         self.description: str = description
-        self.max_duration: int = max_duration
+        self.duration: int = duration
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
@@ -95,7 +95,7 @@ class Effect:
         Returns:
             bool: True if the effect is permanent, False otherwise.
         """
-        return self.max_duration <= 0
+        return self.duration <= 0
 
     def validate(self) -> None:
         """
