@@ -17,7 +17,7 @@ from core.error_handling import (
     validate_required_object,
 )
 from core.utils import evaluate_expression
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class Spell(BaseAction):

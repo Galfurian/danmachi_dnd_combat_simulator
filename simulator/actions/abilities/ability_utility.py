@@ -6,7 +6,7 @@ from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
 from core.error_handling import log_critical, log_error, validate_required_object
 from core.utils import cprint
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class UtilityAbility(BaseAbility):

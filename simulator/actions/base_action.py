@@ -16,7 +16,7 @@ from core.error_handling import (
     validate_required_object,
     safe_get_attribute,
 )
-from effects.effect import *
+from effects import *
 
 
 class BaseAction:

@@ -16,7 +16,7 @@ from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType
 from core.error_handling import log_critical
 from combat.damage import DamageComponent
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class AbilityDeserializer:

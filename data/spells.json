@@ -11,7 +11,10 @@
             3
         ],
         "heal_roll": "[MIND]D8 + [SPELLCASTING] * [MIND]",
-        "target_restrictions": ["SELF", "ALLY"]
+        "target_restrictions": [
+            "SELF",
+            "ALLY"
+        ]
     },
     {
         "class": "SpellHeal",
@@ -25,7 +28,10 @@
             3
         ],
         "heal_roll": "[MIND]D4 + [SPELLCASTING] * [MIND]",
-        "target_restrictions": ["SELF", "ALLY"]
+        "target_restrictions": [
+            "SELF",
+            "ALLY"
+        ]
     },
     {
         "class": "SpellBuff",
@@ -40,15 +46,21 @@
         ],
         "target_expr": "1+[MIND]",
         "requires_concentration": true,
-        "target_restrictions": ["SELF", "ALLY"],
+        "target_restrictions": [
+            "SELF",
+            "ALLY"
+        ],
         "effect": {
-            "type": "Buff",
             "name": "Bless",
             "description": "Adds a dice to the attack rolls.",
             "max_duration": 10,
-            "modifiers": {
-                "attack": "1D4"
-            }
+            "modifiers": [
+                {
+                    "bonus_type": "ATTACK",
+                    "value": "1D4"
+                }
+            ],
+            "class": "BuffEffect"
         }
     },
     {
@@ -60,16 +72,22 @@
         "mind_cost": [
             1
         ],
-        "target_restrictions": ["SELF", "ALLY"],
+        "target_restrictions": [
+            "SELF",
+            "ALLY"
+        ],
         "requires_concentration": true,
         "effect": {
-            "type": "Buff",
             "name": "Shield of Faith",
             "description": "Increases the target's armor class.",
             "max_duration": 10,
-            "modifiers": {
-                "ac": "2"
-            }
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "2"
+                }
+            ],
+            "class": "BuffEffect"
         }
     },
     {
@@ -82,18 +100,23 @@
             1
         ],
         "requires_concentration": true,
-        "target_restrictions": ["SELF"],
+        "target_restrictions": [
+            "SELF"
+        ],
         "effect": {
-            "type": "Buff",
             "name": "Divine Favor",
             "description": "Adds radiant damage to successful attacks.",
             "max_duration": 10,
-            "modifiers": {
-                "damage": {
-                    "damage_roll": "1D6",
-                    "damage_type": "RADIANT"
+            "modifiers": [
+                {
+                    "bonus_type": "DAMAGE",
+                    "value": {
+                        "damage_roll": "1D6",
+                        "damage_type": "RADIANT"
+                    }
                 }
-            }
+            ],
+            "class": "BuffEffect"
         }
     },
     {
@@ -107,9 +130,10 @@
             2,
             3
         ],
-        "target_restrictions": ["SELF"],
+        "target_restrictions": [
+            "SELF"
+        ],
         "effect": {
-            "type": "OnTriggerEffect",
             "name": "Divine Smite",
             "description": "Next weapon attack deals extra radiant damage.",
             "max_duration": 10,
@@ -126,7 +150,8 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1
+            "max_triggers": -1,
+            "class": "TriggerEffect"
         }
     },
     {
@@ -140,9 +165,10 @@
             2,
             3
         ],
-        "target_restrictions": ["SELF"],
+        "target_restrictions": [
+            "SELF"
+        ],
         "effect": {
-            "type": "OnTriggerEffect",
             "name": "Searing Smite",
             "description": "Next weapon attack deals extra fire damage and applies burning.",
             "max_duration": 10,
@@ -152,14 +178,14 @@
             },
             "trigger_effects": [
                 {
-                    "type": "DoT",
                     "name": "Burning",
                     "description": "Deals fire damage over time.",
                     "max_duration": 3,
                     "damage": {
                         "damage_roll": "[MIND]D6",
                         "damage_type": "FIRE"
-                    }
+                    },
+                    "class": "DamageOverTimeEffect"
                 }
             ],
             "damage_bonus": [
@@ -170,7 +196,8 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1
+            "max_triggers": -1,
+            "class": "TriggerEffect"
         }
     },
     {
@@ -184,9 +211,10 @@
             2,
             3
         ],
-        "target_restrictions": ["SELF"],
+        "target_restrictions": [
+            "SELF"
+        ],
         "effect": {
-            "type": "OnTriggerEffect",
             "name": "Wrathful Smite",
             "description": "Next weapon attack deals extra psychic damage and applies fear.",
             "max_duration": 10,
@@ -196,13 +224,16 @@
             },
             "trigger_effects": [
                 {
-                    "type": "Debuff",
                     "name": "Frightened",
                     "description": "Filled with dread and terror.",
                     "max_duration": 3,
-                    "modifiers": {
-                        "attack": "-2"
-                    }
+                    "modifiers": [
+                        {
+                            "bonus_type": "ATTACK",
+                            "value": "-2"
+                        }
+                    ],
+                    "class": "DebuffEffect"
                 }
             ],
             "damage_bonus": [
@@ -213,7 +244,8 @@
             ],
             "consumes_on_trigger": true,
             "cooldown_turns": 0,
-            "max_triggers": -1
+            "max_triggers": -1,
+            "class": "TriggerEffect"
         }
     },
     {
@@ -229,7 +261,9 @@
             4
         ],
         "target_expr": "4",
-        "target_restrictions": ["ENEMY"],
+        "target_restrictions": [
+            "ENEMY"
+        ],
         "damage": [
             {
                 "damage_type": "LIGHTNING",
@@ -255,14 +289,14 @@
             }
         ],
         "effect": {
-            "type": "DoT",
             "name": "Poisoned",
             "description": "Deals poison damage over time.",
             "max_duration": 3,
             "damage": {
                 "damage_roll": "[MIND]D4",
                 "damage_type": "POISON"
-            }
+            },
+            "class": "DamageOverTimeEffect"
         }
     },
     {
@@ -276,16 +310,18 @@
             2,
             3
         ],
-        "target_restrictions": ["ENEMY"],
+        "target_restrictions": [
+            "ENEMY"
+        ],
         "effect": {
-            "type": "IncapacitatingEffect",
             "name": "Sleeping",
             "description": "The target falls asleep and cannot take actions.",
             "max_duration": 3,
             "incapacitation_type": "sleep",
             "save_ends": true,
             "save_dc": 13,
-            "save_stat": "CON"
+            "save_stat": "CON",
+            "class": "IncapacitatingEffect"
         }
     }
 ]

@@ -345,7 +345,9 @@
         "natural_weapons": [
             "Flame Bite"
         ],
-        "resistances": ["FIRE"],
+        "resistances": [
+            "FIRE"
+        ],
         "actions": [
             "Flame Breath"
         ]
@@ -370,7 +372,6 @@
         ],
         "passive_effects": [
             {
-                "type": "OnTriggerEffect",
                 "name": "Berserk Rage",
                 "description": "When below 25% HP, enters a berserker rage!",
                 "max_duration": 0,
@@ -381,23 +382,30 @@
                 },
                 "trigger_effects": [
                     {
-                        "type": "Buff",
                         "name": "Rage",
                         "description": "Massive boost to attack and damage from primal fury!",
                         "max_duration": 999,
-                        "modifiers": {
-                            "attack": "5",
-                            "damage": {
-                                "damage_roll": "2D6",
-                                "damage_type": "BLUDGEONING"
+                        "modifiers": [
+                            {
+                                "bonus_type": "ATTACK",
+                                "value": "5"
+                            },
+                            {
+                                "bonus_type": "DAMAGE",
+                                "value": {
+                                    "damage_roll": "2D6",
+                                    "damage_type": "BLUDGEONING"
+                                }
                             }
-                        }
+                        ],
+                        "class": "BuffEffect"
                     }
                 ],
                 "damage_bonus": [],
                 "consumes_on_trigger": true,
                 "cooldown_turns": 0,
-                "max_triggers": -1
+                "max_triggers": -1,
+                "class": "TriggerEffect"
             }
         ]
     }

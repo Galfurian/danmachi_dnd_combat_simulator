@@ -16,7 +16,8 @@ from actions.spells.spell_heal import SpellHeal
 from core.constants import ActionType
 from core.error_handling import log_critical
 from combat.damage import DamageComponent
-from effects.effect import Effect
+from effects.base_effect import Effect
+from effects.effect_serialization import EffectDeserializer
 
 
 class SpellDeserializer:
@@ -85,7 +86,7 @@ class SpellDeserializer:
             damage=[
                 DamageComponent.from_dict(component) for component in data["damage"]
             ],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
+            effect=EffectDeserializer.deserialize(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
             target_restrictions=data.get("target_restrictions"),
@@ -105,7 +106,7 @@ class SpellDeserializer:
             raise ValueError(
                 f"BuffAbility {data.get('name', 'Unknown')} requires a valid effect"
             )
-        effect = Effect.from_dict(data["effect"])
+        effect = EffectDeserializer.deserialize(data["effect"])
         if not effect:
             raise ValueError(
                 f"BuffAbility {data.get('name', 'Unknown')} has an invalid effect"
@@ -138,7 +139,7 @@ class SpellDeserializer:
             raise ValueError(
                 f"BuffAbility {data.get('name', 'Unknown')} requires a valid effect"
             )
-        effect = Effect.from_dict(data["effect"])
+        effect = EffectDeserializer.deserialize(data["effect"])
         if not effect:
             raise ValueError(
                 f"BuffAbility {data.get('name', 'Unknown')} has an invalid effect"
@@ -176,7 +177,7 @@ class SpellDeserializer:
             level=data["level"],
             mind_cost=data["mind_cost"],
             heal_roll=data["heal_roll"],
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
+            effect=EffectDeserializer.deserialize(data["effect"]) if data.get("effect") else None,
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
             target_restrictions=data.get("target_restrictions", []),

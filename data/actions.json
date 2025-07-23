@@ -14,7 +14,7 @@
             }
         ],
         "effect": {
-            "type": "DoT",
+            "type": "DamageOverTimeEffect",
             "name": "Burning",
             "max_duration": 3,
             "damage": {
@@ -52,14 +52,14 @@
             }
         ],
         "effect": {
-            "type": "DoT",
             "name": "Burning",
             "description": "The target catches fire and burns.",
             "max_duration": 2,
             "damage": {
                 "damage_roll": "1D4",
                 "damage_type": "FIRE"
-            }
+            },
+            "class": "DamageOverTimeEffect"
         }
     }
 ]

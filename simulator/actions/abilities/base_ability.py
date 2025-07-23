@@ -29,7 +29,7 @@ from core.utils import (
     cprint,
     evaluate_expression,
 )
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class BaseAbility(BaseAction, ABC):

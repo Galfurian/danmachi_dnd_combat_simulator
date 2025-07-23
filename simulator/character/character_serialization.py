@@ -12,7 +12,7 @@ from typing import Any, TYPE_CHECKING
 from core.utils import log_warning
 from core.constants import CharacterType, DamageType
 from character.character_class import CharacterClass
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 if TYPE_CHECKING:
     from .main import Character

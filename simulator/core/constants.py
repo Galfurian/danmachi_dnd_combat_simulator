@@ -254,11 +254,13 @@ def get_effect_color(effect: Any) -> str:
         str: The color string associated with the effect type.
     """
     color_map = {
-        "Buff": "bold cyan",
-        "Debuff": "bold red",
-        "DoT": "bold magenta",
-        "HoT": "bold green",
-        "Armor": "bold yellow",
+        "BuffEffect": "bold cyan",
+        "DebuffEffect": "bold red", 
+        "DamageOverTimeEffect": "bold magenta",
+        "HealingOverTimeEffect": "bold green",
+        "ModifierEffect": "bold yellow",
+        "TriggerEffect": "bold white",
+        "IncapacitatingEffect": "bold red",
     }
     return color_map.get(type(effect).__name__, "dim white")
 
@@ -368,10 +370,12 @@ def get_effect_emoji(effect: Any) -> str:
         str: The emoji associated with the effect type.
     """
     emoji_map = {
-        "Buff": "💫",
-        "Debuff": "☠️",
-        "DoT": "❣️",
-        "HoT": "💚",
-        "Armor": "🛡️",
+        "BuffEffect": "💫",
+        "DebuffEffect": "☠️",
+        "DamageOverTimeEffect": "❣️",
+        "HealingOverTimeEffect": "💚",
+        "ModifierEffect": "🛡️",
+        "TriggerEffect": "⚡",
+        "IncapacitatingEffect": "😵‍💫",
     }
     return emoji_map.get(type(effect).__name__, "❔")

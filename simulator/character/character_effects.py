@@ -4,7 +4,8 @@ from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint, get_max_roll
 from core.error_handling import log_error, log_warning, log_critical
-from effects.effect import *
+from combat.damage import DamageComponent
+from effects import *
 
 
 class ActiveEffect:
@@ -85,21 +86,21 @@ class CharacterEffects:
                 ):
                     return False  # Could not add due to concentration limits
 
-            if isinstance(effect, HoT):
+            if isinstance(effect, HealingOverTimeEffect):
                 if self.has_effect(effect):
                     return False
 
-            elif isinstance(effect, DoT):
+            elif isinstance(effect, DamageOverTimeEffect):
                 if self.has_effect(effect):
                     return False
 
-            elif isinstance(effect, OnTriggerEffect) and effect.trigger_condition.trigger_type.value == "on_hit":
+            elif isinstance(effect, TriggerEffect) and effect.trigger_condition.trigger_type.value == "on_hit":
                 # Only allow one OnHit trigger spell at a time (like D&D 5e smite spells)
                 # Remove any existing OnHit trigger effects first
                 existing_triggers = [
                     ae
                     for ae in self.active_effects
-                    if isinstance(ae.effect, OnTriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit"
+                    if isinstance(ae.effect, TriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit"
                 ]
                 for existing_trigger in existing_triggers:
                     self.remove_effect(existing_trigger)
@@ -216,10 +217,10 @@ class CharacterEffects:
         activation_messages = []
 
         for effect in self.passive_effects:
-            # Check for low health triggers using the new OnTriggerEffect system
-            if isinstance(effect, OnTriggerEffect) and effect.trigger_condition.trigger_type.value == "on_low_health":
+            # Check for low health triggers using the new TriggerEffect system
+            if isinstance(effect, TriggerEffect) and effect.trigger_condition.trigger_type.value == "on_low_health":
 
-                trigger_effect: OnTriggerEffect = effect  # type: ignore
+                trigger_effect: TriggerEffect = effect  # type: ignore
 
                 # Create event data for health check
                 event_data = {
@@ -288,10 +289,10 @@ class CharacterEffects:
         Returns:
             bool: True if the effect can be added, False otherwise.
         """
-        if isinstance(effect, HoT):
+        if isinstance(effect, HealingOverTimeEffect):
             return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
 
-        if isinstance(effect, DoT):
+        if isinstance(effect, DamageOverTimeEffect):
             return not self.has_effect(effect)
 
         if isinstance(effect, ModifierEffect):
@@ -500,25 +501,25 @@ class CharacterEffects:
         """
         yield from self.active_effects
 
-    # === OnHit Trigger Management (OnTriggerEffect) ===
+    # === OnHit Trigger Management (TriggerEffect) ===
 
     def get_on_hit_triggers(self) -> list[ActiveEffect]:
         """
-        Get all active OnTriggerEffect effects with on_hit condition.
+        Get all active TriggerEffect effects with on_hit condition.
 
         Returns:
             list[ActiveEffect]: List of active OnHit trigger effects.
         """
         triggers = []
         for ae in self.active_effects:
-            if isinstance(ae.effect, OnTriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit":
+            if isinstance(ae.effect, TriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit":
                 triggers.append(ae)
         return triggers
 
     def trigger_on_hit_effects(
         self, target: Any
     ) -> tuple[
-        list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[OnTriggerEffect]
+        list[tuple[DamageComponent, int]], list[tuple[Effect, int]], list[TriggerEffect]
     ]:
         """
         Trigger all OnHit trigger effects and return damage bonuses and effects to apply.
@@ -530,15 +531,15 @@ class CharacterEffects:
             tuple: (damage_bonuses, effects_to_apply, consumed_triggers)
                 - damage_bonuses: List of (DamageComponent, mind_level) tuples.
                 - effects_to_apply: List of (Effect, mind_level) tuples.
-                - consumed_triggers: List of OnTriggerEffect effects that were consumed.
+                - consumed_triggers: List of TriggerEffect effects that were consumed.
         """
         damage_bonuses: list[tuple[DamageComponent, int]] = []
         effects_to_apply: list[tuple[Effect, int]] = []
         effects_to_remove: list[ActiveEffect] = []
-        consumed_triggers: list[OnTriggerEffect] = []
+        consumed_triggers: list[TriggerEffect] = []
 
         for ae in self.get_on_hit_triggers():
-            if not isinstance(ae.effect, OnTriggerEffect):
+            if not isinstance(ae.effect, TriggerEffect):
                 continue
 
             trigger = ae.effect

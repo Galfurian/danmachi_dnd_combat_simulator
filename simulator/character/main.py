@@ -14,7 +14,8 @@ from core.constants import (
     DamageType,
 )
 from core.utils import get_stat_modifier
-from effects.effect import Effect, IncapacitatingEffect
+from effects.base_effect import Effect
+from effects.incapacitating_effect import IncapacitatingEffect
 from character.character_effects import CharacterEffects
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace

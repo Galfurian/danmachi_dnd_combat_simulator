@@ -17,7 +17,7 @@ from core.utils import (
     roll_and_describe,
     substitute_variables,
 )
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class HealingAbility(BaseAbility):

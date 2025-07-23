@@ -12,7 +12,7 @@ from core.error_handling import (
     validate_required_object,
 )
 from core.utils import cprint
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class OffensiveAbility(BaseAbility):

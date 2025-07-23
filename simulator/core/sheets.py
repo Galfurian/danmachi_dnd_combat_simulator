@@ -6,7 +6,9 @@ from actions.abilities import *
 from actions.base_action import BaseAction
 from items.weapon import *
 from items.armor import *
-from effects.effect import *
+from effects import *
+from combat.damage import DamageComponent
+from core.content import ContentRepository
 
 from rich.padding import Padding
 
@@ -14,10 +16,10 @@ from rich.padding import Padding
 def damage_to_string(damage: DamageComponent) -> str:
     """
     Converts a DamageComponent to a formatted string with color coding.
-    
+
     Args:
         damage (DamageComponent): The damage component to format.
-        
+
     Returns:
         str: Formatted string with damage roll and type in appropriate colors.
     """
@@ -28,10 +30,10 @@ def damage_to_string(damage: DamageComponent) -> str:
 def modifier_to_string(modifier: Modifier) -> str:
     """
     Converts a Modifier to a formatted string representation.
-    
+
     Args:
         modifier (Modifier): The modifier to format.
-        
+
     Returns:
         str: Formatted string showing the modifier value and bonus type with appropriate colors.
     """
@@ -46,7 +48,7 @@ def modifier_to_string(modifier: Modifier) -> str:
 def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """
     Prints the details of an effect in a formatted way.
-    
+
     Args:
         effect (Effect): The effect to display.
         padding (int): Left padding for the output. Defaults to 2.
@@ -56,43 +58,47 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         sheet += f"[italic]{effect.description}[/], "
     if effect.max_duration:
         sheet += f"{effect.max_duration} turns, "
-    if isinstance(effect, Buff):
+    if isinstance(effect, BuffEffect):
         modifiers_str = ", ".join(
             [modifier_to_string(modifier) for modifier in effect.modifiers]
         )
         sheet += f"[green]{modifiers_str}[/]"
-    elif isinstance(effect, Debuff):
+    elif isinstance(effect, DebuffEffect):
         modifiers_str = ", ".join(
             [modifier_to_string(modifier) for modifier in effect.modifiers]
         )
         sheet += f"[red]{modifiers_str}[/]"
-    elif isinstance(effect, HoT):
+    elif isinstance(effect, HealingOverTimeEffect):
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
-    elif isinstance(effect, DoT):
+    elif isinstance(effect, DamageOverTimeEffect):
         sheet += f"deals {damage_to_string(effect.damage)} per turn"
-    elif isinstance(effect, OnTriggerEffect):
-        # Handle OnTriggerEffect effects (like spell buffs that trigger on events)
+    elif isinstance(effect, TriggerEffect):
+        # Handle TriggerEffect effects (like spell buffs that trigger on events)
         details = []
-        
+
         # Show damage bonus if present
         if effect.damage_bonus:
-            damage_strings = [damage_to_string(damage) for damage in effect.damage_bonus]
+            damage_strings = [
+                damage_to_string(damage) for damage in effect.damage_bonus
+            ]
             details.append(f"adds {', '.join(damage_strings)} on trigger")
-        
-        # Show trigger effects if present  
+
+        # Show trigger effects if present
         if effect.trigger_effects:
-            trigger_names = [f"[red]{trigger.name}[/]" for trigger in effect.trigger_effects]
+            trigger_names = [
+                f"[red]{trigger.name}[/]" for trigger in effect.trigger_effects
+            ]
             details.append(f"applies {', '.join(trigger_names)}")
-            
+
         if details:
             sheet += ", ".join(details)
         else:
             sheet += effect.trigger_condition.description
-    
+
     cprint(Padding(sheet, (0, padding)))
-    
-    # For OnTriggerEffect, also show details of the triggered effects
-    if isinstance(effect, OnTriggerEffect):
+
+    # For TriggerEffect, also show details of the triggered effects
+    if isinstance(effect, TriggerEffect):
         if effect.trigger_effects:
             for trigger_effect in effect.trigger_effects:
                 print_effect_sheet(trigger_effect, padding + 2)
@@ -100,45 +106,48 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
 
 def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """Prints the details of a passive effect in a formatted way."""
-    from effects.effect import OnTriggerEffect
-    
+
     sheet: str = f"[{get_effect_color(effect)}]{effect.name}[/]"
     if effect.description:
         sheet += f" - [italic]{effect.description}[/]"
     cprint(Padding(sheet, (0, padding)))
-    
-    # Handle OnTriggerEffect effects
-    if isinstance(effect, OnTriggerEffect):
+
+    # Handle TriggerEffect effects
+    if isinstance(effect, TriggerEffect):
         # Show trigger condition
         trigger_info = effect.get_status_text()
         cprint(Padding(trigger_info, (0, padding + 2)))
-        
+
         # Show what it triggers
         if effect.trigger_effects:
             cprint(Padding("Triggers:", (0, padding + 2)))
             for trigger_effect in effect.trigger_effects:
                 print_effect_sheet(trigger_effect, padding + 4)
-                
+
         # Show damage bonuses
         if effect.damage_bonus:
-            damage_str = ", ".join([damage_to_string(damage) for damage in effect.damage_bonus])
+            damage_str = ", ".join(
+                [damage_to_string(damage) for damage in effect.damage_bonus]
+            )
             cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
-        
+
         # Show what it triggers
         if effect.trigger_effects:
             cprint(Padding("Triggers:", (0, padding + 2)))
             for trigger_effect in effect.trigger_effects:
                 print_effect_sheet(trigger_effect, padding + 4)
-                
+
         # Show damage bonuses
         if effect.damage_bonus:
-            damage_str = ", ".join([damage_to_string(damage) for damage in effect.damage_bonus])
+            damage_str = ", ".join(
+                [damage_to_string(damage) for damage in effect.damage_bonus]
+            )
             cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
-    
+
     else:
         # Generic passive effect - just show description
-        if hasattr(effect, 'trigger_effects'):
-            trigger_effects = getattr(effect, 'trigger_effects', [])
+        if hasattr(effect, "trigger_effects"):
+            trigger_effects = getattr(effect, "trigger_effects", [])
             if trigger_effects:
                 cprint(Padding("Triggers:", (0, padding + 2)))
                 for trigger_effect in trigger_effects:
@@ -185,7 +194,7 @@ def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
 def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """
     Prints the details of a spell in a formatted way.
-    
+
     Args:
         spell (Spell): The spell to display.
         padding (int): Left padding for the output. Defaults to 2.
@@ -200,7 +209,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     padding += 2
     sheet = f"[italic]{spell.description}[/]"
     cprint(Padding(sheet, (0, padding)))
-    
+
     # Handle specific spell types
     if isinstance(spell, SpellAttack):
         sheet = (
@@ -210,7 +219,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     elif isinstance(spell, SpellHeal):
         sheet = f"Heals [green]{spell.heal_roll}[/] HP"
         cprint(Padding(sheet, (0, padding)))
-    
+
     # Handle spell effects
     if hasattr(spell, "effect"):
         spell_effect = getattr(spell, "effect", None)
@@ -223,26 +232,26 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
 def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     """
     Prints the details of an ability in a formatted way.
-    
+
     Args:
         ability (BaseAbility): The ability to display.
         padding (int): Left padding for the output. Defaults to 2.
     """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
     sheet += f"[{get_action_type_color(ability.type)}]{ability.type.name}[/], "
-    
+
     if ability.cooldown > 0:
         sheet += f"cooldown: {ability.cooldown}, "
     if ability.maximum_uses > 0:
         sheet += f"max uses: {ability.maximum_uses}, "
-        
+
     cprint(Padding(sheet, (0, padding)))
     padding += 2
-    
+
     # Description
     sheet = f"[italic]{ability.description}[/]"
     cprint(Padding(sheet, (0, padding)))
-    
+
     # Handle specific ability types
     if isinstance(ability, OffensiveAbility):
         if ability.damage:
@@ -257,18 +266,18 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     elif isinstance(ability, UtilityAbility):
         sheet = f"Provides utility function"
         cprint(Padding(sheet, (0, padding)))
-    
+
     # Handle ability effects
     if hasattr(ability, "effect") and ability.effect:
         cprint(Padding("Applies:", (0, padding)))
         padding += 2
         print_effect_sheet(ability.effect, padding)
-        
+
 
 def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     """
     Prints the details of any action in a formatted way.
-    
+
     Args:
         action (BaseAction): The action to display.
         padding (int): Left padding for the output. Defaults to 2.
@@ -285,7 +294,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         sheet += f"[{get_action_type_color(action.type)}]{action.type.name}[/], "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
-        
+
         # Handle generic action effects if they exist
         if hasattr(action, "effect"):
             action_effect = getattr(action, "effect", None)
@@ -296,29 +305,35 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
 def print_character_sheet(char: Character) -> None:
     """
     Prints the details of a character in a formatted way.
-    
+
     Args:
         char (Character): The character to display.
     """
-    
+
     # Header with basic character info
-    class_levels = ', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])
+    class_levels = ", ".join(
+        [f"[green]{cls.name} {lvl}[/]" for cls, lvl in char.levels.items()]
+    )
     cprint(
         f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], "
         f"[blue]{char.race.name}[/], {class_levels}"
     )
-    
+
     # Core stats
-    cprint(f"  HP: [green]{char.hp}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]")
-    
+    cprint(
+        f"  HP: [green]{char.hp}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]"
+    )
+
     if char.MIND_MAX > 0:
         cprint(f"  Mind: [blue]{char.mind}/{char.MIND_MAX}[/]")
-    
+
     if char.spellcasting_ability:
         # Convert full ability name to 3-letter abbreviation
         ability_abbrev = char.spellcasting_ability[:3].upper()
         spell_mod = getattr(char, ability_abbrev)
-        cprint(f"  Spellcasting: [magenta]{char.spellcasting_ability} ({spell_mod:+d})[/]")
+        cprint(
+            f"  Spellcasting: [magenta]{char.spellcasting_ability} ({spell_mod:+d})[/]"
+        )
 
     # Ability scores and modifiers
     stat_display = []
@@ -326,7 +341,7 @@ def print_character_sheet(char: Character) -> None:
         modifier = getattr(char, stat_name[:3].upper())
         stat_display.append(f"{stat_name.capitalize()}: {stat_value} ({modifier:+d})")
     cprint(f"  {', '.join(stat_display)}")
-    
+
     # Character details
     if char.total_hands != 2:
         cprint(f"  Hands: {char.total_hands}")
@@ -360,16 +375,20 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [magenta]Spells[/]:")
         for spell in char.spells.values():
             print_spell_sheet(spell, 4)
-    
+
     # Resistances and Vulnerabilities
     if char.resistances:
-        resistance_list = [f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances]
+        resistance_list = [
+            f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances
+        ]
         cprint(f"  [green]Resistances[/]: {', '.join(resistance_list)}")
-        
+
     if char.vulnerabilities:
-        vulnerability_list = [f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities]
+        vulnerability_list = [
+            f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities
+        ]
         cprint(f"  [red]Vulnerabilities[/]: {', '.join(vulnerability_list)}")
-    
+
     # Active Effects
     if char.effects_module.active_effects:
         cprint(f"  [yellow]Active Effects[/]:")
@@ -378,20 +397,22 @@ def print_character_sheet(char: Character) -> None:
             if active_effect.duration > 0:
                 effect_info += f" ({active_effect.duration} turns remaining)"
             cprint(Padding(effect_info, (0, 4)))
-    
+
     # Passive Effects (if any)
-    if hasattr(char, 'passive_effects') and char.passive_effects:
+    if hasattr(char, "passive_effects") and char.passive_effects:
         cprint(f"  [dim]Passive Effects[/]:")
         for effect in char.passive_effects:
             print_passive_effect_sheet(effect, 4)
-    
+
     # Cooldowns and uses
-    active_cooldowns = {name: turns for name, turns in char.cooldowns.items() if turns > 0}
+    active_cooldowns = {
+        name: turns for name, turns in char.cooldowns.items() if turns > 0
+    }
     if active_cooldowns:
         cprint(f"  [orange1]Active Cooldowns[/]:")
         for action_name, turns in active_cooldowns.items():
             cprint(Padding(f"{action_name}: {turns} turns", (0, 4)))
-    
+
     active_uses = {name: uses for name, uses in char.uses.items() if uses > 0}
     if active_uses:
         cprint(f"  [orange1]Used Abilities[/]:")
@@ -402,58 +423,59 @@ def print_character_sheet(char: Character) -> None:
 def print_content_repository_summary() -> None:
     """
     Prints a summary of all available content in the repository.
-    
+
     Displays counts and basic information for each content category.
     """
-    from core.content import ContentRepository
-    
+
     repo = ContentRepository()
-    
+
     cprint("\n[bold cyan]📚 Content Repository Summary[/bold cyan]")
     cprint("=" * 50)
-    
+
     # Character Classes
-    if hasattr(repo, 'classes') and repo.classes:
+    if hasattr(repo, "classes") and repo.classes:
         cprint(f"\n[green]Character Classes ({len(repo.classes)})[/green]:")
         for name, char_class in repo.classes.items():
             class_info = f"[blue]{name}[/] - HP×{char_class.hp_mult}, Mind×{char_class.mind_mult}"
             cprint(Padding(class_info, (0, 2)))
-    
-    # Character Races  
-    if hasattr(repo, 'races') and repo.races:
+
+    # Character Races
+    if hasattr(repo, "races") and repo.races:
         cprint(f"\n[green]Character Races ({len(repo.races)})[/green]:")
         for name, race in repo.races.items():
             race_info = f"[blue]{name}[/]"
             if race.natural_ac > 0:
                 race_info += f" - AC +{race.natural_ac}"
             cprint(Padding(race_info, (0, 2)))
-    
+
     # Weapons
-    if hasattr(repo, 'weapons') and repo.weapons:
+    if hasattr(repo, "weapons") and repo.weapons:
         cprint(f"\n[green]Weapons ({len(repo.weapons)})[/green]:")
         for name, weapon in repo.weapons.items():
             weapon_info = f"[blue]{name}[/]"
             if weapon.hands_required:
                 weapon_info += f" - {weapon.hands_required}H"
             cprint(Padding(weapon_info, (0, 2)))
-    
+
     # Armor
-    if hasattr(repo, 'armors') and repo.armors:
+    if hasattr(repo, "armors") and repo.armors:
         cprint(f"\n[green]Armor ({len(repo.armors)})[/green]:")
         for name, armor in repo.armors.items():
             armor_info = f"[blue]{name}[/] - AC {armor.ac} ({armor.armor_type.name}, {armor.armor_slot.name})"
             cprint(Padding(armor_info, (0, 2)))
-    
+
     # Actions
-    if hasattr(repo, 'actions') and repo.actions:
+    if hasattr(repo, "actions") and repo.actions:
         cprint(f"\n[green]Actions & Abilities ({len(repo.actions)})[/green]:")
         for name, action in repo.actions.items():
             action_info = f"[{get_action_category_color(action.category)}]{name}[/] "
-            action_info += f"([{get_action_type_color(action.type)}]{action.type.name}[/])"
+            action_info += (
+                f"([{get_action_type_color(action.type)}]{action.type.name}[/])"
+            )
             cprint(Padding(action_info, (0, 2)))
-    
+
     # Spells
-    if hasattr(repo, 'spells') and repo.spells:
+    if hasattr(repo, "spells") and repo.spells:
         cprint(f"\n[green]Spells ({len(repo.spells)})[/green]:")
         spell_types = {}
         for name, spell in repo.spells.items():
@@ -461,42 +483,46 @@ def print_content_repository_summary() -> None:
             if spell_type not in spell_types:
                 spell_types[spell_type] = []
             spell_types[spell_type].append((name, spell))
-        
+
         for spell_type, spells in spell_types.items():
-            cprint(f"  [{get_action_category_color(spells[0][1].category)}]{spell_type} ({len(spells)})[/]:")
+            cprint(
+                f"  [{get_action_category_color(spells[0][1].category)}]{spell_type} ({len(spells)})[/]:"
+            )
             for name, spell in spells:
                 spell_info = f"[blue]{name}[/] - Lvl {spell.level}"
                 cprint(Padding(spell_info, (0, 4)))
-    
+
     # Calculate total if we have the attributes
     total_items = 0
-    for attr_name in ['classes', 'races', 'weapons', 'armors', 'actions', 'spells']:
+    for attr_name in ["classes", "races", "weapons", "armors", "actions", "spells"]:
         if hasattr(repo, attr_name):
             collection = getattr(repo, attr_name)
             if isinstance(collection, dict):
                 total_items += len(collection)
-    
+
     if total_items > 0:
         cprint(f"\n[dim]Total Items: {total_items}[/dim]")
     else:
-        cprint(f"\n[yellow]⚠️  Repository not loaded. Try running the main simulator first to load content.[/yellow]")
+        cprint(
+            f"\n[yellow]⚠️  Repository not loaded. Try running the main simulator first to load content.[/yellow]"
+        )
 
 
 def print_all_available_content() -> None:
     """
     Prints detailed information about all available content in the repository.
-    
+
     Displays comprehensive information for each item in all content categories.
     """
     from core.content import ContentRepository
-    
+
     repo = ContentRepository()
-    
+
     cprint("\n[bold cyan]📚 Complete Content Catalog[/bold cyan]")
     cprint("=" * 60)
-    
+
     # Print detailed information for each category
-    if hasattr(repo, 'classes') and repo.classes:
+    if hasattr(repo, "classes") and repo.classes:
         cprint(f"\n[bold green]🏛️ Character Classes ({len(repo.classes)})[/bold green]")
         cprint("-" * 30)
         for name, char_class in sorted(repo.classes.items()):
@@ -507,8 +533,8 @@ def print_all_available_content() -> None:
                 total_levels = len(char_class.levels)
                 cprint(f"  Available Levels: {total_levels}")
             cprint("")
-    
-    if hasattr(repo, 'races') and repo.races:
+
+    if hasattr(repo, "races") and repo.races:
         cprint(f"\n[bold green]🧬 Character Races ({len(repo.races)})[/bold green]")
         cprint("-" * 30)
         for name, race in sorted(repo.races.items()):
@@ -520,29 +546,31 @@ def print_all_available_content() -> None:
             if race.default_spells:
                 cprint(f"  Default Spells: {', '.join(race.default_spells)}")
             cprint("")
-    
-    if hasattr(repo, 'weapons') and repo.weapons:
+
+    if hasattr(repo, "weapons") and repo.weapons:
         cprint(f"\n[bold green]⚔️ Weapons ({len(repo.weapons)})[/bold green]")
         cprint("-" * 30)
         for name, weapon in sorted(repo.weapons.items()):
             print_weapon_sheet(weapon, 0)
             cprint("")
-    
-    if hasattr(repo, 'armors') and repo.armors:
+
+    if hasattr(repo, "armors") and repo.armors:
         cprint(f"\n[bold green]🛡️ Armor ({len(repo.armors)})[/bold green]")
         cprint("-" * 30)
         for name, armor in sorted(repo.armors.items()):
             print_armor_sheet(armor, 0)
             cprint("")
-    
-    if hasattr(repo, 'actions') and repo.actions:
-        cprint(f"\n[bold green]⚡ Actions & Abilities ({len(repo.actions)})[/bold green]")
+
+    if hasattr(repo, "actions") and repo.actions:
+        cprint(
+            f"\n[bold green]⚡ Actions & Abilities ({len(repo.actions)})[/bold green]"
+        )
         cprint("-" * 30)
         for name, action in sorted(repo.actions.items()):
             print_action_sheet(action, 0)
             cprint("")
-    
-    if hasattr(repo, 'spells') and repo.spells:
+
+    if hasattr(repo, "spells") and repo.spells:
         cprint(f"\n[bold green]🔮 Spells ({len(repo.spells)})[/bold green]")
         cprint("-" * 30)
         for name, spell in sorted(repo.spells.items()):
@@ -556,14 +584,14 @@ def print_all_available_content() -> None:
 def print_damage_types_reference() -> None:
     """
     Print a reference of all damage types with colors.
-    
+
     Displays all available damage types with their visual styling.
     """
     from core.constants import DamageType
-    
+
     cprint("\n[bold cyan]💥 Damage Types Reference[/bold cyan]")
     cprint("=" * 40)
-    
+
     for damage_type in DamageType:
         emoji = get_damage_type_emoji(damage_type)
         color = get_damage_type_color(damage_type)
@@ -573,20 +601,20 @@ def print_damage_types_reference() -> None:
 def print_action_types_reference() -> None:
     """
     Print a reference of all action types and categories with colors.
-    
+
     Displays all available action types and categories with their visual styling.
     """
     from core.constants import ActionType, ActionCategory
-    
+
     cprint("\n[bold cyan]⚡ Action System Reference[/bold cyan]")
     cprint("=" * 40)
-    
+
     cprint("\n[green]Action Types:[/green]")
     for action_type in ActionType:
         if action_type != ActionType.NONE:  # Skip NONE type
             color = get_action_type_color(action_type)
             cprint(f"  [{color}]{action_type.name.title()}[/]")
-    
+
     cprint("\n[green]Action Categories:[/green]")
     for category in ActionCategory:
         emoji = get_action_category_emoji(category)
@@ -597,7 +625,7 @@ def print_action_types_reference() -> None:
 def create_test_character_sheet() -> None:
     """
     Create and display a test character with various abilities for demonstration.
-    
+
     Creates a sample character to showcase the character sheet formatting system.
     """
     from character import Character
@@ -606,14 +634,14 @@ def create_test_character_sheet() -> None:
     from core.constants import CharacterType, ActionType, ActionCategory, DamageType
     from actions.abilities import OffensiveAbility, HealingAbility
     from combat.damage import DamageComponent
-    
+
     cprint("\n[bold cyan]🧙‍♂️ Test Character Sheet Display[/bold cyan]")
     cprint("=" * 50)
-    
+
     # Create a test race and class
     test_race = CharacterRace("Human", natural_ac=0)
     test_class = CharacterClass("Fighter", hp_mult=10, mind_mult=0)
-    
+
     # Create a test character
     test_char = Character(
         char_type=CharacterType.PLAYER,
@@ -626,13 +654,13 @@ def create_test_character_sheet() -> None:
             "constitution": 15,
             "intelligence": 12,
             "wisdom": 13,
-            "charisma": 8
+            "charisma": 8,
         },
         spellcasting_ability="wisdom",
         total_hands=2,
-        number_of_attacks=2
+        number_of_attacks=2,
     )
-    
+
     # Add a test ability
     fire_breath = OffensiveAbility(
         name="Fire Breath",
@@ -640,10 +668,10 @@ def create_test_character_sheet() -> None:
         description="Exhales a cone of flame",
         cooldown=2,
         maximum_uses=3,
-        damage=[DamageComponent("3d6", DamageType.FIRE)]
+        damage=[DamageComponent("3d6", DamageType.FIRE)],
     )
     test_char.learn_action(fire_breath)
-    
+
     # Add a healing ability
     healing_touch = HealingAbility(
         name="Healing Touch",
@@ -651,9 +679,9 @@ def create_test_character_sheet() -> None:
         description="Channel healing energy through touch",
         cooldown=0,
         maximum_uses=5,
-        heal_roll="2d4+2"
+        heal_roll="2d4+2",
     )
     test_char.learn_action(healing_touch)
-    
+
     # Display the character sheet
     print_character_sheet(test_char)

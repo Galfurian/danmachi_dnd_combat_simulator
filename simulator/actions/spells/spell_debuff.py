@@ -19,7 +19,7 @@ from core.utils import (
     substitute_variables,
     cprint,
 )
-from effects.effect import Effect
+from effects.base_effect import Effect
 from combat.damage import DamageComponent
 
 

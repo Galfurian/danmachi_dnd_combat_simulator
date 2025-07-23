@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 from core.constants import ArmorSlot, ArmorType, BonusType
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class Armor:

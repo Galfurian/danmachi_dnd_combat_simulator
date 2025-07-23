@@ -11,7 +11,7 @@ from core.constants import (
 )
 from core.error_handling import log_critical, log_error, validate_required_object
 from core.utils import cprint
-from effects.effect import Effect
+from effects.base_effect import Effect
 
 
 class BuffAbility(BaseAbility):
