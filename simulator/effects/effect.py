@@ -171,7 +171,7 @@ class Effect:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the effect to a dictionary representation."""
-        from .effect_serializer import EffectSerializer
+        from .effect_serialization import EffectSerializer
 
         return EffectSerializer.serialize(self)
 
@@ -185,7 +185,7 @@ class Effect:
         Returns:
             Effect: An instance of the Effect class.
         """
-        from .effect_serializer import EffectDeserializer
+        from .effect_serialization import EffectDeserializer
 
         return EffectDeserializer.deserialize(data)
 
@@ -866,134 +866,6 @@ def create_custom_trigger(
 
 
 # =============================================================================
-# JSON SERIALIZATION SUPPORT
-# =============================================================================
-
-
-class TriggerConditionSerializer:
-    """Handles serialization of TriggerCondition objects to/from JSON."""
-
-    @staticmethod
-    def serialize(condition: TriggerCondition) -> dict[str, Any]:
-        """Convert a TriggerCondition to a JSON-serializable dictionary."""
-        data: dict[str, Any] = {
-            "trigger_type": condition.trigger_type.value,
-            "description": condition.description,
-        }
-
-        if condition.threshold is not None:
-            data["threshold"] = condition.threshold
-        if condition.damage_type is not None:
-            data["damage_type"] = (
-                condition.damage_type.name
-                if hasattr(condition.damage_type, "name")
-                else str(condition.damage_type)
-            )
-        if condition.spell_category is not None:
-            data["spell_category"] = (
-                condition.spell_category.name
-                if hasattr(condition.spell_category, "name")
-                else str(condition.spell_category)
-            )
-
-        # Note: custom_condition functions cannot be serialized to JSON
-        # They would need to be recreated programmatically
-
-        return data
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> TriggerCondition:
-        """Create a TriggerCondition from a JSON dictionary."""
-        trigger_type = TriggerType(data["trigger_type"])
-
-        # Handle optional fields
-        threshold = data.get("threshold")
-        damage_type = None
-        spell_category = None
-
-        # These would need to be resolved from string names to actual enum values
-        # This would typically be done by the content loading system
-        if "damage_type" in data:
-            # damage_type = DamageType[data["damage_type"]]  # Example
-            pass
-        if "spell_category" in data:
-            # spell_category = SpellCategory[data["spell_category"]]  # Example
-            pass
-
-        return TriggerCondition(
-            trigger_type=trigger_type,
-            threshold=threshold,
-            damage_type=damage_type,
-            spell_category=spell_category,
-            description=data.get("description", ""),
-        )
-
-
-class UniversalTriggerSerializer:
-    """Handles serialization of OnTriggerEffect objects to/from JSON."""
-
-    @staticmethod
-    def serialize(trigger: OnTriggerEffect) -> dict[str, Any]:
-        """Convert a OnTriggerEffect to a JSON-serializable dictionary."""
-        return {
-            "class": "OnTriggerEffect",
-            "name": trigger.name,
-            "description": trigger.description,
-            "max_duration": trigger.max_duration,
-            "trigger_condition": TriggerConditionSerializer.serialize(
-                trigger.trigger_condition
-            ),
-            "trigger_effects": [effect.to_dict() for effect in trigger.trigger_effects],
-            "damage_bonus": [
-                {
-                    "damage_roll": dmg.damage_roll,
-                    "damage_type": (
-                        dmg.damage_type.name
-                        if hasattr(dmg.damage_type, "name")
-                        else str(dmg.damage_type)
-                    ),
-                }
-                for dmg in trigger.damage_bonus
-            ],
-            "consumes_on_trigger": trigger.consumes_on_trigger,
-            "cooldown_turns": trigger.cooldown_turns,
-            "max_triggers": trigger.max_triggers,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> OnTriggerEffect:
-        """Create a OnTriggerEffect from a JSON dictionary."""
-        # Deserialize the trigger condition
-        condition = TriggerConditionSerializer.deserialize(data["trigger_condition"])
-
-        # Deserialize trigger effects (would use existing effect deserializer)
-        trigger_effects = []
-        for effect_data in data.get("trigger_effects", []):
-            effect = Effect.from_dict(effect_data)
-            if effect:
-                trigger_effects.append(effect)
-
-        # Deserialize damage bonuses
-        damage_bonus = []
-        for dmg_data in data.get("damage_bonus", []):
-            # This would need access to DamageType enum
-            # damage_bonus.append(DamageComponent(dmg_data["damage_roll"], DamageType[dmg_data["damage_type"]]))
-            pass
-
-        return OnTriggerEffect(
-            name=data["name"],
-            description=data["description"],
-            max_duration=data["max_duration"],
-            trigger_condition=condition,
-            trigger_effects=trigger_effects,
-            damage_bonus=damage_bonus,
-            consumes_on_trigger=data.get("consumes_on_trigger", True),
-            cooldown_turns=data.get("cooldown_turns", 0),
-            max_triggers=data.get("max_triggers", -1),
-        )
-
-
-# =============================================================================
 # JSON FACTORY FUNCTIONS FOR EASY CONFIGURATION
 # =============================================================================
 
@@ -1133,14 +1005,14 @@ class Modifier:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert the modifier to a dictionary representation."""
-        from .effect_serializer import ModifierSerializer
+        from .effect_serialization import ModifierSerializer
 
         return ModifierSerializer.serialize(self)
 
     @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Modifier":
+    def from_dict(data: dict[str, Any]) -> "Modifier | None":
         """Create a Modifier instance from a dictionary representation."""
-        from .effect_serializer import ModifierDeserializer
+        from .effect_serialization import ModifierDeserializer
 
         return ModifierDeserializer.deserialize(data)
 
@@ -1229,7 +1101,7 @@ class ModifierEffect(Effect):
         return True
 
 
-class Buff(ModifierEffect):
+class BuffEffect(ModifierEffect):
     """
     Positive effect that applies beneficial modifiers to a character.
 
@@ -1247,7 +1119,7 @@ class Buff(ModifierEffect):
         super().__init__(name, description, max_duration, modifiers)
 
 
-class Debuff(ModifierEffect):
+class DebuffEffect(ModifierEffect):
     """
     Negative effect that applies detrimental modifiers to a character.
 
@@ -1265,11 +1137,11 @@ class Debuff(ModifierEffect):
         super().__init__(name, description, max_duration, modifiers)
 
 
-class DoT(Effect):
+class DamageOverTimeEffect(Effect):
     """
     Damage over Time effect that deals damage each turn.
 
-    DoT effects continuously damage the target for a specified duration,
+    Damage over Time effects continuously damage the target for a specified duration,
     using a damage roll expression that can include variables like MIND level.
     """
 
@@ -1303,7 +1175,7 @@ class DoT(Effect):
         # Asser that the damage value is a positive integer.
         assert (
             isinstance(dot_value, int) and dot_value >= 0
-        ), f"DoT '{self.name}' must have a non-negative integer damage value, got {dot_value}."
+        ), f"DamageOverTimeEffect '{self.name}' must have a non-negative integer damage value, got {dot_value}."
         # Apply the damage to the target.
         base, adjusted, taken = target.take_damage(dot_value, self.damage.damage_type)
         # If the damage value is positive, print the damage message.
@@ -1334,17 +1206,17 @@ class DoT(Effect):
             AssertionError: If validation conditions are not met.
         """
         super().validate()
-        assert self.max_duration > 0, "DoT duration must be greater than 0."
+        assert self.max_duration > 0, "DamageOverTimeEffect duration must be greater than 0."
         assert isinstance(
             self.damage, DamageComponent
         ), "Damage must be of type DamageComponent."
 
 
-class HoT(Effect):
+class HealingOverTimeEffect(Effect):
     """
     Heal over Time effect that heals the target each turn.
 
-    HoT effects continuously heal the target for a specified duration,
+    Healing over Time effects continuously heal the target for a specified duration,
     using a heal expression that can include variables like MIND level.
     """
 
@@ -1378,7 +1250,7 @@ class HoT(Effect):
         # Assert that the heal value is a positive integer.
         assert (
             isinstance(hot_value, int) and hot_value >= 0
-        ), f"HoT '{self.name}' must have a non-negative integer heal value, got {hot_value}."
+        ), f"HealingOverTimeEffect '{self.name}' must have a non-negative integer heal value, got {hot_value}."
         # Apply the heal to the target.
         hot_value = target.heal(hot_value)
         # If the heal value is positive, print the heal message.
@@ -1396,7 +1268,7 @@ class HoT(Effect):
             AssertionError: If validation conditions are not met.
         """
         super().validate()
-        assert self.max_duration > 0, "HoT duration must be greater than 0."
+        assert self.max_duration > 0, "HealingOverTimeEffect duration must be greater than 0."
         assert isinstance(
             self.heal_per_turn, str
         ), "Heal per turn must be a string expression."
