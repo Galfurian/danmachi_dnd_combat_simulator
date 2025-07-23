@@ -1,9 +1,4 @@
-"""
-Character concentration management module.
-
-This module handles concentration tracking for D&D 5e-style spellcasting,
-tracking concentration by spell (not by individual effect instances).
-"""
+"""Character concentration management module for D&D 5e-style spellcasting."""
 
 from typing import Any, Dict, List, Optional
 from core.utils import cprint
@@ -13,7 +8,14 @@ from actions.spells import Spell
 class ConcentrationSpell:
     """Represents a concentration spell and all its active effects across targets."""
 
-    def __init__(self, spell: Spell, caster: Any, mind_level: int):
+    def __init__(self, spell: Spell, caster: Any, mind_level: int) -> None:
+        """Initialize a concentration spell.
+        
+        Args:
+            spell: The spell being concentrated on
+            caster: The character casting the spell
+            mind_level: The mind level at which the spell was cast
+        """
         self.spell: Spell = spell
         self.caster: Any = caster
         self.mind_level: int = mind_level
@@ -21,43 +23,68 @@ class ConcentrationSpell:
         self.active_effects: List[Any] = []  # ActiveEffect instances for this spell
 
     def add_target(self, target: Any, active_effect: Any) -> None:
-        """Add a target and its associated active effect to this concentration spell."""
+        """Add a target and its associated active effect to this concentration spell.
+        
+        Args:
+            target: The character being targeted by the concentration spell
+            active_effect: The active effect instance for this target
+        """
         if target not in self.targets:
             self.targets.append(target)
         self.active_effects.append(active_effect)
 
     def remove_target(self, target: Any) -> None:
-        """Remove a target and its effects from this concentration spell."""
+        """Remove a target and its effects from this concentration spell.
+        
+        Args:
+            target: The character to remove from the concentration spell
+        """
         if target in self.targets:
             self.targets.remove(target)
         # Remove associated effects for this target
         self.active_effects = [ae for ae in self.active_effects if ae.target != target]
 
     def is_empty(self) -> bool:
-        """Check if this concentration spell has no active effects."""
+        """Check if this concentration spell has no active effects.
+        
+        Returns:
+            bool: True if the spell has no active effects, False otherwise
+        """
         return len(self.active_effects) == 0
 
 
 class CharacterConcentration:
     """Manages concentration spells for a character (typically a spellcaster)."""
 
-    def __init__(self, character_ref):
-        """Initialize with reference to parent Character object."""
+    def __init__(self, character_ref: Any) -> None:
+        """Initialize with reference to parent Character object.
+        
+        Args:
+            character_ref: Reference to the Character object that owns this concentration manager
+        """
         self._character = character_ref
         self.concentration_spells: Dict[str, ConcentrationSpell] = (
             {}
         )  # spell_name -> ConcentrationSpell
 
     def can_add_concentration_spell(self) -> bool:
-        """Check if we can add another concentration spell without exceeding the limit."""
+        """Check if we can add another concentration spell without exceeding the limit.
+        
+        Returns:
+            bool: True if another concentration spell can be added, False otherwise
+        """
         return len(self.concentration_spells) < self._character.CONCENTRATION_LIMIT
 
     def add_concentration_effect(
         self, spell: Spell, target: Any, active_effect: Any, mind_level: int
     ) -> bool:
-        """
-        Add a concentration effect. If the spell already exists, add to existing concentration.
-        If not, create new concentration spell entry.
+        """Add a concentration effect.
+
+        Args:
+            spell: The spell requiring concentration
+            target: The character being affected by the spell
+            active_effect: The active effect instance to track
+            mind_level: The mind level at which the spell was cast
 
         Returns:
             bool: True if the effect was added successfully
@@ -83,7 +110,12 @@ class CharacterConcentration:
         return True
 
     def remove_concentration_effect(self, target: Any, active_effect: Any) -> None:
-        """Remove a concentration effect when it expires or is dispelled."""
+        """Remove a concentration effect when it expires or is dispelled.
+        
+        Args:
+            target: The character that was being affected
+            active_effect: The active effect instance to remove
+        """
         for spell_key, conc_spell in list(self.concentration_spells.items()):
             if active_effect in conc_spell.active_effects:
                 conc_spell.remove_target(target)
@@ -94,7 +126,11 @@ class CharacterConcentration:
                 break
 
     def drop_oldest_concentration_spell(self) -> None:
-        """Drop the oldest concentration spell to make room for a new one."""
+        """Drop the oldest concentration spell to make room for a new one.
+        
+        This method removes the first concentration spell that was added,
+        along with all its effects, and displays an appropriate message.
+        """
         if not self.concentration_spells:
             return
 
@@ -122,8 +158,7 @@ class CharacterConcentration:
         del self.concentration_spells[oldest_spell_key]
 
     def break_concentration(self, spell: Optional[Spell] = None) -> bool:
-        """
-        Break concentration on a specific spell or all concentration spells.
+        """Break concentration on a specific spell or all concentration spells.
 
         Args:
             spell: Specific spell to break concentration on. If None, breaks all.
@@ -191,9 +226,17 @@ class CharacterConcentration:
         return False
 
     def get_concentration_count(self) -> int:
-        """Get the number of concentration spells currently active."""
+        """Get the number of concentration spells currently active.
+        
+        Returns:
+            int: The number of active concentration spells
+        """
         return len(self.concentration_spells)
 
     def get_concentration_spells(self) -> List[ConcentrationSpell]:
-        """Get a list of all active concentration spells."""
+        """Get a list of all active concentration spells.
+        
+        Returns:
+            List[ConcentrationSpell]: A list containing all active concentration spells
+        """
         return list(self.concentration_spells.values())

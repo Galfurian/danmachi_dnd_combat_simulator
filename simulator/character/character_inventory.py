@@ -1,9 +1,4 @@
-"""
-Character Inventory Management Module.
-
-This module handles all inventory-related functionality for the Character class,
-including weapon and armor management, hand calculations, and equipment validation.
-"""
+"""Character Inventory Management Module - handles inventory-related functionality."""
 
 from typing import TYPE_CHECKING
 
@@ -18,18 +13,26 @@ if TYPE_CHECKING:
 
 
 class CharacterInventory:
-    """Manages character inventory including weapons, armor, and equipment validation."""
+    """
+    Manages character inventory including weapons, armor, and equipment validation.
+    """
 
-    def __init__(self, character: "Character"):
-        """Initialize the inventory manager with a reference to the character.
-        
+    def __init__(self, character: "Character") -> None:
+        """
+        Initialize the inventory manager.
+
         Args:
-            character: The Character instance this inventory manager belongs to.
+            character (Character): The Character instance this inventory manager belongs to.
         """
         self._character = character
 
     def get_occupied_hands(self) -> int:
-        """Returns the number of hands currently occupied by equipped weapons and armor."""
+        """
+        Return the number of hands currently occupied by equipped weapons and armor.
+
+        Returns:
+            int: The number of hands currently occupied.
+        """
         used_hands = sum(item.hands_required for item in self._character.equipped_weapons)
         used_hands += sum(
             armor.armor_slot == ArmorSlot.SHIELD for armor in self._character.equipped_armor
@@ -37,11 +40,17 @@ class CharacterInventory:
         return used_hands
 
     def get_free_hands(self) -> int:
-        """Returns the number of free hands available for equipping items."""
+        """
+        Return the number of free hands available for equipping items.
+
+        Returns:
+            int: The number of free hands available.
+        """
         return self._character.total_hands - self.get_occupied_hands()
 
     def can_equip_weapon(self, weapon: Weapon) -> bool:
-        """Checks if the character can equip a specific weapon.
+        """
+        Check if the character can equip a specific weapon.
 
         Args:
             weapon (Weapon): The weapon to check.
@@ -62,7 +71,8 @@ class CharacterInventory:
         return True
 
     def add_weapon(self, weapon: Weapon) -> bool:
-        """Adds a weapon to the character's equipped weapons.
+        """
+        Add a weapon to the character's equipped weapons.
 
         Args:
             weapon (Weapon): The weapon to equip.
@@ -82,7 +92,8 @@ class CharacterInventory:
         return False
 
     def remove_weapon(self, weapon: Weapon) -> bool:
-        """Removes a weapon from the character's equipped weapons.
+        """
+        Remove a weapon from the character's equipped weapons.
 
         Args:
             weapon (Weapon): The weapon to remove.
@@ -102,7 +113,8 @@ class CharacterInventory:
         return False
 
     def can_equip_armor(self, armor: Armor) -> bool:
-        """Checks if the character can equip a specific armor.
+        """
+        Check if the character can equip a specific armor.
 
         Args:
             armor (Armor): The armor to check.
@@ -131,7 +143,8 @@ class CharacterInventory:
         return True
 
     def add_armor(self, armor: Armor) -> bool:
-        """Adds an armor to the character's equipped armor.
+        """
+        Add an armor to the character's equipped armor.
 
         Args:
             armor (Armor): The armor to equip.
@@ -151,7 +164,8 @@ class CharacterInventory:
         return False
 
     def remove_armor(self, armor: Armor) -> bool:
-        """Removes an armor from the character's equipped armor.
+        """
+        Remove an armor from the character's equipped armor.
 
         Args:
             armor (Armor): The armor to remove.

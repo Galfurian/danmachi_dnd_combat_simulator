@@ -19,14 +19,26 @@ if TYPE_CHECKING:
 
 
 class CharacterSerialization:
-    """Handles serialization and deserialization functionality for Character objects."""
+    """
+    Handles serialization and deserialization functionality for Character objects.
+    """
 
-    def __init__(self, character: "Character"):
-        """Initialize the serialization module with a reference to the character."""
+    def __init__(self, character: "Character") -> None:
+        """
+        Initialize the serialization module with a reference to the character.
+
+        Args:
+            character (Character): The character instance to serialize/deserialize.
+        """
         self._character = character
 
     def to_dict(self) -> dict[str, Any]:
-        """Converts the character to a dictionary representation."""
+        """
+        Converts the character to a dictionary representation.
+
+        Returns:
+            dict[str, Any]: The dictionary representation of the character.
+        """
         data: dict[str, Any] = {}
         data["type"] = self._character.type.name
         data["name"] = self._character.name
@@ -59,7 +71,15 @@ class CharacterSerialization:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Character | None":
-        """Create a Character instance from a dictionary representation."""
+        """
+        Create a Character instance from a dictionary representation.
+
+        Args:
+            data (dict[str, Any]): The dictionary representation of the character.
+
+        Returns:
+            Character | None: The Character instance if successful, None otherwise.
+        """
         # Import here to avoid circular imports
         from .main import Character
         from core.content import ContentRepository
@@ -195,7 +215,8 @@ class CharacterSerialization:
         for effect_data in data.get("passive_effects", []):
             try:
                 effect = Effect.from_dict(effect_data)
-                char.add_passive_effect(effect)
+                if effect is not None:
+                    char.add_passive_effect(effect)
             except Exception as e:
                 log_warning(
                     f"Invalid passive effect for character {data['name']}: {e}",
@@ -216,7 +237,7 @@ def load_character(file_path: Path) -> "Character | None":
     Loads a character from a JSON file.
 
     Args:
-        file_path (str): The path to the JSON file containing character data.
+        file_path (Path): The path to the JSON file containing character data.
 
     Returns:
         Character | None: A Character instance if the file is valid, None otherwise.
@@ -238,7 +259,8 @@ def load_character(file_path: Path) -> "Character | None":
 
 
 def load_characters(file_path: Path) -> dict[str, "Character"]:
-    """Loads characters from a JSON file.
+    """
+    Loads characters from a JSON file.
 
     Args:
         file_path (Path): The path to the JSON file containing character data.

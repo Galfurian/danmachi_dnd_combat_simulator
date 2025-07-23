@@ -1,11 +1,6 @@
-"""
-Character Display Module
+"""Character Display Module - handles character display, formatting, and UI functionality."""
 
-This module handles character display, formatting, and UI functionality.
-Extracted from the main Character class to improve modularity.
-"""
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from core.constants import (
     CharacterType,
@@ -21,8 +16,13 @@ if TYPE_CHECKING:
 class CharacterDisplay:
     """Handles display, formatting, and UI functionality for Character objects."""
 
-    def __init__(self, character: "Character"):
-        """Initialize the display module with a reference to the character."""
+    def __init__(self, character: "Character") -> None:
+        """
+        Initialize the display module with a reference to the character.
+
+        Args:
+            character (Character): The character instance to display.
+        """
         self._character = character
 
     def get_status_line(
@@ -32,7 +32,18 @@ class CharacterDisplay:
         show_bars: bool = False,
         show_ac: bool = True,
     ) -> str:
-        """Get a formatted status line for the character with health, mana, effects, etc."""
+        """
+        Get a formatted status line for the character with health, mana, effects, etc.
+
+        Args:
+            show_all_effects (bool): Whether to show all effects or truncate them. Defaults to False.
+            show_numbers (bool): Whether to show numerical values for stats. Defaults to False.
+            show_bars (bool): Whether to show bar representations for stats. Defaults to False.
+            show_ac (bool): Whether to show the armor class (AC). Defaults to True.
+
+        Returns:
+            str: A formatted string representing the character's status line.
+        """
         # Collect all effects with better formatting
         effects_list = []
         if self._character.effects_module.active_effects:
@@ -158,7 +169,12 @@ class CharacterDisplay:
         return status
 
     def get_detailed_effects(self) -> str:
-        """Get a detailed multi-line view of all active effects."""
+        """
+        Get a detailed multi-line view of all active effects.
+
+        Returns:
+            str: A detailed string of all active effects with descriptions.
+        """
         if not self._character.effects_module.active_effects:
             return "No active effects"
 

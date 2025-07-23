@@ -2,6 +2,10 @@ from typing import Any
 
 
 class CharacterRace:
+    """
+    Represents a character's race, including natural AC, default and available actions and spells.
+    """
+
     def __init__(
         self,
         name: str,
@@ -10,7 +14,18 @@ class CharacterRace:
         default_spells: list[str] | None = None,
         available_actions: dict[int, list[str]] | None = None,
         available_spells: dict[int, list[str]] | None = None,
-    ):
+    ) -> None:
+        """
+        Initialize a CharacterRace instance.
+
+        Args:
+            name (str): The name of the race.
+            natural_ac (int, optional): The natural armor class. Defaults to 0.
+            default_actions (list[str] | None, optional): Default actions for the race. Defaults to None.
+            default_spells (list[str] | None, optional): Default spells for the race. Defaults to None.
+            available_actions (dict[int, list[str]] | None, optional): Actions available by level. Defaults to None.
+            available_spells (dict[int, list[str]] | None, optional): Spells available by level. Defaults to None.
+        """
         self.name = name
         self.natural_ac = natural_ac
         self.default_actions = default_actions or []
@@ -19,7 +34,8 @@ class CharacterRace:
         self.available_spells = available_spells or {}
 
     def to_dict(self) -> dict[str, Any]:
-        """Converts the CharacterRace instance to a dictionary.
+        """
+        Converts the CharacterRace instance to a dictionary.
 
         Returns:
             dict[str, Any]: The dictionary representation of the CharacterRace instance.
@@ -35,10 +51,11 @@ class CharacterRace:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "CharacterRace":
-        """Creates a CharacterRace instance from a dictionary.
+        """
+        Creates a CharacterRace instance from a dictionary.
 
         Args:
-            data (dict): The dictionary representation of the CharacterRace.
+            data (dict[str, Any]): The dictionary representation of the CharacterRace.
 
         Returns:
             CharacterRace: The CharacterRace instance.

@@ -1,9 +1,4 @@
-"""
-Character statistics and calculated properties module.
-
-This module handles all stat-related calculations for Character objects,
-including ability modifiers, derived stats like HP/AC, and expression variables.
-"""
+"""Character statistics and calculated properties module."""
 
 from typing import Dict, Any, TYPE_CHECKING
 from core.constants import BonusType
@@ -17,10 +12,16 @@ if TYPE_CHECKING:
 
 
 class CharacterStats:
-    """Handles all stat calculations and derived properties for a Character."""
-    
-    def __init__(self, character_ref):
-        """Initialize with reference to parent Character object."""
+    """
+    Handles all stat calculations and derived properties for a Character, including ability modifiers, HP, AC, initiative, and utility stat expressions.
+    """
+    def __init__(self, character_ref) -> None:
+        """
+        Initialize with reference to parent Character object.
+
+        Args:
+            character_ref: The Character instance this stats module belongs to.
+        """
         self._character = character_ref
     
     # ============================================================================
@@ -29,37 +30,72 @@ class CharacterStats:
     
     @property
     def STR(self) -> int:
-        """Returns the D&D strength modifier."""
+        """
+        Returns the D&D strength modifier.
+
+        Returns:
+            int: The strength modifier value.
+        """
         return get_stat_modifier(self._character.stats["strength"])
 
     @property 
     def DEX(self) -> int:
-        """Returns the D&D dexterity modifier."""
+        """
+        Returns the D&D dexterity modifier.
+
+        Returns:
+            int: The dexterity modifier value.
+        """
         return get_stat_modifier(self._character.stats["dexterity"])
 
     @property
     def CON(self) -> int:
-        """Returns the D&D constitution modifier."""
+        """
+        Returns the D&D constitution modifier.
+
+        Returns:
+            int: The constitution modifier value.
+        """
         return get_stat_modifier(self._character.stats["constitution"])
 
     @property
     def INT(self) -> int:
-        """Returns the D&D intelligence modifier."""
+        """
+        Returns the D&D intelligence modifier.
+
+        Returns:
+            int: The intelligence modifier value.
+        """
         return get_stat_modifier(self._character.stats["intelligence"])
 
     @property
     def WIS(self) -> int:
-        """Returns the D&D wisdom modifier."""
+        """
+        Returns the D&D wisdom modifier.
+
+        Returns:
+            int: The wisdom modifier value.
+        """
         return get_stat_modifier(self._character.stats["wisdom"])
 
     @property
     def CHA(self) -> int:
-        """Returns the D&D charisma modifier."""
+        """
+        Returns the D&D charisma modifier.
+
+        Returns:
+            int: The charisma modifier value.
+        """
         return get_stat_modifier(self._character.stats["charisma"])
 
     @property
     def SPELLCASTING(self) -> int:
-        """Returns the D&D spellcasting ability modifier."""
+        """
+        Returns the D&D spellcasting ability modifier.
+
+        Returns:
+            int: The spellcasting ability modifier value.
+        """
         if (self._character.spellcasting_ability and 
             self._character.spellcasting_ability in self._character.stats):
             return get_stat_modifier(self._character.stats[self._character.spellcasting_ability])
@@ -71,7 +107,12 @@ class CharacterStats:
 
     @property
     def HP_MAX(self) -> int:
-        """Returns the maximum HP of the character."""
+        """
+        Returns the maximum HP of the character.
+
+        Returns:
+            int: The maximum HP value.
+        """
         hp_max: int = 0
         # Add the class levels' HP multipliers to the max HP.
         for cls, lvl in self._character.levels.items():
@@ -82,7 +123,12 @@ class CharacterStats:
 
     @property
     def MIND_MAX(self) -> int:
-        """Returns the maximum Mind of the character."""
+        """
+        Returns the maximum Mind of the character.
+
+        Returns:
+            int: The maximum Mind value.
+        """
         mind_max: int = 0
         # Add the class levels' Mind multipliers to the max Mind.
         for cls, lvl in self._character.levels.items():
@@ -94,10 +140,10 @@ class CharacterStats:
     @property
     def AC(self) -> int:
         """
-        Calculates Armor Class (AC) using D&D 5e rules:
-        - If wearing body armor, AC = armor.base + DEX modifier (if allowed by type)
-        - Shields stack with body armor or base AC
-        - If no armor is worn, AC = 10 + DEX + race bonus
+        Calculates Armor Class (AC) using D&D 5e rules.
+
+        Returns:
+            int: The total AC value.
         """
         # Base AC is 10 + DEX modifier.
         base_ac = 10 + self.DEX
@@ -115,7 +161,8 @@ class CharacterStats:
 
     @property
     def INITIATIVE(self) -> int:
-        """Calculates the character's initiative based on dexterity and any active effects.
+        """
+        Calculates the character's initiative based on dexterity and any active effects.
 
         Returns:
             int: The total initiative value.
@@ -128,10 +175,11 @@ class CharacterStats:
 
     @property
     def CONCENTRATION_LIMIT(self) -> int:
-        """Calculate the maximum number of concentration effects this character can maintain.
+        """
+        Calculate the maximum number of concentration effects this character can maintain.
 
         Returns:
-            int: Maximum concentration effects
+            int: Maximum concentration effects.
         """
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
         concentration_bonus = self._character.effects_module.get_modifier(BonusType.CONCENTRATION)
@@ -154,7 +202,8 @@ class CharacterStats:
     # ============================================================================
 
     def get_expression_variables(self) -> Dict[str, int]:
-        """Returns a dictionary of the character's modifiers for use in expressions.
+        """
+        Returns a dictionary of the character's modifiers for use in expressions.
 
         Returns:
             Dict[str, int]: A dictionary containing the character's modifiers.

@@ -29,6 +29,11 @@ from items.weapon import Weapon
 
 
 class Character:
+    """
+    Represents a character in the game, including stats, equipment, actions, effects, and all related management modules.
+    Provides methods for stat calculation, action and spell management, equipment handling, effect processing, and serialization.
+    """
+
     def __init__(
         self,
         char_type: CharacterType,
@@ -42,6 +47,21 @@ class Character:
         vulnerabilities: set[DamageType] = set(),
         number_of_attacks: int = 1,
     ):
+        """
+        Initialize a Character instance with all core properties and modules.
+
+        Args:
+            char_type (CharacterType): The type of character (player, NPC, etc.).
+            name (str): The character's name.
+            race (CharacterRace): The character's race.
+            levels (dict[CharacterClass, int]): The character's class levels.
+            stats (dict[str, int]): The character's base stats.
+            spellcasting_ability (Optional[str], optional): The spellcasting ability, if any. Defaults to None.
+            total_hands (int, optional): The number of hands the character has. Defaults to 2.
+            resistances (set[DamageType], optional): Damage types the character resists. Defaults to set().
+            vulnerabilities (set[DamageType], optional): Damage types the character is vulnerable to. Defaults to set().
+            number_of_attacks (int, optional): Number of attacks per turn. Defaults to 1.
+        """
         # Determines if the character is a player or an NPC.
         self.type: CharacterType = char_type
         # Name of the character.
@@ -75,11 +95,6 @@ class Character:
         # List of spells
         self.spells: dict[str, Spell] = dict()
 
-        # Turn flags to track used actions.
-        self.turn_flags: dict[str, bool] = {
-            "standard_action_used": False,
-            "bonus_action_used": False,
-        }
         # Manages active effects on the character.
         self.effects_module: CharacterEffects = CharacterEffects(self)
 
@@ -156,12 +171,7 @@ class Character:
 
     @property
     def AC(self) -> int:
-        """
-        Calculates Armor Class (AC) using D&D 5e rules:
-        - If wearing body armor, AC = armor.base + DEX modifier (if allowed by type)
-        - Shields stack with body armor or base AC
-        - If no armor is worn, AC = 10 + DEX + race bonus
-        """
+        """Calculates Armor Class (AC) using D&D 5e rules."""
         return self.stats_module.AC
 
     @property
@@ -217,9 +227,9 @@ class Character:
 
     def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
         """Returns a list of natural weapon attacks available to the character.
-
+        
         Returns:
-            list[NaturalAttack]: A list of natural weapon attacks.
+            list[NaturalAttack]: A list of natural weapon attacks
         """
         return self.actions_module.get_available_natural_weapon_attacks()
 
@@ -240,30 +250,28 @@ class Character:
         return self.actions_module.get_available_spells()
 
     def turn_done(self) -> bool:
-        """
-        Checks if the character has used both a standard and bonus action this turn.
-        Returns True if both actions are used, False otherwise.
+        """Checks if the character has used both a standard and bonus action this turn.
+        
+        Returns:
+            bool: True if both actions are used, False otherwise
         """
         return self.actions_module.turn_done()
 
     def check_passive_triggers(self) -> list[str]:
-        """
-        Checks all passive effects for trigger conditions and activates them.
-        Returns a list of activation messages for triggered effects.
-
+        """Checks all passive effects for trigger conditions and activates them.
+        
         Returns:
-            list[str]: Messages for effects that were triggered this check.
+            list[str]: Messages for effects that were triggered this check
         """
         return self.effects_module.check_passive_triggers()
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
-        """
-        Applies damage to the character, factoring in resistances and vulnerabilities.
-
+        """Applies damage to the character, factoring in resistances and vulnerabilities.
+        
         Args:
-            amount (int): The raw base damage.
-            damage_type (DamageType): The type of damage being dealt.
-
+            amount: The raw base damage
+            damage_type: The type of damage being dealt
+            
         Returns:
             Tuple[int, int, int]: (base_damage, adjusted_damage, damage_taken)
         """
@@ -290,12 +298,12 @@ class Character:
 
     def heal(self, amount: int) -> int:
         """Increases the character's hp by the given amount, up to max_hp.
-
+        
         Args:
-            amount (int): The amount of healing to apply.
-
+            amount: The amount of healing to apply
+            
         Returns:
-            int: The actual amount healed, which may be less than the requested amount if it exceeds max_hp.
+            int: The actual amount healed
         """
         # Compute the actual amount we can heal.
         amount = max(0, min(amount, self.HP_MAX - self.hp))
@@ -306,12 +314,12 @@ class Character:
 
     def use_mind(self, amount: int) -> bool:
         """Reduces the character's mind by the given amount, if they have enough mind points.
-
+        
         Args:
-            amount (int): The amount of mind points to use.
-
+            amount: The amount of mind points to use
+            
         Returns:
-            bool: True if the mind points were successfully used, False otherwise.
+            bool: True if the mind points were successfully used, False otherwise
         """
         if self.mind >= amount:
             self.mind -= amount
@@ -320,20 +328,20 @@ class Character:
 
     def is_alive(self) -> bool:
         """Checks if the character is alive (hp > 0).
-
+        
         Returns:
-            bool: True if the character is alive, False otherwise.
+            bool: True if the character is alive, False otherwise
         """
         return self.hp > 0
 
     def get_spell_attack_bonus(self, spell_level: int = 1) -> int:
         """Calculates the spell attack bonus for the character.
-
+        
         Args:
-            spell_level (int, optional): The level of the spell being cast. Defaults to
-
+            spell_level: The level of the spell being cast
+            
         Returns:
-            int: The spell attack bonus for the character.
+            int: The spell attack bonus for the character
         """
         return self.SPELLCASTING + spell_level
 

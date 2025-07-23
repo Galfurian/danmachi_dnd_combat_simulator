@@ -8,6 +8,10 @@ from effects.effect import *
 
 
 class ActiveEffect:
+    """
+    Represents an active effect applied to a character, including its source, target, effect details, mind level, and duration.
+    """
+
     def __init__(
         self, source: Any, target: Any, effect: Effect, mind_level: int
     ) -> None:
@@ -19,6 +23,10 @@ class ActiveEffect:
 
 
 class CharacterEffects:
+    """
+    Manages all effects (active, passive, modifiers, triggers) for a character, including application, removal, and effect updates.
+    """
+
     def __init__(self, owner: Any) -> None:
         self.owner: Any = owner
         self.active_effects: list[ActiveEffect] = []
@@ -30,6 +38,18 @@ class CharacterEffects:
     def add_effect(
         self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None
     ) -> bool:
+        """
+        Add a new effect to the character.
+
+        Args:
+            source (Any): The source of the effect (e.g., the caster).
+            effect (Effect): The effect to add.
+            mind_level (int): The mind level of the effect.
+            spell (Optional[Any], optional): The spell associated with the effect, if any. Defaults to None.
+
+        Returns:
+            bool: True if the effect was added successfully, False otherwise.
+        """
         try:
             # Validate inputs
             if not source:
@@ -130,6 +150,15 @@ class CharacterEffects:
             return False
 
     def remove_effect(self, effect: "ActiveEffect") -> bool:
+        """
+        Remove an active effect from the character.
+
+        Args:
+            effect (ActiveEffect): The effect to remove.
+
+        Returns:
+            bool: True if the effect was removed successfully, False otherwise.
+        """
         try:
             if effect in self.active_effects:
                 self.active_effects.remove(effect)
@@ -149,24 +178,38 @@ class CharacterEffects:
     # === Passive Effect Management ===
 
     def add_passive_effect(self, effect: Effect) -> bool:
-        """Add a passive effect that is always active (like boss phase triggers)."""
+        """
+        Add a passive effect that is always active (like boss phase triggers).
+
+        Args:
+            effect (Effect): The passive effect to add.
+
+        Returns:
+            bool: True if the passive effect was added, False if it was already present.
+        """
         if effect not in self.passive_effects:
             self.passive_effects.append(effect)
             return True
         return False
 
     def remove_passive_effect(self, effect: Effect) -> bool:
-        """Remove a passive effect."""
+        """
+        Remove a passive effect.
+
+        Args:
+            effect (Effect): The passive effect to remove.
+
+        Returns:
+            bool: True if the passive effect was removed, False otherwise.
+        """
         if effect in self.passive_effects:
             self.passive_effects.remove(effect)
             return True
         return False
 
     def check_passive_triggers(self) -> list[str]:
-        """
-        Checks all passive effects for trigger conditions and activates them.
-        Returns a list of activation messages for triggered effects.
-
+        """Check all passive effects for trigger conditions and activate them.
+        
         Returns:
             list[str]: Messages for effects that were triggered this check.
         """
@@ -203,15 +246,44 @@ class CharacterEffects:
     # === Regular Effect Management ===
 
     def get_effect_remaining_duration(self, effect: Effect) -> int:
+        """
+        Get the remaining duration of a specific effect.
+
+        Args:
+            effect (Effect): The effect to check.
+
+        Returns:
+            int: The remaining duration of the effect, or 0 if not active.
+        """
         for ae in self.active_effects:
             if ae.effect == effect:
                 return ae.duration
         return 0
 
     def has_effect(self, effect: Effect) -> bool:
+        """
+        Check if a specific effect is currently active.
+
+        Args:
+            effect (Effect): The effect to check.
+
+        Returns:
+            bool: True if the effect is active, False otherwise.
+        """
         return any(ae.effect == effect for ae in self.active_effects)
 
     def can_add_effect(self, effect: Effect, source: Any, mind_level: int) -> bool:
+        """
+        Determine if an effect can be added to the character.
+
+        Args:
+            effect (Effect): The effect to add.
+            source (Any): The source of the effect.
+            mind_level (int): The mind level of the effect.
+
+        Returns:
+            bool: True if the effect can be added, False otherwise.
+        """
         if isinstance(effect, HoT):
             return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
 
@@ -246,6 +318,15 @@ class CharacterEffects:
     # === Modifier Management ===
 
     def get_modifier(self, bonus_type: BonusType) -> Any:
+        """
+        Get the modifier value for a specific bonus type.
+
+        Args:
+            bonus_type (BonusType): The type of bonus to retrieve.
+
+        Returns:
+            Any: The modifier value, which can be an integer, list, or 0.
+        """
         ae = self.active_modifiers.get(bonus_type)
         if not ae:
             return (
@@ -288,6 +369,12 @@ class CharacterEffects:
             )
 
     def get_damage_modifiers(self) -> list[tuple[DamageComponent, int]]:
+        """
+        Get the best damage modifiers for each damage type from all active effects.
+
+        Returns:
+            list[tuple[DamageComponent, int]]: List of (DamageComponent, mind_level) tuples for the best modifier of each type.
+        """
         best_by_type: dict[DamageType, tuple[DamageComponent, int]] = {}
 
         for ae in self.active_effects:
@@ -320,6 +407,9 @@ class CharacterEffects:
         return list(best_by_type.values())
 
     def turn_update(self) -> None:
+        """
+        Update the effects for a turn, applying any changes and removing expired effects.
+        """
         updated = []
         for ae in self.active_effects:
             ae.effect.turn_update(ae.source, self.owner, ae.mind_level)
@@ -343,6 +433,16 @@ class CharacterEffects:
     # === Helpers ===
 
     def _get_modifier_strength(self, ae: ActiveEffect, bonus_type: BonusType) -> int:
+        """
+        Helper to determine the strength of a modifier for comparison purposes.
+
+        Args:
+            ae (ActiveEffect): The active effect to evaluate.
+            bonus_type (BonusType): The bonus type to check.
+
+        Returns:
+            int: The strength value of the modifier.
+        """
         if not isinstance(ae.effect, ModifierEffect):
             return 0
 
@@ -388,12 +488,23 @@ class CharacterEffects:
         return 0
 
     def _iterate_active_effects(self) -> Iterator[ActiveEffect]:
+        """
+        Iterator over all active effects.
+
+        Returns:
+            Iterator[ActiveEffect]: An iterator over active effects.
+        """
         yield from self.active_effects
 
     # === OnHitTrigger Management ===
 
     def get_on_hit_triggers(self) -> list[ActiveEffect]:
-        """Get all active OnHitTrigger effects."""
+        """
+        Get all active OnHitTrigger effects.
+
+        Returns:
+            list[ActiveEffect]: List of active OnHitTrigger effects.
+        """
         triggers = []
         for ae in self.active_effects:
             if isinstance(ae.effect, OnHitTrigger):
@@ -409,13 +520,13 @@ class CharacterEffects:
         Trigger all OnHitTrigger effects and return damage bonuses and effects to apply.
 
         Args:
-            target: The target being hit
+            target (Any): The target being hit.
 
         Returns:
             tuple: (damage_bonuses, effects_to_apply, consumed_triggers)
-                - damage_bonuses: List of (DamageComponent, mind_level) tuples for extra damage
-                - effects_to_apply: List of (Effect, mind_level) tuples to apply to the target
-                - consumed_triggers: List of OnHitTrigger effects that were consumed
+                - damage_bonuses: List of (DamageComponent, mind_level) tuples.
+                - effects_to_apply: List of (Effect, mind_level) tuples.
+                - consumed_triggers: List of OnHitTrigger effects that were consumed.
         """
         damage_bonuses: list[tuple[DamageComponent, int]] = []
         effects_to_apply: list[tuple[Effect, int]] = []
