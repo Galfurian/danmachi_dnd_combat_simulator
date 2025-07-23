@@ -16,7 +16,7 @@ from effects.effect import Effect
 
 
 class OffensiveAbility(BaseAbility):
-    """Offensive abilities that deal damage to targets."""
+    """Represents abilities that deal damage to targets during combat."""
 
     def __init__(
         self,
@@ -33,18 +33,18 @@ class OffensiveAbility(BaseAbility):
         """Initialize a new OffensiveAbility.
         
         Args:
-            name: Display name of the ability
-            type: Action type (STANDARD, BONUS, REACTION, etc.)
-            description: Flavor text describing what the ability does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            damage: List of damage components to roll when used
-            effect: Optional effect applied to targets on successful hits
-            target_expr: Expression determining number of targets ("" = single target)
-            target_restrictions: Override default targeting if needed
-            
+            name (str): Display name of the ability.
+            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            description (str): Flavor text describing what the ability does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            damage (list[DamageComponent]): List of damage components to roll when used.
+            effect (Effect | None): Optional effect applied to targets on successful hits.
+            target_expr (str): Expression determining number of targets ("" = single target).
+            target_restrictions (list[str] | None): Override default targeting if needed.
+        
         Raises:
-            ValueError: If name is empty or required parameters are invalid
+            ValueError: If name is empty or required parameters are invalid.
         """
         try:
             super().__init__(
@@ -81,11 +81,11 @@ class OffensiveAbility(BaseAbility):
         """Execute this offensive ability against a target.
         
         Args:
-            actor: The character using the ability
-            target: The character being damaged
-            
+            actor (Any): The character using the ability.
+            target (Any): The character being damaged.
+        
         Returns:
-            bool: True if ability was executed successfully, False on system errors
+            bool: True if ability was executed successfully, False on system errors.
         """
         # Validate actor and target.
         if not self._validate_actor_and_target(actor, target):
@@ -166,10 +166,10 @@ class OffensiveAbility(BaseAbility):
         """Returns the damage expression with variables substituted.
         
         Args:
-            actor: The character using the ability
-            
+            actor (Any): The character using the ability.
+        
         Returns:
-            str: Complete damage expression with variables replaced by values
+            str: Complete damage expression with variables replaced by values.
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
@@ -177,10 +177,10 @@ class OffensiveAbility(BaseAbility):
         """Returns the minimum possible damage value for the ability.
         
         Args:
-            actor: The character using the ability
-            
+            actor (Any): The character using the ability.
+        
         Returns:
-            int: Minimum total damage across all damage components
+            int: Minimum total damage across all damage components.
         """
         return super()._common_get_min_damage(actor, self.damage)
 
@@ -188,9 +188,9 @@ class OffensiveAbility(BaseAbility):
         """Returns the maximum possible damage value for the ability.
         
         Args:
-            actor: The character using the ability
-            
+            actor (Any): The character using the ability.
+        
         Returns:
-            int: Maximum total damage across all damage components
+            int: Maximum total damage across all damage components.
         """
         return super()._common_get_max_damage(actor, self.damage)

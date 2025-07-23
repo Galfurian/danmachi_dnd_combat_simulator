@@ -7,7 +7,12 @@ from effects.effect import Effect
 
 
 class WeaponAttack(BaseAttack):
-    """A weapon-based attack that can be equipped and unequipped."""
+    """A weapon-based attack that can be equipped and unequipped.
+
+    This class represents attacks made with weapons, such as swords, bows, or
+    other equipment. It includes attributes for handling weapon-specific
+    properties like the number of hands required to wield the weapon.
+    """
 
     def __init__(
         self,
@@ -24,15 +29,15 @@ class WeaponAttack(BaseAttack):
         """Initialize a new WeaponAttack.
         
         Args:
-            name: Weapon name (e.g., "Longsword", "Shortbow")
-            type: Action type (usually ACTION or BONUS_ACTION)
-            description: Flavor text describing the weapon
-            cooldown: Turns between uses (0 for most weapons)
-            maximum_uses: Max uses per encounter (-1 for unlimited)
-            hands_required: Number of hands needed to wield (1 or 2)
-            attack_roll: Attack roll expression with variables
-            damage: List of damage components for the weapon
-            effect: Optional effect applied on successful hit
+            name (str): Weapon name (e.g., "Longsword", "Shortbow").
+            type (ActionType): Action type (usually ACTION or BONUS_ACTION).
+            description (str): Flavor text describing the weapon.
+            cooldown (int): Turns between uses (0 for most weapons).
+            maximum_uses (int): Max uses per encounter (-1 for unlimited).
+            hands_required (int): Number of hands needed to wield (1 or 2).
+            attack_roll (str): Attack roll expression with variables.
+            damage (list[DamageComponent]): List of damage components for the weapon.
+            effect (Effect | None): Optional effect applied on successful hit.
         """
         super().__init__(
             name,

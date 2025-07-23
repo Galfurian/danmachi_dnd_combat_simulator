@@ -126,6 +126,16 @@ def get_character_type_color(character_type: CharacterType) -> str:
 
 
 def apply_character_type_color(character_type: CharacterType, message: str) -> str:
+    """
+    Applies character type color formatting to a message.
+    
+    Args:
+        character_type (CharacterType): The character type to get color for.
+        message (str): The message to format with color.
+        
+    Returns:
+        str: The message wrapped in color formatting tags.
+    """
     return f"[{get_character_type_color(character_type)}]{message}[/]"
 
 
@@ -156,6 +166,16 @@ def get_damage_type_color(damage_type: DamageType) -> str:
 
 
 def apply_damage_type_color(damage_type: DamageType, message: str) -> str:
+    """
+    Applies damage type color formatting to a message.
+    
+    Args:
+        damage_type (DamageType): The damage type to get color for.
+        message (str): The message to format with color.
+        
+    Returns:
+        str: The message wrapped in color formatting tags.
+    """
     return f"[{get_damage_type_color(damage_type)}]{message}[/]"
 
 
@@ -177,6 +197,16 @@ def get_action_type_color(action_type: ActionType) -> str:
 
 
 def apply_action_type_color(action_type: ActionType, message: str) -> str:
+    """
+    Applies action type color formatting to a message.
+    
+    Args:
+        action_type (ActionType): The action type to get color for.
+        message (str): The message to format with color.
+        
+    Returns:
+        str: The message wrapped in color formatting tags.
+    """
     return f"[{get_action_type_color(action_type)}]{message}[/]"
 
 
@@ -201,6 +231,16 @@ def get_action_category_color(category: ActionCategory) -> str:
 
 
 def apply_action_category_color(category: ActionCategory, message: str) -> str:
+    """
+    Applies action category color formatting to a message.
+    
+    Args:
+        category (ActionCategory): The action category to get color for.
+        message (str): The message to format with color.
+        
+    Returns:
+        str: The message wrapped in color formatting tags.
+    """
     return f"[{get_action_category_color(category)}]{message}[/]"
 
 
@@ -224,13 +264,15 @@ def get_effect_color(effect: Any) -> str:
 
 
 def apply_effect_color(effect: Any, message: str) -> str:
-    """Returns a colored string representation of the effect.
+    """
+    Applies effect type color formatting to a message.
 
     Args:
-        effect (Any): The effect instance.
+        effect (Any): The effect instance to get color for.
+        message (str): The message to format with color.
 
     Returns:
-        str: The colored string associated with the effect type.
+        str: The message wrapped in color formatting tags.
     """
     return f"[{get_effect_color(effect)}]{message}[/]"
 

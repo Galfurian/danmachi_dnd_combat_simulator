@@ -14,6 +14,12 @@ from combat.damage import DamageComponent
 
 
 class Effect:
+    """
+    Base class for all game effects that can be applied to characters.
+    
+    Effects can modify character stats, deal damage over time, provide healing,
+    or trigger special behaviors under certain conditions.
+    """
     def __init__(
         self,
         name: str,
@@ -99,8 +105,13 @@ class Effect:
         """
         return self.max_duration <= 0
 
-    def validate(self):
-        """Validate the effect's properties."""
+    def validate(self) -> None:
+        """
+        Validate the effect's properties.
+        
+        Raises:
+            ValueError: If any property validation fails.
+        """
         try:
             if not self.name:
                 log_error("Effect name must not be empty", {"name": self.name})
@@ -179,15 +190,26 @@ class Effect:
 
 
 class Modifier:
-    """Handles different types of modifiers that can be applied to characters."""
+    """
+    Handles different types of modifiers that can be applied to characters.
+    
+    Modifiers represent bonuses or penalties to various character attributes
+    such as HP, AC, damage, or other stats.
+    """
 
     def __init__(self, bonus_type: BonusType, value: Union[str, int, DamageComponent]):
         self.bonus_type = bonus_type
         self.value = value
         self.validate()
 
-    def validate(self):
-        """Validate the modifier's properties."""
+    def validate(self) -> None:
+        """
+        Validate the modifier's properties.
+        
+        Raises:
+            ValueError: If the bonus type or value is invalid.
+            AssertionError: If validation conditions are not met.
+        """
         assert isinstance(
             self.bonus_type, BonusType
         ), f"Bonus type '{self.bonus_type}' must be of type BonusType."
@@ -227,8 +249,16 @@ class Modifier:
 
         return ModifierDeserializer.deserialize(data)
 
-    def __eq__(self, other) -> bool:
-        """Check if two modifiers are equal."""
+    def __eq__(self, other: object) -> bool:
+        """
+        Check if two modifiers are equal.
+        
+        Args:
+            other (object): The other object to compare with.
+            
+        Returns:
+            bool: True if the modifiers are equal, False otherwise.
+        """
         if not isinstance(other, Modifier):
             return False
         return self.bonus_type == other.bonus_type and self.value == other.value
@@ -248,6 +278,12 @@ class Modifier:
 
 
 class ModifierEffect(Effect):
+    """
+    Base class for effects that apply stat modifiers to characters.
+    
+    This includes buffs and debuffs that temporarily modify character attributes
+    like HP, AC, damage bonuses, etc.
+    """
     def __init__(
         self,
         name: str,
@@ -259,7 +295,13 @@ class ModifierEffect(Effect):
         self.modifiers: list[Modifier] = modifiers
         self.validate()
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the modifier effect's properties.
+        
+        Raises:
+            AssertionError: If validation conditions are not met.
+        """
         super().validate()
         assert isinstance(self.modifiers, list), "Modifiers must be a list."
         for modifier in self.modifiers:
@@ -268,6 +310,16 @@ class ModifierEffect(Effect):
             ), f"Modifier '{modifier}' must be of type Modifier."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
+        """
+        Check if the modifier effect can be applied to the target.
+        
+        Args:
+            actor (Any): The character applying the effect.
+            target (Any): The character receiving the effect.
+            
+        Returns:
+            bool: True if the effect can be applied, False otherwise.
+        """
         if not target.is_alive():
             return False
         # Check if the target is already affected by the same modifiers.
@@ -282,6 +334,12 @@ class ModifierEffect(Effect):
 
 
 class Buff(ModifierEffect):
+    """
+    Positive effect that applies beneficial modifiers to a character.
+    
+    Buffs provide temporary bonuses to character attributes such as increased
+    damage, improved AC, or additional HP.
+    """
     def __init__(
         self,
         name: str,
@@ -293,6 +351,12 @@ class Buff(ModifierEffect):
 
 
 class Debuff(ModifierEffect):
+    """
+    Negative effect that applies detrimental modifiers to a character.
+    
+    Debuffs provide temporary penalties to character attributes such as reduced
+    damage, lowered AC, or decreased HP.
+    """
     def __init__(
         self,
         name: str,
@@ -304,6 +368,12 @@ class Debuff(ModifierEffect):
 
 
 class DoT(Effect):
+    """
+    Damage over Time effect that deals damage each turn.
+    
+    DoT effects continuously damage the target for a specified duration,
+    using a damage roll expression that can include variables like MIND level.
+    """
     def __init__(
         self,
         name: str,
@@ -316,7 +386,15 @@ class DoT(Effect):
 
         self.validate()
 
-    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
+    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1) -> None:
+        """
+        Apply damage over time to the target.
+        
+        Args:
+            actor (Any): The character who applied the DoT effect.
+            target (Any): The character receiving the damage.
+            mind_level (Optional[int]): The mind level for damage calculation. Defaults to 1.
+        """
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         # Calculate the damage amount using the provided expression.
@@ -347,7 +425,13 @@ class DoT(Effect):
         if not target.is_alive():
             cprint(f"    [bold red]{target.name} has been defeated![/]")
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the DoT effect's properties.
+        
+        Raises:
+            AssertionError: If validation conditions are not met.
+        """
         super().validate()
         assert self.max_duration > 0, "DoT duration must be greater than 0."
         assert isinstance(
@@ -356,6 +440,12 @@ class DoT(Effect):
 
 
 class HoT(Effect):
+    """
+    Heal over Time effect that heals the target each turn.
+    
+    HoT effects continuously heal the target for a specified duration,
+    using a heal expression that can include variables like MIND level.
+    """
     def __init__(
         self,
         name: str,
@@ -368,7 +458,15 @@ class HoT(Effect):
 
         self.validate()
 
-    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1):
+    def turn_update(self, actor: Any, target: Any, mind_level: Optional[int] = 1) -> None:
+        """
+        Apply healing over time to the target.
+        
+        Args:
+            actor (Any): The character who applied the HoT effect.
+            target (Any): The character receiving the healing.
+            mind_level (Optional[int]): The mind level for healing calculation. Defaults to 1.
+        """
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level
         # Calculate the heal amount using the provided expression.
@@ -386,7 +484,13 @@ class HoT(Effect):
         message += apply_effect_color(self, self.name) + "."
         cprint(message)
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the HoT effect's properties.
+        
+        Raises:
+            AssertionError: If validation conditions are not met.
+        """
         super().validate()
         assert self.max_duration > 0, "HoT duration must be greater than 0."
         assert isinstance(
@@ -395,7 +499,13 @@ class HoT(Effect):
 
 
 class OnHitTrigger(Effect):
-    """Effect that activates when the character makes their next weapon/natural attack."""
+    """
+    Effect that activates when the character makes their next weapon/natural attack.
+    
+    This effect can apply additional damage or trigger other effects when the
+    character successfully hits with an attack. Can be configured to consume
+    the effect after triggering or remain active.
+    """
 
     def __init__(
         self,
@@ -412,7 +522,13 @@ class OnHitTrigger(Effect):
         self.consumes_on_trigger: bool = consumes_on_trigger
         self.validate()
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the OnHitTrigger effect's properties.
+        
+        Raises:
+            AssertionError: If validation conditions are not met.
+        """
         super().validate()
         assert isinstance(self.trigger_effects, list), "Trigger effects must be a list."
         for effect in self.trigger_effects:
@@ -431,7 +547,13 @@ class OnHitTrigger(Effect):
 
 
 class OnLowHealthTrigger(Effect):
-    """Effect that activates when the character's HP drops below a threshold percentage."""
+    """
+    Effect that activates when the character's HP drops below a threshold percentage.
+    
+    This effect monitors the character's health and triggers when their HP falls
+    below a specified percentage threshold. Can apply damage bonuses or other effects
+    when the condition is met.
+    """
 
     def __init__(
         self,
@@ -451,7 +573,13 @@ class OnLowHealthTrigger(Effect):
         self.has_triggered: bool = False  # Track if already activated
         self.validate()
 
-    def validate(self):
+    def validate(self) -> None:
+        """
+        Validate the OnLowHealthTrigger effect's properties.
+        
+        Raises:
+            AssertionError: If validation conditions are not met.
+        """
         super().validate()
         assert (
             0.0 <= self.hp_threshold_percent <= 1.0
@@ -472,7 +600,15 @@ class OnLowHealthTrigger(Effect):
         return target.is_alive()
 
     def should_trigger(self, character: Any) -> bool:
-        """Check if the trigger condition is met and hasn't already been activated."""
+        """
+        Check if the trigger condition is met and hasn't already been activated.
+        
+        Args:
+            character (Any): The character to check health status for.
+            
+        Returns:
+            bool: True if the trigger should activate, False otherwise.
+        """
         if self.has_triggered and self.consumes_on_trigger:
             return False
 
@@ -482,7 +618,16 @@ class OnLowHealthTrigger(Effect):
     def activate(
         self, character: Any
     ) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
-        """Activate the trigger and return damage bonuses and effects to apply."""
+        """
+        Activate the trigger and return damage bonuses and effects to apply.
+        
+        Args:
+            character (Any): The character activating the trigger.
+            
+        Returns:
+            tuple[list[DamageComponent], list[tuple[Effect, int]]]: A tuple containing
+                damage bonuses and a list of effects with their mind levels.
+        """
         self.has_triggered = True
 
         # Return damage bonuses and effects with mind level 0 (passive triggers don't use mind)
@@ -516,15 +661,30 @@ class IncapacitatingEffect(Effect):
         self.save_stat = save_stat
 
     def prevents_actions(self) -> bool:
-        """Check if this effect prevents the character from taking actions."""
+        """
+        Check if this effect prevents the character from taking actions.
+        
+        Returns:
+            bool: True if actions are prevented, False otherwise.
+        """
         return True
 
     def prevents_movement(self) -> bool:
-        """Check if this effect prevents movement."""
+        """
+        Check if this effect prevents movement.
+        
+        Returns:
+            bool: True if movement is prevented, False otherwise.
+        """
         return self.incapacitation_type in ["paralyzed", "stunned", "unconscious"]
 
     def auto_fails_saves(self) -> bool:
-        """Check if character automatically fails certain saves."""
+        """
+        Check if character automatically fails certain saves.
+        
+        Returns:
+            bool: True if saves are automatically failed, False otherwise.
+        """
         return self.incapacitation_type in ["unconscious"]
 
     def can_apply(self, actor: Any, target: Any) -> bool:

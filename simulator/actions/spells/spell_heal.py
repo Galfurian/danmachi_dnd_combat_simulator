@@ -28,7 +28,12 @@ from effects.effect import Effect
 
 
 class SpellHeal(Spell):
-    """Restorative spell that heals hit points and can apply beneficial effects."""
+    """Restorative spell that heals hit points and can apply beneficial effects.
+
+    This class represents spells designed to restore health to allies. It includes
+    attributes for healing expressions and optional beneficial effects, as well as
+    methods for calculating and applying healing during combat.
+    """
 
     def __init__(
         self,
@@ -48,21 +53,21 @@ class SpellHeal(Spell):
         """Initialize a new SpellHeal.
         
         Args:
-            name: Display name of the spell
-            type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
-            description: Flavor text describing what the spell does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            level: Base spell level (1-9 for most spells, 0 for cantrips)
-            mind_cost: List of mind point costs per casting level
-            heal_roll: Healing expression with level scaling support
-            effect: Optional beneficial effect applied alongside healing
-            target_expr: Expression determining number of targets
-            requires_concentration: Whether spell requires concentration
-            target_restrictions: Override default targeting if needed
-            
+            name (str): Display name of the spell.
+            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
+            description (str): Flavor text describing what the spell does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
+            mind_cost (list[int]): List of mind point costs per casting level.
+            heal_roll (str): Healing expression with level scaling support.
+            effect (Effect | None): Optional beneficial effect applied alongside healing.
+            target_expr (str): Expression determining number of targets.
+            requires_concentration (bool): Whether spell requires concentration.
+            target_restrictions (list[str] | None): Override default targeting if needed.
+        
         Raises:
-            ValueError: If heal_roll is invalid or other parameters are invalid
+            ValueError: If heal_roll is invalid or other parameters are invalid.
         """
         try:
             super().__init__(
@@ -118,12 +123,12 @@ class SpellHeal(Spell):
         """Execute a healing spell with automatic success and beneficial effects.
         
         Args:
-            actor: The character casting the spell
-            target: The character targeted by the spell
-            mind_level: The spell level to cast at (affects cost and power)
-            
+            actor (Any): The character casting the spell.
+            target (Any): The character targeted by the spell.
+            mind_level (int): The spell level to cast at (affects cost and power).
+        
         Returns:
-            bool: True if spell was cast successfully, False on failure
+            bool: True if spell was cast successfully, False on failure.
         """
 
         # Call the base class cast_spell to handle common checks.
@@ -176,11 +181,11 @@ class SpellHeal(Spell):
         """Get healing expression with variables substituted for display.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for MIND variable substitution
-            
+            actor (Any): The character casting the spell.
+            mind_level (int | None): The spell level to use for MIND variable substitution.
+        
         Returns:
-            str: Complete healing expression with variables substituted
+            str: Complete healing expression with variables substituted.
         """
         if mind_level is None:
             mind_level = 1
@@ -193,11 +198,11 @@ class SpellHeal(Spell):
         """Calculate the minimum possible healing for the spell.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for scaling calculations
-            
+            actor (Any): The character casting the spell.
+            mind_level (int | None): The spell level to use for scaling calculations.
+        
         Returns:
-            int: Minimum possible healing amount
+            int: Minimum possible healing amount.
         """
         if mind_level is None:
             mind_level = 1
@@ -212,11 +217,11 @@ class SpellHeal(Spell):
         """Calculate the maximum possible healing for the spell.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for scaling calculations
-            
+            actor (Any): The character casting the spell.
+            mind_level (int | None): The spell level to use for scaling calculations.
+        
         Returns:
-            int: Maximum possible healing amount
+            int: Maximum possible healing amount.
         """
         if mind_level is None:
             mind_level = 1

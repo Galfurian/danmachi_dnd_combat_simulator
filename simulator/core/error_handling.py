@@ -4,7 +4,7 @@ Centralized error handling and logging system.
 
 import logging
 import traceback
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, TypeVar, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -12,6 +12,7 @@ T = TypeVar("T")
 
 
 class ErrorSeverity(Enum):
+    """Enumeration of error severity levels for the game's error handling system."""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -20,16 +21,18 @@ class ErrorSeverity(Enum):
 
 @dataclass
 class GameError:
+    """Represents a game error with severity, context, and optional exception information."""
     message: str
     severity: ErrorSeverity
     context: dict[str, Any]
-    exception: Exception | None = None
+    exception: Optional[Exception] = None
 
 
 class ErrorHandler:
     """Centralized error handling for the game."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the ErrorHandler with a logger and empty error history."""
         self.logger = logging.getLogger("game_errors")
         self.error_history: list[GameError] = []
 
@@ -37,8 +40,8 @@ class ErrorHandler:
         self,
         message: str,
         severity: ErrorSeverity,
-        context: dict[str, Any] | None = None,
-        exception: Exception | None = None,
+        context: Optional[dict[str, Any]] = None,
+        exception: Optional[Exception] = None,
     ) -> None:
         """Handle an error based on its severity."""
         # Create the GameError object internally
@@ -78,7 +81,7 @@ class ErrorHandler:
         default: T,
         error_message: str,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: dict | None = None,
+        context: Optional[dict] = None,
     ) -> T:
         """Safely execute an operation with error handling."""
         try:
@@ -94,7 +97,7 @@ class ErrorHandler:
             return default
 
     def validate_required(
-        self, value: Any, name: str, context: dict[str, Any] | None = None
+        self, value: Any, name: str, context: Optional[dict[str, Any]] = None
     ) -> Any:
         """Validate that a required value is not None."""
         if value is None:
@@ -116,11 +119,22 @@ def safe_operation(
     default_value: Any = None,
     error_message: str = "Operation failed",
     severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-):
-    """Decorator for safe operation execution."""
+) -> Callable:
+    """
+    Decorator for safe operation execution.
+    
+    Args:
+        default_value (Any): Default value to return on error.
+        error_message (str): Error message prefix for logging.
+        severity (ErrorSeverity): Severity level for errors.
+        
+    Returns:
+        Callable: The decorator function.
+    """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         def wrapper(*args, **kwargs) -> T:
+            """Wrapper function that executes the decorated function safely."""
             return ERROR_HANDLER.safe_execute(
                 lambda: func(*args, **kwargs), default_value, error_message, severity
             )
@@ -133,8 +147,8 @@ def safe_operation(
 # Convenience functions for each severity level
 def log_info(
     message: str,
-    context: dict[str, Any] | None = None,
-    exception: Exception | None = None,
+    context: Optional[dict[str, Any]] = None,
+    exception: Optional[Exception] = None,
 ) -> None:
     """Log an info-level message."""
     ERROR_HANDLER.handle(message, ErrorSeverity.LOW, context, exception)
@@ -142,8 +156,8 @@ def log_info(
 
 def log_warning(
     message: str,
-    context: dict[str, Any] | None = None,
-    exception: Exception | None = None,
+    context: Optional[dict[str, Any]] = None,
+    exception: Optional[Exception] = None,
 ) -> None:
     """Log a warning-level message."""
     ERROR_HANDLER.handle(message, ErrorSeverity.MEDIUM, context, exception)
@@ -151,8 +165,8 @@ def log_warning(
 
 def log_error(
     message: str,
-    context: dict[str, Any] | None = None,
-    exception: Exception | None = None,
+    context: Optional[dict[str, Any]] = None,
+    exception: Optional[Exception] = None,
 ) -> None:
     """Log an error-level message."""
     ERROR_HANDLER.handle(message, ErrorSeverity.HIGH, context, exception)
@@ -160,8 +174,8 @@ def log_error(
 
 def log_critical(
     message: str,
-    context: dict[str, Any] | None = None,
-    exception: Exception | None = None,
+    context: Optional[dict[str, Any]] = None,
+    exception: Optional[Exception] = None,
 ) -> None:
     """Log a critical-level message."""
     ERROR_HANDLER.handle(message, ErrorSeverity.CRITICAL, context, exception)
@@ -175,7 +189,7 @@ def log_critical(
 
 
 def require_non_empty_string(
-    value: Any, param_name: str, context: dict[str, Any] | None = None
+    value: Any, param_name: str, context: Optional[dict[str, Any]] = None
 ) -> str:
     """
     Validates that a value is a non-empty string.
@@ -206,8 +220,8 @@ def require_non_empty_string(
 
 
 def require_enum_type(
-    value: Any, enum_class: type, param_name: str, context: dict[str, Any] | None = None
-):
+    value: Any, enum_class: type, param_name: str, context: Optional[dict[str, Any]] = None
+) -> Any:
     """
     Validates that a value is of the specified enum type.
 
@@ -244,7 +258,7 @@ def ensure_string(
     value: Any,
     param_name: str,
     default: str = "",
-    context: dict[str, Any] | None = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> str:
     """
     Ensures a value is a string, converting or using default if needed.
@@ -274,7 +288,7 @@ def ensure_string(
 
 
 def ensure_non_negative_int(
-    value: Any, param_name: str, default: int = 0, context: dict[str, Any] | None = None
+    value: Any, param_name: str, default: int = 0, context: Optional[dict[str, Any]] = None
 ) -> int:
     """
     Ensures a value is a non-negative integer, correcting if needed.
@@ -307,9 +321,9 @@ def ensure_int_in_range(
     value: Any,
     param_name: str,
     min_val: int,
-    max_val: int | None = None,
-    default: int | None = None,
-    context: dict[str, Any] | None = None,
+    max_val: Optional[int] = None,
+    default: Optional[int] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> int:
     """
     Ensures a value is an integer within the specified range, correcting if needed.
@@ -367,10 +381,10 @@ def ensure_list_of_type(
     value: Any,
     expected_type: type,
     param_name: str,
-    default: list | None = None,
-    converter: Callable[[Any], Any] | None = None,
-    validator: Callable[[Any], bool] | None = None,
-    context: dict[str, Any] | None = None,
+    default: Optional[list] = None,
+    converter: Optional[Callable[[Any], Any]] = None,
+    validator: Optional[Callable[[Any], bool]] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> list:
     """
     Ensures a value is a list of the specified type, correcting if needed.
@@ -542,8 +556,8 @@ def ensure_list_of_type(
 def ensure_list_of_strings(
     value: Any,
     param_name: str,
-    default: list[str] | None = None,
-    context: dict[str, Any] | None = None,
+    default: Optional[list[str]] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> list[str]:
     """
     Ensures a value is a list of strings, correcting if needed.
@@ -570,8 +584,8 @@ def ensure_list_of_strings(
 def validate_required_object(
     obj: Any,
     param_name: str,
-    required_attributes: list[str] | None = None,
-    context: dict[str, Any] | None = None,
+    required_attributes: Optional[list[str]] = None,
+    context: Optional[dict[str, Any]] = None,
 ) -> Any:
     """
     Validates that an object exists and optionally has required attributes/methods.

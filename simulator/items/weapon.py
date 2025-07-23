@@ -1,9 +1,16 @@
-from typing import Any, List
+from typing import Any
 
 from actions.attacks import BaseAttack
 
 
 class Weapon:
+    """
+    Represents a weapon that can be wielded by characters in combat.
+    
+    Weapons contain one or more attacks that can be performed, specify how many
+    hands are required to wield them, and automatically prefix attack names
+    with the weapon name for identification.
+    """
     def __init__(
         self,
         name: str,
@@ -11,6 +18,15 @@ class Weapon:
         attacks: list[BaseAttack],
         hands_required: int = 0,
     ):
+        """
+        Initialize a new weapon instance.
+        
+        Args:
+            name (str): The name of the weapon.
+            description (str): A description of the weapon.
+            attacks (list[BaseAttack]): List of attacks this weapon can perform.
+            hands_required (int): Number of hands required to wield this weapon. Defaults to 0.
+        """
         self.name: str = name
         self.description: str = description
         self.attacks: list[BaseAttack] = attacks
@@ -22,9 +38,11 @@ class Weapon:
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Converts the Weapon instance to a dictionary.
+        Convert the weapon to a dictionary representation.
+        
         Returns:
-            dict: Dictionary representation of the Weapon instance.
+            dict[str, Any]: Dictionary containing the weapon's properties including
+                          class name, name, description, attacks, and hands required.
         """
         return {
             "class": self.__class__.__name__,
@@ -36,12 +54,18 @@ class Weapon:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Weapon":
-        """Creates a Weapon instance from a dictionary.
+        """
+        Create a Weapon instance from a dictionary representation.
+        
         Args:
-            data (dict): Dictionary containing the weapon data.
-            base_attacks (dict): Dictionary of base attacks.
+            data (dict[str, Any]): Dictionary containing weapon properties including
+                                 name, description, attacks, and hands_required.
+                                 
         Returns:
-            Weapon: An instance of Weapon.
+            Weapon: A new Weapon instance created from the dictionary data.
+            
+        Raises:
+            KeyError: If required keys are missing from the data.
         """
         from actions.attacks.attack_serializer import AttackDeserializer
 

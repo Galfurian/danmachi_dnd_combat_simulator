@@ -30,12 +30,27 @@ FULL_ATTACK = BaseAction("Full Attack", ActionType.STANDARD, ActionCategory.OFFE
 
 
 class CombatManager:
+    """Manages the flow of combat, including turn order, actions, and combat phases.
+
+    This class handles the initialization, execution, and conclusion of combat
+    encounters. It manages participants, turn order, and the logic for both
+    player and NPC actions. Additionally, it provides methods for pre-combat
+    preparation, post-combat healing, and final battle reporting.
+    """
+
     def __init__(
         self,
         player: Character,
         enemies: list[Character],
         friendlies: list[Character],
     ):
+        """Initialize the CombatManager with participants and turn order.
+        
+        Args:
+            player (Character): The player character controlled by the user.
+            enemies (list[Character]): List of enemy characters.
+            friendlies (list[Character]): List of friendly characters.
+        """
         # Store the ui.
         self.ui: PlayerInterface = PlayerInterface()
 
@@ -76,7 +91,7 @@ class CombatManager:
 
     def get_alive_participants(self) -> list[Character]:
         """Returns a list of all participants (player, enemies, friendlies) who are still alive.
-
+        
         Returns:
             list[Character]: A list of alive characters.
         """
@@ -84,10 +99,10 @@ class CombatManager:
 
     def get_alive_opponents(self, actor: Character) -> list[Character]:
         """Returns a list of opponents for the actor, who are still alive.
-
+        
         Args:
             actor (Character): The character for whom to find opponents.
-
+        
         Returns:
             list[Character]: A list of alive opponents.
         """
@@ -99,10 +114,10 @@ class CombatManager:
 
     def get_alive_friendlies(self, actor: Character) -> list[Character]:
         """Returns a list of friendly characters for the actor, who are still alive.
-
+        
         Args:
             actor (Character): The character for whom to find friendlies.
-
+        
         Returns:
             list[Character]: A list of alive friendly characters.
         """
@@ -114,7 +129,7 @@ class CombatManager:
 
     def run_turn(self) -> bool:
         """Runs a single turn within the combat round.
-
+        
         Returns:
             bool: True if the turn was successfully executed, False if combat should end.
         """
@@ -149,7 +164,7 @@ class CombatManager:
 
     def run_participant_turn(self, participant: Character):
         """Runs a single participant's turn in combat.
-
+        
         Args:
             participant (Character): The participant whose turn is being run.
         """
@@ -187,9 +202,7 @@ class CombatManager:
             cprint("")
 
     def ask_for_player_action(self) -> None:
-        """
-        Handles player input for choosing an action and target during their turn.
-        """
+        """Handles player input for choosing an action and target during their turn."""
         if not self.get_alive_opponents(self.player):
             return
 
@@ -282,6 +295,14 @@ class CombatManager:
         self.player.use_action_type(ActionType.STANDARD)
 
     def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
+        """Handles the player's choice to cast a spell.
+        
+        Args:
+            spells (list[Spell]): List of available spells for the player.
+        
+        Returns:
+            bool: True if a spell was successfully cast, False otherwise.
+        """
         while True:
             # Ask for the spell and the mind level.
             choice = self.ask_for_player_spell_and_mind(spells)
@@ -326,9 +347,12 @@ class CombatManager:
         self, spells: list[Spell]
     ) -> Optional[tuple[Spell, int] | str]:
         """Asks the player to choose a spell from their available spells.
-
+        
+        Args:
+            spells (list[Spell]): List of available spells for the player.
+        
         Returns:
-            Optional[tuple[Spell, int]]: The chosen spell and mind level, or None if no spell was selected.
+            Optional[tuple[Spell, int] | str]: The chosen spell and mind level, or None if no spell was selected.
         """
         while True:
             # Let the player choose a spell.
@@ -348,12 +372,12 @@ class CombatManager:
 
     def ask_for_player_target(self, action: BaseAction) -> Optional[Character | str]:
         """Asks the player to choose a target for the given action.
-
+        
         Args:
             action (BaseAction): The action for which to choose a target.
-
+        
         Returns:
-            Optional[Character]: The chosen target, or None if no valid target was selected.
+            Optional[Character | str]: The chosen target, or None if no valid target was selected.
         """
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
@@ -370,13 +394,13 @@ class CombatManager:
         self, action: BaseAction, max_targets: int
     ) -> Optional[List[Character] | str]:
         """Asks the player to choose multiple targets for the given action.
-
+        
         Args:
             action (BaseAction): The action for which to choose targets.
             max_targets (int): The maximum number of targets to choose.
-
+        
         Returns:
-            Optional[list[Character]]: The chosen targets, or None if no valid targets were selected.
+            Optional[list[Character] | str]: The chosen targets, or None if no valid targets were selected.
         """
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
@@ -407,11 +431,10 @@ class CombatManager:
         return self.ui.choose_targets(valid_targets, max_targets)
 
     def execute_npc_action(self, npc: Character):
-        """
-        General AI logic for any NPC, whether enemy or friendly:
-        - Heal low HP allies (including self)
-        - Buff self if not already buffed
-        - Attack enemies
+        """Executes the action logic for an NPC during their turn.
+        
+        Args:
+            npc (Character): The NPC whose action is being executed.
         """
         allies = self.get_alive_friendlies(npc)
         enemies = self.get_alive_opponents(npc)
@@ -537,11 +560,11 @@ class CombatManager:
         self, character: Character, ability: BaseAction
     ) -> list[Character]:
         """Retrieves a list of legal targets for the given character and ability.
-
+        
         Args:
             character (Character): The character performing the action or spell.
             ability (BaseAction): The action or spell being performed.
-
+        
         Returns:
             list[Character]: A list of legal targets for the action or spell.
         """
@@ -605,6 +628,7 @@ class CombatManager:
                 break
 
     def final_report(self) -> None:
+        """Generates the final battle report after combat ends."""
         crule("📊  Final Battle Report", style="bold blue")
         # Player gets full display in final report
         cprint(
@@ -632,9 +656,10 @@ class CombatManager:
         cprint("")  # blank line
 
     def is_combat_over(self) -> bool:
-        """
-        Determines if combat has ended.
-        Combat ends if the player is defeated, or all enemies are defeated.
+        """Determines if combat has ended.
+        
+        Returns:
+            bool: True if combat has ended, False otherwise.
         """
         if not self.player.is_alive():
             cprint("[bold red]Combat ends. You have been defeated![/]")

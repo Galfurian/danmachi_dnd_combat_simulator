@@ -1,7 +1,7 @@
 import copy
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 
 from actions.base_action import BaseAction
 from actions.spells import (
@@ -37,7 +37,13 @@ class ContentRepository(metaclass=Singleton):
     spells: dict[str, BaseAction]
     actions: dict[str, BaseAction]
 
-    def __init__(self, data_dir: Optional[Path] = None):
+    def __init__(self, data_dir: Optional[Path] = None) -> None:
+        """
+        Initialize the ContentRepository.
+        
+        Args:
+            data_dir (Optional[Path]): The directory containing data files to load.
+        """
         if data_dir:
             self.reload(data_dir)
 
@@ -46,7 +52,7 @@ class ContentRepository(metaclass=Singleton):
 
         cprint(f"Loading content from: [bold blue]{root}[/bold blue]")
 
-        def load_json_file(filename: str, loader_func, description: str):
+        def load_json_file(filename: str, loader_func: Callable, description: str) -> dict:
             """Helper to load and validate JSON files"""
             try:
                 cprint(f"Loading {description}...")
@@ -136,7 +142,7 @@ class ContentRepository(metaclass=Singleton):
 
     def _get_from_collection(
         self, collection_name: str, item_name: str, expected_type: Optional[type] = None
-    ) -> Any | None:
+    ) -> Optional[Any]:
         """Generic helper to get an item from any collection with optional type checking.
 
         Args:
@@ -156,48 +162,60 @@ class ContentRepository(metaclass=Singleton):
             return entry
         return None
 
-    def get_character_class(self, name: str) -> CharacterClass | None:
+    def get_character_class(self, name: str) -> Optional[CharacterClass]:
         """Get a character class by name, or None if not found."""
         return self._get_from_collection("classes", name, CharacterClass)
 
-    def get_character_race(self, name: str) -> CharacterRace | None:
+    def get_character_race(self, name: str) -> Optional[CharacterRace]:
         """Get a character race by name, or None if not found."""
         return self._get_from_collection("races", name, CharacterRace)
 
-    def get_weapon(self, name: str) -> Weapon | None:
+    def get_weapon(self, name: str) -> Optional[Weapon]:
         """Get a weapon by name, or None if not found."""
         return self._get_from_collection("weapons", name, Weapon)
 
-    def get_armor(self, name: str) -> Armor | None:
+    def get_armor(self, name: str) -> Optional[Armor]:
         """Get an armor by name, or None if not found."""
         return self._get_from_collection("armors", name, Armor)
 
-    def get_action(self, name: str) -> BaseAction | None:
+    def get_action(self, name: str) -> Optional[BaseAction]:
         """Get an action by name, or None if not found."""
         return self._get_from_collection("actions", name, BaseAction)
 
-    def get_spell(self, name: str) -> BaseAction | None:
+    def get_spell(self, name: str) -> Optional[BaseAction]:
         """Get a spell by name, or None if not found."""
         return self._get_from_collection("spells", name, BaseAction)
 
-    def get_spell_attack(self, name: str) -> SpellAttack | None:
+    def get_spell_attack(self, name: str) -> Optional[SpellAttack]:
         """Get a spell attack by name, or None if not found."""
         return self._get_from_collection("spells", name, SpellAttack)
 
-    def get_spell_heal(self, name: str) -> SpellHeal | None:
+    def get_spell_heal(self, name: str) -> Optional[SpellHeal]:
         """Get a spell heal by name, or None if not found."""
         return self._get_from_collection("spells", name, SpellHeal)
 
-    def get_spell_buff(self, name: str) -> SpellBuff | None:
+    def get_spell_buff(self, name: str) -> Optional[SpellBuff]:
         """Get a spell buff by name, or None if not found."""
         return self._get_from_collection("spells", name, SpellBuff)
 
-    def get_spell_debuff(self, name: str) -> SpellDebuff | None:
+    def get_spell_debuff(self, name: str) -> Optional[SpellDebuff]:
         """Get a spell debuff by name, or None if not found."""
         return self._get_from_collection("spells", name, SpellDebuff)
 
     @staticmethod
-    def _load_character_classes(data) -> dict[str, CharacterClass]:
+    def _load_character_classes(data: list[dict]) -> dict[str, CharacterClass]:
+        """
+        Load character classes from JSON data.
+        
+        Args:
+            data (list[dict]): List of character class data dictionaries.
+            
+        Returns:
+            dict[str, CharacterClass]: Dictionary mapping class names to CharacterClass objects.
+            
+        Raises:
+            ValueError: If duplicate class names are found.
+        """
         classes = {}
         for class_data in data:
             character_class = CharacterClass.from_dict(class_data)
@@ -207,7 +225,19 @@ class ContentRepository(metaclass=Singleton):
         return classes
 
     @staticmethod
-    def _load_character_races(data) -> dict[str, CharacterRace]:
+    def _load_character_races(data: list[dict]) -> dict[str, CharacterRace]:
+        """
+        Load character races from JSON data.
+        
+        Args:
+            data (list[dict]): List of character race data dictionaries.
+            
+        Returns:
+            dict[str, CharacterRace]: Dictionary mapping race names to CharacterRace objects.
+            
+        Raises:
+            ValueError: If duplicate race names are found.
+        """
         races = {}
         for race_data in data:
             character_race = CharacterRace.from_dict(race_data)
@@ -217,7 +247,19 @@ class ContentRepository(metaclass=Singleton):
         return races
 
     @staticmethod
-    def _load_armors(data) -> dict[str, Armor]:
+    def _load_armors(data: list[dict]) -> dict[str, Armor]:
+        """
+        Load armors from JSON data.
+        
+        Args:
+            data (list[dict]): List of armor data dictionaries.
+            
+        Returns:
+            dict[str, Armor]: Dictionary mapping armor names to Armor objects.
+            
+        Raises:
+            ValueError: If duplicate armor names are found.
+        """
         armors = {}
         for armor_data in data:
             armor = Armor.from_dict(armor_data)
@@ -227,8 +269,19 @@ class ContentRepository(metaclass=Singleton):
         return armors
 
     @staticmethod
-    def _load_weapons(data) -> dict[str, Weapon]:
-        """Load weapons from the given data."""
+    def _load_weapons(data: list[dict]) -> dict[str, Weapon]:
+        """
+        Load weapons from JSON data.
+        
+        Args:
+            data (list[dict]): List of weapon data dictionaries.
+            
+        Returns:
+            dict[str, Weapon]: Dictionary mapping weapon names to Weapon objects.
+            
+        Raises:
+            ValueError: If duplicate weapon names are found.
+        """
         weapons: dict[str, Weapon] = {}
         for weapon_data in data:
             weapon = Weapon.from_dict(weapon_data)
@@ -237,8 +290,19 @@ class ContentRepository(metaclass=Singleton):
             weapons[weapon.name] = weapon
         return weapons
 
-    def _load_actions(self, data) -> dict[str, BaseAction]:
-        """Load actions from the given data."""
+    def _load_actions(self, data: list[dict]) -> dict[str, BaseAction]:
+        """
+        Load actions from JSON data.
+        
+        Args:
+            data (list[dict]): List of action data dictionaries.
+            
+        Returns:
+            dict[str, BaseAction]: Dictionary mapping action names to BaseAction objects.
+            
+        Raises:
+            ValueError: If invalid action data is encountered.
+        """
         from actions.abilities.ability_serializer import AbilityDeserializer
         from actions.attacks.attack_serializer import AttackDeserializer
         from actions.spells.spell_serializer import SpellDeserializer

@@ -28,7 +28,12 @@ from effects.effect import Effect
 
 
 class SpellAttack(Spell):
-    """Offensive spell that deals damage through magical attacks."""
+    """Offensive spell that deals damage through magical attacks.
+
+    This class represents spells designed to inflict damage on targets using
+    magical energy. It includes attributes for damage components, optional
+    effects, and methods for calculating and applying damage during combat.
+    """
 
     def __init__(
         self,
@@ -48,21 +53,21 @@ class SpellAttack(Spell):
         """Initialize a new SpellAttack.
         
         Args:
-            name: Display name of the spell
-            type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
-            description: Flavor text describing the spell's appearance/effects
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            level: Base spell level determining scaling and prerequisites
-            mind_cost: List of mind point costs per casting level
-            damage: List of damage components with scaling expressions
-            effect: Optional effect applied on successful spell attacks
-            target_expr: Expression for multi-target spells
-            requires_concentration: Whether spell needs ongoing mental focus
-            target_restrictions: Override default targeting restrictions
-            
+            name (str): Display name of the spell.
+            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
+            description (str): Flavor text describing the spell's appearance/effects.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            level (int): Base spell level determining scaling and prerequisites.
+            mind_cost (list[int]): List of mind point costs per casting level.
+            damage (list[DamageComponent]): List of damage components with scaling expressions.
+            effect (Effect | None): Optional effect applied on successful spell attacks.
+            target_expr (str): Expression for multi-target spells.
+            requires_concentration (bool): Whether spell needs ongoing mental focus.
+            target_restrictions (list[str] | None): Override default targeting restrictions.
+        
         Raises:
-            ValueError: If damage list is empty or contains invalid components
+            ValueError: If damage list is empty or contains invalid components.
         """
         try:
             super().__init__(
@@ -122,12 +127,12 @@ class SpellAttack(Spell):
         """Execute an offensive spell attack with complete combat resolution.
         
         Args:
-            actor: The character casting the spell
-            target: The character being attacked
-            mind_level: The spell level to cast at (affects cost and damage)
-            
+            actor (Any): The character casting the spell.
+            target (Any): The character being attacked.
+            mind_level (int): The spell level to cast at (affects cost and damage).
+        
         Returns:
-            bool: True if spell was successfully cast (regardless of hit/miss)
+            bool: True if spell was successfully cast (regardless of hit/miss).
         """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
@@ -217,11 +222,11 @@ class SpellAttack(Spell):
         """Get damage expression with variables substituted for display.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for MIND variable substitution
-            
+            actor (Any): The character casting the spell.
+            mind_level (int): The spell level to use for MIND variable substitution.
+        
         Returns:
-            str: Complete damage expression with variables substituted
+            str: Complete damage expression with variables substituted.
         """
         return super()._common_get_damage_expr(actor, self.damage, {"MIND": mind_level})
 
@@ -229,11 +234,11 @@ class SpellAttack(Spell):
         """Calculate the minimum possible damage for the spell.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for scaling calculations
-            
+            actor (Any): The character casting the spell.
+            mind_level (int): The spell level to use for scaling calculations.
+        
         Returns:
-            int: Minimum possible damage (sum of all components' minimums)
+            int: Minimum possible damage (sum of all components' minimums).
         """
         return super()._common_get_min_damage(actor, self.damage, {"MIND": mind_level})
 
@@ -241,10 +246,10 @@ class SpellAttack(Spell):
         """Calculate the maximum possible damage for the spell.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for scaling calculations
-            
+            actor (Any): The character casting the spell.
+            mind_level (int): The spell level to use for scaling calculations.
+        
         Returns:
-            int: Maximum possible damage (sum of all components' maximums)
+            int: Maximum possible damage (sum of all components' maximums).
         """
         return super()._common_get_max_damage(actor, self.damage, {"MIND": mind_level})

@@ -12,12 +12,29 @@ from rich.padding import Padding
 
 
 def damage_to_string(damage: DamageComponent) -> str:
+    """
+    Converts a DamageComponent to a formatted string with color coding.
+    
+    Args:
+        damage (DamageComponent): The damage component to format.
+        
+    Returns:
+        str: Formatted string with damage roll and type in appropriate colors.
+    """
     damage_color = get_damage_type_color(damage.damage_type)
     return f"[{damage_color}]{damage.damage_roll} {damage.damage_type.name.lower()}[/]"
 
 
 def modifier_to_string(modifier: Modifier) -> str:
-    """Converts a Modifier to a formatted string representation."""
+    """
+    Converts a Modifier to a formatted string representation.
+    
+    Args:
+        modifier (Modifier): The modifier to format.
+        
+    Returns:
+        str: Formatted string showing the modifier value and bonus type with appropriate colors.
+    """
     if isinstance(modifier.value, DamageComponent):
         return f"[{get_damage_type_color(modifier.value.damage_type)}]{modifier.value.damage_roll} {modifier.value.damage_type.name.lower()}[/] to {modifier.bonus_type.name.lower()}"
     elif isinstance(modifier.value, str):
@@ -27,7 +44,13 @@ def modifier_to_string(modifier: Modifier) -> str:
 
 
 def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
-    """Prints the details of an effect in a formatted way."""
+    """
+    Prints the details of an effect in a formatted way.
+    
+    Args:
+        effect (Effect): The effect to display.
+        padding (int): Left padding for the output. Defaults to 2.
+    """
     sheet: str = f"[blue]{effect.name}[/], "
     if effect.description:
         sheet += f"[italic]{effect.description}[/], "
@@ -165,7 +188,13 @@ def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
 
 
 def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
-    """Prints the details of a spell in a formatted way."""
+    """
+    Prints the details of a spell in a formatted way.
+    
+    Args:
+        spell (Spell): The spell to display.
+        padding (int): Left padding for the output. Defaults to 2.
+    """
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
     sheet += f"[{get_action_type_color(spell.type)}]{spell.type.name}[/], "
@@ -197,7 +226,13 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
 
 
 def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
-    """Prints the details of an ability in a formatted way."""
+    """
+    Prints the details of an ability in a formatted way.
+    
+    Args:
+        ability (BaseAbility): The ability to display.
+        padding (int): Left padding for the output. Defaults to 2.
+    """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
     sheet += f"[{get_action_type_color(ability.type)}]{ability.type.name}[/], "
     
@@ -236,7 +271,13 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         
 
 def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
-    """Prints the details of any action in a formatted way."""
+    """
+    Prints the details of any action in a formatted way.
+    
+    Args:
+        action (BaseAction): The action to display.
+        padding (int): Left padding for the output. Defaults to 2.
+    """
     if isinstance(action, Spell):
         print_spell_sheet(action, padding)
     elif isinstance(action, BaseAbility):
@@ -258,7 +299,12 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
 
 
 def print_character_sheet(char: Character) -> None:
-    """Prints the details of a character in a formatted way."""
+    """
+    Prints the details of a character in a formatted way.
+    
+    Args:
+        char (Character): The character to display.
+    """
     
     # Header with basic character info
     class_levels = ', '.join([f'[green]{cls.name} {lvl}[/]' for cls, lvl in char.levels.items()])
@@ -359,7 +405,11 @@ def print_character_sheet(char: Character) -> None:
 
 
 def print_content_repository_summary() -> None:
-    """Prints a summary of all available content in the repository."""
+    """
+    Prints a summary of all available content in the repository.
+    
+    Displays counts and basic information for each content category.
+    """
     from core.content import ContentRepository
     
     repo = ContentRepository()
@@ -438,7 +488,11 @@ def print_content_repository_summary() -> None:
 
 
 def print_all_available_content() -> None:
-    """Prints detailed information about all available content in the repository."""
+    """
+    Prints detailed information about all available content in the repository.
+    
+    Displays comprehensive information for each item in all content categories.
+    """
     from core.content import ContentRepository
     
     repo = ContentRepository()
@@ -505,7 +559,11 @@ def print_all_available_content() -> None:
 
 
 def print_damage_types_reference() -> None:
-    """Print a reference of all damage types with colors."""
+    """
+    Print a reference of all damage types with colors.
+    
+    Displays all available damage types with their visual styling.
+    """
     from core.constants import DamageType
     
     cprint("\n[bold cyan]💥 Damage Types Reference[/bold cyan]")
@@ -518,7 +576,11 @@ def print_damage_types_reference() -> None:
 
 
 def print_action_types_reference() -> None:
-    """Print a reference of all action types and categories with colors."""
+    """
+    Print a reference of all action types and categories with colors.
+    
+    Displays all available action types and categories with their visual styling.
+    """
     from core.constants import ActionType, ActionCategory
     
     cprint("\n[bold cyan]⚡ Action System Reference[/bold cyan]")
@@ -538,7 +600,11 @@ def print_action_types_reference() -> None:
 
 
 def create_test_character_sheet() -> None:
-    """Create and display a test character with various abilities for demonstration."""
+    """
+    Create and display a test character with various abilities for demonstration.
+    
+    Creates a sample character to showcase the character sheet formatting system.
+    """
     from character import Character
     from character.character_race import CharacterRace
     from character.character_class import CharacterClass

@@ -11,7 +11,22 @@ from core.utils import cprint
 from character import Character, load_character, load_characters
 
 
-"""Sets up basic logging configuration."""
+"""
+Main entry point for the DanMachi D&D Combat Simulator.
+
+This script loads character data, enemy data, and content repositories, then
+initializes and runs combat scenarios. It demonstrates the combat system with
+turn-based mechanics, character actions, spells, and effects.
+
+The combat simulator supports:
+- Loading characters, enemies, and player data from JSON files
+- Managing combat turns and initiative
+- Handling various action types (attacks, spells, abilities)
+- Character effects and status conditions
+- Combat logging and reporting
+"""
+
+# Sets up basic logging configuration.
 logging.basicConfig(
     level=logging.INFO,  # Set the minimum level of messages to be handled
     format="[%(name)s:%(levelname)-12s] %(message)s",
@@ -88,9 +103,17 @@ opponents: list[Character] = []
 allies: list[Character] = []
 
 
-def add_to_list(from_group: dict[str, Character], to_list: list[Character], name: str):
+def add_to_list(from_group: dict[str, Character], to_list: list[Character], name: str) -> None:
     """
-    Adds an opponent to the combat.
+    Add a character from a source group to a destination list for combat.
+    
+    Creates a deep copy of the character to avoid modifying the original data.
+    Logs a warning if the character name is not found in the source group.
+    
+    Args:
+        from_group (dict[str, Character]): Source dictionary of available characters.
+        to_list (list[Character]): Destination list to add the character to.
+        name (str): Name of the character to add from the source group.
     """
     if name in from_group:
         to_list.append(deepcopy(from_group[name]))
@@ -101,9 +124,19 @@ def add_to_list(from_group: dict[str, Character], to_list: list[Character], name
         )
 
 
-def make_names_unique(in_list: list[Character]):
+def make_names_unique(in_list: list[Character]) -> None:
     """
-    Ensures all opponent names are unique by appending a number if necessary, starting from (1).
+    Ensure all character names in a list are unique by appending numbers.
+    
+    Modifies character names in-place by appending (1), (2), etc. to duplicate names.
+    Only adds numbers when duplicates exist - single instances keep original names.
+    
+    Args:
+        in_list (list[Character]): List of characters to make names unique for.
+        
+    Example:
+        Input: ["Goblin", "Goblin", "Orc"]
+        Output: ["Goblin (1)", "Goblin (2)", "Orc"]
     """
     # Count how many times each base name appears
     name_counts = Counter(o.name for o in in_list)

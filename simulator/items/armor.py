@@ -7,6 +7,13 @@ from effects.effect import Effect
 
 
 class Armor:
+    """
+    Represents a piece of armor that can be equipped by characters.
+    
+    Armor provides Armor Class (AC) bonuses and may have special effects.
+    Different armor types (light, medium, heavy) interact differently with
+    Dexterity modifiers, and armor can be equipped in different slots.
+    """
     def __init__(
         self,
         name: str,
@@ -28,6 +35,12 @@ class Armor:
         self.validate()
 
     def validate(self) -> None:
+        """
+        Validate the armor's properties.
+        
+        Raises:
+            AssertionError: If any armor property is invalid.
+        """
         assert self.name and isinstance(self.name, str), "Armor name must not be empty."
         assert self.ac >= 0, "Armor AC bonus must be a non-negative integer."
         assert isinstance(
@@ -43,6 +56,12 @@ class Armor:
     def get_ac(self, dex_mod: int = 0) -> int:
         """
         Returns the total AC of the armor, considering the Dexterity modifier.
+        
+        Args:
+            dex_mod (int): The character's Dexterity modifier. Defaults to 0.
+            
+        Returns:
+            int: The total AC bonus provided by this armor piece.
         """
         if self.armor_slot == ArmorSlot.TORSO:
             if self.armor_type == ArmorType.LIGHT:
@@ -57,6 +76,12 @@ class Armor:
         return 0
 
     def to_dict(self) -> dict[str, Any]:
+        """
+        Convert the armor to a dictionary representation.
+        
+        Returns:
+            dict[str, Any]: Dictionary containing the armor's properties.
+        """
         data = {
             "name": self.name,
             "description": self.description,
@@ -68,6 +93,19 @@ class Armor:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Armor":
+        """
+        Create an Armor instance from a dictionary representation.
+        
+        Args:
+            data (dict[str, Any]): Dictionary containing armor properties.
+            
+        Returns:
+            Armor: A new Armor instance created from the dictionary data.
+            
+        Raises:
+            AssertionError: If the data is None.
+            KeyError: If required keys are missing from the data.
+        """
         assert data is not None, "Data must not be None."
         return Armor(
             name=data["name"],

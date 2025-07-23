@@ -36,7 +36,13 @@ from effects.effect import Effect
 
 
 class BaseAttack(BaseAction):
-    """Base class for all attack actions in the combat system."""
+    """Base class for all attack actions in the combat system.
+
+    This class provides a foundation for implementing various types of attacks,
+    such as weapon attacks and natural attacks. It includes shared functionality
+    like damage calculation, targeting, and serialization, while allowing
+    subclasses to extend or override specific behavior.
+    """
 
     def __init__(
         self,
@@ -54,19 +60,19 @@ class BaseAttack(BaseAction):
         """Initialize a new BaseAttack.
         
         Args:
-            name: The display name of the attack
-            type: The type of action (usually ActionType.ATTACK)
-            description: Description of what the attack does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            hands_required: Number of hands needed
-            attack_roll: Attack bonus expression
-            damage: List of damage components
-            effect: Optional effect applied on successful hits
-            target_restrictions: Override default offensive targeting if needed
-            
+            name (str): The display name of the attack.
+            type (ActionType): The type of action (usually ActionType.ATTACK).
+            description (str): Description of what the attack does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            hands_required (int): Number of hands needed.
+            attack_roll (str): Attack bonus expression.
+            damage (list[DamageComponent]): List of damage components.
+            effect (Effect | None): Optional effect applied on successful hits.
+            target_restrictions (list[str] | None): Override default offensive targeting if needed.
+        
         Raises:
-            ValueError: If name is empty or type/category are invalid
+            ValueError: If name is empty or type/category are invalid.
         """
         try:
             super().__init__(
@@ -125,11 +131,11 @@ class BaseAttack(BaseAction):
         """Execute this attack against a target.
         
         Args:
-            actor: The character performing the attack
-            target: The character being attacked
-            
+            actor (Any): The character performing the attack.
+            target (Any): The character being attacked.
+        
         Returns:
-            bool: True if attack was executed successfully, False on validation errors
+            bool: True if attack was executed successfully, False on validation errors.
         """
         if not self._validate_actor_and_target(actor, target):
             return False
@@ -270,10 +276,10 @@ class BaseAttack(BaseAction):
         """Returns the damage expression with variables substituted.
         
         Args:
-            actor: The character performing the action
-            
+            actor (Any): The character performing the action.
+        
         Returns:
-            str: Complete damage expression with variables replaced by values
+            str: Complete damage expression with variables replaced by values.
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
@@ -281,10 +287,10 @@ class BaseAttack(BaseAction):
         """Returns the minimum possible damage value for the attack.
         
         Args:
-            actor: The character performing the action
-            
+            actor (Any): The character performing the action.
+        
         Returns:
-            int: Minimum total damage across all damage components
+            int: Minimum total damage across all damage components.
         """
         return super()._common_get_min_damage(actor, self.damage)
 
@@ -292,10 +298,10 @@ class BaseAttack(BaseAction):
         """Returns the maximum possible damage value for the attack.
         
         Args:
-            actor: The character performing the action
-            
+            actor (Any): The character performing the action.
+        
         Returns:
-            int: Maximum total damage across all damage components
+            int: Maximum total damage across all damage components.
         """
         return super()._common_get_max_damage(actor, self.damage)
 
@@ -307,7 +313,7 @@ class BaseAttack(BaseAction):
         """Convert attack to dictionary representation using AttackSerializer.
         
         Returns:
-            dict[str, Any]: Dictionary representation of the attack
+            dict[str, Any]: Dictionary representation of the attack.
         """
         from actions.attacks.attack_serializer import AttackSerializer
 
@@ -318,10 +324,10 @@ class BaseAttack(BaseAction):
         """Create BaseAttack from dictionary data using AttackDeserializer.
         
         Args:
-            data: Dictionary containing attack configuration data
-            
+            data (dict[str, Any]): Dictionary containing attack configuration data.
+        
         Returns:
-            BaseAttack: Configured attack instance
+            BaseAttack: Configured attack instance.
         """
         from actions.attacks.attack_serializer import AttackDeserializer
 

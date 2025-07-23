@@ -7,7 +7,11 @@ from effects.effect import Effect
 
 
 class NaturalAttack(BaseAttack):
-    """A natural/innate attack that is part of a creature's biology."""
+    """A natural or innate attack that is part of a creature's biology.
+
+    Examples include bites, claws, tail slaps, or other attacks that do not
+    require weapons and are intrinsic to the creature's anatomy.
+    """
 
     def __init__(
         self,
@@ -23,14 +27,14 @@ class NaturalAttack(BaseAttack):
         """Initialize a new NaturalAttack.
         
         Args:
-            name: Natural weapon name (e.g., "Bite", "Claw", "Tail Slap")
-            type: Action type (usually ACTION, sometimes BONUS_ACTION)
-            description: Flavor text describing the natural weapon
-            cooldown: Turns between uses (0 for most natural attacks)
-            maximum_uses: Max uses per encounter (-1 for unlimited)
-            attack_roll: Attack roll expression with variables
-            damage: List of damage components for the natural weapon
-            effect: Optional effect like poison or disease
+            name (str): Natural weapon name (e.g., "Bite", "Claw", "Tail Slap").
+            type (ActionType): Action type (usually ACTION, sometimes BONUS_ACTION).
+            description (str): Flavor text describing the natural weapon.
+            cooldown (int): Turns between uses (0 for most natural attacks).
+            maximum_uses (int): Max uses per encounter (-1 for unlimited).
+            attack_roll (str): Attack roll expression with variables.
+            damage (list[DamageComponent]): List of damage components for the natural weapon.
+            effect (Effect | None): Optional effect like poison or disease.
         """
         super().__init__(
             name,

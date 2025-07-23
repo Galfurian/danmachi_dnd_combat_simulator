@@ -24,7 +24,12 @@ from combat.damage import DamageComponent
 
 
 class SpellBuff(Spell):
-    """Beneficial spell that enhances targets with positive effects."""
+    """Beneficial spell that enhances targets with positive effects.
+
+    This class represents spells designed to provide buffs or enhancements to
+    allies. It includes attributes for required effects and methods for applying
+    those effects during combat.
+    """
 
     def __init__(
         self,
@@ -43,20 +48,20 @@ class SpellBuff(Spell):
         """Initialize a new SpellBuff.
         
         Args:
-            name: Display name of the spell
-            type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
-            description: Flavor text describing what the spell does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            level: Base spell level (1-9 for most spells, 0 for cantrips)
-            mind_cost: List of mind point costs per casting level
-            effect: Required beneficial effect applied to targets
-            target_expr: Expression determining number of targets
-            requires_concentration: Whether spell requires concentration
-            target_restrictions: Override default targeting if needed
-            
+            name (str): Display name of the spell.
+            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
+            description (str): Flavor text describing what the spell does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
+            mind_cost (list[int]): List of mind point costs per casting level.
+            effect (Effect): Required beneficial effect applied to targets.
+            target_expr (str): Expression determining number of targets.
+            requires_concentration (bool): Whether spell requires concentration.
+            target_restrictions (list[str] | None): Override default targeting if needed.
+        
         Raises:
-            ValueError: If effect is None or invalid
+            ValueError: If effect is None or invalid.
         """
         try:
             super().__init__(
@@ -103,12 +108,12 @@ class SpellBuff(Spell):
         """Execute a buff spell with automatic success and beneficial effects.
         
         Args:
-            actor: The character casting the spell
-            target: The character targeted by the spell
-            mind_level: The spell level to cast at (affects cost and power)
-            
+            actor (Any): The character casting the spell.
+            target (Any): The character targeted by the spell.
+            mind_level (int): The spell level to cast at (affects cost and power).
+        
         Returns:
-            bool: True if spell was cast successfully, False on failure
+            bool: True if spell was cast successfully, False on failure.
         """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
@@ -150,11 +155,11 @@ class SpellBuff(Spell):
         """Get modifier expressions with variables substituted for display.
         
         Args:
-            actor: The character casting the spell
-            mind_level: The spell level to use for MIND variable substitution
-            
+            actor (Any): The character casting the spell.
+            mind_level (int | None): The spell level to use for MIND variable substitution.
+        
         Returns:
-            dict[BonusType, str]: Dictionary mapping bonus types to their expressions
+            dict[BonusType, str]: Dictionary mapping bonus types to their expressions.
         """
         if mind_level is None:
             mind_level = 1

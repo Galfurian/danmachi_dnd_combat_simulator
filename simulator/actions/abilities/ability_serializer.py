@@ -23,7 +23,7 @@ class AbilityDeserializer:
     """Factory for creating ability instances from dictionary data."""
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> Any | None:
+    def deserialize(data: dict[str, Any]) -> BaseAbility | None:
         """
         Deserialize ability data from dictionary to appropriate ability instance.
 
@@ -31,10 +31,10 @@ class AbilityDeserializer:
         the 'class' field in the data dictionary.
 
         Args:
-            data: Dictionary containing ability configuration data.
+            data (dict[str, Any]): Dictionary containing ability configuration data.
 
         Returns:
-            BaseAbility instance of the appropriate subclass, or None if not recognized.
+            BaseAbility | None: Instance of the appropriate subclass, or None if not recognized.
         """
         try:
             ability_class = data.get("class", "")
@@ -68,10 +68,10 @@ class AbilityDeserializer:
         Create OffensiveAbility from dictionary data.
 
         Args:
-            data: Dictionary containing offensive ability configuration data
+            data (dict[str, Any]): Dictionary containing offensive ability configuration data.
 
         Returns:
-            OffensiveAbility: Configured offensive ability instance
+            OffensiveAbility: Configured offensive ability instance.
         """
         return OffensiveAbility(
             name=data["name"],
@@ -91,10 +91,10 @@ class AbilityDeserializer:
         Create HealingAbility from dictionary data.
 
         Args:
-            data: Dictionary containing healing ability configuration data
+            data (dict[str, Any]): Dictionary containing healing ability configuration data.
 
         Returns:
-            HealingAbility: Configured healing ability instance
+            HealingAbility: Configured healing ability instance.
         """
         return HealingAbility(
             name=data["name"],
@@ -114,26 +114,30 @@ class AbilityDeserializer:
         Create BuffAbility from dictionary data.
 
         Args:
-            data: Dictionary containing buff ability configuration data
+            data (dict[str, Any]): Dictionary containing buff ability configuration data.
 
         Returns:
-            BuffAbility: Configured buff ability instance
+            BuffAbility: Configured buff ability instance.
 
         Raises:
-            ValueError: If required effect data is missing
+            ValueError: If required effect data is missing.
         """
-        if "effect" not in data:
+        if "effect" not in data or data["effect"] is None:
             raise ValueError(
-                f"BuffAbility {data.get('name', 'Unknown')} requires an effect"
+                f"BuffAbility {data.get('name', 'Unknown')} requires a valid effect"
             )
-
+        effect = Effect.from_dict(data["effect"])
+        if not effect:
+            raise ValueError(
+                f"BuffAbility {data.get('name', 'Unknown')} has an invalid effect"
+            )
         return BuffAbility(
             name=data["name"],
             type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
-            effect=Effect.from_dict(data["effect"]),
+            effect=effect,  # Ensure effect is valid
             target_expr=data.get("target_expr", ""),
             target_restrictions=data.get("target_restrictions"),
         )
@@ -144,10 +148,10 @@ class AbilityDeserializer:
         Create UtilityAbility from dictionary data.
 
         Args:
-            data: Dictionary containing utility ability configuration data
+            data (dict[str, Any]): Dictionary containing utility ability configuration data.
 
         Returns:
-            UtilityAbility: Configured utility ability instance
+            UtilityAbility: Configured utility ability instance.
         """
         return UtilityAbility(
             name=data["name"],
@@ -174,10 +178,10 @@ class AbilitySerializer:
         specific serialization to the appropriate subclass methods.
 
         Args:
-            ability: The ability instance to serialize.
+            ability (BaseAbility): The ability instance to serialize.
 
         Returns:
-            dict: Dictionary representation of the ability.
+            dict[str, Any]: Dictionary representation of the ability.
         """
         if isinstance(ability, OffensiveAbility):
             return AbilitySerializer._serialize_offensive_ability(ability)
@@ -196,10 +200,10 @@ class AbilitySerializer:
         Serialize common BaseAbility fields to dictionary.
 
         Args:
-            ability: The base ability instance to serialize
+            ability (BaseAbility): The base ability instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary containing common ability fields
+            dict[str, Any]: Dictionary containing common ability fields.
         """
         data = {
             "class": ability.__class__.__name__,
@@ -224,10 +228,10 @@ class AbilitySerializer:
         Serialize OffensiveAbility to dictionary format.
 
         Args:
-            ability: The offensive ability instance to serialize
+            ability (OffensiveAbility): The offensive ability instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the offensive ability
+            dict[str, Any]: Dictionary representation of the offensive ability.
         """
         data = AbilitySerializer._serialize_base_ability(ability)
         data["damage"] = [component.to_dict() for component in ability.damage]
@@ -239,10 +243,10 @@ class AbilitySerializer:
         Serialize HealingAbility to dictionary format.
 
         Args:
-            ability: The healing ability instance to serialize
+            ability (HealingAbility): The healing ability instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the healing ability
+            dict[str, Any]: Dictionary representation of the healing ability.
         """
         data = AbilitySerializer._serialize_base_ability(ability)
         data["heal_roll"] = ability.heal_roll
@@ -254,10 +258,10 @@ class AbilitySerializer:
         Serialize BuffAbility to dictionary format.
 
         Args:
-            ability: The buff ability instance to serialize
+            ability (BuffAbility): The buff ability instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the buff ability
+            dict[str, Any]: Dictionary representation of the buff ability.
         """
         data = AbilitySerializer._serialize_base_ability(ability)
         # Effect is guaranteed for BuffAbility
@@ -271,7 +275,7 @@ class AbilitySerializer:
         Serialize UtilityAbility to dictionary format.
 
         Args:
-            ability: The utility ability instance to serialize
+            ability (UtilityAbility): The utility ability instance to serialize.
 
         Returns:
             dict[str, Any]: Dictionary representation of the utility ability

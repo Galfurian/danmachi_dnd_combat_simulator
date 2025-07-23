@@ -21,7 +21,13 @@ from effects.effect import Effect
 
 
 class Spell(BaseAction):
-    """Abstract base class for all magical spells in the combat system."""
+    """Abstract base class for all magical spells in the combat system.
+
+    This class provides a foundation for implementing various types of spells,
+    such as offensive, healing, support, and debuff spells. It includes shared
+    functionality like targeting, mind cost validation, and serialization, while
+    requiring subclasses to implement specific behavior through abstract methods.
+    """
 
     def __init__(
         self,
@@ -38,22 +44,22 @@ class Spell(BaseAction):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new Spell.
-
+        
         Args:
-            name: Display name of the spell
-            type: Action type (ACTION, BONUS_ACTION, REACTION, etc.)
-            description: Flavor text describing what the spell does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            level: Base spell level (1-9 for most spells, 0 for cantrips)
-            mind_cost: List of mind point costs per casting level [level1, level2, ...]
-            category: Spell category (OFFENSIVE, HEALING, SUPPORT, DEBUFF)
-            target_expr: Expression determining number of targets ("" = single target)
-            requires_concentration: Whether spell requires ongoing mental focus
-            target_restrictions: Override default targeting if needed
-
+            name (str): Display name of the spell.
+            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
+            description (str): Flavor text describing what the spell does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
+            mind_cost (list[int]): List of mind point costs per casting level [level1, level2, ...].
+            category (ActionCategory): Spell category (OFFENSIVE, HEALING, SUPPORT, DEBUFF).
+            target_expr (str): Expression determining number of targets ("" = single target).
+            requires_concentration (bool): Whether spell requires ongoing mental focus.
+            target_restrictions (list[str] | None): Override default targeting if needed.
+        
         Raises:
-            ValueError: If name is empty or type/category are invalid
+            ValueError: If name is empty or type/category are invalid.
         """
         try:
             super().__init__(
@@ -113,21 +119,21 @@ class Spell(BaseAction):
 
     def is_single_target(self) -> bool:
         """Check if the spell targets a single entity.
-
+        
         Returns:
-            bool: True if spell targets one entity, False for multi-target
+            bool: True if spell targets one entity, False for multi-target.
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
     def target_count(self, actor: Any, mind_level: int) -> int:
         """Calculate the number of targets this spell can affect.
-
+        
         Args:
-            actor: The character casting the spell (must have expression variables)
-            mind_level: The spell level being used for casting
-
+            actor (Any): The character casting the spell (must have expression variables).
+            mind_level (int): The spell level being used for casting.
+        
         Returns:
-            int: Number of targets (minimum 1, even for invalid expressions)
+            int: Number of targets (minimum 1, even for invalid expressions).
         """
         if self.target_expr:
             variables = actor.get_expression_variables()
@@ -142,30 +148,30 @@ class Spell(BaseAction):
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute spell - delegates to cast_spell method.
-
+        
         Args:
-            actor: The character casting the spell
-            target: The target of the spell
-
+            actor (Any): The character casting the spell.
+            target (Any): The target of the spell.
+        
         Returns:
-            bool: Always False - use cast_spell() instead
-
+            bool: Always False - use cast_spell() instead.
+        
         Raises:
-            NotImplementedError: Always raised to enforce using cast_spell()
+            NotImplementedError: Always raised to enforce using cast_spell().
         """
         raise NotImplementedError("Spells must use the cast_spell method.")
 
     @abstractmethod
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """Abstract method for casting spells with level-specific behavior.
-
+        
         Args:
-            actor: The character casting the spell (must have mind points)
-            target: The character targeted by the spell
-            mind_level: The spell level to cast at (1-9, affects cost and power)
-
+            actor (Any): The character casting the spell (must have mind points).
+            target (Any): The character targeted by the spell.
+            mind_level (int): The spell level to cast at (1-9, affects cost and power).
+        
         Returns:
-            bool: True if spell was cast successfully, False on failure
+            bool: True if spell was cast successfully, False on failure.
         """
         if not self._validate_actor_and_target(actor, target):
             return False
@@ -212,9 +218,9 @@ class Spell(BaseAction):
 
     def to_dict(self) -> dict[str, Any]:
         """Transform this Spell into a dictionary representation.
-
+        
         Returns:
-            dict[str, Any]: Dictionary representation of the spell
+            dict[str, Any]: Dictionary representation of the spell.
         """
         from actions.spells.spell_serializer import SpellSerializer
 
@@ -223,12 +229,12 @@ class Spell(BaseAction):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
         """Create a Spell instance from a dictionary.
-
+        
         Args:
-            data: Dictionary containing spell configuration data
-
+            data (dict[str, Any]): Dictionary containing spell configuration data.
+        
         Returns:
-            Any | None: Spell instance or None if creation fails
+            Any | None: Spell instance or None if creation fails.
         """
         from actions.spells.spell_serializer import SpellDeserializer
 

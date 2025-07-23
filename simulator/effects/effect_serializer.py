@@ -67,7 +67,15 @@ class EffectDeserializer:
 
     @staticmethod
     def _deserialize_buff(data: Dict[str, Any]) -> "Buff":
-        """Create a Buff instance from dictionary data."""
+        """
+        Create a Buff instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing buff configuration data.
+            
+        Returns:
+            Buff: A Buff effect instance.
+        """
         from .effect import Buff, Modifier
 
         modifiers = []
@@ -107,7 +115,15 @@ class EffectDeserializer:
 
     @staticmethod
     def _deserialize_debuff(data: Dict[str, Any]) -> "Debuff":
-        """Create a Debuff instance from dictionary data."""
+        """
+        Create a Debuff instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing debuff configuration data.
+            
+        Returns:
+            Debuff: A Debuff effect instance.
+        """
         from .effect import Debuff, Modifier
 
         modifiers = []
@@ -147,7 +163,15 @@ class EffectDeserializer:
 
     @staticmethod
     def _deserialize_dot(data: Dict[str, Any]) -> "DoT":
-        """Create a DoT (Damage over Time) instance from dictionary data."""
+        """
+        Create a DoT (Damage over Time) instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing DoT configuration data.
+            
+        Returns:
+            DoT: A DoT effect instance.
+        """
         from .effect import DoT
 
         return DoT(
@@ -159,7 +183,15 @@ class EffectDeserializer:
 
     @staticmethod
     def _deserialize_hot(data: Dict[str, Any]) -> "HoT":
-        """Create a HoT (Heal over Time) instance from dictionary data."""
+        """
+        Create a HoT (Heal over Time) instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing HoT configuration data.
+            
+        Returns:
+            HoT: A HoT effect instance.
+        """
         from .effect import HoT
 
         return HoT(
@@ -171,7 +203,15 @@ class EffectDeserializer:
 
     @staticmethod
     def _deserialize_on_hit_trigger(data: Dict[str, Any]) -> "OnHitTrigger":
-        """Create an OnHitTrigger instance from dictionary data."""
+        """
+        Create an OnHitTrigger instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing OnHitTrigger configuration data.
+            
+        Returns:
+            OnHitTrigger: An OnHitTrigger effect instance.
+        """
         from .effect import OnHitTrigger
 
         # Parse trigger effects
@@ -197,7 +237,15 @@ class EffectDeserializer:
     def _deserialize_on_low_health_trigger(
         data: Dict[str, Any],
     ) -> "OnLowHealthTrigger":
-        """Create an OnLowHealthTrigger instance from dictionary data."""
+        """
+        Create an OnLowHealthTrigger instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing OnLowHealthTrigger configuration data.
+            
+        Returns:
+            OnLowHealthTrigger: An OnLowHealthTrigger effect instance.
+        """
         from .effect import OnLowHealthTrigger
 
         # Parse trigger effects
@@ -228,7 +276,15 @@ class EffectDeserializer:
     def _deserialize_incapacitating_effect(
         data: Dict[str, Any],
     ) -> "IncapacitatingEffect":
-        """Create an IncapacitatingEffect instance from dictionary data."""
+        """
+        Create an IncapacitatingEffect instance from dictionary data.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing IncapacitatingEffect configuration data.
+            
+        Returns:
+            IncapacitatingEffect: An IncapacitatingEffect instance.
+        """
         from .effect import IncapacitatingEffect
 
         return IncapacitatingEffect(
@@ -246,7 +302,7 @@ class EffectSerializer:
     """Serializer for converting effect instances to dictionary format."""
 
     @staticmethod
-    def serialize(effect) -> Dict[str, Any]:
+    def serialize(effect: "Effect") -> Dict[str, Any]:
         """
         Serialize effect instance to dictionary format.
 
@@ -254,10 +310,10 @@ class EffectSerializer:
         specific serialization to the appropriate subclass methods.
 
         Args:
-            effect: The effect instance to serialize.
+            effect (Effect): The effect instance to serialize.
 
         Returns:
-            dict: Dictionary representation of the effect.
+            Dict[str, Any]: Dictionary representation of the effect.
         """
         # Import effect classes for isinstance checks
         from .effect import (
@@ -288,8 +344,16 @@ class EffectSerializer:
             raise ValueError(f"Unsupported effect type: {type(effect)}")
 
     @staticmethod
-    def _serialize_base_effect(effect) -> Dict[str, Any]:
-        """Serialize common base effect fields."""
+    def _serialize_base_effect(effect: "Effect") -> Dict[str, Any]:
+        """
+        Serialize common base effect fields.
+        
+        Args:
+            effect (Effect): The effect instance to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary with common effect fields.
+        """
         return {
             "type": effect.__class__.__name__,
             "name": effect.name,
@@ -298,8 +362,16 @@ class EffectSerializer:
         }
 
     @staticmethod
-    def _serialize_buff(effect) -> Dict[str, Any]:
-        """Serialize Buff to dictionary."""
+    def _serialize_buff(effect: "Buff") -> Dict[str, Any]:
+        """
+        Serialize Buff to dictionary.
+        
+        Args:
+            effect (Buff): The buff effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the buff.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["modifiers"] = [
             ModifierSerializer.serialize(modifier) for modifier in effect.modifiers
@@ -307,8 +379,16 @@ class EffectSerializer:
         return data
 
     @staticmethod
-    def _serialize_debuff(effect) -> Dict[str, Any]:
-        """Serialize Debuff to dictionary."""
+    def _serialize_debuff(effect: "Debuff") -> Dict[str, Any]:
+        """
+        Serialize Debuff to dictionary.
+        
+        Args:
+            effect (Debuff): The debuff effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the debuff.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["modifiers"] = [
             ModifierSerializer.serialize(modifier) for modifier in effect.modifiers
@@ -316,22 +396,46 @@ class EffectSerializer:
         return data
 
     @staticmethod
-    def _serialize_dot(effect) -> Dict[str, Any]:
-        """Serialize DoT to dictionary."""
+    def _serialize_dot(effect: "DoT") -> Dict[str, Any]:
+        """
+        Serialize DoT (Damage over Time) to dictionary.
+        
+        Args:
+            effect (DoT): The DoT effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the DoT effect.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["damage"] = effect.damage.to_dict()
         return data
 
     @staticmethod
-    def _serialize_hot(effect) -> Dict[str, Any]:
-        """Serialize HoT to dictionary."""
+    def _serialize_hot(effect: "HoT") -> Dict[str, Any]:
+        """
+        Serialize HoT (Heal over Time) to dictionary.
+        
+        Args:
+            effect (HoT): The HoT effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the HoT effect.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["heal_per_turn"] = effect.heal_per_turn
         return data
 
     @staticmethod
-    def _serialize_on_hit_trigger(effect) -> Dict[str, Any]:
-        """Serialize OnHitTrigger to dictionary."""
+    def _serialize_on_hit_trigger(effect: "OnHitTrigger") -> Dict[str, Any]:
+        """
+        Serialize OnHitTrigger to dictionary.
+        
+        Args:
+            effect (OnHitTrigger): The OnHitTrigger effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the OnHitTrigger effect.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["trigger_effects"] = [
             EffectSerializer.serialize(trigger_effect)
@@ -342,8 +446,16 @@ class EffectSerializer:
         return data
 
     @staticmethod
-    def _serialize_on_low_health_trigger(effect) -> Dict[str, Any]:
-        """Serialize OnLowHealthTrigger to dictionary."""
+    def _serialize_on_low_health_trigger(effect: "OnLowHealthTrigger") -> Dict[str, Any]:
+        """
+        Serialize OnLowHealthTrigger to dictionary.
+        
+        Args:
+            effect (OnLowHealthTrigger): The OnLowHealthTrigger effect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the OnLowHealthTrigger effect.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data["trigger_effects"] = [
             EffectSerializer.serialize(trigger_effect)
@@ -356,8 +468,16 @@ class EffectSerializer:
         return data
 
     @staticmethod
-    def _serialize_incapacitating_effect(effect) -> Dict[str, Any]:
-        """Serialize IncapacitatingEffect to dictionary."""
+    def _serialize_incapacitating_effect(effect: "IncapacitatingEffect") -> Dict[str, Any]:
+        """
+        Serialize IncapacitatingEffect to dictionary.
+        
+        Args:
+            effect (IncapacitatingEffect): The IncapacitatingEffect to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the IncapacitatingEffect.
+        """
         data = EffectSerializer._serialize_base_effect(effect)
         data.update(
             {
@@ -375,7 +495,18 @@ class ModifierDeserializer:
 
     @staticmethod
     def deserialize(data: Dict[str, Any]) -> "Modifier":
-        """Create a Modifier instance from a dictionary representation."""
+        """
+        Create a Modifier instance from a dictionary representation.
+        
+        Args:
+            data (Dict[str, Any]): Dictionary containing modifier configuration data.
+            
+        Returns:
+            Modifier: A Modifier instance.
+            
+        Raises:
+            ValueError: If the bonus type is unknown.
+        """
         from .effect import Modifier
 
         assert data is not None, "Data must not be None."
@@ -408,8 +539,16 @@ class ModifierSerializer:
     """Serializer for converting modifier instances to dictionary format."""
 
     @staticmethod
-    def serialize(modifier) -> Dict[str, Any]:
-        """Convert the modifier to a dictionary representation."""
+    def serialize(modifier: "Modifier") -> Dict[str, Any]:
+        """
+        Convert the modifier to a dictionary representation.
+        
+        Args:
+            modifier (Modifier): The modifier instance to serialize.
+            
+        Returns:
+            Dict[str, Any]: Dictionary representation of the modifier.
+        """
         return {
             "bonus_type": modifier.bonus_type.name.lower(),
             "value": (

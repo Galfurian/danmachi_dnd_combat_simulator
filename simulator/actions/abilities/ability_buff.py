@@ -15,7 +15,10 @@ from effects.effect import Effect
 
 
 class BuffAbility(BaseAbility):
-    """Buff abilities that provide beneficial effects to targets."""
+    """
+    Represents a buff ability that provides beneficial effects to targets in combat.
+    Inherits from BaseAbility and applies an Effect to allies or self.
+    """
 
     def __init__(
         self,
@@ -27,21 +30,22 @@ class BuffAbility(BaseAbility):
         effect: Effect,
         target_expr: str = "",
         target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new BuffAbility.
-        
+    ) -> None:
+        """
+        Initialize a new BuffAbility for combat.
+
         Args:
-            name: Display name of the ability
-            type: Action type (STANDARD, BONUS, REACTION, etc.)
-            description: Flavor text describing what the ability does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            effect: Effect to apply to targets (required for buff abilities)
-            target_expr: Expression determining number of targets ("" = single target)
-            target_restrictions: Override default targeting if needed
-            
+            name (str): Display name of the ability.
+            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            description (str): Flavor text describing what the ability does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            effect (Effect): Effect to apply to targets (required for buff abilities).
+            target_expr (str, optional): Expression determining number of targets ("" = single target). Defaults to "".
+            target_restrictions (list[str] | None, optional): Override default targeting if needed. Defaults to None.
+
         Raises:
-            ValueError: If name is empty, effect is None, or other parameters are invalid
+            ValueError: If name is empty, effect is None, or other parameters are invalid.
         """
         try:
             # Validate that effect is provided
@@ -69,14 +73,15 @@ class BuffAbility(BaseAbility):
             raise
 
     def execute(self, actor: Any, target: Any) -> bool:
-        """Execute this buff ability on a target.
-        
+        """
+        Execute this buff ability on a target in combat.
+
         Args:
-            actor: The character using the ability
-            target: The character being buffed
-            
+            actor (Any): The character using the ability.
+            target (Any): The character being buffed.
+
         Returns:
-            bool: True if ability was executed successfully, False on system errors
+            bool: True if ability was executed successfully, False on system errors.
         """
         # Validate actor and target.
         if not self._validate_actor_and_target(actor, target):
@@ -136,10 +141,11 @@ class BuffAbility(BaseAbility):
     # ============================================================================
 
     def get_effect_description(self) -> str:
-        """Get a description of the effect this ability provides.
-        
+        """
+        Get a description of the effect this ability provides.
+
         Returns:
-            str: Description of the buff effect
+            str: Description of the buff effect.
         """
         if self.effect and hasattr(self.effect, "description"):
             return self.effect.description

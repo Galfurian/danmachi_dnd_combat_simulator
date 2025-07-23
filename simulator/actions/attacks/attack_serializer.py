@@ -18,10 +18,15 @@ from effects.effect import Effect
 
 
 class AttackDeserializer:
-    """Factory for creating attack instances from dictionary data."""
+    """Factory for creating attack instances from dictionary data.
+
+    This class provides methods to deserialize dictionary data into specific
+    attack subclasses, such as `WeaponAttack` or `NaturalAttack`. It ensures
+    proper instantiation of attack objects based on the provided configuration.
+    """
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> Any | None:
+    def deserialize(data: dict[str, Any]) -> BaseAttack | None:
         """
         Deserialize attack data from dictionary to appropriate attack instance.
 
@@ -29,10 +34,10 @@ class AttackDeserializer:
         the 'class' field in the data dictionary.
 
         Args:
-            data: Dictionary containing attack configuration data.
+            data (dict[str, Any]): Dictionary containing attack configuration data.
 
         Returns:
-            BaseAttack instance of the appropriate subclass, or None if not recognized.
+            BaseAttack | None: Instance of the appropriate subclass, or None if not recognized.
         """
         try:
             attack_class = data.get("class", "")
@@ -61,10 +66,10 @@ class AttackDeserializer:
         Create BaseAttack from dictionary data.
 
         Args:
-            data: Dictionary containing base attack configuration data
+            data (dict[str, Any]): Dictionary containing base attack configuration data.
 
         Returns:
-            BaseAttack: Configured base attack instance
+            BaseAttack: Configured base attack instance.
         """
         return BaseAttack(
             name=data["name"],
@@ -84,10 +89,10 @@ class AttackDeserializer:
         Create WeaponAttack from dictionary data.
 
         Args:
-            data: Dictionary containing weapon attack configuration data
+            data (dict[str, Any]): Dictionary containing weapon attack configuration data.
 
         Returns:
-            WeaponAttack: Configured weapon attack instance
+            WeaponAttack: Configured weapon attack instance.
         """
         return WeaponAttack(
             name=data["name"],
@@ -107,10 +112,10 @@ class AttackDeserializer:
         Create NaturalAttack from dictionary data.
 
         Args:
-            data: Dictionary containing natural attack configuration data
+            data (dict[str, Any]): Dictionary containing natural attack configuration data.
 
         Returns:
-            NaturalAttack: Configured natural attack instance
+            NaturalAttack: Configured natural attack instance.
         """
         return NaturalAttack(
             name=data["name"],
@@ -125,7 +130,11 @@ class AttackDeserializer:
 
 
 class AttackSerializer:
-    """Serializer for converting attack instances to dictionary format."""
+    """Serializer for converting attack instances to dictionary format.
+
+    This class provides methods to serialize attack objects into dictionary
+    representations, ensuring compatibility with external systems or storage.
+    """
 
     @staticmethod
     def serialize(attack: BaseAttack) -> dict[str, Any]:
@@ -136,10 +145,10 @@ class AttackSerializer:
         specific serialization to the appropriate subclass methods.
 
         Args:
-            attack: The attack instance to serialize.
+            attack (BaseAttack): The attack instance to serialize.
 
         Returns:
-            dict: Dictionary representation of the attack.
+            dict[str, Any]: Dictionary representation of the attack.
         """
         if isinstance(attack, WeaponAttack):
             return AttackSerializer._serialize_weapon_attack(attack)
@@ -156,10 +165,10 @@ class AttackSerializer:
         Serialize BaseAttack to dictionary format.
 
         Args:
-            attack: The base attack instance to serialize
+            attack (BaseAttack): The base attack instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the base attack
+            dict[str, Any]: Dictionary representation of the base attack.
         """
         data = {
             "class": attack.__class__.__name__,
@@ -184,10 +193,10 @@ class AttackSerializer:
         Serialize WeaponAttack to dictionary format.
 
         Args:
-            attack: The weapon attack instance to serialize
+            attack (WeaponAttack): The weapon attack instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the weapon attack
+            dict[str, Any]: Dictionary representation of the weapon attack.
         """
         # WeaponAttack has same fields as BaseAttack
         return AttackSerializer._serialize_base_attack(attack)
@@ -198,10 +207,10 @@ class AttackSerializer:
         Serialize NaturalAttack to dictionary format.
 
         Args:
-            attack: The natural attack instance to serialize
+            attack (NaturalAttack): The natural attack instance to serialize.
 
         Returns:
-            dict[str, Any]: Dictionary representation of the natural attack
+            dict[str, Any]: Dictionary representation of the natural attack.
         """
         # NaturalAttack has same fields as BaseAttack
         return AttackSerializer._serialize_base_attack(attack)

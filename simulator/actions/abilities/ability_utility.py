@@ -10,7 +10,7 @@ from effects.effect import Effect
 
 
 class UtilityAbility(BaseAbility):
-    """Utility abilities that provide non-combat benefits."""
+    """Represents abilities that provide non-combat benefits, such as utility functions or effects."""
 
     def __init__(
         self,
@@ -27,18 +27,18 @@ class UtilityAbility(BaseAbility):
         """Initialize a new UtilityAbility.
         
         Args:
-            name: Display name of the ability
-            type: Action type (STANDARD, BONUS, REACTION, etc.)
-            description: Flavor text describing what the ability does
-            cooldown: Turns to wait before reusing (0 = no cooldown)
-            maximum_uses: Max uses per encounter/day (-1 = unlimited)
-            utility_function: Name of the utility function this ability performs
-            effect: Optional effect applied to targets on use
-            target_expr: Expression determining number of targets ("" = single target)
-            target_restrictions: Override default targeting if needed
-            
+            name (str): Display name of the ability.
+            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            description (str): Flavor text describing what the ability does.
+            cooldown (int): Turns to wait before reusing (0 = no cooldown).
+            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
+            utility_function (str): Name of the utility function this ability performs.
+            effect (Effect | None): Optional effect applied to targets on use.
+            target_expr (str): Expression determining number of targets ("" = single target).
+            target_restrictions (list[str] | None): Override default targeting if needed.
+        
         Raises:
-            ValueError: If name is empty or required parameters are invalid
+            ValueError: If name is empty or required parameters are invalid.
         """
         try:
             super().__init__(
@@ -67,11 +67,11 @@ class UtilityAbility(BaseAbility):
         """Execute this utility ability on a target.
         
         Args:
-            actor: The character using the ability
-            target: The character/object being affected
-            
+            actor (Any): The character using the ability.
+            target (Any): The character/object being affected.
+        
         Returns:
-            bool: True if ability was executed successfully, False on system errors
+            bool: True if ability was executed successfully, False on system errors.
         """
         # Validate actor and target.
         if not self._validate_actor_and_target(actor, target):
@@ -124,11 +124,11 @@ class UtilityAbility(BaseAbility):
         """Execute the specific utility function for this ability.
         
         Args:
-            actor: The character using the ability
-            target: The target of the ability
-            
+            actor (Any): The character using the ability.
+            target (Any): The target of the ability.
+        
         Returns:
-            str: Description of what the utility function accomplished
+            str: Description of what the utility function accomplished.
         """
         if not self.utility_function:
             return "No specific utility function"
@@ -152,11 +152,11 @@ class UtilityAbility(BaseAbility):
         """Execute detect magic utility function.
         
         Args:
-            actor: The character using the ability
-            target: The target of the ability
-            
+            actor (Any): The character using the ability.
+            target (Any): The target of the ability.
+        
         Returns:
-            str: Description of magical auras detected
+            str: Description of magical auras detected.
         """
         return "Detected magical auras in the area"
 
@@ -164,11 +164,11 @@ class UtilityAbility(BaseAbility):
         """Execute teleportation utility function.
         
         Args:
-            actor: The character using the ability
-            target: The target of the ability
-            
+            actor (Any): The character using the ability.
+            target (Any): The target of the ability.
+        
         Returns:
-            str: Description of teleportation result
+            str: Description of teleportation result.
         """
         return "Teleported to a nearby location"
 
@@ -176,11 +176,11 @@ class UtilityAbility(BaseAbility):
         """Execute investigation utility function.
         
         Args:
-            actor: The character using the ability
-            target: The target of the ability
-            
+            actor (Any): The character using the ability.
+            target (Any): The target of the ability.
+        
         Returns:
-            str: Description of investigation results
+            str: Description of investigation results.
         """
         return "Gained insight about the surroundings"
 
@@ -188,11 +188,11 @@ class UtilityAbility(BaseAbility):
         """Execute identify utility function.
         
         Args:
-            actor: The character using the ability
-            target: The target of the ability
-            
+            actor (Any): The character using the ability.
+            target (Any): The target of the ability.
+        
         Returns:
-            str: Description of identified properties
+            str: Description of identified properties.
         """
         return "Identified the properties of a magical item"
 
@@ -204,7 +204,7 @@ class UtilityAbility(BaseAbility):
         """Get a description of what this utility ability does.
         
         Returns:
-            str: Description of the utility function
+            str: Description of the utility function.
         """
         if self.utility_function:
             return f"Performs {self.utility_function} utility function"
@@ -217,7 +217,7 @@ class UtilityAbility(BaseAbility):
         """Check if this utility ability typically targets the user.
         
         Returns:
-            bool: True if commonly self-targeted, False otherwise
+            bool: True if commonly self-targeted, False otherwise.
         """
         self_targeted_functions = {"teleport", "investigate", "detect_magic", "stealth"}
         return self.utility_function in self_targeted_functions

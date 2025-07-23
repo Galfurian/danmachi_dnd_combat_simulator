@@ -4,7 +4,7 @@ Safe dice expression parser to replace eval() usage.
 
 import re
 import random
-from typing import Tuple, Union
+from typing import Tuple
 from core.error_handling import log_error, log_warning
 
 
@@ -74,7 +74,19 @@ class DiceParser:
         details = []
 
         # Replace dice rolls with their results
-        def roll_dice(match):
+        def roll_dice(match: re.Match[str]) -> str:
+            """
+            Helper function to process individual dice roll matches.
+            
+            Args:
+                match (re.Match[str]): Regular expression match object containing dice notation.
+                
+            Returns:
+                str: String representation of the dice roll result.
+                
+            Raises:
+                ValueError: If dice parameters are invalid.
+            """
             nonlocal total, details
 
             try:

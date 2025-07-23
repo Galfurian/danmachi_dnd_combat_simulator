@@ -12,7 +12,23 @@ from core.error_handling import log_error, log_warning
 
 
 class DamageComponent:
+    """Represents a single component of damage, including its roll expression and type.
+
+    This class encapsulates the logic for defining and validating damage components,
+    which include a damage roll expression and a damage type (e.g., PHYSICAL, FIRE).
+    It also provides methods for serialization and deserialization.
+    """
+
     def __init__(self, damage_roll: str, damage_type: DamageType):
+        """Initialize a new DamageComponent.
+
+        Args:
+            damage_roll (str): The damage roll expression (e.g., "1d6+3").
+            damage_type (DamageType): The type of damage (e.g., PHYSICAL, FIRE).
+
+        Raises:
+            ValueError: If the damage roll or damage type is invalid.
+        """
         # Validate inputs
         if not damage_roll or not isinstance(damage_roll, str):
             log_error(
@@ -32,6 +48,11 @@ class DamageComponent:
         self.damage_type: DamageType = damage_type
 
     def to_dict(self) -> dict[str, Any]:
+        """Serialize the DamageComponent to a dictionary.
+
+        Returns:
+            dict[str, Any]: A dictionary representation of the damage component.
+        """
         try:
             return {
                 "damage_roll": self.damage_roll,
@@ -47,6 +68,17 @@ class DamageComponent:
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "DamageComponent":
+        """Deserialize a DamageComponent from a dictionary.
+
+        Args:
+            data (dict[str, Any]): A dictionary containing damage component data.
+
+        Returns:
+            DamageComponent: The deserialized damage component.
+
+        Raises:
+            ValueError: If the data is invalid or missing required fields.
+        """
         try:
             if not isinstance(data, dict):
                 log_error(
@@ -144,8 +176,7 @@ def roll_damage_components(
     Args:
         actor (Any): The actor applying the damage.
         target (Any): The target receiving the damage.
-        damage_components (list[DamageComponent]): The damage components being applied.
-        mind_levels (list[int]): The mind levels to use for the damage rolls.
+        damage_components (list[Tuple[DamageComponent, int]]): The damage components being applied.
 
     Returns:
         Tuple[int, list[str]]: The total damage dealt and a list of damage detail strings.

@@ -1,5 +1,5 @@
 # cli_prompt.py
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from rich.table import Table
 
@@ -21,25 +21,29 @@ session = PromptSession(erase_when_done=True)
 
 class PlayerInterface:
     """
-    - Shows a Rich table of abilities each time.
-    - Offers autocomplete + numeric shortcuts.
-    - Wipes the typed prompt line after ⏎ (erase_when_done=True).
+    Command-line interface for player interactions in the combat simulator.
+    
+    Provides Rich table-based menus for action selection, target selection,
+    spell selection, and other combat-related choices. Uses prompt_toolkit
+    for interactive input with numeric and alphabetic shortcuts.
     """
 
     def __init__(self) -> None:
+        """Initialize the PlayerInterface with no configuration needed."""
         pass
 
     def choose_action(
         self,
-        actions: List[BaseAction],
+        actions: list[BaseAction],
         submenus: list[str] = [],
         exit_entry: Optional[str] = "Back",
     ) -> Optional[BaseAction | str]:
         """Choose an action from a list of available actions.
 
         Args:
-            actions (List[BaseAction]): The list of available actions to choose from.
+            actions (list[BaseAction]): The list of available actions to choose from.
             submenus (list[str], optional): A list of submenu options. Defaults to [].
+            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
 
         Returns:
             Optional[BaseAction | str]: The selected action, "q" for exit, or a submenu option.
@@ -97,15 +101,16 @@ class PlayerInterface:
 
     def choose_target(
         self,
-        targets: List[Character],
+        targets: list[Character],
         submenus: list[str] = [],
         exit_entry: Optional[str] = "Back",
     ) -> Optional[Character | str]:
         """Choose a target from a list of characters.
 
         Args:
-            targets (List[Character]): The list of target characters to choose from.
+            targets (list[Character]): The list of target characters to choose from.
             submenus (list[str], optional): A list of submenu options. Defaults to [].
+            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
 
         Returns:
             Optional[Character | str]: The selected target character, "q" for exit, or a submenu option.
@@ -163,20 +168,21 @@ class PlayerInterface:
 
     def choose_targets(
         self,
-        targets: List[Character],
+        targets: list[Character],
         max_targets: int,
         submenus: list[str] = [],
         exit_entry: Optional[str] = "Back",
-    ) -> Optional[List[Character] | str]:
+    ) -> Optional[list[Character] | str]:
         """Choose multiple targets from a list of characters.
 
         Args:
-            targets (List[Character]): The list of target characters to choose from.
+            targets (list[Character]): The list of target characters to choose from.
             max_targets (int): The maximum number of targets that can be selected.
             submenus (list[str], optional): A list of submenu options. Defaults to [].
+            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
 
         Returns:
-            Optional[List[Character] | str]: The list of selected characters, "q" for exit, or a submenu option.
+            Optional[list[Character] | str]: The list of selected characters, "q" for exit, or a submenu option.
         """
         if not targets:
             return None
@@ -260,6 +266,7 @@ class PlayerInterface:
         Args:
             spells (list[Spell]): The list of available spells to choose from.
             submenus (list[str], optional): A list of submenus to display. Defaults to [].
+            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
 
         Returns:
             Optional[Spell | str]: The selected spell, "q" for exit, or submenu.
@@ -318,7 +325,20 @@ class PlayerInterface:
     def choose_mind(
         self, actor: Character, spell: Spell, exit_entry: Optional[str] = "Back"
     ) -> int:
-        """Prompts the user to select the amount of MIND to spend on a spell (if upcast is allowed)."""
+        """
+        Prompt the user to select the amount of MIND to spend on a spell.
+        
+        Displays upcasting options if the spell supports it, showing damage/healing
+        ranges and target counts for each MIND level.
+        
+        Args:
+            actor (Character): The character casting the spell.
+            spell (Spell): The spell being cast.
+            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
+            
+        Returns:
+            int: The selected MIND level to spend, or -1 if user chose to go back.
+        """
         if len(spell.mind_cost) == 1:
             return spell.mind_cost[0]
         # Get the variables for the prompt.
@@ -408,9 +428,21 @@ class PlayerInterface:
                 return -1
 
     @staticmethod
-    def sort_actions(actions: List[Any]) -> List[Any]:
+    def sort_actions(actions: list[Any]) -> list[Any]:
         """
-        Sorts actions by their type and name.
+        Sort actions by their type, category, and name for consistent display.
+        
+        Prioritizes action types (Standard, Bonus, Free) then categories
+        (Offensive, Healing, Buff, Debuff, Utility, Debug), then alphabetically by name.
+        
+        Args:
+            actions (list[Any]): List of BaseAction instances to sort.
+            
+        Returns:
+            list[Any]: The sorted list of actions.
+            
+        Raises:
+            AssertionError: If any action is not an instance of BaseAction.
         """
         assert all(
             isinstance(action, BaseAction) for action in actions
@@ -442,7 +474,13 @@ class PlayerInterface:
     @staticmethod
     def get_digit_choice(answer: str) -> int:
         """
-        Converts a single digit input to an index (0 for '0', 1 for '1', etc.).
+        Convert a single digit string input to its integer value.
+        
+        Args:
+            answer (str): User input string to parse.
+            
+        Returns:
+            int: The integer value of the digit (0-9), or -1 if invalid input.
         """
         if isinstance(answer, str) and len(answer) == 1 and answer.isdigit():
             return int(answer)
@@ -451,7 +489,15 @@ class PlayerInterface:
     @staticmethod
     def get_alpha_choice(answer: Any) -> int:
         """
-        Converts a single character input to an index (0 for 'a', 1 for 'b', etc.).
+        Convert a single alphabetic character to its index position.
+        
+        Maps 'a' or 'A' to 0, 'b' or 'B' to 1, etc. Case-insensitive.
+        
+        Args:
+            answer (Any): User input to parse.
+            
+        Returns:
+            int: The index position (0-25 for a-z), or -1 if invalid input.
         """
         if isinstance(answer, str) and len(answer) == 1 and answer.isalpha():
             return ord(answer.lower()) - ord("a")
