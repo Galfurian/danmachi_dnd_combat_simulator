@@ -228,7 +228,7 @@ class Character:
 
     def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
         """Returns a list of natural weapon attacks available to the character.
-        
+
         Returns:
             list[NaturalAttack]: A list of natural weapon attacks
         """
@@ -252,7 +252,7 @@ class Character:
 
     def turn_done(self) -> bool:
         """Checks if the character has used both a standard and bonus action this turn.
-        
+
         Returns:
             bool: True if both actions are used, False otherwise
         """
@@ -260,7 +260,7 @@ class Character:
 
     def check_passive_triggers(self) -> list[str]:
         """Checks all passive effects for trigger conditions and activates them.
-        
+
         Returns:
             list[str]: Messages for effects that were triggered this check
         """
@@ -268,11 +268,11 @@ class Character:
 
     def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
         """Applies damage to the character, factoring in resistances and vulnerabilities.
-        
+
         Args:
             amount: The raw base damage
             damage_type: The type of damage being dealt
-            
+
         Returns:
             Tuple[int, int, int]: (base_damage, adjusted_damage, damage_taken)
         """
@@ -291,6 +291,7 @@ class Character:
             wake_up_messages = self.effects_module.handle_damage_taken(actual)
             if wake_up_messages:
                 from core.utils import cprint
+
                 for msg in wake_up_messages:
                     cprint(f"    {msg}")
 
@@ -307,10 +308,10 @@ class Character:
 
     def heal(self, amount: int) -> int:
         """Increases the character's hp by the given amount, up to max_hp.
-        
+
         Args:
             amount: The amount of healing to apply
-            
+
         Returns:
             int: The actual amount healed
         """
@@ -323,10 +324,10 @@ class Character:
 
     def use_mind(self, amount: int) -> bool:
         """Reduces the character's mind by the given amount, if they have enough mind points.
-        
+
         Args:
             amount: The amount of mind points to use
-            
+
         Returns:
             bool: True if the mind points were successfully used, False otherwise
         """
@@ -337,7 +338,7 @@ class Character:
 
     def is_alive(self) -> bool:
         """Checks if the character is alive (hp > 0).
-        
+
         Returns:
             bool: True if the character is alive, False otherwise
         """
@@ -345,10 +346,10 @@ class Character:
 
     def get_spell_attack_bonus(self, spell_level: int = 1) -> int:
         """Calculates the spell attack bonus for the character.
-        
+
         Args:
             spell_level: The level of the spell being cast
-            
+
         Returns:
             int: The spell attack bonus for the character
         """
@@ -385,6 +386,52 @@ class Character:
             spell (Any): The spell to unlearn.
         """
         return self.actions_module.unlearn_spell(spell)
+
+    def assign_class_and_race_spells(self):
+        """
+        Automatically assigns spells based on character class levels and race.
+        This should be called after character creation or level changes.
+        """
+        from core.content import ContentRepository
+
+        repo = ContentRepository()
+
+        # Get spells from race (default spells and level-based)
+        if self.race:
+            # Add default race spells
+            for spell_name in self.race.default_spells:
+                spell = repo.get_spell(spell_name)
+                if spell:
+                    self.learn_spell(spell)
+
+            # Add race spells based on character level
+            total_level = sum(self.levels.values())
+            for level_str, spell_names in self.race.available_spells.items():
+                required_level = int(level_str)
+                if total_level >= required_level:
+                    for spell_name in spell_names:
+                        spell = repo.get_spell(spell_name)
+                        if spell:
+                            self.learn_spell(spell)
+
+        # Get spells from each class level
+        for character_class, class_level in self.levels.items():
+            # Get all spells up to the current class level
+            spell_names = character_class.get_all_spells_up_to_level(class_level)
+            # Get all actions up to the current class level
+            action_names = character_class.get_all_actions_up_to_level(class_level)
+            for spell_name in spell_names:
+                spell = repo.get_spell(spell_name)
+                if spell:
+                    self.learn_spell(spell)
+            for action_name in action_names:
+                action = repo.get_action(action_name)
+                if action:
+                    self.learn_action(action)
+                else:
+                    spell = repo.get_spell(action_name)
+                    if spell:
+                        self.learn_spell(spell)
 
     def get_occupied_hands(self) -> int:
         """Returns the number of hands currently occupied by equipped weapons and armor."""

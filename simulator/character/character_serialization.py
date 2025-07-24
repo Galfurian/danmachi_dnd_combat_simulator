@@ -135,6 +135,9 @@ class CharacterSerialization:
             number_of_attacks,
         )
 
+        # Automatically assign spells based on class and race levels
+        char.assign_class_and_race_spells()
+
         # Get the list of equipped weapons.
         for weapon_name in data.get("equipped_weapons", []):
             weapon = repo.get_weapon(weapon_name)
@@ -196,12 +199,12 @@ class CharacterSerialization:
                 continue
             char.learn_action(action)
 
-        # Load the spells.
+        # Load the spells (additional spells beyond class/race defaults).
         for spell_data in data.get("spells", []):
             spell = repo.get_spell(spell_data)
             if spell is None:
                 log_warning(
-                    f"Invalid spell '{spell_data}' for character {data['name']}",
+                    f"Invalid additional spell '{spell_data}' for character {data['name']}",
                     {
                         "character": data["name"],
                         "spell_data": str(spell_data),
@@ -209,7 +212,9 @@ class CharacterSerialization:
                     },
                 )
                 continue
-            char.learn_spell(spell)
+            # Only add if not already learned from class/race
+            if spell.name not in char.spells:
+                char.learn_spell(spell)
 
         # Load passive effects (like boss phase triggers).
         for effect_data in data.get("passive_effects", []):

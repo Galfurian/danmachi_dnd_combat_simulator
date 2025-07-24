@@ -15,7 +15,7 @@ class ModifierEffect(Effect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         modifiers: list[Modifier],
     ):
         super().__init__(name, description, duration)
@@ -72,7 +72,7 @@ class BuffEffect(ModifierEffect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         modifiers: list[Modifier],
     ):
         super().__init__(name, description, duration, modifiers)
@@ -90,7 +90,7 @@ class DebuffEffect(ModifierEffect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         modifiers: list[Modifier],
     ):
         super().__init__(name, description, duration, modifiers)

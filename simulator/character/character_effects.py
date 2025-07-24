@@ -20,7 +20,7 @@ class ActiveEffect:
         self.target: Any = target  # The recipient
         self.effect: Effect = effect
         self.mind_level: int = mind_level
-        self.duration: int = effect.duration
+        self.duration: int | None = effect.duration
 
 
 class CharacterEffects:
@@ -281,7 +281,7 @@ class CharacterEffects:
 
     # === Regular Effect Management ===
 
-    def get_effect_remaining_duration(self, effect: Effect) -> int:
+    def get_effect_remaining_duration(self, effect: Effect) -> int | None:
         """
         Get the remaining duration of a specific effect.
 
@@ -289,7 +289,7 @@ class CharacterEffects:
             effect (Effect): The effect to check.
 
         Returns:
-            int: The remaining duration of the effect, or 0 if not active.
+            int | None: The remaining duration of the effect, None for indefinite effects, or 0 if not active.
         """
         for ae in self.active_effects:
             if ae.effect == effect:
@@ -449,8 +449,13 @@ class CharacterEffects:
         updated = []
         for ae in self.active_effects:
             ae.effect.turn_update(ae.source, self.owner, ae.mind_level)
-            ae.duration -= 1
-            if ae.duration > 0:
+            
+            # Only decrement duration if it's not None (indefinite effects)
+            if ae.duration is not None:
+                ae.duration -= 1
+                
+            # Keep effect if duration is None (indefinite) or still has time remaining
+            if ae.duration is None or ae.duration > 0:
                 updated.append(ae)
             else:
                 cprint(

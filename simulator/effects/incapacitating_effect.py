@@ -15,7 +15,7 @@ class IncapacitatingEffect(Effect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         incapacitation_type: str = "general",  # "sleep", "paralyzed", "stunned", etc.
         save_ends: bool = False,
         save_dc: int = 0,
@@ -69,7 +69,7 @@ class IncapacitatingEffect(Effect):
         # First check if this type of incapacitation can break on damage
         if self.incapacitation_type not in ["sleep", "charm"]:
             return False
-            
+
         # Then check if damage meets the threshold
         return damage_amount >= self.damage_threshold
 

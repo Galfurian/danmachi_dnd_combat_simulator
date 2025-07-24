@@ -1,6 +1,11 @@
 from typing import Any, Optional
 
-from core.constants import get_effect_emoji, apply_character_type_color, apply_damage_type_color, get_damage_type_emoji
+from core.constants import (
+    get_effect_emoji,
+    apply_character_type_color,
+    apply_damage_type_color,
+    get_damage_type_emoji,
+)
 from core.utils import cprint, roll_and_describe
 from combat.damage import DamageComponent
 
@@ -19,7 +24,7 @@ class DamageOverTimeEffect(Effect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         damage: DamageComponent,
     ):
         super().__init__(name, description, duration)
@@ -76,7 +81,9 @@ class DamageOverTimeEffect(Effect):
             AssertionError: If validation conditions are not met.
         """
         super().validate()
-        assert self.duration > 0, "DamageOverTimeEffect duration must be greater than 0."
+        assert (
+            self.duration > 0
+        ), "DamageOverTimeEffect duration must be greater than 0."
         assert isinstance(
             self.damage, DamageComponent
         ), "Damage must be of type DamageComponent."

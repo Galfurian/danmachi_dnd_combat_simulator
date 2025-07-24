@@ -3,43 +3,59 @@
         "name": "Paladin",
         "hp_mult": 8,
         "mind_mult": 2,
-        "levels": {
-            "1": [
-                {
-                    "action": "Divine Smite",
-                    "is_default": true
-                },
-                {
-                    "action": "Healing Word",
-                    "is_default": true
-                }
-            ]
+        "actions_by_level": {
+            "1": ["Divine Smite"]
+        },
+        "spells_by_level": {
+            "1": ["Healing Word"],
+            "2": ["Bless", "Cure Wounds", "Divine Favor", "Shield of Faith"],
+            "3": ["Lesser Restoration"],
+            "5": ["Prayer of Healing"],
+            "9": ["Mass Cure Wounds"]
         }
     },
     {
         "name": "Sorcerer",
         "hp_mult": 4,
-        "mind_mult": 6
-    },
-    {
-        "name": "Warrior",
-        "hp_mult": 10,
-        "mind_mult": 0
-    },
-    {
-        "name": "Rogue",
-        "hp_mult": 5,
-        "mind_mult": 5
+        "mind_mult": 6,
+        "spells_by_level": {
+            "1": ["Fire Bolt", "Magic Missile", "Mage Armor", "Burning Hands", "Thunderwave"],
+            "3": ["Scorching Ray", "Invisibility"],
+            "5": ["Fireball", "Lightning Bolt", "Counterspell"],
+            "6": ["Haste"]
+        }
     },
     {
         "name": "Cleric",
         "hp_mult": 6,
-        "mind_mult": 4
+        "mind_mult": 4,
+        "spells_by_level": {
+            "1": ["Cure Wounds", "Healing Word", "Bless", "Shield of Faith"],
+            "3": ["Prayer of Healing", "Lesser Restoration", "Spiritual Weapon"],
+            "5": ["Mass Cure Wounds"]
+        }
     },
     {
         "name": "Wizard",
         "hp_mult": 2,
-        "mind_mult": 8
+        "mind_mult": 8,
+        "spells_by_level": {
+            "1": ["Fire Bolt", "Magic Missile", "Mage Armor", "Burning Hands", "Thunderwave"],
+            "3": ["Scorching Ray", "Invisibility", "Hold Person"],
+            "5": ["Fireball", "Lightning Bolt", "Counterspell", "Haste", "Slow"]
+        }
+    },
+    {
+        "name": "Warrior",
+        "hp_mult": 10,
+        "mind_mult": 0,
+        "spells_by_level": {}
+    },
+    {
+        "name": "Rogue",
+        "hp_mult": 5,
+        "mind_mult": 5,
+        "spells_by_level": {}
     },
     {
         "name": "Beast",
@@ -65,5 +81,46 @@
         "name": "Dragonkin",
         "hp_mult": 10,
         "mind_mult": 4
+    },
+    {
+        "name": "Ranger",
+        "hp_mult": 8,
+        "mind_mult": 3,
+        "spells_by_level": {
+            "2": ["Hunter's Mark", "Cure Wounds"],
+            "5": ["Lesser Restoration"],
+            "9": ["Barkskin"]
+        }
+    },
+    {
+        "name": "Warlock",
+        "hp_mult": 6,
+        "mind_mult": 4,
+        "spells_by_level": {
+            "1": ["Eldritch Blast"],
+            "2": ["Burning Hands", "Invisibility"],
+            "3": ["Hold Person"],
+            "5": ["Scorching Ray"]
+        }
+    },
+    {
+        "name": "Bard",
+        "hp_mult": 6,
+        "mind_mult": 5,
+        "spells_by_level": {
+            "1": ["Cure Wounds", "Healing Word", "Thunderwave"],
+            "3": ["Invisibility", "Hold Person"],
+            "5": ["Counterspell"]
+        }
+    },
+    {
+        "name": "Druid",
+        "hp_mult": 6,
+        "mind_mult": 4,
+        "spells_by_level": {
+            "1": ["Cure Wounds"],
+            "3": ["Barkskin", "Lesser Restoration"],
+            "5": ["Mass Cure Wounds"]
+        }
     }
 ]

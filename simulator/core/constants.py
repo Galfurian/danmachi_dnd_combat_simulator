@@ -35,6 +35,7 @@ class ActionType(Enum):
     STANDARD = auto()
     BONUS = auto()
     FREE = auto()
+    REACTION = auto()
 
 
 class DamageType(Enum):
@@ -46,6 +47,7 @@ class DamageType(Enum):
     FIRE = auto()
     COLD = auto()
     LIGHTNING = auto()
+    THUNDER = auto()
     POISON = auto()
     NECROTIC = auto()
     RADIANT = auto()
@@ -155,6 +157,7 @@ def get_damage_type_color(damage_type: DamageType) -> str:
         DamageType.FIRE: "bold red",
         DamageType.COLD: "bold cyan",
         DamageType.LIGHTNING: "bold blue",
+        DamageType.THUNDER: "bold purple",
         DamageType.POISON: "bold green",
         DamageType.NECROTIC: "dim white",
         DamageType.RADIANT: "bold white",
@@ -192,6 +195,7 @@ def get_action_type_color(action_type: ActionType) -> str:
         ActionType.STANDARD: "bold yellow",
         ActionType.BONUS: "bold green",
         ActionType.FREE: "bold cyan",
+        ActionType.REACTION: "bold red",
     }
     return color_map.get(action_type, "dim white")
 
@@ -312,6 +316,7 @@ def get_damage_type_emoji(damage_type: DamageType) -> str:
         DamageType.FIRE: "🔥",
         DamageType.COLD: "❄️",
         DamageType.LIGHTNING: "⚡",
+        DamageType.THUNDER: "🌩️",
         DamageType.POISON: "☠️",
         DamageType.NECROTIC: "🖤",
         DamageType.RADIANT: "✨",

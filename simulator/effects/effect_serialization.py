@@ -65,7 +65,9 @@ class EffectSerializer:
             "name": effect.name,
             "description": effect.description,
             "duration": effect.duration,
-            "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
+            "modifiers": [
+                ModifierSerializer.serialize(mod) for mod in effect.modifiers
+            ],
         }
 
     @staticmethod
@@ -76,7 +78,9 @@ class EffectSerializer:
             "name": effect.name,
             "description": effect.description,
             "duration": effect.duration,
-            "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
+            "modifiers": [
+                ModifierSerializer.serialize(mod) for mod in effect.modifiers
+            ],
         }
 
     @staticmethod
@@ -87,7 +91,9 @@ class EffectSerializer:
             "name": effect.name,
             "description": effect.description,
             "duration": effect.duration,
-            "modifiers": [ModifierSerializer.serialize(mod) for mod in effect.modifiers],
+            "modifiers": [
+                ModifierSerializer.serialize(mod) for mod in effect.modifiers
+            ],
         }
 
     @staticmethod
@@ -120,8 +126,12 @@ class EffectSerializer:
             "name": effect.name,
             "description": effect.description,
             "duration": effect.duration,
-            "trigger_condition": TriggerConditionSerializer.serialize(effect.trigger_condition),
-            "trigger_effects": [EffectSerializer.serialize(te) for te in effect.trigger_effects],
+            "trigger_condition": TriggerConditionSerializer.serialize(
+                effect.trigger_condition
+            ),
+            "trigger_effects": [
+                EffectSerializer.serialize(te) for te in effect.trigger_effects
+            ],
             "damage_bonus": [dmg.to_dict() for dmg in effect.damage_bonus],
             "consumes_on_trigger": effect.consumes_on_trigger,
             "cooldown_turns": effect.cooldown_turns,
@@ -199,7 +209,7 @@ class EffectDeserializer:
         return BuffEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 0),
+            duration=data.get("duration", None),
             modifiers=modifiers,
         )
 
@@ -210,7 +220,7 @@ class EffectDeserializer:
         return DebuffEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 0),
+            duration=data.get("duration", None),
             modifiers=modifiers,
         )
 
@@ -221,7 +231,7 @@ class EffectDeserializer:
         return ModifierEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 0),
+            duration=data.get("duration", None),
             modifiers=modifiers,
         )
 
@@ -236,7 +246,7 @@ class EffectDeserializer:
         return DamageOverTimeEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 1),
+            duration=data.get("duration", None),
             damage=damage,
         )
 
@@ -246,7 +256,7 @@ class EffectDeserializer:
         return HealingOverTimeEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 1),
+            duration=data.get("duration", None),
             heal_per_turn=data.get("heal_per_turn", "1"),
         )
 
@@ -255,9 +265,13 @@ class EffectDeserializer:
         """Deserialize an TriggerEffect."""
         # Deserialize trigger condition
         trigger_condition_data = data.get("trigger_condition", {})
-        trigger_condition = TriggerConditionDeserializer.deserialize(trigger_condition_data)
+        trigger_condition = TriggerConditionDeserializer.deserialize(
+            trigger_condition_data
+        )
         if not trigger_condition:
-            raise ValueError(f"Invalid trigger condition data: {trigger_condition_data}")
+            raise ValueError(
+                f"Invalid trigger condition data: {trigger_condition_data}"
+            )
 
         # Deserialize trigger effects
         trigger_effects = []
@@ -276,13 +290,13 @@ class EffectDeserializer:
         return TriggerEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 0),
+            duration=data.get("duration", None),
             trigger_condition=trigger_condition,
             trigger_effects=trigger_effects,
             damage_bonus=damage_bonus,
             consumes_on_trigger=data.get("consumes_on_trigger", True),
             cooldown_turns=data.get("cooldown_turns", 0),
-            max_triggers=data.get("max_triggers", -1),
+            max_triggers=data.get("max_triggers"),  # None for unlimited
         )
 
     @staticmethod
@@ -291,7 +305,7 @@ class EffectDeserializer:
         return IncapacitatingEffect(
             name=data["name"],
             description=data.get("description", ""),
-            duration=data.get("duration", 1),
+            duration=data.get("duration", None),
             incapacitation_type=data.get("incapacitation_type", "general"),
             save_ends=data.get("save_ends", False),
             save_dc=data.get("save_dc", 0),
@@ -358,7 +372,7 @@ class ModifierDeserializer:
     def deserialize_list(modifiers_data: list[dict[str, Any]]) -> list[Modifier]:
         """
         Deserialize a list of modifiers from dictionary data.
-        
+
         Format: [{"bonus_type": "ATTACK", "value": "1D4"}]
 
         Args:
@@ -368,7 +382,7 @@ class ModifierDeserializer:
             list[Modifier]: List of deserialized modifiers.
         """
         modifiers = []
-        
+
         # Handle only new format: [{"bonus_type": "ATTACK", "value": "1D4"}]
         if isinstance(modifiers_data, list):
             for mod_data in modifiers_data:
@@ -376,8 +390,10 @@ class ModifierDeserializer:
                 if modifier:
                     modifiers.append(modifier)
         else:
-            log_error("Modifiers data must be a list", {"modifiers_data": modifiers_data})
-                    
+            log_error(
+                "Modifiers data must be a list", {"modifiers_data": modifiers_data}
+            )
+
         return modifiers
 
 
@@ -404,10 +420,18 @@ class TriggerConditionSerializer:
             result["threshold"] = condition.threshold
 
         if condition.damage_type is not None:
-            result["damage_type"] = condition.damage_type.name if hasattr(condition.damage_type, 'name') else str(condition.damage_type)
+            result["damage_type"] = (
+                condition.damage_type.name
+                if hasattr(condition.damage_type, "name")
+                else str(condition.damage_type)
+            )
 
         if condition.spell_category is not None:
-            result["spell_category"] = condition.spell_category.name if hasattr(condition.spell_category, 'name') else str(condition.spell_category)
+            result["spell_category"] = (
+                condition.spell_category.name
+                if hasattr(condition.spell_category, "name")
+                else str(condition.spell_category)
+            )
 
         # Note: custom_condition functions cannot be serialized
         if condition.custom_condition is not None:
@@ -432,16 +456,22 @@ class TriggerConditionDeserializer:
         """
         try:
             trigger_type = TriggerType(data["trigger_type"])
-            
+
             return TriggerCondition(
                 trigger_type=trigger_type,
                 threshold=data.get("threshold"),
-                damage_type=data.get("damage_type"),  # Would need to convert string back to enum
-                spell_category=data.get("spell_category"),  # Would need to convert string back to enum
+                damage_type=data.get(
+                    "damage_type"
+                ),  # Would need to convert string back to enum
+                spell_category=data.get(
+                    "spell_category"
+                ),  # Would need to convert string back to enum
                 custom_condition=None,  # Cannot deserialize custom functions
                 description=data.get("description", ""),
             )
 
         except (KeyError, ValueError) as e:
-            log_error(f"Failed to deserialize trigger condition: {str(e)}", {"data": data}, e)
+            log_error(
+                f"Failed to deserialize trigger condition: {str(e)}", {"data": data}, e
+            )
             return None

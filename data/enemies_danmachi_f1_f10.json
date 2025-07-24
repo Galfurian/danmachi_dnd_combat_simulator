@@ -403,8 +403,6 @@
                 ],
                 "damage_bonus": [],
                 "consumes_on_trigger": true,
-                "cooldown_turns": 0,
-                "max_triggers": -1,
                 "class": "TriggerEffect"
             }
         ]

@@ -55,7 +55,7 @@ class CharacterDisplay:
                     if len(e.effect.name) > 15
                     else e.effect.name
                 )
-                effects_list.append(f"[{color}]{effect_name}[/]({e.duration})")
+                effects_list.append(f"[{color}]{effect_name}[/]({e.duration if e.duration else '∞'})")
 
         # Build status line with better spacing
         hp_bar = (

@@ -137,7 +137,6 @@
             "name": "Divine Smite",
             "class": "TriggerEffect",
             "description": "Next weapon attack deals extra radiant damage.",
-            "duration": 10,
             "trigger_condition": {
                 "trigger_type": "on_hit",
                 "description": "when hitting with an attack"
@@ -149,9 +148,7 @@
                     "damage_type": "RADIANT"
                 }
             ],
-            "consumes_on_trigger": true,
-            "cooldown_turns": 0,
-            "max_triggers": -1
+            "consumes_on_trigger": true
         }
     },
     {
@@ -195,9 +192,7 @@
                     "damage_type": "FIRE"
                 }
             ],
-            "consumes_on_trigger": true,
-            "cooldown_turns": 0,
-            "max_triggers": -1
+            "consumes_on_trigger": true
         }
     },
     {
@@ -243,9 +238,7 @@
                     "damage_type": "PSYCHIC"
                 }
             ],
-            "consumes_on_trigger": true,
-            "cooldown_turns": 0,
-            "max_triggers": -1
+            "consumes_on_trigger": true
         }
     },
     {
@@ -322,6 +315,391 @@
             "save_dc": 13,
             "save_stat": "CON",
             "class": "IncapacitatingEffect"
+        }
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Magic Missile",
+        "type": "STANDARD",
+        "description": "A missile of magical energy darts forth from your fingertip and strikes its target, dealing force damage.",
+        "level": 1,
+        "mind_cost": [1, 2, 3],
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "([MIND] + 2)D4 + [MIND] + 2",
+                "damage_type": "FORCE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Fire Bolt",
+        "type": "STANDARD", 
+        "description": "You hurl a mote of fire at a creature or object within range.",
+        "level": 0,
+        "mind_cost": [0],
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "1D10",
+                "damage_type": "FIRE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Eldritch Blast",
+        "type": "STANDARD",
+        "description": "A beam of crackling energy streaks toward a creature within range.",
+        "level": 0,
+        "mind_cost": [0],
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "1D10",
+                "damage_type": "FORCE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Burning Hands",
+        "type": "STANDARD",
+        "description": "A thin sheet of flames shoots forth from your outstretched fingertips.",
+        "level": 1,
+        "mind_cost": [1, 2, 3],
+        "target_expr": "3",
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "3D6 + ([MIND] - 1)D6",
+                "damage_type": "FIRE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Thunderwave",
+        "type": "STANDARD",
+        "description": "A wave of thunderous force sweeps out from you.",
+        "level": 1,
+        "mind_cost": [1, 2, 3],
+        "target_expr": "4",
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "2D8 + ([MIND] - 1)D8",
+                "damage_type": "THUNDER"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Scorching Ray",
+        "type": "STANDARD",
+        "description": "You create three rays of fire and hurl them at targets within range.",
+        "level": 2,
+        "mind_cost": [2, 3, 4],
+        "target_expr": "[MIND] + 1",
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "2D6",
+                "damage_type": "FIRE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Fireball",
+        "type": "STANDARD",
+        "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
+        "level": 3,
+        "mind_cost": [3, 4, 5],
+        "target_expr": "6",
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "8D6 + ([MIND] - 3)D6",
+                "damage_type": "FIRE"
+            }
+        ]
+    },
+    {
+        "class": "SpellAttack",
+        "name": "Lightning Bolt",
+        "type": "STANDARD",
+        "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out from you in a direction you choose.",
+        "level": 3,
+        "mind_cost": [3, 4, 5],
+        "target_expr": "5",
+        "target_restrictions": ["ENEMY"],
+        "damage": [
+            {
+                "damage_roll": "8D6 + ([MIND] - 3)D6",
+                "damage_type": "LIGHTNING"
+            }
+        ]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Prayer of Healing",
+        "type": "STANDARD",
+        "description": "Up to six creatures of your choice that you can see within range each regain hit points.",
+        "level": 2,
+        "mind_cost": [2, 3, 4],
+        "heal_roll": "2D8 + [SPELLCASTING] + ([MIND] - 2)D8",
+        "target_expr": "6",
+        "target_restrictions": ["SELF", "ALLY"]
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Mass Cure Wounds",
+        "type": "STANDARD",
+        "description": "A wave of healing energy washes out from a point of your choice within range.",
+        "level": 3,
+        "mind_cost": [3, 4, 5],
+        "heal_roll": "3D8 + [SPELLCASTING] + ([MIND] - 3)D8",
+        "target_expr": "6",
+        "target_restrictions": ["SELF", "ALLY"]
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Mage Armor",
+        "type": "STANDARD",
+        "description": "You touch a willing creature who isn't wearing armor, and a protective magical force surrounds it.",
+        "level": 1,
+        "mind_cost": [1],
+        "target_restrictions": ["SELF", "ALLY"],
+        "effect": {
+            "name": "Mage Armor",
+            "class": "BuffEffect",
+            "description": "Base AC becomes 13 + Dex modifier.",
+            "duration": 80,
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "3"
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Heroism",
+        "type": "STANDARD",
+        "description": "A willing creature you touch is imbued with bravery.",
+        "level": 1,
+        "mind_cost": [1, 2, 3],
+        "requires_concentration": true,
+        "target_restrictions": ["SELF", "ALLY"],
+        "effect": {
+            "name": "Heroism",
+            "class": "BuffEffect",
+            "description": "Gain temporary hit points and immunity to being frightened.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "HP",
+                    "value": "[SPELLCASTING]"
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Barkskin",
+        "type": "STANDARD",
+        "description": "You touch a willing creature. Until the spell ends, the target's skin has a rough, bark-like appearance, and the target's AC can't be less than 16.",
+        "level": 2,
+        "mind_cost": [2],
+        "requires_concentration": true,
+        "target_restrictions": ["SELF", "ALLY"],
+        "effect": {
+            "name": "Barkskin",
+            "class": "BuffEffect",
+            "description": "AC cannot be less than 16.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "4"
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Haste",
+        "type": "STANDARD",
+        "description": "Choose a willing creature that you can see within range. Until the spell ends, the target's speed is doubled.",
+        "level": 3,
+        "mind_cost": [3],
+        "requires_concentration": true,
+        "target_restrictions": ["SELF", "ALLY"],
+        "effect": {
+            "name": "Haste",
+            "class": "BuffEffect",
+            "description": "Doubled speed, +2 AC, advantage on Dexterity saving throws, and an additional action.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "2"
+                },
+                {
+                    "bonus_type": "ATTACK",
+                    "value": "2"
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Hold Person",
+        "type": "STANDARD",
+        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.",
+        "level": 2,
+        "mind_cost": [2, 3, 4],
+        "requires_concentration": true,
+        "target_restrictions": ["ENEMY"],
+        "effect": {
+            "name": "Paralyzed",
+            "description": "The target is paralyzed and cannot move or act.",
+            "duration": 10,
+            "incapacitation_type": "paralysis",
+            "save_ends": true,
+            "save_dc": 13,
+            "save_stat": "WIS",
+            "class": "IncapacitatingEffect"
+        }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Slow",
+        "type": "STANDARD",
+        "description": "You alter time around up to six creatures of your choice in a 40-foot cube within range.",
+        "level": 3,
+        "mind_cost": [3],
+        "requires_concentration": true,
+        "target_expr": "6",
+        "target_restrictions": ["ENEMY"],
+        "effect": {
+            "name": "Slowed",
+            "description": "Speed halved, -2 penalty to AC and Dexterity saving throws.",
+            "duration": 10,
+            "class": "BuffEffect",
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "-2"
+                },
+                {
+                    "bonus_type": "ATTACK",
+                    "value": "-2"
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellDebuff",
+        "name": "Counterspell",
+        "type": "REACTION",
+        "description": "You attempt to interrupt a creature in the process of casting a spell.",
+        "level": 3,
+        "mind_cost": [3, 4, 5],
+        "target_restrictions": ["ENEMY"],
+        "effect": {
+            "name": "Spell Interrupted",
+            "description": "The target's spell is countered and has no effect.",
+            "duration": 1,
+            "class": "BuffEffect"
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Spiritual Weapon",
+        "type": "BONUS",
+        "description": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again.",
+        "level": 2,
+        "mind_cost": [2, 3, 4],
+        "target_restrictions": ["SELF"],
+        "effect": {
+            "name": "Spiritual Weapon",
+            "class": "BuffEffect",
+            "description": "Creates a spectral weapon that can attack as a bonus action.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "DAMAGE",
+                    "value": {
+                        "damage_roll": "1D8 + [SPELLCASTING] + ([MIND] - 2)D8",
+                        "damage_type": "FORCE"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Hunter's Mark",
+        "type": "BONUS",
+        "description": "You choose a creature you can see within range and mystically mark it as your quarry.",
+        "level": 1,
+        "mind_cost": [1, 2, 3],
+        "requires_concentration": true,
+        "target_restrictions": ["ENEMY"],
+        "effect": {
+            "name": "Hunter's Mark",
+            "class": "BuffEffect",
+            "description": "Marked target takes extra damage from your attacks.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "DAMAGE",
+                    "value": {
+                        "damage_roll": "1D6",
+                        "damage_type": "PIERCING"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "class": "SpellHeal",
+        "name": "Lesser Restoration",
+        "type": "STANDARD",
+        "description": "You touch a creature and can end either one disease or one condition afflicting it.",
+        "level": 2,
+        "mind_cost": [2],
+        "heal_roll": "0",
+        "target_restrictions": ["SELF", "ALLY"]
+    },
+    {
+        "class": "SpellBuff",
+        "name": "Invisibility",
+        "type": "STANDARD",
+        "description": "A creature you touch becomes invisible until the spell ends.",
+        "level": 2,
+        "mind_cost": [2, 3, 4],
+        "requires_concentration": true,
+        "target_restrictions": ["SELF", "ALLY"],
+        "effect": {
+            "name": "Invisible",
+            "class": "BuffEffect",
+            "description": "The target is invisible and has advantage on stealth.",
+            "duration": 10,
+            "modifiers": [
+                {
+                    "bonus_type": "AC",
+                    "value": "2"
+                },
+                {
+                    "bonus_type": "ATTACK",
+                    "value": "5"
+                }
+            ]
         }
     }
 ]

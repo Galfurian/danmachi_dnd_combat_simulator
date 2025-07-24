@@ -18,7 +18,7 @@ class HealingOverTimeEffect(Effect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         heal_per_turn: str,
     ):
         super().__init__(name, description, duration)

@@ -155,13 +155,13 @@ class TriggerEffect(Effect):
         self,
         name: str,
         description: str,
-        duration: int,
+        duration: int | None,
         trigger_condition: TriggerCondition,
         trigger_effects: list["Effect"],
         damage_bonus: list[DamageComponent] | None = None,
         consumes_on_trigger: bool = True,
         cooldown_turns: int = 0,
-        max_triggers: int = -1,  # -1 for unlimited
+        max_triggers: int | None = None,  # None for unlimited
     ):
         """
         Initialize a universal trigger effect.
@@ -175,7 +175,7 @@ class TriggerEffect(Effect):
             damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
             consumes_on_trigger (bool): Whether the effect is consumed when triggered.
             cooldown_turns (int): Number of turns before trigger can activate again.
-            max_triggers (int): Maximum number of times trigger can activate (-1 for unlimited).
+            max_triggers (int | None): Maximum number of times trigger can activate (None for unlimited).
         """
         super().__init__(name, description, duration)
         self.trigger_condition = trigger_condition
@@ -215,8 +215,8 @@ class TriggerEffect(Effect):
             ), f"Damage component '{damage_comp}' must be of type DamageComponent."
         assert self.cooldown_turns >= 0, "Cooldown turns must be non-negative."
         assert (
-            self.max_triggers >= -1
-        ), "Max triggers must be -1 (unlimited) or positive."
+            self.max_triggers is None or self.max_triggers >= 0
+        ), "Max triggers must be None (unlimited) or non-negative."
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """TriggerEffect effects can be applied to any living target."""
@@ -229,8 +229,8 @@ class TriggerEffect(Effect):
         Returns:
             bool: True if the trigger can activate, False otherwise.
         """
-        # Check if we've exceeded max triggers
-        if self.max_triggers > 0 and self.triggers_used >= self.max_triggers:
+        # Check if we've exceeded max triggers (None means unlimited)
+        if self.max_triggers is not None and self.triggers_used >= self.max_triggers:
             return False
 
         # Check if we're on cooldown
@@ -316,7 +316,7 @@ class TriggerEffect(Effect):
         """
         status_parts = [self.trigger_condition.description]
 
-        if self.max_triggers > 0:
+        if self.max_triggers is not None:
             status_parts.append(f"({self.triggers_used}/{self.max_triggers} uses)")
         elif self.triggers_used > 0:
             status_parts.append(f"({self.triggers_used} uses)")
@@ -337,7 +337,7 @@ def create_on_hit_trigger(
     description: str,
     trigger_effects: list[Effect],
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
     max_uses: int = -1,
@@ -380,7 +380,7 @@ def create_low_health_trigger(
     hp_threshold: float,
     trigger_effects: list[Effect],
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
     max_uses: int = -1,
@@ -422,7 +422,7 @@ def create_spell_cast_trigger(
     trigger_effects: list[Effect],
     spell_category: Optional[Any] = None,
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     cooldown: int = 0,
     max_uses: int = -1,
 ) -> TriggerEffect:
@@ -464,7 +464,7 @@ def create_damage_taken_trigger(
     trigger_effects: list[Effect],
     damage_type: Optional[Any] = None,
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     cooldown: int = 1,
     max_uses: int = -1,
 ) -> TriggerEffect:
@@ -503,7 +503,7 @@ def create_turn_based_trigger(
     description: str,
     trigger_effects: list[Effect],
     trigger_on_start: bool = True,
-    duration: int = 0,
+    duration: int | None = None,
     max_uses: int = -1,
 ) -> TriggerEffect:
     """
@@ -542,7 +542,7 @@ def create_critical_hit_trigger(
     description: str,
     trigger_effects: list[Effect],
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
 ) -> TriggerEffect:
@@ -582,7 +582,7 @@ def create_kill_trigger(
     description: str,
     trigger_effects: list[Effect],
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     cooldown: int = 0,
     max_uses: int = -1,
 ) -> TriggerEffect:
@@ -623,7 +623,7 @@ def create_custom_trigger(
     custom_condition: Callable[[Any, dict], bool],
     trigger_effects: list[Effect],
     damage_bonus: list[DamageComponent] | None = None,
-    duration: int = 0,
+    duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
     max_uses: int = -1,
@@ -750,5 +750,5 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
         damage_bonus=damage_bonus,
         consumes_on_trigger=config.get("consumes", True),
         cooldown_turns=config.get("cooldown", 0),
-        max_triggers=config.get("max_uses", -1),
+        max_triggers=config.get("max_triggers"),  # None for unlimited
     )
