@@ -29,7 +29,7 @@ The combat simulator supports:
 # Sets up basic logging configuration.
 logging.basicConfig(
     level=logging.INFO,  # Set the minimum level of messages to be handled
-    format="[%(name)s:%(levelname)-12s] %(message)s",
+    format="%(message)s",  # Clean format - our error handler already includes severity and location
     handlers=[logging.StreamHandler()],
 )
 

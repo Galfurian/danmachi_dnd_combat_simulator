@@ -2,13 +2,50 @@
 Centralized error handling and logging system.
 """
 
+import inspect
 import logging
+import os
 import traceback
+from pathlib import Path
 from typing import Any, Callable, TypeVar, Optional
 from dataclasses import dataclass
 from enum import Enum
 
 T = TypeVar("T")
+
+
+def _get_caller_info(skip_frames: int = 2) -> tuple[str, int]:
+    """
+    Get the file path and line number of the caller.
+    
+    Args:
+        skip_frames: Number of frames to skip (default 2: this function + the logging function)
+        
+    Returns:
+        tuple: (relative_file_path, line_number)
+    """
+    try:
+        # Get the current working directory to make paths relative
+        project_root = Path.cwd()
+        
+        # Get the stack info (skip this function and the logging function)
+        stack = inspect.stack()
+        if len(stack) > skip_frames:
+            frame_info = stack[skip_frames]
+            file_path = Path(frame_info.filename)
+            line_number = frame_info.lineno
+            
+            # Try to make the path relative to project root
+            try:
+                rel_path = file_path.relative_to(project_root)
+                return str(rel_path), line_number
+            except ValueError:
+                # If we can't make it relative, just use the filename
+                return file_path.name, line_number
+        
+        return "unknown", 0
+    except Exception:
+        return "unknown", 0
 
 
 class ErrorSeverity(Enum):
@@ -44,6 +81,9 @@ class ErrorHandler:
         exception: Optional[Exception] = None,
     ) -> None:
         """Handle an error based on its severity."""
+        # Get caller information
+        file_path, line_number = _get_caller_info(skip_frames=3)  # Skip this method + the log_* function + caller
+        
         # Create the GameError object internally
         error = GameError(
             message=message,
@@ -59,17 +99,21 @@ class ErrorHandler:
             if error.context
             else {}
         )
+        
+        # Add file and line info to the message with clean format
+        location_info = f"{file_path}:{line_number}"
+        formatted_message = f"{location_info} - {message}"
 
         if error.severity == ErrorSeverity.CRITICAL:
-            self.logger.critical(f"CRITICAL: {error.message}", extra=safe_context)
+            self.logger.critical(f"CRITICAL: {formatted_message}", extra=safe_context)
             if error.exception:
                 self.logger.critical(traceback.format_exc())
         elif error.severity == ErrorSeverity.HIGH:
-            self.logger.error(f"ERROR: {error.message}", extra=safe_context)
+            self.logger.error(f"ERROR: {formatted_message}", extra=safe_context)
         elif error.severity == ErrorSeverity.MEDIUM:
-            self.logger.warning(f"WARNING: {error.message}", extra=safe_context)
+            self.logger.warning(f"WARNING: {formatted_message}", extra=safe_context)
         else:
-            self.logger.info(f"INFO: {error.message}", extra=safe_context)
+            self.logger.info(f"INFO: {formatted_message}", extra=safe_context)
 
     def handle_error(self, error: GameError) -> None:
         """Handle an error based on its severity. (Legacy method - prefer handle())"""
