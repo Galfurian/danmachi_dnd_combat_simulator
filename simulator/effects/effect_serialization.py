@@ -140,6 +140,7 @@ class EffectSerializer:
             "save_ends": effect.save_ends,
             "save_dc": effect.save_dc,
             "save_stat": effect.save_stat,
+            "damage_threshold": effect.damage_threshold,
         }
 
 
@@ -295,6 +296,7 @@ class EffectDeserializer:
             save_ends=data.get("save_ends", False),
             save_dc=data.get("save_dc", 0),
             save_stat=data.get("save_stat", "CON"),
+            damage_threshold=data.get("damage_threshold", 1),
         )
 
 

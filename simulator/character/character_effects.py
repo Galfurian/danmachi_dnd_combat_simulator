@@ -150,6 +150,37 @@ class CharacterEffects:
             )
             return False
 
+    def handle_damage_taken(self, damage_amount: int) -> list[str]:
+        """
+        Handle effects that should trigger or break when damage is taken.
+        
+        Args:
+            damage_amount (int): Amount of damage taken.
+            
+        Returns:
+            list[str]: Messages about effects that were broken or triggered.
+        """
+        messages = []
+        
+        if damage_amount <= 0:
+            return messages
+            
+        # Check for incapacitating effects that should break on damage
+        effects_to_remove = []
+        for active_effect in self.active_effects:
+            if isinstance(active_effect.effect, IncapacitatingEffect):
+                if active_effect.effect.breaks_on_damage(damage_amount):
+                    effects_to_remove.append(active_effect)
+                    messages.append(
+                        f"{self.owner.name} wakes up from {active_effect.effect.name} due to taking damage!"
+                    )
+        
+        # Remove the effects that should break
+        for effect_to_remove in effects_to_remove:
+            self.remove_effect(effect_to_remove)
+            
+        return messages
+
     def remove_effect(self, effect: "ActiveEffect") -> bool:
         """
         Remove an active effect from the character.

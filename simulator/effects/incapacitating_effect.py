@@ -20,12 +20,14 @@ class IncapacitatingEffect(Effect):
         save_ends: bool = False,
         save_dc: int = 0,
         save_stat: str = "CON",
+        damage_threshold: int = 1,  # Minimum damage needed to break effect (if applicable)
     ):
         super().__init__(name, description, duration)
         self.incapacitation_type = incapacitation_type
         self.save_ends = save_ends
         self.save_dc = save_dc
         self.save_stat = save_stat
+        self.damage_threshold = damage_threshold
 
     def prevents_actions(self) -> bool:
         """
@@ -53,6 +55,23 @@ class IncapacitatingEffect(Effect):
             bool: True if saves are automatically failed, False otherwise.
         """
         return self.incapacitation_type in ["unconscious"]
+
+    def breaks_on_damage(self, damage_amount: int = 1) -> bool:
+        """
+        Check if taking damage should break this incapacitation.
+
+        Args:
+            damage_amount (int): Amount of damage taken.
+
+        Returns:
+            bool: True if damage breaks the effect, False otherwise.
+        """
+        # First check if this type of incapacitation can break on damage
+        if self.incapacitation_type not in ["sleep", "charm"]:
+            return False
+            
+        # Then check if damage meets the threshold
+        return damage_amount >= self.damage_threshold
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """Incapacitating effects can be applied to any living target."""

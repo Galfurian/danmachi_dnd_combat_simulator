@@ -286,6 +286,14 @@ class Character:
         actual = min(adjusted, self.hp)
         self.hp = max(self.hp - adjusted, 0)
 
+        # Handle effects that break on damage (like sleep effects)
+        if actual > 0:  # Only if damage was actually taken
+            wake_up_messages = self.effects_module.handle_damage_taken(actual)
+            if wake_up_messages:
+                from core.utils import cprint
+                for msg in wake_up_messages:
+                    cprint(f"    {msg}")
+
         # Check for passive triggers after taking damage (e.g., OnLowHealthTrigger)
         if self.passive_effects and self.is_alive():
             activation_messages = self.check_passive_triggers()

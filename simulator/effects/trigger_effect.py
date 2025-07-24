@@ -169,7 +169,7 @@ class TriggerEffect(Effect):
         Args:
             name (str): Name of the effect.
             description (str): Description of what the effect does.
-            duration (int): Maximum duration in turns (0 for permanent).
+            duration (int): Duration in turns (0 for permanent).
             trigger_condition (TriggerCondition): Condition that activates the trigger.
             trigger_effects (list[Effect]): Effects to apply when triggered.
             damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
