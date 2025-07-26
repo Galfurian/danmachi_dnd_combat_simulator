@@ -41,11 +41,7 @@
     },
     {
         "name": "Aasimar",
-        "natural_ac": 1,
-        "default_spells": ["Healing Word"],
-        "available_spells": {
-            "3": ["Daylight"]
-        }
+        "natural_ac": 1
     },
     {
         "name": "Spirit",
