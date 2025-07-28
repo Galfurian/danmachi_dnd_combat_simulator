@@ -6,22 +6,31 @@ from actions.spells import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
 from character import Character
 
 # =============================================================================
-# Sorting Functions
+# Support Functions
 # =============================================================================
+
 
 def _hp_ratio(character: Character) -> float:
     """
     Helper function to calculate HP ratio.
-    
+
     Args:
         character (Character): The character whose HP ratio to calculate.
-        
+
     Returns:
         float: The HP ratio (current HP / max HP), or 1.0 if max HP is 0.
     """
     return character.hp / character.HP_MAX if character.HP_MAX > 0 else 1.0
 
-def _sort_targets_by_usefulness_and_hp(targets: list[Character], action: Any, mind_level: int = 0) -> list[Character]:
+
+# =============================================================================
+# Sorting Functions
+# =============================================================================
+
+
+def _sort_targets_by_usefulness_and_hp_offensive(
+    targets: list[Character], action: Any, mind_level: int = 0
+) -> list[Character]:
     """
     Generic sorting function that prioritizes:
     1. Targets where the effect would be useful.
@@ -36,15 +45,48 @@ def _sort_targets_by_usefulness_and_hp(targets: list[Character], action: Any, mi
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
     """
     useful = [
-        t for t in targets
-        if not hasattr(action, "effect") or action.effect is None or t.effects_module.can_add_effect(action.effect, t, mind_level)
+        t
+        for t in targets
+        if not hasattr(action, "effect")
+        or action.effect is None
+        or t.effects_module.can_add_effect(action.effect, t, mind_level)
     ]
     not_useful = [t for t in targets if t not in useful]
-    
+
     useful_sorted = sorted(useful, key=_hp_ratio)
     not_useful_sorted = sorted(not_useful, key=_hp_ratio)
-    
+
     return useful_sorted + not_useful_sorted
+
+
+def _sort_targets_by_usefulness_and_hp_healing(
+    targets: list[Character], action: Any, mind_level: int = 0
+) -> list[Character]:
+    """
+    Generic sorting function for healing actions.
+    Prioritizes targets that need healing or where the effect would be useful.
+
+    Args:
+        targets (list[Character]): List of potential targets.
+        action (Any): The healing action being considered.
+        mind_level (int): The mind level to use for evaluating usefulness. Defaults to 0
+
+    Returns:
+        list[Character]: Sorted list of targets based on usefulness and HP ratio.
+    """
+
+    useful = [
+        t
+        for t in targets
+        if t.hp < t.HP_MAX
+        or action.effect is None
+        or t.effects_module.can_add_effect(action.effect, t, mind_level)
+    ]
+
+    useful = sorted(useful, key=lambda t: t.HP_MAX - t.hp, reverse=True)
+
+    return useful
+
 
 def _sort_for_base_attack(
     actor: Character, action: BaseAttack, targets: list[Character]
@@ -60,7 +102,8 @@ def _sort_for_base_attack(
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
     """
-    return _sort_targets_by_usefulness_and_hp(targets, action, 0)
+    return _sort_targets_by_usefulness_and_hp_offensive(targets, action, 0)
+
 
 def _sort_for_spell_attack(
     actor: Character, spell: SpellAttack, targets: list[Character]
@@ -76,7 +119,10 @@ def _sort_for_spell_attack(
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
     """
-    return _sort_targets_by_usefulness_and_hp(targets, spell, spell.mind_cost[0])
+    return _sort_targets_by_usefulness_and_hp_offensive(
+        targets, spell, spell.mind_cost[0]
+    )
+
 
 def _sort_for_spell_heal(
     actor: Character, spell: SpellHeal, targets: list[Character]
@@ -92,16 +138,11 @@ def _sort_for_spell_heal(
     Returns:
         list[Character]: Sorted list of targets based on HP ratio and usefulness of the healing effect.
     """
-    wounded = [t for t in targets if t.hp < t.HP_MAX]
-    
-    def priority_key(t: Character) -> Tuple[float, bool]:
-        hp_ratio = _hp_ratio(t)
-        usefulness = spell.effect is None or t.effects_module.can_add_effect(
-            spell.effect, t, spell.mind_cost[0]
-        )
-        return (hp_ratio, not usefulness)
-    
-    return sorted(wounded, key=priority_key)
+
+    return _sort_targets_by_usefulness_and_hp_healing(
+        targets, spell, spell.mind_cost[0]
+    )
+
 
 def _sort_for_spell_buff(
     actor: Character, action: SpellBuff, targets: list[Character]
@@ -117,7 +158,10 @@ def _sort_for_spell_buff(
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
     """
-    return _sort_targets_by_usefulness_and_hp(targets, action, action.mind_cost[0])
+    return _sort_targets_by_usefulness_and_hp_offensive(
+        targets, action, action.mind_cost[0]
+    )
+
 
 def _sort_for_spell_debuff(
     actor: Character, spell: SpellDebuff, targets: list[Character]
@@ -133,17 +177,18 @@ def _sort_for_spell_debuff(
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
     """
-    return _sort_targets_by_usefulness_and_hp(targets, spell, spell.mind_cost[0])
+    return _sort_targets_by_usefulness_and_hp_offensive(
+        targets, spell, spell.mind_cost[0]
+    )
 
 
 # =============================================================================
 # Improved AI Functions - Split Weapon and Target Selection
 # =============================================================================
 
+
 def choose_best_weapon_for_situation(
-    npc: Character, 
-    weapons: list["WeaponAttack"], 
-    enemies: list[Character]
+    npc: Character, weapons: list["WeaponAttack"], enemies: list[Character]
 ) -> Optional["WeaponAttack"]:
     """
     Choose the best weapon type based on overall battlefield effectiveness.
@@ -160,51 +205,52 @@ def choose_best_weapon_for_situation(
     """
     if not weapons or not enemies:
         return None
-    
+
     best_weapon = None
     best_score = -1
-    
+
     for weapon in weapons:
         # Skip if weapon is on cooldown
         if npc.is_on_cooldown(weapon):
             continue
-            
+
         # Calculate weapon effectiveness against all available targets
         total_score = 0
         valid_target_count = 0
-        
+
         for target in enemies:
             # Skip dead targets
             if not target.is_alive():
                 continue
-                
+
             valid_target_count += 1
-            
+
             # Effect score
             effect_score = 0
-            if weapon.effect and target.effects_module.can_add_effect(weapon.effect, target, 0):
+            if weapon.effect and target.effects_module.can_add_effect(
+                weapon.effect, target, 0
+            ):
                 effect_score = 10
-            
+
             # Damage potential score
             damage_score = len(weapon.damage) * 2
-            
+
             # Weapon versatility score
             target_score = effect_score + damage_score
             total_score += target_score
-        
+
         if valid_target_count > 0:
             # Average effectiveness across all targets
             avg_score = total_score / valid_target_count
             if avg_score > best_score:
                 best_score = avg_score
                 best_weapon = weapon
-    
+
     return best_weapon
 
+
 def choose_best_target_for_weapon(
-    npc: Character, 
-    weapon: "WeaponAttack", 
-    enemies: list[Character]
+    npc: Character, weapon: "WeaponAttack", enemies: list[Character]
 ) -> Optional[Character]:
     """
     Choose the best target for a specific weapon.
@@ -221,39 +267,41 @@ def choose_best_target_for_weapon(
     """
     if not weapon or not enemies:
         return None
-    
+
     # Use existing sorting logic but only for this weapon
     sorted_targets = _sort_for_base_attack(npc, weapon, enemies)
-    
+
     # Find the first alive target
     for target in sorted_targets:
         if target.is_alive():
             return target
-    
+
     return None
+
 
 def get_weapon_attacks(npc: Character) -> list["WeaponAttack"]:
     """
     Get available weapon attacks for a character.
-    
+
     Args:
         npc (Character): The character to get weapon attacks for.
-        
+
     Returns:
         list[WeaponAttack]: List of available weapon attacks.
     """
     return npc.get_available_weapon_attacks()
 
+
 def get_natural_attacks(npc: Character) -> list["NaturalAttack"]:
     """
     Get available natural attacks for a character.
-    
+
     Args:
         npc (Character): The character to get natural attacks for.
-        
+
     Returns:
         list[NaturalAttack]: List of available natural attacks.
-    """ 
+    """
     return npc.get_available_natural_weapon_attacks()
 
 
@@ -265,10 +313,10 @@ def get_natural_attacks(npc: Character) -> list["NaturalAttack"]:
 def get_all_combat_actions(npc: Character) -> list[BaseAction]:
     """
     Get all available combat actions for a character.
-    
+
     Args:
         npc (Character): The character to get combat actions for.
-        
+
     Returns:
         list[BaseAction]: List of all available combat actions including attacks, actions, and spells.
     """
@@ -282,11 +330,11 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
 def get_actions_by_type(npc: Character, action_type: type) -> list[BaseAction]:
     """
     Generic function to get actions of a specific type.
-    
+
     Args:
         npc (Character): The character to get actions for.
         action_type (type): The type of action to filter for.
-        
+
     Returns:
         list[BaseAction]: List of actions of the specified type.
     """
