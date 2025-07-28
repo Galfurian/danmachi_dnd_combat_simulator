@@ -17,7 +17,7 @@ class WeaponAttack(BaseAttack):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -41,7 +41,7 @@ class WeaponAttack(BaseAttack):
         """
         super().__init__(
             name,
-            type,
+            action_type,
             description,
             cooldown,
             maximum_uses,

@@ -9,10 +9,10 @@ serialization logic from individual spell classes.
 from typing import Any
 
 from actions.spells.base_spell import Spell
-from actions.spells.spell_attack import SpellAttack
+from actions.spells.spell_offensive import SpellAttack
 from actions.spells.spell_buff import SpellBuff
 from actions.spells.spell_debuff import SpellDebuff
-from actions.spells.spell_heal import SpellHeal
+from actions.spells.spell_healing import SpellHeal
 from core.constants import ActionType
 from core.error_handling import log_critical
 from combat.damage import DamageComponent
@@ -77,7 +77,7 @@ class SpellDeserializer:
         """
         return SpellAttack(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -86,7 +86,11 @@ class SpellDeserializer:
             damage=[
                 DamageComponent.from_dict(component) for component in data["damage"]
             ],
-            effect=EffectDeserializer.deserialize(data["effect"]) if data.get("effect") else None,
+            effect=(
+                EffectDeserializer.deserialize(data["effect"])
+                if data.get("effect")
+                else None
+            ),
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
             target_restrictions=data.get("target_restrictions"),
@@ -113,7 +117,7 @@ class SpellDeserializer:
             )
         return SpellBuff(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -146,7 +150,7 @@ class SpellDeserializer:
             )
         return SpellDebuff(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -170,14 +174,18 @@ class SpellDeserializer:
         """
         return SpellHeal(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
             level=data["level"],
             mind_cost=data["mind_cost"],
             heal_roll=data["heal_roll"],
-            effect=EffectDeserializer.deserialize(data["effect"]) if data.get("effect") else None,
+            effect=(
+                EffectDeserializer.deserialize(data["effect"])
+                if data.get("effect")
+                else None
+            ),
             target_expr=data.get("target_expr", ""),
             requires_concentration=data.get("requires_concentration", False),
             target_restrictions=data.get("target_restrictions", []),
@@ -229,7 +237,7 @@ class SpellSerializer:
         """
         data = {
             "name": spell.name,
-            "type": spell.type.name,
+            "type": spell.action_type.name,
             "description": spell.description,
             "cooldown": spell.cooldown,
             "maximum_uses": spell.maximum_uses,

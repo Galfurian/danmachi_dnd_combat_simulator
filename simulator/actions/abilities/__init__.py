@@ -8,6 +8,7 @@ specialized behavior while sharing common functionality through BaseAbility.
 
 from actions.abilities.base_ability import BaseAbility
 from actions.abilities.ability_buff import BuffAbility
+from actions.abilities.ability_debuff import DebuffAbility
 from actions.abilities.ability_healing import HealingAbility
 from actions.abilities.ability_offensive import OffensiveAbility
 from actions.abilities.ability_utility import UtilityAbility
@@ -16,8 +17,9 @@ from actions.abilities.ability_serializer import AbilityDeserializer, AbilitySer
 __all__ = [
     "BaseAbility",
     "OffensiveAbility",
-    "HealingAbility", 
+    "HealingAbility",
     "BuffAbility",
+    "DebuffAbility",
     "UtilityAbility",
     "AbilityDeserializer",
     "AbilitySerializer",

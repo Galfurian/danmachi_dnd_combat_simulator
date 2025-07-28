@@ -44,7 +44,7 @@ class BaseAbility(BaseAction, ABC):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         category: ActionCategory,
         description: str,
         cooldown: int,
@@ -54,10 +54,10 @@ class BaseAbility(BaseAction, ABC):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new BaseAbility.
-        
+
         Args:
             name (str): Display name of the ability.
-            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
             category (ActionCategory): Action category (OFFENSIVE, HEALING, BUFF, UTILITY, etc.).
             description (str): Flavor text describing what the ability does.
             cooldown (int): Turns to wait before reusing (0 = no cooldown).
@@ -65,14 +65,14 @@ class BaseAbility(BaseAction, ABC):
             effect (Effect | None): Optional effect applied to targets on use.
             target_expr (str): Expression determining number of targets ("" = single target).
             target_restrictions (list[str] | None): Override default targeting if needed.
-        
+
         Raises:
             ValueError: If name is empty or type/category are invalid.
         """
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 category,
                 description,
                 cooldown,
@@ -109,7 +109,7 @@ class BaseAbility(BaseAction, ABC):
 
     def is_single_target(self) -> bool:
         """Check if the ability targets a single entity.
-        
+
         Returns:
             bool: True if ability targets one entity, False for multi-target.
         """
@@ -117,10 +117,10 @@ class BaseAbility(BaseAction, ABC):
 
     def target_count(self, actor: Any) -> int:
         """Calculate the number of targets this ability can affect.
-        
+
         Args:
             actor (Any): The character using the ability.
-        
+
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions).
         """
@@ -136,11 +136,11 @@ class BaseAbility(BaseAction, ABC):
     @abstractmethod
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this ability against a target.
-        
+
         Args:
             actor (Any): The character using the ability.
             target (Any): The target character.
-        
+
         Returns:
             bool: True if ability was executed successfully, False on system errors.
         """
@@ -152,7 +152,7 @@ class BaseAbility(BaseAction, ABC):
 
     def to_dict(self) -> dict[str, Any]:
         """Convert this ability to a dictionary representation.
-        
+
         Returns:
             dict[str, Any]: Dictionary representation of the ability.
         """
@@ -163,10 +163,10 @@ class BaseAbility(BaseAction, ABC):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
         """Create an ability instance from dictionary data.
-        
+
         Args:
             data (dict[str, Any]): Dictionary containing ability configuration data.
-        
+
         Returns:
             Any | None: Ability instance or None if creation fails.
         """

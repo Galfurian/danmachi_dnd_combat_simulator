@@ -3,6 +3,13 @@ from typing import Optional, Tuple, Any
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions.abilities import (
+    OffensiveAbility,
+    HealingAbility,
+    BuffAbility,
+    DebuffAbility,
+)
+
 from character import Character
 
 # =============================================================================
@@ -107,9 +114,9 @@ def _sort_for_base_attack(
 
 def _sort_for_spell_attack(
     actor: Character, spell: SpellAttack, targets: list[Character]
-) -> list[Character]:
+) -> tuple[int, list[Character], float]:
     """
-    Prioritizes targets for offensive spells.
+    Optimizes both mind_level and targets for offensive spells.
 
     Args:
         actor (Character): The character casting the spell.
@@ -117,11 +124,40 @@ def _sort_for_spell_attack(
         targets (list[Character]): List of potential targets.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
+        tuple[int, list[Character], float]: The best mind level and corresponding sorted targets.
     """
-    return _sort_targets_by_usefulness_and_hp_offensive(
-        targets, spell, spell.mind_cost[0]
-    )
+    best_score = -float("inf")
+    best_mind_level = spell.mind_cost[0]
+    best_targets = []
+
+    for mind_level in spell.mind_cost:
+        if mind_level > actor.mind:
+            continue
+        max_targets = spell.target_count(actor, mind_level)
+        if max_targets <= 0:
+            continue
+        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(
+            targets, spell, mind_level
+        )
+        candidate_targets = sorted_targets[:max_targets]
+        if not candidate_targets:
+            continue
+        usefulness = sum(
+            1
+            for t in candidate_targets
+            if spell.effect is None
+            or t.effects_module.can_add_effect(spell.effect, t, mind_level)
+        )
+        score = usefulness * 10 - mind_level
+        print(
+            f"[DEBUG] mind_level={mind_level}, score={score}, max_targets={max_targets}, targets={len(candidate_targets)}"
+        )
+        if score > best_score:
+            best_score = score
+            best_mind_level = mind_level
+            best_targets = candidate_targets
+
+    return best_mind_level, best_targets, best_score
 
 
 def _sort_for_spell_heal(
@@ -424,37 +460,17 @@ def choose_best_attack_spell_action(
         if npc.is_on_cooldown(spell):
             continue
 
-        sorted_targets = _sort_for_spell_attack(npc, spell, enemies)
+        mind_level, candidate_targets, score = _sort_for_spell_attack(
+            npc, spell, enemies
+        )
+        if mind_level is None or not candidate_targets:
+            continue
 
-        for mind_level in spell.mind_cost:
-            if mind_level > npc.mind:
-                continue
-
-            max_targets = spell.target_count(npc, mind_level)
-            if max_targets <= 0:
-                continue
-
-            candidate_targets = sorted_targets[:max_targets]
-
-            if not candidate_targets:
-                continue
-
-            # Score = how many targets the effect would benefit + bonus for low mind usage
-            usefulness = sum(
-                1
-                for t in candidate_targets
-                if spell.effect is None
-                or t.effects_module.can_add_effect(spell.effect, t, mind_level)
-            )
-
-            # Prioritize high usefulness, low cost.
-            score = usefulness * 10 - mind_level
-
-            if score > best_score:
-                best_score = score
-                best_spell = spell
-                best_level = mind_level
-                best_targets = candidate_targets
+        if score > best_score:
+            best_score = score
+            best_spell = spell
+            best_level = mind_level
+            best_targets = candidate_targets
     if best_spell:
         return best_spell, best_level, best_targets
     return None
@@ -657,4 +673,158 @@ def choose_best_debuff_spell_action(
     if best_spell:
         return best_spell, best_level, best_targets
 
+    return None
+
+
+# =============================================================================
+# Ability AI Functions
+# =============================================================================
+
+
+def choose_best_offensive_ability_action(
+    npc: Character,
+    enemies: list[Character],
+    abilities: list[OffensiveAbility],
+) -> Optional[tuple[OffensiveAbility, list[Character]]]:
+    """
+    Chooses the best offensive ability and targets (no mind cost).
+    """
+    best_score = -1
+    best_ability = None
+    best_targets: list[Character] = []
+
+    for ability in abilities:
+        if npc.is_on_cooldown(ability):
+            continue
+        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(enemies, ability)
+        max_targets = (
+            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        )
+        candidate_targets = sorted_targets[:max_targets]
+        if not candidate_targets:
+            continue
+        usefulness = sum(
+            1
+            for t in candidate_targets
+            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
+        )
+        score = usefulness * 10
+        if score > best_score:
+            best_score = score
+            best_ability = ability
+            best_targets = candidate_targets
+    if best_ability:
+        return best_ability, best_targets
+    return None
+
+
+def choose_best_healing_ability_action(
+    npc: Character,
+    allies: list[Character],
+    abilities: list[HealingAbility],
+) -> Optional[tuple[HealingAbility, list[Character]]]:
+    """
+    Chooses the best healing ability and targets (no mind cost).
+    """
+    best_score = -1
+    best_ability = None
+    best_targets: list[Character] = []
+
+    for ability in abilities:
+        if npc.is_on_cooldown(ability):
+            continue
+        sorted_targets = _sort_targets_by_usefulness_and_hp_healing(allies, ability)
+        max_targets = (
+            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        )
+        candidate_targets = sorted_targets[:max_targets]
+        if not candidate_targets:
+            continue
+        total_hp_missing = sum(t.HP_MAX - t.hp for t in candidate_targets)
+        useful_effects = sum(
+            1
+            for t in candidate_targets
+            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
+        )
+        score = total_hp_missing + useful_effects * 10
+        if score > best_score:
+            best_score = score
+            best_ability = ability
+            best_targets = candidate_targets
+    if best_ability:
+        return best_ability, best_targets
+    return None
+
+
+def choose_best_buff_ability_action(
+    npc: Character,
+    allies: list[Character],
+    abilities: list[BuffAbility],
+) -> Optional[tuple[BuffAbility, list[Character]]]:
+    """
+    Chooses the best buff ability and targets (no mind cost).
+    """
+    best_score = -1
+    best_ability = None
+    best_targets: list[Character] = []
+
+    for ability in abilities:
+        if npc.is_on_cooldown(ability):
+            continue
+        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(allies, ability)
+        max_targets = (
+            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        )
+        candidate_targets = sorted_targets[:max_targets]
+        if not candidate_targets:
+            continue
+        usefulness = sum(
+            1
+            for t in candidate_targets
+            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
+        )
+        score = usefulness * 10
+        if score > best_score:
+            best_score = score
+            best_ability = ability
+            best_targets = candidate_targets
+    if best_ability:
+        return best_ability, best_targets
+    return None
+
+
+def choose_best_debuff_ability_action(
+    npc: Character,
+    enemies: list[Character],
+    abilities: list[DebuffAbility],
+) -> Optional[tuple[DebuffAbility, list[Character]]]:
+    """
+    Chooses the best debuff ability and targets (no mind cost).
+    """
+    best_score = -1
+    best_ability = None
+    best_targets: list[Character] = []
+
+    for ability in abilities:
+        if npc.is_on_cooldown(ability):
+            continue
+        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(enemies, ability)
+        max_targets = (
+            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        )
+        candidate_targets = sorted_targets[:max_targets]
+        if not candidate_targets:
+            continue
+        usefulness = sum(
+            1
+            for t in candidate_targets
+            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
+        )
+        score = usefulness * 10
+        if score > best_score:
+            best_score = score
+            best_ability = ability
+            best_targets = candidate_targets
+    if best_ability:
+        return best_ability, best_targets
     return None

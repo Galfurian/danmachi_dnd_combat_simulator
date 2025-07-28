@@ -55,7 +55,7 @@ class DamageOverTimeEffect(Effect):
         base, adjusted, taken = target.take_damage(dot_value, self.damage.damage_type)
         # If the damage value is positive, print the damage message.
         dot_str = f"    {get_effect_emoji(self)} "
-        dot_str += apply_character_type_color(target.type, target.name) + " takes "
+        dot_str += apply_character_type_color(target.char_type, target.name) + " takes "
         # Create a damage string for display.
         dot_str += apply_damage_type_color(
             self.damage.damage_type,

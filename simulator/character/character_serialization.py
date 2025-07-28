@@ -40,7 +40,7 @@ class CharacterSerialization:
             dict[str, Any]: The dictionary representation of the character.
         """
         data: dict[str, Any] = {}
-        data["type"] = self._character.type.name
+        data["type"] = self._character.char_type.name
         data["name"] = self._character.name
         data["race"] = self._character.race.name
         data["levels"] = {cls.name: lvl for cls, lvl in self._character.levels.items()}

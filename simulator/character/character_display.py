@@ -68,7 +68,7 @@ class CharacterDisplay:
 
         # Use dynamic name width based on name length, but cap it
         name_width = min(max(len(self._character.name), 8), 16)
-        status = f"{get_character_type_emoji(self._character.type)} [bold]{self._character.name:<{name_width}}[/] "
+        status = f"{get_character_type_emoji(self._character.char_type)} [bold]{self._character.name:<{name_width}}[/] "
 
         # Show AC only for player and allies (not enemies) with yellow color
         if show_ac:
@@ -118,7 +118,7 @@ class CharacterDisplay:
 
         # Show concentration info only for the player with magenta/purple color
         if (
-            self._character.type == CharacterType.PLAYER
+            self._character.char_type == CharacterType.PLAYER
             and self._character.concentration_module.get_concentration_count()
             > 0
         ):

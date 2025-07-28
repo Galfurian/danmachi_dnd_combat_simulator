@@ -49,7 +49,7 @@ class HealingOverTimeEffect(Effect):
         hot_value = target.heal(hot_value)
         # If the heal value is positive, print the heal message.
         message = f"    {get_effect_emoji(self)} "
-        message += apply_character_type_color(target.type, target.name)
+        message += apply_character_type_color(target.action_type, target.name)
         message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
         message += apply_effect_color(self, self.name) + "."
         cprint(message)

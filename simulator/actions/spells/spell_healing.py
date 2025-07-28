@@ -38,7 +38,7 @@ class SpellHeal(Spell):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -51,7 +51,7 @@ class SpellHeal(Spell):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new SpellHeal.
-        
+
         Args:
             name (str): Display name of the spell.
             type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
@@ -65,14 +65,14 @@ class SpellHeal(Spell):
             target_expr (str): Expression determining number of targets.
             requires_concentration (bool): Whether spell requires concentration.
             target_restrictions (list[str] | None): Override default targeting if needed.
-        
+
         Raises:
             ValueError: If heal_roll is invalid or other parameters are invalid.
         """
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 description,
                 cooldown,
                 maximum_uses,
@@ -121,12 +121,12 @@ class SpellHeal(Spell):
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """Execute a healing spell with automatic success and beneficial effects.
-        
+
         Args:
             actor (Any): The character casting the spell.
             target (Any): The character targeted by the spell.
             mind_level (int): The spell level to cast at (affects cost and power).
-        
+
         Returns:
             bool: True if spell was cast successfully, False on failure.
         """
@@ -179,11 +179,11 @@ class SpellHeal(Spell):
 
     def get_heal_expr(self, actor: Any, mind_level: int | None = 1) -> str:
         """Get healing expression with variables substituted for display.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int | None): The spell level to use for MIND variable substitution.
-        
+
         Returns:
             str: Complete healing expression with variables substituted.
         """
@@ -196,11 +196,11 @@ class SpellHeal(Spell):
 
     def get_min_heal(self, actor: Any, mind_level: int | None = 1) -> int:
         """Calculate the minimum possible healing for the spell.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int | None): The spell level to use for scaling calculations.
-        
+
         Returns:
             int: Minimum possible healing amount.
         """
@@ -215,11 +215,11 @@ class SpellHeal(Spell):
 
     def get_max_heal(self, actor: Any, mind_level: int | None = 1) -> int:
         """Calculate the maximum possible healing for the spell.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int | None): The spell level to use for scaling calculations.
-        
+
         Returns:
             int: Maximum possible healing amount.
         """

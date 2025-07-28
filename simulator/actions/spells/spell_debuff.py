@@ -34,7 +34,7 @@ class SpellDebuff(Spell):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -66,7 +66,7 @@ class SpellDebuff(Spell):
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 description,
                 cooldown,
                 maximum_uses,

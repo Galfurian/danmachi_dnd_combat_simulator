@@ -9,13 +9,13 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from core.error_handling import log_critical, log_error, validate_required_object
+from core.error_handling import log_critical
 from core.utils import cprint
 from effects.base_effect import Effect
-from effects.modifier_effect import BuffEffect
+from effects.modifier_effect import DebuffEffect
 
 
-class BuffAbility(BaseAbility):
+class DebuffAbility(BaseAbility):
     """
     Represents a buff ability that provides beneficial effects to targets in combat.
     Inherits from BaseAbility and applies an Effect to allies or self.
@@ -33,7 +33,7 @@ class BuffAbility(BaseAbility):
         target_restrictions: list[str] | None = None,
     ) -> None:
         """
-        Initialize a new BuffAbility for combat.
+        Initialize a new DebuffAbility for combat.
 
         Args:
             name (str): Display name of the ability.
@@ -62,18 +62,18 @@ class BuffAbility(BaseAbility):
             )
 
             # Make sure effect is valid.
-            if not isinstance(effect, BuffEffect):
+            if not isinstance(effect, DebuffEffect):
                 log_critical(
-                    f"DebuffAbility {name} effect must be a BuffEffect instance, got: {type(effect).__name__}",
+                    f"DebuffAbility {name} effect must be a DebuffEffect instance, got: {type(effect).__name__}",
                     {"name": name, "effect_type": type(effect).__name__},
                 )
                 raise ValueError(
-                    f"DebuffAbility {name} effect must be a BuffEffect instance"
+                    f"DebuffAbility {name} effect must be a DebuffEffect instance"
                 )
 
         except Exception as e:
             log_critical(
-                f"Error initializing BuffAbility {name}: {str(e)}",
+                f"Error initializing DebuffAbility {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
             )
@@ -108,7 +108,7 @@ class BuffAbility(BaseAbility):
         # Check the effect is valid.
         if not isinstance(self.effect, Effect):
             log_critical(
-                f"BuffAbility {self.name} has invalid effect type: {type(self.effect).__name__}",
+                f"DebuffAbility {self.name} has invalid effect type: {type(self.effect).__name__}",
                 {"name": self.name, "effect_type": type(self.effect).__name__},
             )
             return False
@@ -123,13 +123,13 @@ class BuffAbility(BaseAbility):
 
         if GLOBAL_VERBOSE_LEVEL == 0:
             if effect_applied:
-                msg += f" granting [{effect_color}]{self.effect.name}[/]"
+                msg += f" applying [{effect_color}]{self.effect.name}[/]"
             else:
                 msg += f" but fails to apply [{effect_color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             if effect_applied:
-                msg += f" successfully granting [{effect_color}]{self.effect.name}[/]"
+                msg += f" successfully applying [{effect_color}]{self.effect.name}[/]"
             else:
                 msg += (
                     f" but {target_str} resists [{effect_color}]{self.effect.name}[/]"

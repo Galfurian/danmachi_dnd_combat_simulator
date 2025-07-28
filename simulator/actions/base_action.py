@@ -31,7 +31,7 @@ class BaseAction:
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         category: ActionCategory,
         description: str = "",
         cooldown: int = 0,
@@ -54,8 +54,10 @@ class BaseAction:
         """
         # === CRITICAL VALIDATIONS ===
         # These will raise ValueError if invalid - action cannot be created
-        self.name = require_non_empty_string(name, "action name", {"type": str(type)})
-        self.type = require_enum_type(type, ActionType, "action type", {"name": name})
+        self.name = require_non_empty_string(name, "action name", {"name": name})
+        self.action_type = require_enum_type(
+            action_type, ActionType, "action type", {"name": name}
+        )
         self.category = require_enum_type(
             category, ActionCategory, "action category", {"name": name}
         )
@@ -111,7 +113,7 @@ class BaseAction:
                     "actor",
                     [
                         "name",
-                        "type",
+                        "char_type",
                         "mind",
                         "MIND_MAX",
                         "hp",
@@ -127,7 +129,7 @@ class BaseAction:
                     "target",
                     [
                         "name",
-                        "type",
+                        "char_type",
                         "mind",
                         "MIND_MAX",
                         "hp",
@@ -161,8 +163,8 @@ class BaseAction:
         Returns:
             tuple[str, str]: (actor_display, target_display)
         """
-        actor_str = apply_character_type_color(actor.type, actor.name)
-        target_str = apply_character_type_color(target.type, target.name)
+        actor_str = apply_character_type_color(actor.char_type, actor.name)
+        target_str = apply_character_type_color(target.char_type, target.name)
         return actor_str, target_str
 
     # ============================================================================
@@ -422,7 +424,7 @@ class BaseAction:
 
         def _is_relationship_valid(actor: Any, target: Any, is_ally: bool) -> bool:
             """Helper to check if actor and target have the correct relationship."""
-            are_opponents = is_oponent(actor.type, target.type)
+            are_opponents = is_oponent(actor.char_type, target.char_type)
             if is_ally:
                 return not are_opponents
             else:
@@ -444,23 +446,23 @@ class BaseAction:
         # Offensive actions target enemies (not self, must be opponents).
         if self.category == ActionCategory.OFFENSIVE:
             # Offensive actions target enemies (not self, must be opponents)
-            return target != actor and is_oponent(actor.type, target.type)
+            return target != actor and is_oponent(actor.char_type, target.char_type)
 
         # Healing actions target self and allies (not enemies, not at full health for healing)
         if self.category == ActionCategory.HEALING:
             if target == actor:
                 return target.hp < target.HP_MAX
-            if not is_oponent(actor.type, target.type):
+            if not is_oponent(actor.char_type, target.char_type):
                 return target.hp < target.HP_MAX
             return False
 
         # Buff actions target self and allies.
         if self.category == ActionCategory.BUFF:
-            return target == actor or not is_oponent(actor.type, target.type)
+            return target == actor or not is_oponent(actor.char_type, target.char_type)
 
         # Debuff actions target enemies.
         if self.category == ActionCategory.DEBUFF:
-            return target != actor and is_oponent(actor.type, target.type)
+            return target != actor and is_oponent(actor.char_type, target.char_type)
 
         # Utility actions can target anyone.
         if self.category == ActionCategory.UTILITY:

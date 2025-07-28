@@ -78,7 +78,7 @@ class CharacterActions:
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue
-                if not self.has_action_type(attack.type):
+                if not self.has_action_type(attack.action_type):
                     continue
                 # Only include NaturalAttack instances
                 if isinstance(attack, NaturalAttack):
@@ -97,7 +97,7 @@ class CharacterActions:
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue
-                if not self.has_action_type(attack.type):
+                if not self.has_action_type(attack.action_type):
                     continue
                 # Only include WeaponAttack instances
                 if isinstance(attack, WeaponAttack):
@@ -123,7 +123,7 @@ class CharacterActions:
         """
         available_actions: List[BaseAction] = []
         for action in self._character.actions.values():
-            if not self.is_on_cooldown(action) and self.has_action_type(action.type):
+            if not self.is_on_cooldown(action) and self.has_action_type(action.action_type):
                 available_actions.append(action)
         return available_actions
 
@@ -135,7 +135,7 @@ class CharacterActions:
         """
         available_spells: List[Spell] = []
         for spell in self._character.spells.values():
-            if not self.is_on_cooldown(spell) and self.has_action_type(spell.type):
+            if not self.is_on_cooldown(spell) and self.has_action_type(spell.action_type):
                 # Check if the character has enough mind points to cast the spell.
                 if self._character.mind >= (
                     spell.mind_cost[0] if spell.mind_cost else 0
@@ -154,7 +154,7 @@ class CharacterActions:
         )
         # Check if the character has any bonus actions available.
         has_bonus_actions: bool = any(
-            action.type == ActionType.BONUS for action in available_actions
+            action.action_type == ActionType.BONUS for action in available_actions
         )
         if has_bonus_actions and not self.turn_flags["bonus_action_used"]:
             return False

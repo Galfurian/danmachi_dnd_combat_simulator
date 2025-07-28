@@ -35,7 +35,7 @@ class SpellBuff(Spell):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -67,7 +67,7 @@ class SpellBuff(Spell):
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 description,
                 cooldown,
                 maximum_uses,

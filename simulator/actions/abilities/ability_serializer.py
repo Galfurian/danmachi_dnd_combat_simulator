@@ -75,7 +75,7 @@ class AbilityDeserializer:
         """
         return OffensiveAbility(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -98,7 +98,7 @@ class AbilityDeserializer:
         """
         return HealingAbility(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -133,7 +133,7 @@ class AbilityDeserializer:
             )
         return BuffAbility(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -155,7 +155,7 @@ class AbilityDeserializer:
         """
         return UtilityAbility(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -208,7 +208,7 @@ class AbilitySerializer:
         data = {
             "class": ability.__class__.__name__,
             "name": ability.name,
-            "type": ability.type.name,
+            "type": ability.action_type.name,
             "description": ability.description,
             "cooldown": ability.cooldown,
             "maximum_uses": ability.maximum_uses,

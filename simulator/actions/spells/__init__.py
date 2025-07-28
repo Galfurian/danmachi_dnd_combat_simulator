@@ -14,7 +14,7 @@ Available Classes:
 Usage:
     ```python
     from actions.spells import SpellAttack, SpellHeal, SpellBuff, SpellDebuff
-    
+
     # Create spells
     fireball = SpellAttack(name="Fireball", ...)
     cure_wounds = SpellHeal(name="Cure Wounds", ...)
@@ -24,15 +24,15 @@ Usage:
 """
 
 from actions.spells.base_spell import Spell
-from actions.spells.spell_attack import SpellAttack
-from actions.spells.spell_heal import SpellHeal
+from actions.spells.spell_offensive import SpellAttack
+from actions.spells.spell_healing import SpellHeal
 from actions.spells.spell_buff import SpellBuff
 from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_serializer import SpellSerializer, SpellDeserializer
 
 __all__ = [
     "Spell",
-    "SpellAttack", 
+    "SpellAttack",
     "SpellHeal",
     "SpellBuff",
     "SpellDebuff",

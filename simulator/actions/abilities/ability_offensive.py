@@ -21,7 +21,7 @@ class OffensiveAbility(BaseAbility):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -34,7 +34,7 @@ class OffensiveAbility(BaseAbility):
         
         Args:
             name (str): Display name of the ability.
-            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
             description (str): Flavor text describing what the ability does.
             cooldown (int): Turns to wait before reusing (0 = no cooldown).
             maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
@@ -49,7 +49,7 @@ class OffensiveAbility(BaseAbility):
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 ActionCategory.OFFENSIVE,
                 description,
                 cooldown,

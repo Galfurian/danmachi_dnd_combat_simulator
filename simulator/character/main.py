@@ -64,7 +64,7 @@ class Character:
             number_of_attacks (int, optional): Number of attacks per turn. Defaults to 1.
         """
         # Determines if the character is a player or an NPC.
-        self.type: CharacterType = char_type
+        self.char_type: CharacterType = char_type
         # Name of the character.
         self.name: str = name
         # The character race.

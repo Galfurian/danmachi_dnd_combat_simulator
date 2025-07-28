@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # Test the new incapacitation system with Sleep Powder
     add_to_list(enemies, opponents, "Purple Moth")
     # add_to_list(enemies, opponents, "Minotaur Boss")
-    # add_to_list(enemies, opponents, "Infant Dragon")
+    add_to_list(enemies, opponents, "Infant Dragon")
     # add_to_list(enemies, opponents, "Orc")
     # add_to_list(enemies, opponents, "Goblin")
     # add_to_list(enemies, opponents, "Goblin")

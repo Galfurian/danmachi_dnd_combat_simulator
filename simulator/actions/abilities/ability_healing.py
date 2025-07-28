@@ -26,7 +26,7 @@ class HealingAbility(BaseAbility):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -36,10 +36,10 @@ class HealingAbility(BaseAbility):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new HealingAbility.
-        
+
         Args:
             name (str): Display name of the ability.
-            type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
+            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
             description (str): Flavor text describing what the ability does.
             cooldown (int): Turns to wait before reusing (0 = no cooldown).
             maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
@@ -47,14 +47,14 @@ class HealingAbility(BaseAbility):
             effect (Effect | None): Optional effect applied to targets on use (like regeneration).
             target_expr (str): Expression determining number of targets ("" = single target).
             target_restrictions (list[str] | None): Override default targeting if needed.
-        
+
         Raises:
             ValueError: If name is empty or required parameters are invalid.
         """
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 ActionCategory.HEALING,
                 description,
                 cooldown,
@@ -77,11 +77,11 @@ class HealingAbility(BaseAbility):
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this healing ability on a target.
-        
+
         Args:
             actor (Any): The character using the ability.
             target (Any): The character being healed.
-        
+
         Returns:
             bool: True if ability was executed successfully, False on system errors.
         """
@@ -144,10 +144,10 @@ class HealingAbility(BaseAbility):
 
     def get_heal_expr(self, actor: Any) -> str:
         """Returns the healing expression with variables substituted.
-        
+
         Args:
             actor (Any): The character using the ability.
-        
+
         Returns:
             str: Complete healing expression with variables replaced by values.
         """
@@ -156,10 +156,10 @@ class HealingAbility(BaseAbility):
 
     def get_min_heal(self, actor: Any) -> int:
         """Returns the minimum possible healing value for the ability.
-        
+
         Args:
             actor (Any): The character using the ability.
-        
+
         Returns:
             int: Minimum healing amount.
         """
@@ -169,10 +169,10 @@ class HealingAbility(BaseAbility):
 
     def get_max_heal(self, actor: Any) -> int:
         """Returns the maximum possible healing value for the ability.
-        
+
         Args:
             actor (Any): The character using the ability.
-        
+
         Returns:
             int: Maximum healing amount.
         """

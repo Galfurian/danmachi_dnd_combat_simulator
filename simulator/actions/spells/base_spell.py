@@ -32,7 +32,7 @@ class Spell(BaseAction):
     def __init__(
         self,
         name: str,
-        type: ActionType,
+        action_type: ActionType,
         description: str,
         cooldown: int,
         maximum_uses: int,
@@ -64,7 +64,7 @@ class Spell(BaseAction):
         try:
             super().__init__(
                 name,
-                type,
+                action_type,
                 category,
                 description,
                 cooldown,

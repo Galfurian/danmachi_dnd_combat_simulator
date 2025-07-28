@@ -45,7 +45,7 @@ class CombatManager:
         friendlies: list[Character],
     ):
         """Initialize the CombatManager with participants and turn order.
-        
+
         Args:
             player (Character): The player character controlled by the user.
             enemies (list[Character]): List of enemy characters.
@@ -85,13 +85,13 @@ class CombatManager:
         for participant in self.participants:
             # Use bars only for turn order display to keep it compact
             # Show AC for player and allies, hide for enemies
-            show_ac = participant.type != CharacterType.ENEMY
+            show_ac = participant.char_type != CharacterType.ENEMY
             status_line = participant.get_status_line(show_bars=True, show_ac=show_ac)
             cprint(f"    🎲 {self.initiatives[participant]:3}  {status_line}")
 
     def get_alive_participants(self) -> list[Character]:
         """Returns a list of all participants (player, enemies, friendlies) who are still alive.
-        
+
         Returns:
             list[Character]: A list of alive characters.
         """
@@ -99,37 +99,37 @@ class CombatManager:
 
     def get_alive_opponents(self, actor: Character) -> list[Character]:
         """Returns a list of opponents for the actor, who are still alive.
-        
+
         Args:
             actor (Character): The character for whom to find opponents.
-        
+
         Returns:
             list[Character]: A list of alive opponents.
         """
         return [
             char
             for char in self.get_alive_participants()
-            if is_oponent(actor.type, char.type)
+            if is_oponent(actor.char_type, char.char_type)
         ]
 
     def get_alive_friendlies(self, actor: Character) -> list[Character]:
         """Returns a list of friendly characters for the actor, who are still alive.
-        
+
         Args:
             actor (Character): The character for whom to find friendlies.
-        
+
         Returns:
             list[Character]: A list of alive friendly characters.
         """
         return [
             char
             for char in self.get_alive_participants()
-            if not is_oponent(actor.type, char.type)
+            if not is_oponent(actor.char_type, char.char_type)
         ]
 
     def run_turn(self) -> bool:
         """Runs a single turn within the combat round.
-        
+
         Returns:
             bool: True if the turn was successfully executed, False if combat should end.
         """
@@ -164,7 +164,7 @@ class CombatManager:
 
     def run_participant_turn(self, participant: Character):
         """Runs a single participant's turn in combat.
-        
+
         Args:
             participant (Character): The participant whose turn is being run.
         """
@@ -183,12 +183,14 @@ class CombatManager:
             else:
                 # NPCs get bars only for cleaner display
                 # Show AC for allies, hide for enemies
-                show_ac = participant.type != CharacterType.ENEMY
+                show_ac = participant.char_type != CharacterType.ENEMY
                 cprint(participant.get_status_line(show_bars=True, show_ac=show_ac))
 
             # Check if character is incapacitated
             if participant.is_incapacitated():
-                cprint(f"    💤 {participant.name} is incapacitated and cannot act this turn.")
+                cprint(
+                    f"    💤 {participant.name} is incapacitated and cannot act this turn."
+                )
             else:
                 # Execute the participant's action based on whether they are the player or an NPC.
                 if participant == self.player:
@@ -236,7 +238,7 @@ class CombatManager:
         if not attacks:
             log_warning(
                 "No available attacks for the full attack action",
-                {"player": self.player.name, "context": "full_attack_selection"}
+                {"player": self.player.name, "context": "full_attack_selection"},
             )
             return
 
@@ -245,7 +247,11 @@ class CombatManager:
         if attack is None or not isinstance(attack, BaseAttack):
             log_warning(
                 "Invalid attack selected. Ending full attack",
-                {"player": self.player.name, "selected_attack": str(attack), "context": "full_attack_selection"}
+                {
+                    "player": self.player.name,
+                    "selected_attack": str(attack),
+                    "context": "full_attack_selection",
+                },
             )
             return
 
@@ -254,7 +260,11 @@ class CombatManager:
         if not valid_targets:
             log_warning(
                 f"No valid targets for {attack.name}",
-                {"player": self.player.name, "attack": attack.name, "context": "full_attack_target_selection"}
+                {
+                    "player": self.player.name,
+                    "attack": attack.name,
+                    "context": "full_attack_target_selection",
+                },
             )
             return
 
@@ -296,10 +306,10 @@ class CombatManager:
 
     def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
         """Handles the player's choice to cast a spell.
-        
+
         Args:
             spells (list[Spell]): List of available spells for the player.
-        
+
         Returns:
             bool: True if a spell was successfully cast, False otherwise.
         """
@@ -322,7 +332,11 @@ class CombatManager:
                 if not targets:
                     log_warning(
                         f"No valid targets for {spell.name}",
-                        {"player": self.player.name, "spell": spell.name, "context": "spell_target_selection"}
+                        {
+                            "player": self.player.name,
+                            "spell": spell.name,
+                            "context": "spell_target_selection",
+                        },
                     )
                     break
                 if isinstance(targets, str):
@@ -337,7 +351,7 @@ class CombatManager:
                 # Remove the MIND cost from the player.
                 self.player.mind -= mind_level
                 # Mark the action type as used.
-                self.player.use_action_type(spell.type)
+                self.player.use_action_type(spell.action_type)
                 # Add the spell to the cooldowns if it has one.
                 self.player.add_cooldown(spell, spell.cooldown)
                 return True
@@ -347,10 +361,10 @@ class CombatManager:
         self, spells: list[Spell]
     ) -> Optional[tuple[Spell, int] | str]:
         """Asks the player to choose a spell from their available spells.
-        
+
         Args:
             spells (list[Spell]): List of available spells for the player.
-        
+
         Returns:
             Optional[tuple[Spell, int] | str]: The chosen spell and mind level, or None if no spell was selected.
         """
@@ -372,10 +386,10 @@ class CombatManager:
 
     def ask_for_player_target(self, action: BaseAction) -> Optional[Character | str]:
         """Asks the player to choose a target for the given action.
-        
+
         Args:
             action (BaseAction): The action for which to choose a target.
-        
+
         Returns:
             Optional[Character | str]: The chosen target, or None if no valid target was selected.
         """
@@ -384,7 +398,11 @@ class CombatManager:
         if not valid_targets:
             log_warning(
                 f"No valid targets for {action.name}",
-                {"player": self.player.name, "action": action.name, "context": "single_target_selection"}
+                {
+                    "player": self.player.name,
+                    "action": action.name,
+                    "context": "single_target_selection",
+                },
             )
             return None
         # Ask the player to choose a target.
@@ -394,11 +412,11 @@ class CombatManager:
         self, action: BaseAction, max_targets: int
     ) -> Optional[List[Character] | str]:
         """Asks the player to choose multiple targets for the given action.
-        
+
         Args:
             action (BaseAction): The action for which to choose targets.
             max_targets (int): The maximum number of targets to choose.
-        
+
         Returns:
             Optional[list[Character] | str]: The chosen targets, or None if no valid targets were selected.
         """
@@ -407,13 +425,22 @@ class CombatManager:
         if len(valid_targets) == 0:
             log_warning(
                 f"No valid targets for {action.name}",
-                {"player": self.player.name, "action": action.name, "context": "multi_target_selection"}
+                {
+                    "player": self.player.name,
+                    "action": action.name,
+                    "context": "multi_target_selection",
+                },
             )
             return None
         if max_targets <= 0:
             log_warning(
                 f"Invalid maximum number of targets: {max_targets}",
-                {"player": self.player.name, "action": action.name, "max_targets": max_targets, "context": "target_validation"}
+                {
+                    "player": self.player.name,
+                    "action": action.name,
+                    "max_targets": max_targets,
+                    "context": "target_validation",
+                },
             )
             return None
         if max_targets == 1 or len(valid_targets) == 1:
@@ -421,7 +448,11 @@ class CombatManager:
             if target is None:
                 log_warning(
                     f"No valid target for {action.name}",
-                    {"player": self.player.name, "action": action.name, "context": "single_target_fallback"}
+                    {
+                        "player": self.player.name,
+                        "action": action.name,
+                        "context": "single_target_fallback",
+                    },
                 )
                 return None
             if isinstance(target, str):
@@ -432,7 +463,7 @@ class CombatManager:
 
     def execute_npc_action(self, npc: Character):
         """Executes the action logic for an NPC during their turn.
-        
+
         Args:
             npc (Character): The NPC whose action is being executed.
         """
@@ -442,7 +473,11 @@ class CombatManager:
         if not enemies:
             log_warning(
                 f"SKIP: {npc.name} has no enemies to attack",
-                {"npc": npc.name, "allies_count": len(allies), "context": "npc_ai_decision"}
+                {
+                    "npc": npc.name,
+                    "allies_count": len(allies),
+                    "context": "npc_ai_decision",
+                },
             )
             return
 
@@ -458,7 +493,7 @@ class CombatManager:
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
                 # Mark the action type as used.
-                npc.use_action_type(spell.type)
+                npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
 
@@ -474,7 +509,7 @@ class CombatManager:
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
                 # Mark the action type as used.
-                npc.use_action_type(spell.type)
+                npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
 
@@ -490,7 +525,7 @@ class CombatManager:
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
                 # Mark the action type as used.
-                npc.use_action_type(spell.type)
+                npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
 
@@ -506,7 +541,7 @@ class CombatManager:
                 # Add the spell to the cooldowns if it has one.
                 npc.add_cooldown(spell, spell.cooldown)
                 # Mark the action type as used.
-                npc.use_action_type(spell.type)
+                npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
 
@@ -540,7 +575,7 @@ class CombatManager:
                 # Add cooldown and mark action type only once after all attacks
                 if used_weapon_attack:
                     npc.add_cooldown(best_weapon, best_weapon.cooldown)
-                    npc.use_action_type(best_weapon.type)
+                    npc.use_action_type(best_weapon.action_type)
 
         # Check for natural attacks.
         if not used_weapon_attack:
@@ -554,17 +589,17 @@ class CombatManager:
                     # Add the attack to the cooldowns if it has one.
                     npc.add_cooldown(attack, attack.cooldown)
                     # Mark the action type as used.
-                    npc.use_action_type(attack.type)
+                    npc.use_action_type(attack.action_type)
 
     def _get_legal_targets(
         self, character: Character, ability: BaseAction
     ) -> list[Character]:
         """Retrieves a list of legal targets for the given character and ability.
-        
+
         Args:
             character (Character): The character performing the action or spell.
             ability (BaseAction): The action or spell being performed.
-        
+
         Returns:
             list[Character]: A list of legal targets for the action or spell.
         """
@@ -646,7 +681,7 @@ class CombatManager:
         defeated = [
             c
             for c in self.participants
-            if not c.is_alive() and c.type == CharacterType.ENEMY
+            if not c.is_alive() and c.char_type == CharacterType.ENEMY
         ]
         if defeated:
             cprint(
@@ -657,7 +692,7 @@ class CombatManager:
 
     def is_combat_over(self) -> bool:
         """Determines if combat has ended.
-        
+
         Returns:
             bool: True if combat has ended, False otherwise.
         """

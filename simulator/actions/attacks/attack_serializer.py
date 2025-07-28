@@ -73,7 +73,7 @@ class AttackDeserializer:
         """
         return BaseAttack(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -96,7 +96,7 @@ class AttackDeserializer:
         """
         return WeaponAttack(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -119,7 +119,7 @@ class AttackDeserializer:
         """
         return NaturalAttack(
             name=data["name"],
-            type=ActionType[data["type"]],
+            action_type=ActionType[data["type"]],
             description=data.get("description", ""),
             cooldown=data.get("cooldown", 0),
             maximum_uses=data.get("maximum_uses", -1),
@@ -173,7 +173,7 @@ class AttackSerializer:
         data = {
             "class": attack.__class__.__name__,
             "name": attack.name,
-            "type": attack.type.name,
+            "type": attack.action_type.name,
             "description": attack.description,
             "cooldown": attack.cooldown,
             "maximum_uses": attack.maximum_uses,

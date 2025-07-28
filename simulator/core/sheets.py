@@ -201,7 +201,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
-    sheet += f"[{get_action_type_color(spell.type)}]{spell.type.name}[/], "
+    sheet += f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name}[/], "
     sheet += f"mind {spell.mind_cost}, "
     if spell.maximum_uses > 0:
         sheet += f"max uses: {spell.maximum_uses}, "
@@ -238,7 +238,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
     """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
-    sheet += f"[{get_action_type_color(ability.type)}]{ability.type.name}[/], "
+    sheet += f"[{get_action_type_color(ability.action_type)}]{ability.action_type.name}[/], "
 
     if ability.cooldown > 0:
         sheet += f"cooldown: {ability.cooldown}, "
@@ -291,7 +291,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     else:
         # Generic action display
         sheet: str = f"[{get_action_category_color(action.category)}]{action.name}[/], "
-        sheet += f"[{get_action_type_color(action.type)}]{action.type.name}[/], "
+        sheet += f"[{get_action_type_color(action.action_type)}]{action.action_type.name}[/], "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
 
@@ -315,7 +315,7 @@ def print_character_sheet(char: Character) -> None:
         [f"[green]{cls.name} {lvl}[/]" for cls, lvl in char.levels.items()]
     )
     cprint(
-        f"{get_character_type_emoji(char.type)} [{get_character_type_color(char.type)}]{char.name}[/], "
+        f"{get_character_type_emoji(char.char_type)} [{get_character_type_color(char.char_type)}]{char.name}[/], "
         f"[blue]{char.race.name}[/], {class_levels}"
     )
 
@@ -470,7 +470,7 @@ def print_content_repository_summary() -> None:
         for name, action in repo.actions.items():
             action_info = f"[{get_action_category_color(action.category)}]{name}[/] "
             action_info += (
-                f"([{get_action_type_color(action.type)}]{action.type.name}[/])"
+                f"([{get_action_type_color(action.action_type)}]{action.action_type.name}[/])"
             )
             cprint(Padding(action_info, (0, 2)))
 
@@ -664,7 +664,7 @@ def create_test_character_sheet() -> None:
     # Add a test ability
     fire_breath = OffensiveAbility(
         name="Fire Breath",
-        type=ActionType.STANDARD,
+        action_type=ActionType.STANDARD,
         description="Exhales a cone of flame",
         cooldown=2,
         maximum_uses=3,
@@ -675,7 +675,7 @@ def create_test_character_sheet() -> None:
     # Add a healing ability
     healing_touch = HealingAbility(
         name="Healing Touch",
-        type=ActionType.BONUS,
+        action_type=ActionType.BONUS,
         description="Channel healing energy through touch",
         cooldown=0,
         maximum_uses=5,

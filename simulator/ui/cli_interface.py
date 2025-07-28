@@ -63,7 +63,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 action.name,
-                action.type.name.title(),
+                action.action_type.name.title(),
                 action.category.name.title(),
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -285,7 +285,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 spell.name,
-                f"[{get_action_type_color(spell.type)}]{spell.type.name.title()}[/]",
+                f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name.title()}[/]",
                 f"[{get_action_category_color(spell.category)}]{spell.category.name.title()}[/]",
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -464,7 +464,7 @@ class PlayerInterface:
         # Sort actions by ActionType (then by name for stability)
         actions.sort(
             key=lambda action: (
-                type_priority.get(action.type, 99),
+                type_priority.get(action.action_type, 99),
                 category_priority.get(action.category, 99),
                 action.name.lower(),
             )
