@@ -24,6 +24,9 @@
         "Steel Shield",
         "Defense Style"
     ],
+    "actions": [
+        "Radiant Smite"
+    ],
     "spells": [
         "Shatter"
     ]

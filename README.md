@@ -32,7 +32,7 @@ The ultimate goal is to provide a simulation platform where players can experien
 .
 ├── data/                           # JSON data files
 │   ├── player.json
-│   ├── actions.json
+│   ├── abilities.json
 │   ├── characters.json
 │   ├── character_races.json
 │   ├── enemies_danmachi_f1_f10.json
@@ -110,7 +110,7 @@ The **DnD Combat Simulator** provides:
 All entities and actions are stored as JSON files within the `data` directory:
 
 - **player.json**: Player character definitions.
-- **actions.json**: General action definitions.
+- **abilities.json**: General action definitions.
 - **enemies_danmachi_f1_f10.json**: Enemies from DanMachi floors 1-10.
 - Other JSON files: Classes, races, armors, spells, and more.
 

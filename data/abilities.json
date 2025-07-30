@@ -62,5 +62,21 @@
                 "damage_type": "FIRE"
             }
         }
+    },
+    {
+        "class": "OffensiveAbility",
+        "name": "Radiant Smite",
+        "type": "STANDARD",
+        "description": "A burst of radiant energy strikes your foe.",
+        "cooldown": 0,
+        "maximum_uses": -1,
+        "target_expr": "1",
+        "damage": [
+            {
+                "damage_roll": "2D8",
+                "damage_type": "RADIANT"
+            }
+        ],
+        "attack_roll": "1D20 + SPELLCASTING + proficiency"
     }
 ]
