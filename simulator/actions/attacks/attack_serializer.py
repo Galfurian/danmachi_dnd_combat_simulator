@@ -12,7 +12,8 @@ from actions.attacks.base_attack import BaseAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.attacks.natural_attack import NaturalAttack
 from core.constants import ActionType
-from core.error_handling import log_critical
+from actions.base_action import ActionSerializer
+from catchery import log_critical
 from combat.damage import DamageComponent
 from effects.base_effect import Effect
 
@@ -57,8 +58,8 @@ class AttackDeserializer:
                 f"Error creating attack '{attack_name}': {str(e)}",
                 {"attack_name": attack_name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     @staticmethod
     def _deserialize_base_attack(data: dict[str, Any]) -> BaseAttack:
@@ -170,21 +171,11 @@ class AttackSerializer:
         Returns:
             dict[str, Any]: Dictionary representation of the base attack.
         """
-        data = {
-            "class": attack.__class__.__name__,
-            "name": attack.name,
-            "type": attack.action_type.name,
-            "description": attack.description,
-            "cooldown": attack.cooldown,
-            "maximum_uses": attack.maximum_uses,
-            "hands_required": attack.hands_required,
-            "attack_roll": attack.attack_roll,
-            "damage": [component.to_dict() for component in attack.damage],
-        }
-        
+        data = ActionSerializer.serialize(attack)
+        data["attack_roll"] = attack.attack_roll
+        data["damage"] = [component.to_dict() for component in attack.damage]
         if attack.effect:
             data["effect"] = attack.effect.to_dict()
-            
         return data
 
     @staticmethod

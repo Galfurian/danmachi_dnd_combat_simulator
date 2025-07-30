@@ -13,14 +13,7 @@ from core.constants import (
     apply_character_type_color,
     get_effect_color,
 )
-from core.error_handling import (
-    log_critical,
-    log_error,
-    log_warning,
-    ensure_string,
-    ensure_list_of_type,
-    validate_required_object,
-)
+from catchery import *
 from core.utils import (
     debug,
     parse_expr_and_assume_max_roll,
@@ -29,7 +22,7 @@ from core.utils import (
     cprint,
     evaluate_expression,
 )
-from effects.base_effect import Effect
+from effects.base_effect import Effect, ensure_effect
 
 
 class BaseAbility(BaseAction, ABC):
@@ -80,28 +73,25 @@ class BaseAbility(BaseAction, ABC):
                 target_restrictions,
             )
 
-            # Validate effect
-            if effect is not None and not isinstance(effect, Effect):
-                log_warning(
-                    f"Ability {name} effect must be Effect or None, got: {effect.__class__.__name__}, setting to None",
-                    {"name": name, "effect": effect},
-                )
-                effect = None
-
-            # Validate target_expr.
+            # Validate the effect.
+            self.effect: Effect | None = ensure_effect(
+                effect,
+                "BaseAbility effect",
+                None,
+                {"name": name},
+            )
+            # Validate the target expression.
             self.target_expr = ensure_string(
                 target_expr, "target expression", "", {"name": name}
             )
-
-            self.effect: Effect | None = effect
 
         except Exception as e:
             log_critical(
                 f"Error initializing BaseAbility {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     # ============================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)

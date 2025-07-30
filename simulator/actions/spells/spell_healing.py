@@ -10,12 +10,7 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from core.error_handling import (
-    log_error,
-    log_warning,
-    log_critical,
-    ensure_string,
-)
+from catchery import *
 from core.utils import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
@@ -24,7 +19,7 @@ from core.utils import (
     substitute_variables,
     cprint,
 )
-from effects.base_effect import Effect
+from effects.base_effect import Effect, ensure_effect
 
 
 class SpellHeal(Spell):
@@ -85,35 +80,28 @@ class SpellHeal(Spell):
             )
 
             # Validate heal_roll expression using helper
-            self.heal_roll = ensure_string(
-                heal_roll, "heal roll expression", "", {"name": name}
+            self.heal_roll = validate_type(
+                heal_roll,
+                "heal roll",
+                str,
+                {"name": name, "heal_roll": heal_roll},
             )
-            if not self.heal_roll:
-                log_critical(
-                    f"SpellHeal {name} must have a valid heal_roll expression",
-                    {"name": name, "heal_roll": heal_roll},
-                )
-                raise ValueError(
-                    f"SpellHeal {name} must have a valid heal_roll expression"
-                )
 
-            # Validate optional effect
-            if effect is not None and not isinstance(effect, Effect):
-                log_warning(
-                    f"SpellHeal {name} effect must be Effect or None, got: {type(effect).__name__}, setting to None",
-                    {"name": name, "effect_type": type(effect).__name__},
-                )
-                effect = None
-
-            self.effect = effect
+            # Ensure effect is a valid type or None.
+            self.effect = ensure_effect(
+                effect,
+                "SpellHeal effect",
+                None,
+                {"name": name},
+            )
 
         except Exception as e:
             log_critical(
                 f"Error initializing SpellHeal {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     # ============================================================================
     # HEALING SPELL METHODS
@@ -177,7 +165,7 @@ class SpellHeal(Spell):
     # HEALING CALCULATION METHODS
     # ============================================================================
 
-    def get_heal_expr(self, actor: Any, mind_level: int | None = 1) -> str:
+    def get_heal_expr(self, actor: Any, mind_level: int = 1) -> str:
         """Get healing expression with variables substituted for display.
 
         Args:
@@ -194,7 +182,7 @@ class SpellHeal(Spell):
         variables["MIND"] = mind_level
         return simplify_expression(self.heal_roll, variables)
 
-    def get_min_heal(self, actor: Any, mind_level: int | None = 1) -> int:
+    def get_min_heal(self, actor: Any, mind_level: int = 1) -> int:
         """Calculate the minimum possible healing for the spell.
 
         Args:
@@ -213,7 +201,7 @@ class SpellHeal(Spell):
             substitute_variables(self.heal_roll, variables)
         )
 
-    def get_max_heal(self, actor: Any, mind_level: int | None = 1) -> int:
+    def get_max_heal(self, actor: Any, mind_level: int = 1) -> int:
         """Calculate the maximum possible healing for the spell.
 
         Args:

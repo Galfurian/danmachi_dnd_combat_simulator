@@ -10,11 +10,7 @@ from core.constants import (
     BonusType,
     get_effect_color,
 )
-from core.error_handling import (
-    log_error,
-    log_warning,
-    log_critical,
-)
+from catchery import *
 from core.utils import (
     substitute_variables,
     cprint,
@@ -47,7 +43,7 @@ class SpellBuff(Spell):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new SpellBuff.
-        
+
         Args:
             name (str): Display name of the spell.
             type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
@@ -60,7 +56,7 @@ class SpellBuff(Spell):
             target_expr (str): Expression determining number of targets.
             requires_concentration (bool): Whether spell requires concentration.
             target_restrictions (list[str] | None): Override default targeting if needed.
-        
+
         Raises:
             ValueError: If effect is None or invalid.
         """
@@ -79,27 +75,21 @@ class SpellBuff(Spell):
                 target_restrictions,
             )
 
-            # Validate required effect
-            if effect is None:
-                log_critical(f"SpellBuff {name} must have an effect", {"name": name})
-                raise ValueError(f"SpellBuff {name} must have an effect")
-
-            if not isinstance(effect, Effect):
-                log_critical(
-                    f"SpellBuff {name} effect must be an Effect instance, got: {type(effect).__name__}",
-                    {"name": name, "effect_type": type(effect).__name__},
-                )
-                raise ValueError(f"SpellBuff {name} effect must be an Effect instance")
-
-            self.effect = effect
+            # Assign the effect to the spell.
+            self.effect = validate_type(
+                effect,
+                "SpellDebuff effect",
+                Effect,
+                {"name": name, "effect_type": type(effect).__name__},
+            )
 
         except Exception as e:
             log_critical(
                 f"Error initializing SpellBuff {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     # ============================================================================
     # BUFF SPELL METHODS
@@ -107,12 +97,12 @@ class SpellBuff(Spell):
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """Execute a buff spell with automatic success and beneficial effects.
-        
+
         Args:
             actor (Any): The character casting the spell.
             target (Any): The character targeted by the spell.
             mind_level (int): The spell level to cast at (affects cost and power).
-        
+
         Returns:
             bool: True if spell was cast successfully, False on failure.
         """
@@ -151,14 +141,14 @@ class SpellBuff(Spell):
     # ============================================================================
 
     def get_modifier_expressions(
-        self, actor: Any, mind_level: int | None = 1
+        self, actor: Any, mind_level: int = 1
     ) -> dict[BonusType, str]:
         """Get modifier expressions with variables substituted for display.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int | None): The spell level to use for MIND variable substitution.
-        
+
         Returns:
             dict[BonusType, str]: Dictionary mapping bonus types to their expressions.
         """

@@ -5,7 +5,7 @@ from logging import debug
 from typing import Any, Optional, Callable
 from rich.console import Console
 from rich.rule import Rule
-from core.error_handling import log_error, log_warning
+from catchery import *
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
@@ -13,7 +13,7 @@ DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 def cprint(*args, **kwargs) -> None:
     """
     Custom print function to handle colored output.
-    
+
     Args:
         *args: Arguments to pass to the console print function.
         **kwargs: Keyword arguments to pass to the console print function.
@@ -25,7 +25,7 @@ def cprint(*args, **kwargs) -> None:
 def crule(*args, **kwargs) -> None:
     """
     Custom print function to handle colored output with a rule.
-    
+
     Args:
         *args: Arguments to pass to the Rule constructor.
         **kwargs: Keyword arguments to pass to the Rule constructor.
@@ -37,10 +37,10 @@ def crule(*args, **kwargs) -> None:
 def ccapture(content: Any) -> str:
     """
     Captures console output as a string.
-    
+
     Args:
         content (Any): The content to capture.
-        
+
     Returns:
         str: The captured output as a string.
     """
@@ -61,11 +61,11 @@ class Singleton(type):
     def __call__(cls, *a, **kw) -> Any:
         """
         Creates or returns the singleton instance.
-        
+
         Args:
             *a: Positional arguments for instance creation.
             **kw: Keyword arguments for instance creation.
-            
+
         Returns:
             Any: The singleton instance.
         """
@@ -86,13 +86,12 @@ def _safe_eval(arith_expr: str) -> str:
     Returns:
         str: The result of the evaluation or the original expression if an error occurs.
     """
-    # TODO: Replace with DiceParser.parse_dice()
-    from core.error_handling import log_error, log_warning
 
+    # TODO: Replace with DiceParser.parse_dice()
     def _unsafe_eval() -> str:
         """
         Nested function to evaluate arithmetic expression.
-        
+
         Returns:
             str: The string result of the evaluation.
         """
@@ -114,10 +113,10 @@ def _safe_eval(arith_expr: str) -> str:
 def get_stat_modifier(score: int) -> int:
     """
     Calculates the D&D ability score modifier.
-    
+
     Args:
         score (int): The ability score.
-        
+
     Returns:
         int: The modifier for the given ability score.
     """
@@ -135,8 +134,6 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
     Returns:
         str: The expression with variables substituted.
     """
-    from core.error_handling import log_error, log_warning
-
     if not expr:
         log_warning(
             "Empty expression provided to substitute_variables",
@@ -189,10 +186,10 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
 def extract_dice_terms(expr: str) -> list[str]:
     """
     Extracts all dice terms like '1d8', '2D6', or 'd4' from an expression.
-    
+
     Args:
         expr (str): The expression to extract dice terms from.
-        
+
     Returns:
         list[str]: List of dice terms found in the expression.
     """
@@ -315,11 +312,11 @@ def _parse_term_and_process_dice(
 def _roll_individual_dice(num: int, sides: int) -> list[int]:
     """
     Helper function to roll individual dice.
-    
+
     Args:
         num (int): Number of dice to roll.
         sides (int): Number of sides on each die.
-        
+
     Returns:
         list[int]: List of individual dice roll results.
     """
@@ -329,11 +326,11 @@ def _roll_individual_dice(num: int, sides: int) -> list[int]:
 def _assume_min_individual_dice(num: int, sides: int) -> list[int]:
     """
     Helper function to assume min for individual dice.
-    
+
     Args:
         num (int): Number of dice.
         sides (int): Number of sides on each die.
-        
+
     Returns:
         list[int]: List with minimum roll (1) for each die.
     """
@@ -343,11 +340,11 @@ def _assume_min_individual_dice(num: int, sides: int) -> list[int]:
 def _assume_max_individual_dice(num: int, sides: int) -> list[int]:
     """
     Helper function to assume max for individual dice.
-    
+
     Args:
         num (int): Number of dice.
         sides (int): Number of sides on each die.
-        
+
     Returns:
         list[int]: List with maximum roll for each die.
     """
@@ -357,10 +354,10 @@ def _assume_max_individual_dice(num: int, sides: int) -> list[int]:
 def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
     """
     Parses a dice term and rolls the dice.
-    
+
     Args:
         term (str): The dice term to parse and roll.
-        
+
     Returns:
         tuple[int, list[int]]: Total roll result and list of individual rolls.
     """
@@ -370,10 +367,10 @@ def parse_term_and_roll_dice(term: str) -> tuple[int, list[int]]:
 def parse_term_and_assume_min_dice(term: str) -> tuple[int, list[int]]:
     """
     Parses a dice term and assumes the minimum roll (1) for each die.
-    
+
     Args:
         term (str): The dice term to parse.
-        
+
     Returns:
         tuple[int, list[int]]: Total minimum result and list of minimum rolls.
     """
@@ -383,10 +380,10 @@ def parse_term_and_assume_min_dice(term: str) -> tuple[int, list[int]]:
 def parse_term_and_assume_max_dice(term: str) -> tuple[int, list[int]]:
     """
     Parses a dice term and assumes the maximum roll for each die.
-    
+
     Args:
         term (str): The dice term to parse.
-        
+
     Returns:
         tuple[int, list[int]]: Total maximum result and list of maximum rolls.
     """
@@ -396,10 +393,10 @@ def parse_term_and_assume_max_dice(term: str) -> tuple[int, list[int]]:
 def roll_dice(term: str) -> int:
     """
     Rolls a dice term and returns the total.
-    
+
     Args:
         term (str): The dice term to roll.
-        
+
     Returns:
         int: The total result of the dice roll.
     """
@@ -453,7 +450,11 @@ def _process_dice_expression(
     except Exception as e:
         log_warning(
             f"Failed to evaluate '{processed_expr}': {e}",
-            {"expression": processed_expr, "error": str(e), "context": "dice_expression_evaluation"}
+            {
+                "expression": processed_expr,
+                "error": str(e),
+                "context": "dice_expression_evaluation",
+            },
         )
         return 0
 
@@ -461,10 +462,10 @@ def _process_dice_expression(
 def roll_dice_expression(expr: str) -> int:
     """
     Rolls a dice expression and returns the total.
-    
+
     Args:
         expr (str): The dice expression to roll.
-        
+
     Returns:
         int: The total result of the dice expression.
     """
@@ -474,10 +475,10 @@ def roll_dice_expression(expr: str) -> int:
 def parse_expr_and_assume_min_roll(expr: str) -> int:
     """
     Assumes the minimum roll (1) for all dice terms in the expression.
-    
+
     Args:
         expr (str): The dice expression to process.
-        
+
     Returns:
         int: The minimum possible result for the expression.
     """
@@ -487,10 +488,10 @@ def parse_expr_and_assume_min_roll(expr: str) -> int:
 def parse_expr_and_assume_max_roll(expr: str) -> int:
     """
     Assumes the maximum roll for all dice terms in the expression.
-    
+
     Args:
         expr (str): The dice expression to process.
-        
+
     Returns:
         int: The maximum possible result for the expression.
     """
@@ -501,11 +502,11 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 def roll_expression(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     """
     Rolls a dice expression with variable substitution.
-    
+
     Args:
         expr (str): The dice expression to roll.
         variables (Optional[dict[str, int]]): Variables to substitute in the expression.
-        
+
     Returns:
         int: The total result of the roll.
     """
@@ -524,11 +525,11 @@ def roll_expression(expr: str, variables: Optional[dict[str, int]] = None) -> in
 def get_max_roll(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     """
     Gets the maximum possible roll for a dice expression.
-    
+
     Args:
         expr (str): The dice expression to analyze.
         variables (Optional[dict[str, int]]): Variables to substitute in the expression.
-        
+
     Returns:
         int: The maximum possible result.
     """
@@ -580,7 +581,12 @@ def roll_and_describe(
     except Exception as e:
         log_warning(
             f"Failed to evaluate '{breakdown}': {e}",
-            {"breakdown": breakdown, "original_expr": original_expr, "error": str(e), "context": "dice_breakdown_evaluation"}
+            {
+                "breakdown": breakdown,
+                "original_expr": original_expr,
+                "error": str(e),
+                "context": "dice_breakdown_evaluation",
+            },
         )
         return 0, f"{original_expr} = ERROR", []
 
@@ -588,11 +594,11 @@ def roll_and_describe(
 def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -> int:
     """
     Evaluates a mathematical expression with variable substitution.
-    
+
     Args:
         expr (str): The expression to evaluate.
         variables (Optional[dict[str, int]]): Variables to substitute in the expression.
-        
+
     Returns:
         int: The result of the expression evaluation.
     """
@@ -609,7 +615,13 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
     except Exception as e:
         log_warning(
             f"Failed to evaluate '{substituted}': {e}",
-            {"expression": substituted, "original": expr, "variables": variables or {}, "error": str(e), "context": "variable_expression_evaluation"}
+            {
+                "expression": substituted,
+                "original": expr,
+                "variables": variables or {},
+                "error": str(e),
+                "context": "variable_expression_evaluation",
+            },
         )
         return 0
 
@@ -617,11 +629,11 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
 def simplify_expression(expr: str, variables: Optional[dict[str, int]] = None) -> str:
     """
     Simplifies an expression by substituting variables and evaluating arithmetic.
-    
+
     Args:
         expr (str): The expression to simplify.
         variables (Optional[dict[str, int]]): Variables to substitute in the expression.
-        
+
     Returns:
         str: The simplified expression.
     """
@@ -639,13 +651,13 @@ def simplify_expression(expr: str, variables: Optional[dict[str, int]] = None) -
 def make_bar(current: int, maximum: int, length: int = 10, color: str = "white") -> str:
     """
     Creates a visual progress bar representation.
-    
+
     Args:
         current (int): The current value.
         maximum (int): The maximum value.
         length (int): The length of the bar in characters. Defaults to 10.
         color (str): The color for the filled portion. Defaults to "white".
-        
+
     Returns:
         str: A formatted progress bar string.
     """

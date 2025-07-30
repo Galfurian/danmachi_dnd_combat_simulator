@@ -5,10 +5,16 @@ from logging import debug
 from typing import List, Optional
 
 from core.utils import cprint, crule
-from core.error_handling import log_warning
+from catchery import *
 from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions.abilities import (
+    OffensiveAbility,
+    HealingAbility,
+    BuffAbility,
+    DebuffAbility,
+)
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_base_attack_action,
@@ -17,6 +23,10 @@ from combat.npc_ai import (
     choose_best_healing_spell_action,
     choose_best_target_for_weapon,
     choose_best_weapon_for_situation,
+    choose_best_healing_ability_action,
+    choose_best_offensive_ability_action,
+    choose_best_buff_ability_action,
+    choose_best_debuff_ability_action,
     get_actions_by_type,
     get_natural_attacks,
 )
@@ -299,7 +309,7 @@ class CombatManager:
 
             # Add cooldown only once for the attack type
             if attack_num == 0:
-                self.player.add_cooldown(attack, attack.cooldown)
+                self.player.add_cooldown(attack)
 
         # Mark the action type as used.
         self.player.use_action_type(ActionType.STANDARD)
@@ -353,7 +363,7 @@ class CombatManager:
                 # Mark the action type as used.
                 self.player.use_action_type(spell.action_type)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell, spell.cooldown)
+                self.player.add_cooldown(spell)
                 return True
         return False
 
@@ -491,11 +501,27 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell)
                 # Mark the action type as used.
                 npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
+
+        # Check for healing abilities.
+        healing_abilities: list[HealingAbility] = get_actions_by_type(
+            npc, HealingAbility
+        )
+        if healing_abilities:
+            result = choose_best_healing_ability_action(npc, allies, healing_abilities)
+            if result:
+                ability, targets = result
+                # Use the healing ability on the targets.
+                for t in targets:
+                    ability.execute(npc, t)
+                # Add the ability to the cooldowns if it has one.
+                npc.add_cooldown(ability)
+                # Mark the action type as used.
+                npc.use_action_type(ability.action_type)
 
         # Check for buff spells.
         spell_buffs: list[SpellBuff] = get_actions_by_type(npc, SpellBuff)
@@ -507,11 +533,25 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell)
                 # Mark the action type as used.
                 npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
+
+        # Check for buff abilities.
+        buff_abilities: list[BuffAbility] = get_actions_by_type(npc, BuffAbility)
+        if buff_abilities:
+            result = choose_best_buff_ability_action(npc, allies, buff_abilities)
+            if result:
+                ability, targets = result
+                # Use the buff ability on the targets.
+                for t in targets:
+                    ability.execute(npc, t)
+                # Add the ability to the cooldowns if it has one.
+                npc.add_cooldown(ability)
+                # Mark the action type as used.
+                npc.use_action_type(ability.action_type)
 
         # Check for debuff spells.
         spell_debuffs: list[SpellDebuff] = get_actions_by_type(npc, SpellDebuff)
@@ -523,11 +563,25 @@ class CombatManager:
                 for t in targets:
                     spell.cast_spell(npc, t, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell)
                 # Mark the action type as used.
                 npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
+
+        # Check for debuff abilities.
+        debuff_abilities: list[DebuffAbility] = get_actions_by_type(npc, DebuffAbility)
+        if debuff_abilities:
+            result = choose_best_debuff_ability_action(npc, enemies, debuff_abilities)
+            if result:
+                ability, targets = result
+                # Use the debuff ability on the targets.
+                for t in targets:
+                    ability.execute(npc, t)
+                # Add the ability to the cooldowns if it has one.
+                npc.add_cooldown(ability)
+                # Mark the action type as used.
+                npc.use_action_type(ability.action_type)
 
         # Check for attack spells.
         spell_attacks: list[SpellAttack] = get_actions_by_type(npc, SpellAttack)
@@ -539,11 +593,29 @@ class CombatManager:
                 for target in targets:
                     spell.cast_spell(npc, target, mind_level)
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell, spell.cooldown)
+                npc.add_cooldown(spell)
                 # Mark the action type as used.
                 npc.use_action_type(spell.action_type)
                 # Remove the MIND cost from the NPC.
                 npc.mind -= mind_level
+
+        # Check for offensive abilities.
+        offensive_abilities: list[OffensiveAbility] = get_actions_by_type(
+            npc, OffensiveAbility
+        )
+        if offensive_abilities:
+            result = choose_best_offensive_ability_action(
+                npc, enemies, offensive_abilities
+            )
+            if result:
+                ability, targets = result
+                # Use the offensive ability on the targets.
+                for target in targets:
+                    ability.execute(npc, target)
+                # Add the ability to the cooldowns if it has one.
+                npc.add_cooldown(ability)
+                # Mark the action type as used.
+                npc.use_action_type(ability.action_type)
 
         # Check for base attacks.
         weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
@@ -574,7 +646,7 @@ class CombatManager:
 
                 # Add cooldown and mark action type only once after all attacks
                 if used_weapon_attack:
-                    npc.add_cooldown(best_weapon, best_weapon.cooldown)
+                    npc.add_cooldown(best_weapon)
                     npc.use_action_type(best_weapon.action_type)
 
         # Check for natural attacks.
@@ -587,7 +659,7 @@ class CombatManager:
                     # Perform the natural attack on the target.
                     attack.execute(npc, target)
                     # Add the attack to the cooldowns if it has one.
-                    npc.add_cooldown(attack, attack.cooldown)
+                    npc.add_cooldown(attack)
                     # Mark the action type as used.
                     npc.use_action_type(attack.action_type)
 

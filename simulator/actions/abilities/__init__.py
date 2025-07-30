@@ -11,7 +11,6 @@ from actions.abilities.ability_buff import BuffAbility
 from actions.abilities.ability_debuff import DebuffAbility
 from actions.abilities.ability_healing import HealingAbility
 from actions.abilities.ability_offensive import OffensiveAbility
-from actions.abilities.ability_utility import UtilityAbility
 from actions.abilities.ability_serializer import AbilityDeserializer, AbilitySerializer
 
 __all__ = [
@@ -20,7 +19,6 @@ __all__ = [
     "HealingAbility",
     "BuffAbility",
     "DebuffAbility",
-    "UtilityAbility",
     "AbilityDeserializer",
     "AbilitySerializer",
 ]

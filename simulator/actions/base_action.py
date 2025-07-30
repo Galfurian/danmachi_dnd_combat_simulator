@@ -1,22 +1,35 @@
 from logging import debug
-from typing import Any
+from typing import Any, Tuple
 
-from combat.damage import *
-from core.utils import *
-from core.constants import *
-from core.error_handling import (
-    log_error,
+from combat.damage import (
+    DamageComponent,
+    roll_and_describe,
+    roll_damage_components_no_mind,
+)
+from core.utils import (
+    parse_expr_and_assume_max_roll,
+    parse_expr_and_assume_min_roll,
+    substitute_variables,
+)
+from core.constants import (
+    ActionType,
+    ActionCategory,
+    apply_character_type_color,
+    is_oponent,
+)
+from catchery import (
+    ErrorSeverity,
     log_warning,
-    require_non_empty_string,
-    require_enum_type,
+    safe_operation,
+    validate_object,
+    validate_type,
     ensure_string,
-    ensure_non_negative_int,
     ensure_int_in_range,
-    ensure_list_of_strings,
-    validate_required_object,
+    ensure_non_negative_int,
+    ensure_list_of_type,
     safe_get_attribute,
 )
-from effects import *
+from effects import Effect
 
 
 class BaseAction:
@@ -52,29 +65,48 @@ class BaseAction:
         Raises:
             ValueError: If critical validations fail.
         """
+        ctx = {
+            "name": name,
+            "action_type": action_type,
+            "category": category,
+            "description": description,
+            "cooldown": cooldown,
+            "maximum_uses": maximum_uses,
+            "target_restrictions": target_restrictions or [],
+        }
+
         # === CRITICAL VALIDATIONS ===
-        # These will raise ValueError if invalid - action cannot be created
-        self.name = require_non_empty_string(name, "action name", {"name": name})
-        self.action_type = require_enum_type(
-            action_type, ActionType, "action type", {"name": name}
-        )
-        self.category = require_enum_type(
-            category, ActionCategory, "action category", {"name": name}
-        )
+        self.name = validate_type(name, "Action name", str, ctx)
+        self.action_type = validate_type(action_type, "Action type", ActionType, ctx)
+        self.category = validate_type(category, "Action category", ActionCategory, ctx)
 
         # === NON-CRITICAL VALIDATIONS ===
-        # These will log warnings and auto-correct - action can still be created
-        self.description = ensure_string(
-            description, "action description", "", {"name": name}
+
+        self.description = ensure_string(description, "Action description", "", ctx)
+        self._cooldown = ensure_int_in_range(
+            cooldown,
+            "Action cooldown",
+            -1,
+            None,
+            -1,
+            ctx,
         )
-        self.cooldown = ensure_non_negative_int(
-            cooldown, "action cooldown", 0, {"name": name}
+        self._maximum_uses = ensure_int_in_range(
+            maximum_uses,
+            "Action maximum_uses",
+            -1,
+            None,
+            -1,
+            ctx,
         )
-        self.maximum_uses = ensure_int_in_range(
-            maximum_uses, "action maximum_uses", -1, None, -1, {"name": name}
-        )
-        self.target_restrictions = ensure_list_of_strings(
-            target_restrictions, "target restrictions", [], {"name": name}
+        self.target_restrictions = ensure_list_of_type(
+            target_restrictions,
+            "Action target restrictions",
+            str,
+            [],
+            lambda x: str(x).strip(),
+            None,
+            ctx,
         )
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -96,61 +128,71 @@ class BaseAction:
     # GENERIC METHODS
     # ===========================================================================
 
-    def _validate_actor_and_target(self, actor: Any, target: Any) -> bool:
-        """Validate that actor and target are valid characters with required methods.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
+    def has_limited_uses(self) -> bool:
+        """Check if the action has limited uses.
 
         Returns:
-            bool: True if both actor and target are valid, False otherwise
+            bool: True if maximum uses is greater than 0, False if unlimited.
         """
-        try:
-            if actor:
-                validate_required_object(
-                    actor,
-                    "actor",
-                    [
-                        "name",
-                        "char_type",
-                        "mind",
-                        "MIND_MAX",
-                        "hp",
-                        "HP_MAX",
-                        "is_on_cooldown",
-                        "get_expression_variables",
-                    ],
-                    {"action": self.name},
-                )
-            if target:
-                validate_required_object(
-                    target,
-                    "target",
-                    [
-                        "name",
-                        "char_type",
-                        "mind",
-                        "MIND_MAX",
-                        "hp",
-                        "HP_MAX",
-                        "is_on_cooldown",
-                        "get_expression_variables",
-                    ],
-                    {"action": self.name},
-                )
-        except Exception as e:
-            log_error(
-                f"Error executing {self.name}: {str(e)}",
-                {
-                    "action": self.name,
-                    "error": str(e),
-                    "actor": getattr(actor, "name", "Unknown"),
-                    "target": getattr(target, "name", "Unknown"),
-                },
-                e,
-            )
-            return False
+        return self._maximum_uses > 0
+
+    def get_maximum_uses(self) -> int:
+        """Get the maximum number of uses for this action.
+
+        Returns:
+            int: Maximum uses per encounter/day (-1 for unlimited).
+        """
+        return self._maximum_uses
+
+    def has_cooldown(self) -> bool:
+        """Check if the action has a cooldown period.
+
+        Returns:
+            bool: True if cooldown is greater than 0, False otherwise.
+        """
+        return self._cooldown > 0
+
+    def get_cooldown(self) -> int:
+        """Get the cooldown period for this action.
+
+        Returns:
+            int: Cooldown period in turns (-1 for no cooldown).
+        """
+        return self._cooldown
+
+    @safe_operation(
+        default_value=False,
+        error_message="Character validation failed",
+        severity=ErrorSeverity.HIGH,
+    )
+    def _validate_character(
+        self, character: Any, context: dict[str, Any] | None = None
+    ) -> bool:
+        """Validate that a character object has the required attributes.
+
+        Args:
+            character (Any): The character object to validate.
+            context (dict[str, Any]): Context for error messages.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        validate_object(
+            character,
+            "character",
+            context or {"action": self.name},
+            [
+                "name",
+                "char_type",
+                "mind",
+                "MIND_MAX",
+                "hp",
+                "HP_MAX",
+                "is_on_cooldown",
+                "get_expression_variables",
+                "effects_module",
+            ],
+        )
         return True
 
     def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
@@ -176,7 +218,7 @@ class BaseAction:
         actor: Any,
         target: Any,
         effect: Effect | None,
-        mind_level: int | None = None,
+        mind_level: int = 0,
     ) -> bool:
         """Apply an effect to a target character.
 
@@ -190,7 +232,9 @@ class BaseAction:
             bool: True if effect was successfully applied, False otherwise
         """
         # Validate actor and target.
-        if not self._validate_actor_and_target(actor, target):
+        if not self._validate_character(actor):
+            return False
+        if not self._validate_character(target):
             return False
         # Validate effect is provided and is an instance of Effect.
         if not effect or not isinstance(effect, Effect):
@@ -235,7 +279,7 @@ class BaseAction:
         Returns:
             Tuple[int, str, int]: (total_result, description, raw_d20_roll)
         """
-        if not self._validate_actor_and_target(actor, None):
+        if not self._validate_character(actor):
             return 1, "1D20: 1 (error)", 1
         # Build attack expression
         expr = "1D20"
@@ -244,7 +288,7 @@ class BaseAction:
             expr += f" + {attack_bonus_expr}"
 
         # Process bonus list
-        bonus_list = ensure_list_of_strings(bonus_list, "bonus list", [])
+        bonus_list = ensure_list_of_type(bonus_list, "bonus list", str, [])
         for bonus in bonus_list:
             if bonus:  # Only add non-empty bonuses
                 expr += f" + {bonus}"
@@ -263,6 +307,65 @@ class BaseAction:
 
         total, desc, rolls = roll_and_describe(expr, variables)
         return total, desc, rolls[0] if rolls else 0
+
+    def _resolve_attack_roll(
+        self,
+        actor: Any,
+        target: Any,
+        attack_bonus_expr: str = "",
+        bonus_list: list[str] | None = None,
+        target_ac_attr: str = "AC",
+        auto_hit_on_crit: bool = True,
+        auto_miss_on_fumble: bool = True,
+    ) -> dict:
+        """
+        Perform an attack roll, returning a structured result with crit/fumble/hit info.
+
+        Args:
+            actor (Any): The character making the attack.
+            target (Any): The character being attacked.
+            attack_bonus_expr (str): Attack bonus expression (e.g., "STR + PROF").
+            bonus_list (list[str]): Additional bonus expressions.
+            target_ac_attr (str): Attribute name for target's AC (default: "AC").
+            auto_hit_on_crit (bool): If True, crit always hits.
+            auto_miss_on_fumble (bool): If True, fumble always misses.
+
+        Returns:
+            dict: {
+                'hit': bool,
+                'is_critical': bool,
+                'is_fumble': bool,
+                'attack_total': int,
+                'attack_roll_desc': str,
+                'msg': str,
+                'd20_roll': int,
+            }
+        """
+        if bonus_list is None:
+            bonus_list = []
+        attack_total, attack_roll_desc, d20_roll = self._roll_attack_with_crit(
+            actor, attack_bonus_expr, bonus_list
+        )
+        is_critical = d20_roll == 20
+        is_fumble = d20_roll == 1
+        target_ac = getattr(target, target_ac_attr, 0)
+        # Determine hit logic
+        if is_fumble and auto_miss_on_fumble:
+            hit = False
+        elif is_critical and auto_hit_on_crit:
+            hit = True
+        else:
+            hit = attack_total >= target_ac
+        msg = f"rolled ({attack_roll_desc}) {attack_total} vs AC {target_ac}"
+        return {
+            "hit": hit,
+            "is_critical": is_critical,
+            "is_fumble": is_fumble,
+            "attack_total": attack_total,
+            "attack_roll_desc": attack_roll_desc,
+            "msg": msg,
+            "d20_roll": d20_roll,
+        }
 
     # ============================================================================
     # COMMON UTILITY METHODS (SHARED BY DAMAGE-DEALING ABILITIES)
@@ -285,7 +388,7 @@ class BaseAction:
             str: Complete damage expression with variables replaced by values
         """
         # Validate actor.
-        if not self._validate_actor_and_target(actor, None):
+        if not self._validate_character(actor):
             return "0"
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
@@ -327,7 +430,7 @@ class BaseAction:
             int: Minimum total damage across all damage components
         """
         # Validate actor.
-        if not self._validate_actor_and_target(actor, None):
+        if not self._validate_character(actor):
             return 0
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
@@ -371,7 +474,7 @@ class BaseAction:
             int: Maximum total damage across all damage components
         """
         # Validate actor.
-        if not self._validate_actor_and_target(actor, None):
+        if not self._validate_character(actor):
             return 0
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
@@ -415,7 +518,9 @@ class BaseAction:
         from core.constants import ActionCategory
 
         # Validate actor and target.
-        if not self._validate_actor_and_target(actor, target):
+        if not self._validate_character(actor):
+            return False
+        if not self._validate_character(target):
             return False
 
         # Both must be alive to target.
@@ -504,3 +609,25 @@ class BaseAction:
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement the from_dict method")
+
+
+class ActionSerializer:
+    """Utility class for serializing and deserializing action instances."""
+
+    @staticmethod
+    def serialize(ability: BaseAction) -> dict[str, Any]:
+        """Serialize common fields shared by all abilities."""
+        data = {
+            "class": ability.__class__.__name__,
+            "name": ability.name,
+            "type": ability.action_type.name,
+            "description": ability.description,
+            "": ability.target_restrictions or [],
+        }
+        if ability.has_cooldown():
+            data["cooldown"] = ability.get_cooldown()
+        if ability.has_limited_uses():
+            data["maximum_uses"] = ability.get_maximum_uses()
+        if ability.target_restrictions:
+            data["target_restrictions"] = ability.target_restrictions
+        return data

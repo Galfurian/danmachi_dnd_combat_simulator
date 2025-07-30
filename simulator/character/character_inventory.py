@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from core.constants import ArmorSlot
-from core.error_handling import log_warning
+from catchery import *
 from logging import debug
 from items.armor import Armor
 from items.weapon import Weapon
@@ -33,9 +33,14 @@ class CharacterInventory:
         Returns:
             int: The number of hands currently occupied.
         """
-        used_hands = sum(item.hands_required for item in self._character.equipped_weapons)
+        used_hands = sum(
+            item.get_required_hands()
+            for item in self._character.equipped_weapons
+            if item.requires_hands()
+        )
         used_hands += sum(
-            armor.armor_slot == ArmorSlot.SHIELD for armor in self._character.equipped_armor
+            armor.armor_slot == ArmorSlot.SHIELD
+            for armor in self._character.equipped_armor
         )
         return used_hands
 
@@ -59,13 +64,18 @@ class CharacterInventory:
             bool: True if the weapon can be equipped, False otherwise.
         """
         # If the weapon requires no hands, it can always be equipped.
-        if weapon.hands_required <= 0:
+        if not weapon.requires_hands():
             return True
         # Check if the character has enough free hands to equip the weapon.
-        if weapon.hands_required > self.get_free_hands():
+        if weapon.get_required_hands() > self.get_free_hands():
             log_warning(
                 f"{self._character.name} does not have enough free hands to equip {weapon.name}.",
-                {"character": self._character.name, "weapon": weapon.name, "hands_required": weapon.hands_required, "free_hands": self.get_free_hands()}
+                {
+                    "character": self._character.name,
+                    "weapon": weapon.name,
+                    "hands_required": weapon.get_required_hands(),
+                    "free_hands": self.get_free_hands(),
+                },
             )
             return False
         return True
@@ -87,7 +97,7 @@ class CharacterInventory:
             return True
         log_warning(
             f"{self._character.name} cannot equip {weapon.name}",
-            {"character": self._character.name, "weapon": weapon.name}
+            {"character": self._character.name, "weapon": weapon.name},
         )
         return False
 
@@ -108,7 +118,7 @@ class CharacterInventory:
             return True
         log_warning(
             f"{self._character.name} does not have {weapon.name} equipped",
-            {"character": self._character.name, "weapon": weapon.name}
+            {"character": self._character.name, "weapon": weapon.name},
         )
         return False
 
@@ -127,7 +137,11 @@ class CharacterInventory:
             if self.get_free_hands() <= 0:
                 log_warning(
                     f"{self._character.name} does not have a free hand to equip {armor.name}",
-                    {"character": self._character.name, "armor": armor.name, "free_hands": self.get_free_hands()}
+                    {
+                        "character": self._character.name,
+                        "armor": armor.name,
+                        "free_hands": self.get_free_hands(),
+                    },
                 )
                 return False
             return True
@@ -136,7 +150,12 @@ class CharacterInventory:
             if equipped.armor_slot == armor.armor_slot:
                 log_warning(
                     f"{self._character.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
-                    {"character": self._character.name, "armor": armor.name, "slot": armor.armor_slot.name, "equipped": equipped.name}
+                    {
+                        "character": self._character.name,
+                        "armor": armor.name,
+                        "slot": armor.armor_slot.name,
+                        "equipped": equipped.name,
+                    },
                 )
                 return False
         # If the armor slot is not occupied, we can equip it.
@@ -159,7 +178,11 @@ class CharacterInventory:
             return True
         log_warning(
             f"{self._character.name} cannot equip {armor.name} because the armor slot is already occupied",
-            {"character": self._character.name, "armor": armor.name, "slot": armor.armor_slot.name}
+            {
+                "character": self._character.name,
+                "armor": armor.name,
+                "slot": armor.armor_slot.name,
+            },
         )
         return False
 
@@ -180,6 +203,6 @@ class CharacterInventory:
             return True
         log_warning(
             f"{self._character.name} does not have {armor.name} equipped",
-            {"character": self._character.name, "armor": armor.name}
+            {"character": self._character.name, "armor": armor.name},
         )
         return False

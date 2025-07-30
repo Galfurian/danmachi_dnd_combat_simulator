@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple
 from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
-from core.error_handling import log_warning
+from catchery import *
 from core.constants import (
     ActionType,
     ArmorSlot,
@@ -513,14 +513,13 @@ class Character:
         or a round."""
         return self.actions_module.turn_update()
 
-    def add_cooldown(self, action: BaseAction, duration: int):
+    def add_cooldown(self, action: BaseAction):
         """Adds a cooldown to an action.
 
         Args:
             action_name (BaseAction): The action to add a cooldown to.
-            duration (int): The duration of the cooldown in turns.
         """
-        return self.actions_module.add_cooldown(action, duration)
+        return self.actions_module.add_cooldown(action)
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.

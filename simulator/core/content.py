@@ -15,7 +15,7 @@ from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from items.armor import Armor
 from items.weapon import Weapon
-from core.error_handling import log_critical, log_error
+from catchery import *
 
 
 class ContentRepository(metaclass=Singleton):
@@ -129,7 +129,7 @@ class ContentRepository(metaclass=Singleton):
 
             self.armors = load_json_file("armors.json", self._load_armors, "armors")
             self.spells = load_json_file("spells.json", self._load_actions, "spells")
-            self.actions = load_json_file("actions.json", self._load_actions, "actions")
+            self.actions = load_json_file("abilities.json", self._load_actions, "actions")
 
             cprint("Content loaded successfully!\n")
 

@@ -169,8 +169,8 @@ def print_base_attack_sheet(attack: BaseAttack, padding: int = 2) -> None:
 def print_weapon_sheet(weapon: Weapon, padding: int = 2) -> None:
     """Prints the details of a weapon in a formatted way."""
     sheet: str = f"[blue]{weapon.name}[/], "
-    if weapon.hands_required:
-        sheet += f"{weapon.hands_required} hands, "
+    if weapon.requires_hands():
+        sheet += f"{weapon.get_required_hands()} hands, "
     sheet += f"[italic]{weapon.description}[/]"
     cprint(Padding(sheet, (0, padding)))
     for attack in weapon.attacks:
@@ -201,10 +201,12 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
-    sheet += f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name}[/], "
+    sheet += (
+        f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name}[/], "
+    )
     sheet += f"mind {spell.mind_cost}, "
-    if spell.maximum_uses > 0:
-        sheet += f"max uses: {spell.maximum_uses}, "
+    if spell.has_limited_uses():
+        sheet += f"max uses: {spell.get_maximum_uses()}, "
     cprint(Padding(sheet, (0, padding)))
     padding += 2
     sheet = f"[italic]{spell.description}[/]"
@@ -238,12 +240,14 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
     """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
-    sheet += f"[{get_action_type_color(ability.action_type)}]{ability.action_type.name}[/], "
+    sheet += (
+        f"[{get_action_type_color(ability.action_type)}]{ability.action_type.name}[/], "
+    )
 
-    if ability.cooldown > 0:
-        sheet += f"cooldown: {ability.cooldown}, "
-    if ability.maximum_uses > 0:
-        sheet += f"max uses: {ability.maximum_uses}, "
+    if ability.has_cooldown():
+        sheet += f"cooldown: {ability.get_cooldown()}, "
+    if ability.has_limited_uses():
+        sheet += f"max uses: {ability.get_maximum_uses()}, "
 
     cprint(Padding(sheet, (0, padding)))
     padding += 2
@@ -262,9 +266,6 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         cprint(Padding(sheet, (0, padding)))
     elif isinstance(ability, BuffAbility):
         sheet = f"Applies beneficial effect"
-        cprint(Padding(sheet, (0, padding)))
-    elif isinstance(ability, UtilityAbility):
-        sheet = f"Provides utility function"
         cprint(Padding(sheet, (0, padding)))
 
     # Handle ability effects
@@ -453,8 +454,8 @@ def print_content_repository_summary() -> None:
         cprint(f"\n[green]Weapons ({len(repo.weapons)})[/green]:")
         for name, weapon in repo.weapons.items():
             weapon_info = f"[blue]{name}[/]"
-            if weapon.hands_required:
-                weapon_info += f" - {weapon.hands_required}H"
+            if weapon.requires_hands():
+                weapon_info += f" - {weapon.get_required_hands()}H"
             cprint(Padding(weapon_info, (0, 2)))
 
     # Armor
@@ -469,9 +470,7 @@ def print_content_repository_summary() -> None:
         cprint(f"\n[green]Actions & Abilities ({len(repo.actions)})[/green]:")
         for name, action in repo.actions.items():
             action_info = f"[{get_action_category_color(action.category)}]{name}[/] "
-            action_info += (
-                f"([{get_action_type_color(action.action_type)}]{action.action_type.name}[/])"
-            )
+            action_info += f"([{get_action_type_color(action.action_type)}]{action.action_type.name}[/])"
             cprint(Padding(action_info, (0, 2)))
 
     # Spells

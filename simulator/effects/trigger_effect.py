@@ -1,7 +1,7 @@
 from typing import Any, Optional, Callable
 from enum import Enum
 
-from core.error_handling import log_error, log_warning
+from catchery import *
 from combat.damage import DamageComponent
 
 from .base_effect import Effect

@@ -8,7 +8,7 @@ following the same pattern as ability_serializer.py for clean separation of conc
 from typing import Any, Optional
 
 from core.constants import BonusType
-from core.error_handling import log_error, log_warning
+from catchery import *
 from combat.damage import DamageComponent
 
 # Import all effect classes from their new locations

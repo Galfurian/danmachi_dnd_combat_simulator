@@ -8,7 +8,7 @@ from core.constants import (
     get_damage_type_emoji,
 )
 from core.utils import roll_and_describe
-from core.error_handling import log_error, log_warning
+from catchery import *
 
 
 class DamageComponent:

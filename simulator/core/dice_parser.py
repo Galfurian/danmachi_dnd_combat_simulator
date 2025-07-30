@@ -5,7 +5,7 @@ Safe dice expression parser to replace eval() usage.
 import re
 import random
 from typing import Tuple
-from core.error_handling import log_error, log_warning
+from catchery import *
 
 
 class DiceParser:
@@ -47,8 +47,8 @@ class DiceParser:
                 f"Error processing dice expression: {str(e)}",
                 {"expression": expression},
                 e,
-            )
-            raise ValueError(f"Error processing expression: {e}")
+                True,
+            ) ValueError(f"Error processing expression: {e}")
 
         # Handle simple numbers
         if expr.isdigit():
@@ -179,5 +179,5 @@ class DiceParser:
                 f"Unexpected error parsing dice expression '{expression}': {str(e)}",
                 {"expression": expression},
                 e,
-            )
-            raise ValueError(f"Unexpected error: {e}")
+                True,
+            ) ValueError(f"Unexpected error: {e}")

@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from core.constants import BonusType
-from core.error_handling import log_error, log_warning, log_critical
+from catchery import *
 
 
 class Effect:
@@ -164,6 +164,7 @@ class Effect:
         """Convert the effect to a dictionary representation."""
         # Import here to avoid circular imports
         from .effect_serialization import EffectSerializer
+
         return EffectSerializer.serialize(self)
 
     @staticmethod
@@ -178,6 +179,7 @@ class Effect:
         """
         # Import here to avoid circular imports
         from .effect_serialization import EffectDeserializer
+
         return EffectDeserializer.deserialize(data)
 
 
@@ -203,7 +205,7 @@ class Modifier:
             AssertionError: If validation conditions are not met.
         """
         from combat.damage import DamageComponent
-        
+
         assert isinstance(
             self.bonus_type, BonusType
         ), f"Bonus type '{self.bonus_type}' must be of type BonusType."
@@ -234,6 +236,7 @@ class Modifier:
         """Convert the modifier to a dictionary representation."""
         # Import here to avoid circular imports
         from .effect_serialization import ModifierSerializer
+
         return ModifierSerializer.serialize(self)
 
     @staticmethod
@@ -241,6 +244,7 @@ class Modifier:
         """Create a Modifier instance from a dictionary representation."""
         # Import here to avoid circular imports
         from .effect_serialization import ModifierDeserializer
+
         return ModifierDeserializer.deserialize(data)
 
     def __eq__(self, other: object) -> bool:
@@ -260,7 +264,7 @@ class Modifier:
     def __hash__(self) -> int:
         """Make the modifier hashable for use in sets and dictionaries."""
         from combat.damage import DamageComponent
-        
+
         if isinstance(self.value, DamageComponent):
             # For DamageComponent, use its string representation for hashing
             return hash(
@@ -271,3 +275,21 @@ class Modifier:
     def __repr__(self) -> str:
         """String representation of the modifier."""
         return f"Modifier({self.bonus_type.name}, {self.value})"
+
+
+def ensure_effect(
+    effect: Any,
+    name: str,
+    default: Effect | None = None,
+    context: dict[str, Any] | None = None,
+) -> Any:
+    if effect is not None and not isinstance(effect, Effect):
+        log_warning(
+            f"{name} must be either Effect or None, got: {type(effect).__name__}, setting to {default}",
+            {
+                **(context or {}),
+                "effect_type": type(effect).__name__,
+            },
+        )
+        effect = default
+    return effect

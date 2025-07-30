@@ -11,10 +11,10 @@ from typing import Any
 from actions.abilities.ability_buff import BuffAbility
 from actions.abilities.ability_healing import HealingAbility
 from actions.abilities.ability_offensive import OffensiveAbility
-from actions.abilities.ability_utility import UtilityAbility
 from actions.abilities.base_ability import BaseAbility
-from core.constants import ActionCategory, ActionType
-from core.error_handling import log_critical
+from actions.base_action import ActionSerializer
+from core.constants import ActionType
+from catchery import log_critical
 from combat.damage import DamageComponent
 from effects.base_effect import Effect
 
@@ -36,9 +36,9 @@ class AbilityDeserializer:
         Returns:
             BaseAbility | None: Instance of the appropriate subclass, or None if not recognized.
         """
+        ability_name = data.get("name", "Unknown")
+        ability_class = data.get("class", "")
         try:
-            ability_class = data.get("class", "")
-
             if ability_class == "BaseAbility":
                 # For backward compatibility, default to OffensiveAbility
                 return AbilityDeserializer._deserialize_offensive_ability(data)
@@ -48,19 +48,16 @@ class AbilityDeserializer:
                 return AbilityDeserializer._deserialize_healing_ability(data)
             elif ability_class == "BuffAbility":
                 return AbilityDeserializer._deserialize_buff_ability(data)
-            elif ability_class == "UtilityAbility":
-                return AbilityDeserializer._deserialize_utility_ability(data)
             else:
                 # Not a recognized ability class - return None for other action types
                 return None
         except Exception as e:
-            ability_name = data.get("name", "Unknown")
             log_critical(
                 f"Error creating ability '{ability_name}': {str(e)}",
                 {"ability_name": ability_name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     @staticmethod
     def _deserialize_offensive_ability(data: dict[str, Any]) -> OffensiveAbility:
@@ -142,29 +139,6 @@ class AbilityDeserializer:
             target_restrictions=data.get("target_restrictions"),
         )
 
-    @staticmethod
-    def _deserialize_utility_ability(data: dict[str, Any]) -> UtilityAbility:
-        """
-        Create UtilityAbility from dictionary data.
-
-        Args:
-            data (dict[str, Any]): Dictionary containing utility ability configuration data.
-
-        Returns:
-            UtilityAbility: Configured utility ability instance.
-        """
-        return UtilityAbility(
-            name=data["name"],
-            action_type=ActionType[data["type"]],
-            description=data.get("description", ""),
-            cooldown=data.get("cooldown", 0),
-            maximum_uses=data.get("maximum_uses", -1),
-            utility_function=data.get("utility_function", ""),
-            effect=Effect.from_dict(data["effect"]) if data.get("effect") else None,
-            target_expr=data.get("target_expr", ""),
-            target_restrictions=data.get("target_restrictions"),
-        )
-
 
 class AbilitySerializer:
     """Serializer for converting ability instances to dictionary format."""
@@ -189,8 +163,6 @@ class AbilitySerializer:
             return AbilitySerializer._serialize_healing_ability(ability)
         elif isinstance(ability, BuffAbility):
             return AbilitySerializer._serialize_buff_ability(ability)
-        elif isinstance(ability, UtilityAbility):
-            return AbilitySerializer._serialize_utility_ability(ability)
         else:
             raise ValueError(f"Unsupported ability type: {type(ability)}")
 
@@ -205,21 +177,11 @@ class AbilitySerializer:
         Returns:
             dict[str, Any]: Dictionary containing common ability fields.
         """
-        data = {
-            "class": ability.__class__.__name__,
-            "name": ability.name,
-            "type": ability.action_type.name,
-            "description": ability.description,
-            "cooldown": ability.cooldown,
-            "maximum_uses": ability.maximum_uses,
-        }
+        data = ActionSerializer.serialize(ability)
         if ability.target_expr:
             data["target_expr"] = ability.target_expr
-        if ability.target_restrictions is not None:
-            data["target_restrictions"] = ability.target_restrictions
         if ability.effect:
             data["effect"] = ability.effect.to_dict()
-
         return data
 
     @staticmethod
@@ -267,20 +229,4 @@ class AbilitySerializer:
         # Effect is guaranteed for BuffAbility
         assert ability.effect is not None, "BuffAbility must have an effect"
         data["effect"] = ability.effect.to_dict()
-        return data
-
-    @staticmethod
-    def _serialize_utility_ability(ability: UtilityAbility) -> dict[str, Any]:
-        """
-        Serialize UtilityAbility to dictionary format.
-
-        Args:
-            ability (UtilityAbility): The utility ability instance to serialize.
-
-        Returns:
-            dict[str, Any]: Dictionary representation of the utility ability
-        """
-        data = AbilitySerializer._serialize_base_ability(ability)
-        if ability.utility_function:
-            data["utility_function"] = ability.utility_function
         return data

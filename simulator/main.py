@@ -5,7 +5,7 @@ from pathlib import Path
 
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
-from core.error_handling import log_error, log_warning
+from catchery import *
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
 from character import Character, load_character, load_characters

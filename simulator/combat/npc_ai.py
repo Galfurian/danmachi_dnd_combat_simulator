@@ -363,7 +363,7 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
     )
 
 
-def get_actions_by_type(npc: Character, action_type: type) -> list[BaseAction]:
+def get_actions_by_type(npc: Character, action_type: type) -> list[Any]:
     """
     Generic function to get actions of a specific type.
 
@@ -372,7 +372,7 @@ def get_actions_by_type(npc: Character, action_type: type) -> list[BaseAction]:
         action_type (type): The type of action to filter for.
 
     Returns:
-        list[BaseAction]: List of actions of the specified type.
+        list[Any]: List of actions of the specified type.
     """
     return [a for a in get_all_combat_actions(npc) if isinstance(a, action_type)]
 

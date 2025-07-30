@@ -7,7 +7,7 @@ from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
 from core.constants import ActionType
-from core.error_handling import log_warning
+from catchery import *
 
 if TYPE_CHECKING:
     from character.main import Character
@@ -123,7 +123,9 @@ class CharacterActions:
         """
         available_actions: List[BaseAction] = []
         for action in self._character.actions.values():
-            if not self.is_on_cooldown(action) and self.has_action_type(action.action_type):
+            if not self.is_on_cooldown(action) and self.has_action_type(
+                action.action_type
+            ):
                 available_actions.append(action)
         return available_actions
 
@@ -135,7 +137,9 @@ class CharacterActions:
         """
         available_spells: List[Spell] = []
         for spell in self._character.spells.values():
-            if not self.is_on_cooldown(spell) and self.has_action_type(spell.action_type):
+            if not self.is_on_cooldown(spell) and self.has_action_type(
+                spell.action_type
+            ):
                 # Check if the character has enough mind points to cast the spell.
                 if self._character.mind >= (
                     spell.mind_cost[0] if spell.mind_cost else 0
@@ -160,15 +164,14 @@ class CharacterActions:
             return False
         return self.turn_flags["standard_action_used"]
 
-    def add_cooldown(self, action: BaseAction, duration: int) -> None:
+    def add_cooldown(self, action: BaseAction) -> None:
         """Add a cooldown to an action.
 
         Args:
             action (BaseAction): The action to add a cooldown to.
-            duration (int): The duration of the cooldown in turns.
         """
-        if action.name not in self._character.cooldowns and duration > 0:
-            self._character.cooldowns[action.name] = duration + 1
+        if action.name not in self._character.cooldowns and action.has_cooldown():
+            self._character.cooldowns[action.name] = action.get_cooldown()
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Check if an action is currently on cooldown.
@@ -188,17 +191,8 @@ class CharacterActions:
             action (BaseAction): The action to initialize uses for.
         """
         if action.name not in self._character.uses:
-            # For unlimited use actions (-1), don't track uses
-            if action.maximum_uses == -1:
-                self._character.uses[action.name] = -1  # Unlimited
-                debug(
-                    f"{self._character.name} initialized {action.name} with unlimited uses."
-                )
-            else:
-                self._character.uses[action.name] = action.maximum_uses
-                debug(
-                    f"{self._character.name} initialized {action.name} with {action.maximum_uses} uses."
-                )
+            if action.has_limited_uses():
+                self._character.uses[action.name] = action.get_maximum_uses()
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Return the remaining uses of an action.
@@ -209,26 +203,27 @@ class CharacterActions:
         Returns:
             int: The remaining uses of the action. Returns -1 for unlimited use actions.
         """
-        if action.maximum_uses == -1:
-            return -1  # Unlimited uses
+        # Unlimited uses.
+        if not action.has_limited_uses():
+            return -1
         return self._character.uses.get(action.name, 0)
 
-    def decrement_uses(self, action: BaseAction) -> None:
+    def decrement_uses(self, action: BaseAction) -> bool:
         """Decrement the uses of an action by 1.
 
         Args:
             action (BaseAction): The action to decrement uses for.
-        """
-        # Don't decrement unlimited use actions
-        if action.maximum_uses == -1:
-            return
 
+        Returns:
+            bool: True if the uses were decremented, False if not.
+        """
+        # Don't decrement unlimited use actions.
+        if not action.has_limited_uses():
+            return True
         if action.name in self._character.uses:
             if self._character.uses[action.name] > 0:
                 self._character.uses[action.name] -= 1
-                debug(
-                    f"{self._character.name} used {action.name}. Remaining uses: {self._character.uses[action.name]}"
-                )
+                return True
             else:
                 log_warning(
                     f"{self._character.name} has no remaining uses for {action.name}",
@@ -247,6 +242,7 @@ class CharacterActions:
                     "available_actions": list(self._character.uses.keys()),
                 },
             )
+        return False
 
     def turn_update(self) -> None:
         """Update the duration of all active effects and cooldowns."""

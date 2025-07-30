@@ -6,16 +6,7 @@ from typing import Any
 
 from actions.base_action import BaseAction
 from core.constants import ActionCategory, ActionType
-from core.error_handling import (
-    log_error,
-    log_warning,
-    log_critical,
-    ensure_non_negative_int,
-    ensure_string,
-    ensure_list_of_type,
-    safe_get_attribute,
-    validate_required_object,
-)
+from catchery import *
 from core.utils import evaluate_expression
 from effects.base_effect import Effect
 
@@ -44,7 +35,7 @@ class Spell(BaseAction):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new Spell.
-        
+
         Args:
             name (str): Display name of the spell.
             type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
@@ -57,7 +48,7 @@ class Spell(BaseAction):
             target_expr (str): Expression determining number of targets ("" = single target).
             requires_concentration (bool): Whether spell requires ongoing mental focus.
             target_restrictions (list[str] | None): Override default targeting if needed.
-        
+
         Raises:
             ValueError: If name is empty or type/category are invalid.
         """
@@ -80,8 +71,8 @@ class Spell(BaseAction):
             # Validate mind_cost list using helper
             self.mind_cost = ensure_list_of_type(
                 mind_cost,
-                int,
                 "mind cost",
+                int,
                 [0],
                 converter=lambda x: (
                     max(0, int(x)) if isinstance(x, (int, float)) else 0
@@ -110,8 +101,8 @@ class Spell(BaseAction):
                 f"Error initializing Spell {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     # ============================================================================
     # TARGETING SYSTEM METHODS
@@ -119,7 +110,7 @@ class Spell(BaseAction):
 
     def is_single_target(self) -> bool:
         """Check if the spell targets a single entity.
-        
+
         Returns:
             bool: True if spell targets one entity, False for multi-target.
         """
@@ -127,11 +118,11 @@ class Spell(BaseAction):
 
     def target_count(self, actor: Any, mind_level: int) -> int:
         """Calculate the number of targets this spell can affect.
-        
+
         Args:
             actor (Any): The character casting the spell (must have expression variables).
             mind_level (int): The spell level being used for casting.
-        
+
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions).
         """
@@ -148,14 +139,14 @@ class Spell(BaseAction):
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute spell - delegates to cast_spell method.
-        
+
         Args:
             actor (Any): The character casting the spell.
             target (Any): The target of the spell.
-        
+
         Returns:
             bool: Always False - use cast_spell() instead.
-        
+
         Raises:
             NotImplementedError: Always raised to enforce using cast_spell().
         """
@@ -164,16 +155,18 @@ class Spell(BaseAction):
     @abstractmethod
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """Abstract method for casting spells with level-specific behavior.
-        
+
         Args:
             actor (Any): The character casting the spell (must have mind points).
             target (Any): The character targeted by the spell.
             mind_level (int): The spell level to cast at (1-9, affects cost and power).
-        
+
         Returns:
             bool: True if spell was cast successfully, False on failure.
         """
-        if not self._validate_actor_and_target(actor, target):
+        if not self._validate_character(actor):
+            return False
+        if not self._validate_character(target):
             return False
 
         # Validate mind cost against the specified level.
@@ -218,7 +211,7 @@ class Spell(BaseAction):
 
     def to_dict(self) -> dict[str, Any]:
         """Transform this Spell into a dictionary representation.
-        
+
         Returns:
             dict[str, Any]: Dictionary representation of the spell.
         """
@@ -229,10 +222,10 @@ class Spell(BaseAction):
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Any | None":
         """Create a Spell instance from a dictionary.
-        
+
         Args:
             data (dict[str, Any]): Dictionary containing spell configuration data.
-        
+
         Returns:
             Any | None: Spell instance or None if creation fails.
         """

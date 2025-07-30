@@ -9,16 +9,16 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from core.error_handling import log_critical
 from core.utils import cprint
 from effects.base_effect import Effect
 from effects.modifier_effect import DebuffEffect
+from catchery import validate_type, log_critical
 
 
 class DebuffAbility(BaseAbility):
     """
-    Represents a buff ability that provides beneficial effects to targets in combat.
-    Inherits from BaseAbility and applies an Effect to allies or self.
+    Represents a debuff ability that provides detrimental effects to targets in combat.
+    Inherits from BaseAbility and applies an Effect to enemies.
     """
 
     def __init__(
@@ -62,22 +62,15 @@ class DebuffAbility(BaseAbility):
             )
 
             # Make sure effect is valid.
-            if not isinstance(effect, DebuffEffect):
-                log_critical(
-                    f"DebuffAbility {name} effect must be a DebuffEffect instance, got: {type(effect).__name__}",
-                    {"name": name, "effect_type": type(effect).__name__},
-                )
-                raise ValueError(
-                    f"DebuffAbility {name} effect must be a DebuffEffect instance"
-                )
+            validate_type(effect, "Effect", DebuffEffect, {"name": name})
 
         except Exception as e:
             log_critical(
                 f"Error initializing DebuffAbility {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     def execute(self, actor: Any, target: Any) -> bool:
         """
@@ -91,27 +84,27 @@ class DebuffAbility(BaseAbility):
             bool: True if ability was executed successfully, False on system errors.
         """
         # Validate actor and target.
-        if not self._validate_actor_and_target(actor, target):
+        if not self._validate_character(actor):
+            return False
+        if not self._validate_character(target):
+            return False
+        # Validate effect.
+        if not self.effect or not isinstance(self.effect, DebuffEffect):
+            log_critical(
+                f"{self.name} has invalid effect type: {type(self.effect).__name__}",
+                {"name": self.name, "effect_type": type(self.effect).__name__},
+            )
+            return False
+        # Validate cooldown.
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor.name} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor.name, "ability": self.name},
+            )
             return False
 
         # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
-
-        # Check cooldown.
-        if actor.is_on_cooldown(self):
-            log_critical(
-                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
-                {"actor": actor_str, "ability": self.name},
-            )
-            return False
-
-        # Check the effect is valid.
-        if not isinstance(self.effect, Effect):
-            log_critical(
-                f"DebuffAbility {self.name} has invalid effect type: {type(self.effect).__name__}",
-                {"name": self.name, "effect_type": type(self.effect).__name__},
-            )
-            return False
 
         # Apply the buff effect
         effect_applied = self._common_apply_effect(actor, target, self.effect)

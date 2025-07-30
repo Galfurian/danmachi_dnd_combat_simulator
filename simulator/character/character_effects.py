@@ -3,7 +3,7 @@
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint, get_max_roll
-from core.error_handling import log_error, log_warning, log_critical
+from catchery import *
 from combat.damage import DamageComponent
 from effects import *
 

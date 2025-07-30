@@ -12,12 +12,7 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from core.error_handling import (
-    log_error,
-    log_warning,
-    log_critical,
-    ensure_list_of_type,
-)
+from catchery import *
 from core.utils import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
@@ -51,7 +46,7 @@ class SpellAttack(Spell):
         target_restrictions: list[str] | None = None,
     ):
         """Initialize a new SpellAttack.
-        
+
         Args:
             name (str): Display name of the spell.
             type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
@@ -65,7 +60,7 @@ class SpellAttack(Spell):
             target_expr (str): Expression for multi-target spells.
             requires_concentration (bool): Whether spell needs ongoing mental focus.
             target_restrictions (list[str] | None): Override default targeting restrictions.
-        
+
         Raises:
             ValueError: If damage list is empty or contains invalid components.
         """
@@ -84,20 +79,16 @@ class SpellAttack(Spell):
                 target_restrictions,
             )
 
-            # Validate damage components using helper
-            if not damage or not isinstance(damage, list) or len(damage) == 0:
-                log_critical(
-                    f"SpellAttack {name} must have at least one damage component",
-                    {"name": name, "damage": damage},
-                )
-                raise ValueError(
-                    f"SpellAttack {name} must have at least one damage component"
-                )
-
+            # Validate damage components using helper.
             self.damage = ensure_list_of_type(
-                damage,
+                validate_type(
+                    damage,
+                    "SpellAttack damage",
+                    list,
+                    {"name": name, "damage": damage},
+                ),
+                "SpellAttack damage",
                 DamageComponent,
-                "damage components",
                 context={"name": name},
             )
 
@@ -116,8 +107,8 @@ class SpellAttack(Spell):
                 f"Error initializing SpellAttack {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     # ============================================================================
     # SPELL ATTACK METHODS
@@ -125,12 +116,12 @@ class SpellAttack(Spell):
 
     def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
         """Execute an offensive spell attack with complete combat resolution.
-        
+
         Args:
             actor (Any): The character casting the spell.
             target (Any): The character being attacked.
             mind_level (int): The spell level to cast at (affects cost and damage).
-        
+
         Returns:
             bool: True if spell was successfully cast (regardless of hit/miss).
         """
@@ -220,11 +211,11 @@ class SpellAttack(Spell):
 
     def get_damage_expr(self, actor: Any, mind_level: int = 1) -> str:
         """Get damage expression with variables substituted for display.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int): The spell level to use for MIND variable substitution.
-        
+
         Returns:
             str: Complete damage expression with variables substituted.
         """
@@ -232,11 +223,11 @@ class SpellAttack(Spell):
 
     def get_min_damage(self, actor: Any, mind_level: int = 1) -> int:
         """Calculate the minimum possible damage for the spell.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int): The spell level to use for scaling calculations.
-        
+
         Returns:
             int: Minimum possible damage (sum of all components' minimums).
         """
@@ -244,11 +235,11 @@ class SpellAttack(Spell):
 
     def get_max_damage(self, actor: Any, mind_level: int = 1) -> int:
         """Calculate the maximum possible damage for the spell.
-        
+
         Args:
             actor (Any): The character casting the spell.
             mind_level (int): The spell level to use for scaling calculations.
-        
+
         Returns:
             int: Maximum possible damage (sum of all components' maximums).
         """

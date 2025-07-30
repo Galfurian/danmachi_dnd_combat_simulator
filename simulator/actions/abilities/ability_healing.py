@@ -4,12 +4,7 @@ from typing import Any
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from core.error_handling import (
-    ensure_string,
-    log_critical,
-    log_error,
-    validate_required_object,
-)
+from catchery import ensure_string, log_critical
 from core.utils import (
     cprint,
     parse_expr_and_assume_max_roll,
@@ -64,7 +59,7 @@ class HealingAbility(BaseAbility):
                 target_restrictions,
             )
 
-            # Validate heal_roll using helper
+            # Validate the heal_roll expression.
             self.heal_roll = ensure_string(heal_roll, "heal roll", "0", {"name": name})
 
         except Exception as e:
@@ -72,8 +67,8 @@ class HealingAbility(BaseAbility):
                 f"Error initializing HealingAbility {name}: {str(e)}",
                 {"name": name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this healing ability on a target.
@@ -86,28 +81,27 @@ class HealingAbility(BaseAbility):
             bool: True if ability was executed successfully, False on system errors.
         """
         # Validate actor and target.
-        if not self._validate_actor_and_target(actor, target):
+        if not self._validate_character(actor):
+            return False
+        if not self._validate_character(target):
+            return False
+        # Validate cooldown.
+        if actor.is_on_cooldown(self):
+            log_critical(
+                f"{actor.name} cannot use {self.name} yet, still on cooldown.",
+                {"actor": actor.name, "ability": self.name},
+            )
             return False
 
         # Get display strings for logging.
         actor_str, target_str = self._get_display_strings(actor, target)
 
-        # Check cooldown.
-        if actor.is_on_cooldown(self):
-            log_critical(
-                f"{actor_str} cannot use {self.name} yet, still on cooldown.",
-                {"actor": actor_str, "ability": self.name},
-            )
-            return False
-
         # Roll healing amount
         variables = actor.get_expression_variables()
         healing_amount, healing_desc, _ = roll_and_describe(self.heal_roll, variables)
 
-        # Apply healing to target
-        old_hp = target.hp
-        target.heal(healing_amount)
-        actual_healing = target.hp - old_hp
+        # Apply healing to target.
+        actual_healing = target.heal(healing_amount)
 
         # Apply effects
         effect_applied = self._common_apply_effect(actor, target, self.effect)

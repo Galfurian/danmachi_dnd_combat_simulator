@@ -14,7 +14,8 @@ from actions.spells.spell_buff import SpellBuff
 from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_healing import SpellHeal
 from core.constants import ActionType
-from core.error_handling import log_critical
+from actions.base_action import ActionSerializer
+from catchery import log_critical
 from combat.damage import DamageComponent
 from effects.base_effect import Effect
 from effects.effect_serialization import EffectDeserializer
@@ -62,8 +63,8 @@ class SpellDeserializer:
                 f"Error creating spell '{spell_name}': {str(e)}",
                 {"spell_name": spell_name, "error": str(e)},
                 e,
+                True,
             )
-            raise
 
     @staticmethod
     def _deserialize_spell_attack(data: dict[str, Any]) -> SpellAttack:
@@ -235,20 +236,12 @@ class SpellSerializer:
         Returns:
             dict[str, Any]: Dictionary containing common spell fields.
         """
-        data = {
-            "name": spell.name,
-            "type": spell.action_type.name,
-            "description": spell.description,
-            "cooldown": spell.cooldown,
-            "maximum_uses": spell.maximum_uses,
-            "level": spell.level,
-            "mind_cost": spell.mind_cost,
-            "requires_concentration": spell.requires_concentration,
-        }
-
+        data = ActionSerializer.serialize(spell)
+        data["level"] = spell.level
+        data["mind_cost"] = spell.mind_cost
+        data["requires_concentration"] = spell.requires_concentration
         if spell.target_expr:
             data["target_expr"] = spell.target_expr
-
         return data
 
     @staticmethod
