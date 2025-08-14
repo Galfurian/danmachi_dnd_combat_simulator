@@ -62,36 +62,31 @@ class BaseAbility(BaseAction, ABC):
         Raises:
             ValueError: If name is empty or type/category are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                category,
-                description,
-                cooldown,
-                maximum_uses,
-                target_restrictions,
-            )
+        super().__init__(
+            name,
+            action_type,
+            category,
+            description,
+            cooldown,
+            maximum_uses,
+            target_restrictions,
+        )
 
-            # Validate the effect.
-            self.effect: Effect | None = ensure_effect(
-                effect,
-                "BaseAbility effect",
-                None,
-                {"name": name},
-            )
-            # Validate the target expression.
-            self.target_expr = ensure_string(
-                target_expr, "target expression", "", {"name": name}
-            )
+        ctx = {"name": name}
 
-        except Exception as e:
-            log_critical(
-                f"Error initializing BaseAbility {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        self.effect: Effect | None = ensure_object(
+            obj=effect,
+            name="BaseAbility.effect",
+            expected_type=Effect,
+            default=None,
+            context=ctx,
+        )
+        self.target_expr = ensure_string(
+            obj=target_expr,
+            name="BaseAbility.target_expr",
+            default="",
+            context=ctx,
+        )
 
     # ============================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)

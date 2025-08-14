@@ -28,6 +28,7 @@ from catchery import (
     ensure_non_negative_int,
     ensure_list_of_type,
     safe_get_attribute,
+    re_raise_chained,
 )
 from effects import Effect
 
@@ -41,6 +42,11 @@ class BaseAction:
     for damage calculation and serialization.
     """
 
+    @re_raise_chained(
+        new_exception_type=RuntimeError,
+        message="BaseAction: Failed to initialize.",
+        severity=ErrorSeverity.HIGH,
+    )
     def __init__(
         self,
         name: str,
@@ -76,37 +82,53 @@ class BaseAction:
         }
 
         # === CRITICAL VALIDATIONS ===
-        self.name = validate_type(name, "Action name", str, ctx)
-        self.action_type = validate_type(action_type, "Action type", ActionType, ctx)
-        self.category = validate_type(category, "Action category", ActionCategory, ctx)
+        self.name = validate_type(
+            obj=name,
+            name="Action name",
+            expected_type=str,
+            context=ctx,
+        )
+        self.action_type = validate_type(
+            obj=action_type,
+            name="Action type",
+            expected_type=ActionType,
+            context=ctx,
+        )
+        self.category = validate_type(
+            obj=category,
+            name="Action category",
+            expected_type=ActionCategory,
+            context=ctx,
+        )
 
         # === NON-CRITICAL VALIDATIONS ===
 
-        self.description = ensure_string(description, "Action description", "", ctx)
+        self.description = ensure_string(
+            obj=description,
+            name="Action description",
+            default="",
+            context=ctx,
+        )
         self._cooldown = ensure_int_in_range(
-            cooldown,
-            "Action cooldown",
-            -1,
-            None,
-            -1,
-            ctx,
+            obj=cooldown,
+            name="Action cooldown",
+            min_val=-1,
+            default=-1,
+            context=ctx,
         )
         self._maximum_uses = ensure_int_in_range(
-            maximum_uses,
-            "Action maximum_uses",
-            -1,
-            None,
-            -1,
-            ctx,
+            obj=maximum_uses,
+            name="Action maximum_uses",
+            min_val=-1,
+            default=-1,
+            context=ctx,
         )
         self.target_restrictions = ensure_list_of_type(
-            target_restrictions,
-            "Action target restrictions",
-            str,
-            [],
-            lambda x: str(x).strip(),
-            None,
-            ctx,
+            values=target_restrictions,
+            name="Action target restrictions",
+            expected_type=str,
+            default=[],
+            context=ctx,
         )
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -178,10 +200,10 @@ class BaseAction:
             bool: True if valid, False otherwise.
         """
         validate_object(
-            character,
-            "character",
-            context or {"action": self.name},
-            [
+            obj=character,
+            name="character",
+            context=context or {"action": self.name},
+            attributes=[
                 "name",
                 "char_type",
                 "mind",

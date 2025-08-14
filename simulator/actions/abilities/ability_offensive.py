@@ -46,39 +46,33 @@ class OffensiveAbility(BaseAbility):
         Raises:
             ValueError: If name is empty or required parameters are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                ActionCategory.OFFENSIVE,
-                description,
-                cooldown,
-                maximum_uses,
-                effect,
-                target_expr,
-                target_restrictions,
-            )
+        super().__init__(
+            name,
+            action_type,
+            ActionCategory.OFFENSIVE,
+            description,
+            cooldown,
+            maximum_uses,
+            effect,
+            target_expr,
+            target_restrictions,
+        )
 
-            # Validate damage list using helper
-            self.damage: list[DamageComponent] = ensure_list_of_type(
-                damage,
-                "damage components",
-                DamageComponent,
-                [],
-                validator=lambda x: isinstance(x, DamageComponent),
-                context={"name": name},
-            )
+        ctx = {"name": name}
 
-            # Set attack_roll (empty string means auto-hit)
-            self.attack_roll = attack_roll
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing OffensiveAbility {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        self.attack_roll: str = ensure_string(
+            obj=attack_roll,
+            name="OffensiveAbility.attack_roll",
+            default="",
+            context=ctx,
+        )
+        self.damage: list[DamageComponent] = ensure_list_of_type(
+            values=damage,
+            name="OffensiveAbility.damage",
+            expected_type=DamageComponent,
+            default=[],
+            context=ctx,
+        )
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this offensive ability against a target.

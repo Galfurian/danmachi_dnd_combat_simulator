@@ -21,20 +21,18 @@ class WeaponAttack(BaseAttack):
         description: str,
         cooldown: int,
         maximum_uses: int,
-        hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
         effect: Effect | None = None,
     ):
         """Initialize a new WeaponAttack.
-        
+
         Args:
             name (str): Weapon name (e.g., "Longsword", "Shortbow").
             type (ActionType): Action type (usually ACTION or BONUS_ACTION).
             description (str): Flavor text describing the weapon.
             cooldown (int): Turns between uses (0 for most weapons).
             maximum_uses (int): Max uses per encounter (-1 for unlimited).
-            hands_required (int): Number of hands needed to wield (1 or 2).
             attack_roll (str): Attack roll expression with variables.
             damage (list[DamageComponent]): List of damage components for the weapon.
             effect (Effect | None): Optional effect applied on successful hit.
@@ -45,7 +43,6 @@ class WeaponAttack(BaseAttack):
             description,
             cooldown,
             maximum_uses,
-            hands_required,
             attack_roll,
             damage,
             effect,

@@ -13,7 +13,7 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from catchery import ensure_list_of_type, ensure_string, log_critical, log_warning
+from catchery import ensure_list_of_type, ensure_string, log_warning, ensure_object
 from core.utils import debug, cprint
 from effects.base_effect import Effect
 
@@ -34,7 +34,6 @@ class BaseAttack(BaseAction):
         description: str,
         cooldown: int,
         maximum_uses: int,
-        hands_required: int,
         attack_roll: str,
         damage: list[DamageComponent],
         effect: Effect | None = None,
@@ -48,7 +47,6 @@ class BaseAttack(BaseAction):
             description (str): Description of what the attack does.
             cooldown (int): Turns to wait before reusing (0 = no cooldown).
             maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            hands_required (int): Number of hands needed.
             attack_roll (str): Attack bonus expression.
             damage (list[DamageComponent]): List of damage components.
             effect (Effect | None): Optional effect applied on successful hits.
@@ -57,49 +55,38 @@ class BaseAttack(BaseAction):
         Raises:
             ValueError: If name is empty or type/category are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                ActionCategory.OFFENSIVE,
-                description,
-                cooldown,
-                maximum_uses,
-                target_restrictions,
-            )
+        super().__init__(
+            name,
+            action_type,
+            ActionCategory.OFFENSIVE,
+            description,
+            cooldown,
+            maximum_uses,
+            target_restrictions,
+        )
 
-            # Validate attack_roll using helper
-            self.attack_roll: str = ensure_string(
-                attack_roll, "attack roll", "", {"name": name}
-            )
+        ctx = {"name": name}
 
-            # Validate damage list using helper
-            self.damage = ensure_list_of_type(
-                damage,
-                "damage components",
-                DamageComponent,
-                [],
-                validator=lambda x: isinstance(x, DamageComponent),
-                context={"name": name},
-            )
-
-            # Validate effect
-            if effect is not None and not isinstance(effect, Effect):
-                log_warning(
-                    f"Attack {name} effect must be Effect or None, got: {effect.__class__.__name__}, setting to None",
-                    {"name": name, "effect": effect},
-                )
-                effect = None
-
-            self.effect: Effect | None = effect
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing BaseAttack {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        self.attack_roll: str = ensure_string(
+            obj=attack_roll,
+            name="BaseAttack.attack_roll",
+            default="",
+            context=ctx,
+        )
+        self.damage: list[DamageComponent] = ensure_list_of_type(
+            values=damage,
+            name="BaseAttack.damage",
+            expected_type=DamageComponent,
+            default=[],
+            context=ctx,
+        )
+        self.effect: Effect | None = ensure_object(
+            obj=effect,
+            name="BaseAttack.effect",
+            expected_type=Effect,
+            default=None,
+            context=ctx,
+        )
 
     # ============================================================================
     # COMBAT EXECUTION METHODS

@@ -46,29 +46,19 @@ class HealingAbility(BaseAbility):
         Raises:
             ValueError: If name is empty or required parameters are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                ActionCategory.HEALING,
-                description,
-                cooldown,
-                maximum_uses,
-                effect,
-                target_expr,
-                target_restrictions,
-            )
-
-            # Validate the heal_roll expression.
-            self.heal_roll = ensure_string(heal_roll, "heal roll", "0", {"name": name})
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing HealingAbility {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        super().__init__(
+            name,
+            action_type,
+            ActionCategory.HEALING,
+            description,
+            cooldown,
+            maximum_uses,
+            effect,
+            target_expr,
+            target_restrictions,
+        )
+        # Validate the heal_roll expression.
+        self.heal_roll = ensure_string(heal_roll, "heal roll", "0", {"name": name})
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this healing ability on a target.

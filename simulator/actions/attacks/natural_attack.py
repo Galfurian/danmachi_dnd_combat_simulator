@@ -25,7 +25,7 @@ class NaturalAttack(BaseAttack):
         effect: Effect | None = None,
     ):
         """Initialize a new NaturalAttack.
-        
+
         Args:
             name (str): Natural weapon name (e.g., "Bite", "Claw", "Tail Slap").
             type (ActionType): Action type (usually ACTION, sometimes BONUS_ACTION).
@@ -42,7 +42,6 @@ class NaturalAttack(BaseAttack):
             description,
             cooldown,
             maximum_uses,
-            0,  # Natural attacks don't require hands
             attack_roll,
             damage,
             effect,

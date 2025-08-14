@@ -48,29 +48,19 @@ class BuffAbility(BaseAbility):
         Raises:
             ValueError: If name is empty, effect is None, or other parameters are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                ActionCategory.BUFF,
-                description,
-                cooldown,
-                maximum_uses,
-                effect,
-                target_expr,
-                target_restrictions,
-            )
-
-            # Make sure effect is valid.
-            validate_type(effect, "Effect", BuffEffect, {"name": name})
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing BuffAbility {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        super().__init__(
+            name,
+            action_type,
+            ActionCategory.BUFF,
+            description,
+            cooldown,
+            maximum_uses,
+            effect,
+            target_expr,
+            target_restrictions,
+        )
+        # Make sure effect is valid.
+        validate_type(effect, "Effect", BuffEffect, {"name": name})
 
     def execute(self, actor: Any, target: Any) -> bool:
         """

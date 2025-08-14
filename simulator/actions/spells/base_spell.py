@@ -20,6 +20,11 @@ class Spell(BaseAction):
     requiring subclasses to implement specific behavior through abstract methods.
     """
 
+    @re_raise_chained(
+        new_exception_type=RuntimeError,
+        message="Spell: Failed to initialize.",
+        severity=ErrorSeverity.HIGH,
+    )
     def __init__(
         self,
         name: str,
@@ -52,57 +57,47 @@ class Spell(BaseAction):
         Raises:
             ValueError: If name is empty or type/category are invalid.
         """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                category,
-                description,
-                cooldown,
-                maximum_uses,
-                target_restrictions,
-            )
+        super().__init__(
+            name,
+            action_type,
+            category,
+            description,
+            cooldown,
+            maximum_uses,
+            target_restrictions,
+        )
 
-            # Validate level using helper
-            self.level = ensure_non_negative_int(
-                level, "spell level", 0, {"name": name}
-            )
+        ctx = {"name": name}
 
-            # Validate mind_cost list using helper
-            self.mind_cost = ensure_list_of_type(
-                mind_cost,
-                "mind cost",
-                int,
-                [0],
-                converter=lambda x: (
-                    max(0, int(x)) if isinstance(x, (int, float)) else 0
-                ),
-                validator=lambda x: isinstance(x, int) and x >= 0,
-                context={"name": name},
-            )
+        self.level = ensure_non_negative_int(
+            obj=level,
+            name="Spell.level",
+            default=0,
+            context=ctx,
+        )
 
-            # Validate target_expr using helper
-            self.target_expr = ensure_string(
-                target_expr, "target expression", "", {"name": name}
-            )
+        self.mind_cost = ensure_list_of_type(
+            mind_cost,
+            name="Spell.mind_cost",
+            expected_type=int,
+            default=[0],
+            context=ctx,
+        )
 
-            # Validate requires_concentration
-            if not isinstance(requires_concentration, bool):
-                log_warning(
-                    f"Spell {name} requires_concentration must be boolean, got: {requires_concentration.__class__.__name__}, setting to False",
-                    {"name": name, "requires_concentration": requires_concentration},
-                )
-                requires_concentration = False
+        self.target_expr = ensure_string(
+            obj=target_expr,
+            name="Spell.target_expr",
+            default="",
+            context=ctx,
+        )
 
-            self.requires_concentration = requires_concentration
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing Spell {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+        self.requires_concentration = ensure_object(
+            obj=requires_concentration,
+            name="Spell.requires_concentration",
+            expected_type=bool,
+            default=False,
+            context=ctx,
+        )
 
     # ============================================================================
     # TARGETING SYSTEM METHODS
