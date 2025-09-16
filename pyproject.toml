@@ -1,0 +1,23 @@
+[project]
+
+name = "danmachi_dnd_combat_simulator"
+version = "0.1.0"
+description = "A DnD-inspired combat simulator based on the Danmachi universe."
+authors = [{ name = "Galfurian", email = "enry.frak@gmail.com" }]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["rich>=14.0.0", "prompt_toolkit>=3.0.51", "pydantic>=2.0.0"]
+
+[tool.setuptools]
+
+package-dir = { "" = "simulator" }
+
+[tool.setuptools.packages.find]
+
+where = ["simulator"]
+
+[build-system]
+
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

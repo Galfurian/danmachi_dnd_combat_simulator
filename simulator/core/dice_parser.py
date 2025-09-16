@@ -4,8 +4,6 @@ Safe dice expression parser to replace eval() usage.
 
 import re
 import random
-from typing import Tuple
-from catchery import *
 
 
 class DiceParser:
@@ -15,7 +13,7 @@ class DiceParser:
     SIMPLE_MATH = re.compile(r"^[\d\s\+\-\*\/\(\)]+$")
 
     @staticmethod
-    def parse_dice(expression: str) -> Tuple[int, str]:
+    def parse_dice(expression: str) -> tuple[int, str]:
         """
         Safely parse and roll dice expressions.
 
@@ -23,17 +21,17 @@ class DiceParser:
             expression: Dice expression like "1d20+5" or "2d6"
 
         Returns:
-            Tuple of (result, description)
+            tuple of (result, description)
 
         Raises:
             ValueError: If expression is invalid
         """
         if not expression:
-            log_warning("Empty dice expression provided", {"expression": expression})
+            print("Empty dice expression provided", {"expression": expression})
             raise ValueError("Invalid dice expression: empty")
 
         if not isinstance(expression, str):
-            log_warning(
+            print(
                 f"Dice expression must be string, got {type(expression).__name__}",
                 {"expression": expression, "type": type(expression).__name__},
             )
@@ -43,26 +41,27 @@ class DiceParser:
         try:
             expr = expression.strip().upper()
         except Exception as e:
-            log_error(
+            print(
                 f"Error processing dice expression: {str(e)}",
                 {"expression": expression},
                 e,
                 True,
-            ) ValueError(f"Error processing expression: {e}")
+            )
+            raise ValueError(f"Error processing expression: {e}")
 
         # Handle simple numbers
         if expr.isdigit():
             try:
                 value = int(expr)
                 if value < 0:
-                    log_warning(
+                    print(
                         f"Negative values not allowed in dice expressions: {value}",
                         {"expression": expression, "value": value},
                     )
                     raise ValueError(f"Negative value: {value}")
                 return value, str(value)
             except ValueError as e:
-                log_warning(
+                print(
                     f"Invalid numeric expression: {expression}",
                     {"expression": expression},
                     e,
@@ -77,13 +76,13 @@ class DiceParser:
         def roll_dice(match: re.Match[str]) -> str:
             """
             Helper function to process individual dice roll matches.
-            
+
             Args:
                 match (re.Match[str]): Regular expression match object containing dice notation.
-                
+
             Returns:
                 str: String representation of the dice roll result.
-                
+
             Raises:
                 ValueError: If dice parameters are invalid.
             """
@@ -96,28 +95,28 @@ class DiceParser:
                 modifier = int(modifier_str) if modifier_str else 0
 
                 if count <= 0:
-                    log_error(
+                    print(
                         f"Invalid dice count: {count}",
                         {"expression": expression, "count": count, "sides": sides},
                     )
                     raise ValueError(f"Invalid dice count: {count}")
 
                 if count > 100:  # Reasonable limits
-                    log_error(
+                    print(
                         f"Too many dice: {count} (limit: 100)",
                         {"expression": expression, "count": count, "sides": sides},
                     )
                     raise ValueError(f"Too many dice: {count}")
 
                 if sides <= 0:
-                    log_error(
+                    print(
                         f"Invalid dice sides: {sides}",
                         {"expression": expression, "count": count, "sides": sides},
                     )
                     raise ValueError(f"Invalid dice sides: {sides}")
 
                 if sides > 1000:
-                    log_error(
+                    print(
                         f"Too many sides: {sides} (limit: 1000)",
                         {"expression": expression, "count": count, "sides": sides},
                     )
@@ -140,7 +139,7 @@ class DiceParser:
                 return str(roll_sum)
 
             except Exception as e:
-                log_error(
+                print(
                     f"Error rolling dice in expression '{expression}': {str(e)}",
                     {"expression": expression, "match": match.group()},
                     e,
@@ -159,14 +158,14 @@ class DiceParser:
                     description = " + ".join(details) if details else processed
                     return int(total), description
                 except Exception as e:
-                    log_error(
+                    print(
                         f"Error evaluating processed expression '{processed}': {str(e)}",
                         {"original": expression, "processed": processed},
                         e,
                     )
                     raise ValueError(f"Invalid expression: {e}")
             else:
-                log_error(
+                print(
                     f"Unsafe expression detected: {expression}",
                     {"expression": expression, "processed": processed},
                 )
@@ -175,9 +174,10 @@ class DiceParser:
         except ValueError:
             raise  # Re-raise ValueError as-is
         except Exception as e:
-            log_error(
+            print(
                 f"Unexpected error parsing dice expression '{expression}': {str(e)}",
                 {"expression": expression},
                 e,
                 True,
-            ) ValueError(f"Unexpected error: {e}")
+            )
+            raise ValueError(f"Unexpected error: {e}")

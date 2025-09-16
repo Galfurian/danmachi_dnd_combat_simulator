@@ -13,7 +13,7 @@ from core.constants import (
     apply_character_type_color,
     get_effect_color,
 )
-from catchery import *
+from pydantic import Field
 from core.utils import (
     debug,
     parse_expr_and_assume_max_roll,
@@ -34,59 +34,14 @@ class BaseAbility(BaseAction, ABC):
     to implement specific behavior through abstract methods.
     """
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        category: ActionCategory,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        effect: Effect | None = None,
-        target_expr: str = "",
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new BaseAbility.
-
-        Args:
-            name (str): Display name of the ability.
-            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
-            category (ActionCategory): Action category (OFFENSIVE, HEALING, BUFF, UTILITY, etc.).
-            description (str): Flavor text describing what the ability does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            effect (Effect | None): Optional effect applied to targets on use.
-            target_expr (str): Expression determining number of targets ("" = single target).
-            target_restrictions (list[str] | None): Override default targeting if needed.
-
-        Raises:
-            ValueError: If name is empty or type/category are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            category,
-            description,
-            cooldown,
-            maximum_uses,
-            target_restrictions,
-        )
-
-        ctx = {"name": name}
-
-        self.effect: Effect | None = ensure_object(
-            obj=effect,
-            name="BaseAbility.effect",
-            expected_type=Effect,
-            default=None,
-            context=ctx,
-        )
-        self.target_expr = ensure_string(
-            obj=target_expr,
-            name="BaseAbility.target_expr",
-            default="",
-            context=ctx,
-        )
+    effect: Effect | None = Field(
+        None,
+        description="Effect applied by this ability (if any)",
+    )
+    target_expr: str = Field(
+        "",
+        description="Expression defining number of targets.",
+    )
 
     # ============================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)
@@ -131,30 +86,31 @@ class BaseAbility(BaseAction, ABC):
         """
         pass
 
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert this ability to a dictionary representation.
+def deserialze_ability(data: dict[str, Any]) -> BaseAbility | None:
+    """Deserialize a dictionary into a BaseAbility instance.
 
-        Returns:
-            dict[str, Any]: Dictionary representation of the ability.
-        """
-        from actions.abilities.ability_serializer import AbilitySerializer
+    Args:
+        data (dict[str, Any]): The dictionary representation of the ability.
 
-        return AbilitySerializer.serialize(self)
+    Returns:
+        BaseAbility | None: The deserialized ability instance, or None if deserialization fails.
+    """
+    from actions.abilities.ability_buff import AbilityBuff
+    from actions.abilities.ability_debuff import AbilityDebuff
+    from actions.abilities.ability_heal import AbilityHeal
+    from actions.abilities.ability_offensive import AbilityOffensive
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Any | None":
-        """Create an ability instance from dictionary data.
+    if "class" not in data:
+        raise ValueError("Missing 'class' in ability data")
 
-        Args:
-            data (dict[str, Any]): Dictionary containing ability configuration data.
+    if data["class"] == "AbilityBuff":
+        return AbilityBuff(**data)
+    if data["class"] == "AbilityDebuff":
+        return AbilityDebuff(**data)
+    if data["class"] == "AbilityHeal":
+        return AbilityHeal(**data)
+    if data["class"] == "AbilityOffensive":
+        return AbilityOffensive(**data)
 
-        Returns:
-            Any | None: Ability instance or None if creation fails.
-        """
-        from actions.abilities.ability_serializer import AbilityDeserializer
-
-        return AbilityDeserializer.deserialize(data)
+    return None

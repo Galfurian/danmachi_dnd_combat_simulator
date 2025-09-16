@@ -5,7 +5,7 @@ from typing import Any, Optional, Callable
 
 from actions.base_action import BaseAction
 from actions.spells import (
-    SpellAttack,
+    SpellOffensive,
     SpellBuff,
     SpellDebuff,
     SpellHeal,
@@ -15,7 +15,6 @@ from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from items.armor import Armor
 from items.weapon import Weapon
-from catchery import *
 
 
 class ContentRepository(metaclass=Singleton):
@@ -40,7 +39,7 @@ class ContentRepository(metaclass=Singleton):
     def __init__(self, data_dir: Optional[Path] = None) -> None:
         """
         Initialize the ContentRepository.
-        
+
         Args:
             data_dir (Optional[Path]): The directory containing data files to load.
         """
@@ -52,7 +51,9 @@ class ContentRepository(metaclass=Singleton):
 
         cprint(f"Loading content from: [bold blue]{root}[/bold blue]")
 
-        def load_json_file(filename: str, loader_func: Callable, description: str) -> dict:
+        def load_json_file(
+            filename: str, loader_func: Callable, description: str
+        ) -> dict:
             """Helper to load and validate JSON files"""
             try:
                 cprint(f"Loading {description}...")
@@ -60,14 +61,14 @@ class ContentRepository(metaclass=Singleton):
                 # Validate file path
                 file_path = root / filename
                 if not file_path.exists():
-                    log_error(
+                    print(
                         f"Data file not found: {filename}",
                         {"filename": filename, "path": str(file_path)},
                     )
                     raise FileNotFoundError(f"File not found: {file_path}")
 
                 if not file_path.is_file():
-                    log_error(
+                    print(
                         f"Path is not a file: {filename}",
                         {"filename": filename, "path": str(file_path)},
                     )
@@ -78,7 +79,7 @@ class ContentRepository(metaclass=Singleton):
                     data = json.load(f)
 
                 if not isinstance(data, list):
-                    log_error(
+                    print(
                         f"Expected a list in {filename}, got {type(data).__name__}",
                         {"filename": filename, "data_type": type(data).__name__},
                     )
@@ -87,11 +88,11 @@ class ContentRepository(metaclass=Singleton):
                     )
 
                 if not data:
-                    log_error(f"Empty data list in {filename}", {"filename": filename})
+                    print(f"Empty data list in {filename}", {"filename": filename})
                 return loader_func(data)
 
             except json.JSONDecodeError as e:
-                log_error(
+                print(
                     f"Invalid JSON in {filename}: {str(e)}",
                     {"filename": filename, "error": str(e)},
                     e,
@@ -99,7 +100,7 @@ class ContentRepository(metaclass=Singleton):
                 raise ValueError(f"Invalid JSON in {filename}: {e}")
 
             except Exception as e:
-                log_error(
+                print(
                     f"Error loading {filename}: {str(e)}",
                     {"filename": filename, "description": description},
                     e,
@@ -129,12 +130,14 @@ class ContentRepository(metaclass=Singleton):
 
             self.armors = load_json_file("armors.json", self._load_armors, "armors")
             self.spells = load_json_file("spells.json", self._load_actions, "spells")
-            self.actions = load_json_file("abilities.json", self._load_actions, "actions")
+            self.actions = load_json_file(
+                "abilities.json", self._load_actions, "actions"
+            )
 
             cprint("Content loaded successfully!\n")
 
         except Exception as e:
-            log_critical(
+            print(
                 f"Critical error during content loading: {str(e)}",
                 {"root_path": str(root), "error": str(e)},
             )
@@ -186,9 +189,9 @@ class ContentRepository(metaclass=Singleton):
         """Get a spell by name, or None if not found."""
         return self._get_from_collection("spells", name, BaseAction)
 
-    def get_spell_attack(self, name: str) -> Optional[SpellAttack]:
+    def get_spell_attack(self, name: str) -> Optional[SpellOffensive]:
         """Get a spell attack by name, or None if not found."""
-        return self._get_from_collection("spells", name, SpellAttack)
+        return self._get_from_collection("spells", name, SpellOffensive)
 
     def get_spell_heal(self, name: str) -> Optional[SpellHeal]:
         """Get a spell heal by name, or None if not found."""
@@ -206,13 +209,13 @@ class ContentRepository(metaclass=Singleton):
     def _load_character_classes(data: list[dict]) -> dict[str, CharacterClass]:
         """
         Load character classes from JSON data.
-        
+
         Args:
             data (list[dict]): List of character class data dictionaries.
-            
+
         Returns:
             dict[str, CharacterClass]: Dictionary mapping class names to CharacterClass objects.
-            
+
         Raises:
             ValueError: If duplicate class names are found.
         """
@@ -228,13 +231,13 @@ class ContentRepository(metaclass=Singleton):
     def _load_character_races(data: list[dict]) -> dict[str, CharacterRace]:
         """
         Load character races from JSON data.
-        
+
         Args:
             data (list[dict]): List of character race data dictionaries.
-            
+
         Returns:
             dict[str, CharacterRace]: Dictionary mapping race names to CharacterRace objects.
-            
+
         Raises:
             ValueError: If duplicate race names are found.
         """
@@ -250,13 +253,13 @@ class ContentRepository(metaclass=Singleton):
     def _load_armors(data: list[dict]) -> dict[str, Armor]:
         """
         Load armors from JSON data.
-        
+
         Args:
             data (list[dict]): List of armor data dictionaries.
-            
+
         Returns:
             dict[str, Armor]: Dictionary mapping armor names to Armor objects.
-            
+
         Raises:
             ValueError: If duplicate armor names are found.
         """
@@ -272,13 +275,13 @@ class ContentRepository(metaclass=Singleton):
     def _load_weapons(data: list[dict]) -> dict[str, Weapon]:
         """
         Load weapons from JSON data.
-        
+
         Args:
             data (list[dict]): List of weapon data dictionaries.
-            
+
         Returns:
             dict[str, Weapon]: Dictionary mapping weapon names to Weapon objects.
-            
+
         Raises:
             ValueError: If duplicate weapon names are found.
         """
@@ -293,28 +296,34 @@ class ContentRepository(metaclass=Singleton):
     def _load_actions(self, data: list[dict]) -> dict[str, BaseAction]:
         """
         Load actions from JSON data.
-        
+
         Args:
             data (list[dict]): List of action data dictionaries.
-            
+
         Returns:
             dict[str, BaseAction]: Dictionary mapping action names to BaseAction objects.
-            
+
         Raises:
             ValueError: If invalid action data is encountered.
         """
-        from actions.abilities.ability_serializer import AbilityDeserializer
-        from actions.attacks.attack_serializer import AttackDeserializer
-        from actions.spells.spell_serializer import SpellDeserializer
+        from actions.abilities.base_ability import deserialze_ability
+        from actions.attacks.base_attack import deserialze_attack
+        from actions.spells.base_spell import deserialze_spell
 
         actions: dict[str, BaseAction] = {}
         for action_data in data:
-            action = AttackDeserializer.deserialize(action_data)
-            if not action:
-                action = SpellDeserializer.deserialize(action_data)
-                if not action:
-                    action = AbilityDeserializer.deserialize(action_data)
-                    if not action:
-                        raise ValueError(f"Invalid action data: {action_data}")
-            actions[action.name] = action
+            ability = deserialze_ability(action_data)
+            if ability:
+                actions[ability.name] = ability
+                continue
+            attack = deserialze_attack(action_data)
+            if attack:
+                actions[attack.name] = attack
+                continue
+            spell = deserialze_spell(action_data)
+            if spell:
+                actions[spell.name] = spell
+                continue
+            raise ValueError(f"Invalid action data: {action_data}")
+
         return actions

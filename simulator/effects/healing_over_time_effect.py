@@ -1,7 +1,12 @@
 from typing import Any, Optional
 
-from core.constants import get_effect_emoji, apply_character_type_color, apply_effect_color
+from core.constants import (
+    get_effect_emoji,
+    apply_character_type_color,
+    apply_effect_color,
+)
 from core.utils import cprint, roll_and_describe
+from pydantic import Field, model_validator
 
 from .base_effect import Effect
 
@@ -14,17 +19,24 @@ class HealingOverTimeEffect(Effect):
     using a heal expression that can include variables like MIND level.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        heal_per_turn: str,
-    ):
-        super().__init__(name, description, duration)
-        self.heal_per_turn = heal_per_turn
+    heal_per_turn: str = Field(
+        ...,
+        description="Heal expression defining the heal amount per turn.",
+    )
 
-        self.validate()
+    @model_validator(mode="after")
+    def check_duration(self) -> Any:
+        if self.duration is None or self.duration <= 0:
+            raise ValueError(
+                "Duration must be a positive integer for HealingOverTimeEffect."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_heal_per_turn(self) -> Any:
+        if not isinstance(self.heal_per_turn, str):
+            raise ValueError("Heal per turn must be a string expression.")
+        return self
 
     def turn_update(
         self, actor: Any, target: Any, mind_level: Optional[int] = 1
@@ -53,16 +65,3 @@ class HealingOverTimeEffect(Effect):
         message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
         message += apply_effect_color(self, self.name) + "."
         cprint(message)
-
-    def validate(self) -> None:
-        """
-        Validate the HoT effect's properties.
-
-        Raises:
-            AssertionError: If validation conditions are not met.
-        """
-        super().validate()
-        assert self.duration > 0, "HealingOverTimeEffect duration must be greater than 0."
-        assert isinstance(
-            self.heal_per_turn, str
-        ), "Heal per turn must be a string expression."

@@ -12,55 +12,15 @@ from core.constants import (
 from core.utils import cprint
 from effects.base_effect import Effect
 from effects.modifier_effect import DebuffEffect
-from catchery import validate_type, log_critical
 
 
-class DebuffAbility(BaseAbility):
+class AbilityDebuff(BaseAbility):
     """
     Represents a debuff ability that provides detrimental effects to targets in combat.
     Inherits from BaseAbility and applies an Effect to enemies.
     """
-
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        effect: Effect,
-        target_expr: str = "",
-        target_restrictions: list[str] | None = None,
-    ) -> None:
-        """
-        Initialize a new DebuffAbility for combat.
-
-        Args:
-            name (str): Display name of the ability.
-            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
-            description (str): Flavor text describing what the ability does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            effect (Effect): Effect to apply to targets (required for buff abilities).
-            target_expr (str, optional): Expression determining number of targets ("" = single target). Defaults to "".
-            target_restrictions (list[str] | None, optional): Override default targeting if needed. Defaults to None.
-
-        Raises:
-            ValueError: If name is empty, effect is None, or other parameters are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            ActionCategory.BUFF,
-            description,
-            cooldown,
-            maximum_uses,
-            effect,
-            target_expr,
-            target_restrictions,
-        )
-        # Make sure effect is valid.
-        validate_type(effect, "Effect", DebuffEffect, {"name": name})
+    
+    category: ActionCategory = ActionCategory.DEBUFF
 
     def execute(self, actor: Any, target: Any) -> bool:
         """
@@ -80,14 +40,14 @@ class DebuffAbility(BaseAbility):
             return False
         # Validate effect.
         if not self.effect or not isinstance(self.effect, DebuffEffect):
-            log_critical(
+            print(
                 f"{self.name} has invalid effect type: {type(self.effect).__name__}",
                 {"name": self.name, "effect_type": type(self.effect).__name__},
             )
             return False
         # Validate cooldown.
         if actor.is_on_cooldown(self):
-            log_critical(
+            print(
                 f"{actor.name} cannot use {self.name} yet, still on cooldown.",
                 {"actor": actor.name, "ability": self.name},
             )

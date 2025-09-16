@@ -13,37 +13,3 @@ class WeaponAttack(BaseAttack):
     other equipment. It includes attributes for handling weapon-specific
     properties like the number of hands required to wield the weapon.
     """
-
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        attack_roll: str,
-        damage: list[DamageComponent],
-        effect: Effect | None = None,
-    ):
-        """Initialize a new WeaponAttack.
-
-        Args:
-            name (str): Weapon name (e.g., "Longsword", "Shortbow").
-            type (ActionType): Action type (usually ACTION or BONUS_ACTION).
-            description (str): Flavor text describing the weapon.
-            cooldown (int): Turns between uses (0 for most weapons).
-            maximum_uses (int): Max uses per encounter (-1 for unlimited).
-            attack_roll (str): Attack roll expression with variables.
-            damage (list[DamageComponent]): List of damage components for the weapon.
-            effect (Effect | None): Optional effect applied on successful hit.
-        """
-        super().__init__(
-            name,
-            action_type,
-            description,
-            cooldown,
-            maximum_uses,
-            attack_roll,
-            damage,
-            effect,
-        )

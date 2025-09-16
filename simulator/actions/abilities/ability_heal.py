@@ -4,7 +4,7 @@ from typing import Any
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from catchery import ensure_string, log_critical
+from pydantic import Field
 from core.utils import (
     cprint,
     parse_expr_and_assume_max_roll,
@@ -15,50 +15,16 @@ from core.utils import (
 from effects.base_effect import Effect
 
 
-class HealingAbility(BaseAbility):
+class AbilityHeal(BaseAbility):
     """Represents abilities that restore hit points to targets during combat."""
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        heal_roll: str,
-        effect: Effect | None = None,
-        target_expr: str = "",
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new HealingAbility.
-
-        Args:
-            name (str): Display name of the ability.
-            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
-            description (str): Flavor text describing what the ability does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            heal_roll (str): Healing expression (e.g., "2d8 + WIS", "1d4 + LEVEL").
-            effect (Effect | None): Optional effect applied to targets on use (like regeneration).
-            target_expr (str): Expression determining number of targets ("" = single target).
-            target_restrictions (list[str] | None): Override default targeting if needed.
-
-        Raises:
-            ValueError: If name is empty or required parameters are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            ActionCategory.HEALING,
-            description,
-            cooldown,
-            maximum_uses,
-            effect,
-            target_expr,
-            target_restrictions,
-        )
-        # Validate the heal_roll expression.
-        self.heal_roll = ensure_string(heal_roll, "heal roll", "0", {"name": name})
+    category: ActionCategory = ActionCategory.HEALING
+    
+    # Validate the heal_roll expression.
+    heal_roll: str = Field(
+        ...,
+        description="Expression for healing amount, e.g. '1d8 + 3'",
+    )
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this healing ability on a target.
@@ -77,7 +43,7 @@ class HealingAbility(BaseAbility):
             return False
         # Validate cooldown.
         if actor.is_on_cooldown(self):
-            log_critical(
+            print(
                 f"{actor.name} cannot use {self.name} yet, still on cooldown.",
                 {"actor": actor.name, "ability": self.name},
             )

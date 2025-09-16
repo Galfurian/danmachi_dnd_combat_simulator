@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING
 
 from core.constants import ArmorSlot
-from catchery import *
 from logging import debug
 from items.armor import Armor
 from items.weapon import Weapon
@@ -68,7 +67,7 @@ class CharacterInventory:
             return True
         # Check if the character has enough free hands to equip the weapon.
         if weapon.get_required_hands() > self.get_free_hands():
-            log_warning(
+            print(
                 f"{self._character.name} does not have enough free hands to equip {weapon.name}.",
                 {
                     "character": self._character.name,
@@ -95,7 +94,7 @@ class CharacterInventory:
             # Add the weapon to the character's weapon list.
             self._character.equipped_weapons.append(weapon)
             return True
-        log_warning(
+        print(
             f"{self._character.name} cannot equip {weapon.name}",
             {"character": self._character.name, "weapon": weapon.name},
         )
@@ -116,7 +115,7 @@ class CharacterInventory:
             # Remove the weapon from the character's weapon list.
             self._character.equipped_weapons.remove(weapon)
             return True
-        log_warning(
+        print(
             f"{self._character.name} does not have {weapon.name} equipped",
             {"character": self._character.name, "weapon": weapon.name},
         )
@@ -135,7 +134,7 @@ class CharacterInventory:
         # If the armor is a shield, it can be equipped if the character has a free hand.
         if armor.armor_slot == ArmorSlot.SHIELD:
             if self.get_free_hands() <= 0:
-                log_warning(
+                print(
                     f"{self._character.name} does not have a free hand to equip {armor.name}",
                     {
                         "character": self._character.name,
@@ -148,7 +147,7 @@ class CharacterInventory:
         # Otherwise, check if the armor slot is already occupied.
         for equipped in self._character.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
-                log_warning(
+                print(
                     f"{self._character.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
                     {
                         "character": self._character.name,
@@ -176,7 +175,7 @@ class CharacterInventory:
             # Add the armor to the character's armor list.
             self._character.equipped_armor.append(armor)
             return True
-        log_warning(
+        print(
             f"{self._character.name} cannot equip {armor.name} because the armor slot is already occupied",
             {
                 "character": self._character.name,
@@ -201,7 +200,7 @@ class CharacterInventory:
             # Remove the armor from the character's armor list.
             self._character.equipped_armor.remove(armor)
             return True
-        log_warning(
+        print(
             f"{self._character.name} does not have {armor.name} equipped",
             {"character": self._character.name, "armor": armor.name},
         )

@@ -8,7 +8,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Thrust",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -20,7 +20,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Slash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -40,7 +40,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Thrust",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR] + 1",
                 "damage": [
                     {
@@ -52,7 +52,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Slash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -72,7 +72,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Thrust",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -84,7 +84,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Slash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -104,7 +104,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Thrust",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -116,7 +116,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Slash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -136,7 +136,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Cleave",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -156,7 +156,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Smash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -176,7 +176,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Stab",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -196,7 +196,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Chop",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -216,7 +216,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Pierce",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -236,7 +236,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Smash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -256,7 +256,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Crush",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -276,7 +276,7 @@
             {
                 "class": "WeaponAttack",
                 "name": "Slash",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {

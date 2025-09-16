@@ -202,7 +202,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
     sheet += (
-        f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name}[/], "
+        f"[{get_action_type_color(spell.action_type)}]{spell.action_type}[/], "
     )
     sheet += f"mind {spell.mind_cost}, "
     if spell.has_limited_uses():
@@ -213,7 +213,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     cprint(Padding(sheet, (0, padding)))
 
     # Handle specific spell types
-    if isinstance(spell, SpellAttack):
+    if isinstance(spell, SpellOffensive):
         sheet = (
             f"Deals {', '.join([damage_to_string(damage) for damage in spell.damage])}"
         )
@@ -241,7 +241,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
     sheet += (
-        f"[{get_action_type_color(ability.action_type)}]{ability.action_type.name}[/], "
+        f"[{get_action_type_color(ability.action_type)}]{ability.action_type}[/], "
     )
 
     if ability.has_cooldown():
@@ -257,14 +257,14 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     cprint(Padding(sheet, (0, padding)))
 
     # Handle specific ability types
-    if isinstance(ability, OffensiveAbility):
+    if isinstance(ability, AbilityOffensive):
         if ability.damage:
             sheet = f"Deals {', '.join([damage_to_string(damage) for damage in ability.damage])}"
             cprint(Padding(sheet, (0, padding)))
-    elif isinstance(ability, HealingAbility):
+    elif isinstance(ability, AbilityHeal):
         sheet = f"Heals [green]{ability.heal_roll}[/] HP"
         cprint(Padding(sheet, (0, padding)))
-    elif isinstance(ability, BuffAbility):
+    elif isinstance(ability, AbilityBuff):
         sheet = f"Applies beneficial effect"
         cprint(Padding(sheet, (0, padding)))
 
@@ -292,7 +292,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     else:
         # Generic action display
         sheet: str = f"[{get_action_category_color(action.category)}]{action.name}[/], "
-        sheet += f"[{get_action_type_color(action.action_type)}]{action.action_type.name}[/], "
+        sheet += f"[{get_action_type_color(action.action_type)}]{action.action_type}[/], "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
 
@@ -470,7 +470,7 @@ def print_content_repository_summary() -> None:
         cprint(f"\n[green]Actions & Abilities ({len(repo.actions)})[/green]:")
         for name, action in repo.actions.items():
             action_info = f"[{get_action_category_color(action.category)}]{name}[/] "
-            action_info += f"([{get_action_type_color(action.action_type)}]{action.action_type.name}[/])"
+            action_info += f"([{get_action_type_color(action.action_type)}]{action.action_type}[/])"
             cprint(Padding(action_info, (0, 2)))
 
     # Spells
@@ -594,7 +594,7 @@ def print_damage_types_reference() -> None:
     for damage_type in DamageType:
         emoji = get_damage_type_emoji(damage_type)
         color = get_damage_type_color(damage_type)
-        cprint(f"{emoji} [{color}]{damage_type.name.title()}[/]")
+        cprint(f"{emoji} [{color}]{damage_type}[/]")
 
 
 def print_action_types_reference() -> None:
@@ -612,75 +612,10 @@ def print_action_types_reference() -> None:
     for action_type in ActionType:
         if action_type != ActionType.NONE:  # Skip NONE type
             color = get_action_type_color(action_type)
-            cprint(f"  [{color}]{action_type.name.title()}[/]")
+            cprint(f"  [{color}]{action_type.title()}[/]")
 
     cprint("\n[green]Action Categories:[/green]")
     for category in ActionCategory:
         emoji = get_action_category_emoji(category)
         color = get_action_category_color(category)
         cprint(f"  {emoji} [{color}]{category.name.title()}[/]")
-
-
-def create_test_character_sheet() -> None:
-    """
-    Create and display a test character with various abilities for demonstration.
-
-    Creates a sample character to showcase the character sheet formatting system.
-    """
-    from character import Character
-    from character.character_race import CharacterRace
-    from character.character_class import CharacterClass
-    from core.constants import CharacterType, ActionType, ActionCategory, DamageType
-    from actions.abilities import OffensiveAbility, HealingAbility
-    from combat.damage import DamageComponent
-
-    cprint("\n[bold cyan]🧙‍♂️ Test Character Sheet Display[/bold cyan]")
-    cprint("=" * 50)
-
-    # Create a test race and class
-    test_race = CharacterRace("Human", natural_ac=0)
-    test_class = CharacterClass("Fighter", hp_mult=10, mind_mult=0)
-
-    # Create a test character
-    test_char = Character(
-        char_type=CharacterType.PLAYER,
-        name="Test Hero",
-        race=test_race,
-        levels={test_class: 5},
-        stats={
-            "strength": 16,
-            "dexterity": 14,
-            "constitution": 15,
-            "intelligence": 12,
-            "wisdom": 13,
-            "charisma": 8,
-        },
-        spellcasting_ability="wisdom",
-        total_hands=2,
-        number_of_attacks=2,
-    )
-
-    # Add a test ability
-    fire_breath = OffensiveAbility(
-        name="Fire Breath",
-        action_type=ActionType.STANDARD,
-        description="Exhales a cone of flame",
-        cooldown=2,
-        maximum_uses=3,
-        damage=[DamageComponent("3d6", DamageType.FIRE)],
-    )
-    test_char.learn_action(fire_breath)
-
-    # Add a healing ability
-    healing_touch = HealingAbility(
-        name="Healing Touch",
-        action_type=ActionType.BONUS,
-        description="Channel healing energy through touch",
-        cooldown=0,
-        maximum_uses=5,
-        heal_roll="2d4+2",
-    )
-    test_char.learn_action(healing_touch)
-
-    # Display the character sheet
-    print_character_sheet(test_char)

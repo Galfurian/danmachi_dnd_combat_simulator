@@ -29,9 +29,6 @@ from .trigger_effect import (
     create_trigger_from_json_config,
 )
 
-# Import serialization module
-from . import effect_serialization
-
 __all__ = [
     # Base classes
     "Effect",
@@ -66,7 +63,4 @@ __all__ = [
     "create_kill_trigger",
     "create_custom_trigger",
     "create_trigger_from_json_config",
-    
-    # Serialization
-    "effect_serialization",
 ]

@@ -7,7 +7,6 @@ from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
 from core.constants import ActionType
-from catchery import *
 
 if TYPE_CHECKING:
     from character.main import Character
@@ -225,7 +224,7 @@ class CharacterActions:
                 self._character.uses[action.name] -= 1
                 return True
             else:
-                log_warning(
+                print(
                     f"{self._character.name} has no remaining uses for {action.name}",
                     {
                         "character": self._character.name,
@@ -234,7 +233,7 @@ class CharacterActions:
                     },
                 )
         else:
-            log_warning(
+            print(
                 f"{self._character.name} does not have {action.name} in their uses",
                 {
                     "character": self._character.name,

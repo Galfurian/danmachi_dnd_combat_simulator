@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import Field
+
 from .base_effect import Effect
 
 
@@ -11,23 +13,26 @@ class IncapacitatingEffect(Effect):
     completely prevents the character from acting during their turn.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        incapacitation_type: str = "general",  # "sleep", "paralyzed", "stunned", etc.
-        save_ends: bool = False,
-        save_dc: int = 0,
-        save_stat: str = "CON",
-        damage_threshold: int = 1,  # Minimum damage needed to break effect (if applicable)
-    ):
-        super().__init__(name, description, duration)
-        self.incapacitation_type = incapacitation_type
-        self.save_ends = save_ends
-        self.save_dc = save_dc
-        self.save_stat = save_stat
-        self.damage_threshold = damage_threshold
+    incapacitation_type: str = Field(
+        ...,
+        description="Type of incapacitation (e.g., 'sleep', 'paralyzed', 'stunned').",
+    )
+    save_ends: bool = Field(
+        False,
+        description="Whether the effect can end on a successful saving throw.",
+    )
+    save_dc: int = Field(
+        0,
+        description="DC for the saving throw to end the effect.",
+    )
+    save_stat: str = Field(
+        "CON",
+        description="Stat used for the saving throw (e.g., 'CON', 'WIS').",
+    )
+    damage_threshold: int = Field(
+        1,
+        description="Minimum damage needed to break effect (if applicable).",
+    )
 
     def prevents_actions(self) -> bool:
         """

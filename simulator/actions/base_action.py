@@ -17,23 +17,11 @@ from core.constants import (
     apply_character_type_color,
     is_oponent,
 )
-from catchery import (
-    ErrorSeverity,
-    log_warning,
-    safe_operation,
-    validate_object,
-    validate_type,
-    ensure_string,
-    ensure_int_in_range,
-    ensure_non_negative_int,
-    ensure_list_of_type,
-    safe_get_attribute,
-    re_raise_chained,
-)
 from effects import Effect
+from pydantic import BaseModel, Field
 
 
-class BaseAction:
+class BaseAction(BaseModel, use_enum_values=True):
     """Base class for all character actions in the combat system.
 
     This class provides a foundation for implementing various types of actions,
@@ -42,94 +30,45 @@ class BaseAction:
     for damage calculation and serialization.
     """
 
-    @re_raise_chained(
-        new_exception_type=RuntimeError,
-        message="BaseAction: Failed to initialize.",
-        severity=ErrorSeverity.HIGH,
+    name: str = Field(
+        ...,
+        description="Name of the action",
     )
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        category: ActionCategory,
-        description: str = "",
-        cooldown: int = 0,
-        maximum_uses: int = -1,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new BaseAction.
+    action_type: ActionType = Field(
+        ...,
+        description="Type of the action (e.g., ACTION, BONUS_ACTION)",
+    )
+    category: ActionCategory = Field(
+        ...,
+        description="Category of the action (e.g., OFFENSIVE, HEALING)",
+    )
+    description: str = Field(
+        default="No description.",
+        description="Description of the action",
+    )
+    cooldown: int = Field(
+        default=-1,
+        ge=-1,
+        description="Cooldown period in turns (-1 for no cooldown)",
+    )
+    maximum_uses: int = Field(
+        default=-1,
+        ge=-1,
+        description="Maximum number of uses per encounter/day (-1 for unlimited)",
+    )
+    target_restrictions: list[str] = Field(
+        default_factory=list,
+        description="Restrictions on valid targets",
+    )
 
-        Args:
-            name (str): Name of the action.
-            type (ActionType): Type of the action (e.g., ACTION, BONUS_ACTION).
-            category (ActionCategory): Category of the action (e.g., OFFENSIVE, HEALING).
-            description (str): Description of the action.
-            cooldown (int): Cooldown period in turns.
-            maximum_uses (int): Maximum number of uses per encounter/day.
-            target_restrictions (list[str] | None): Restrictions on valid targets.
+    # For compatibility with old code using _cooldown and _maximum_uses
+    @property
+    def _cooldown(self) -> int:
+        return self.cooldown
 
-        Raises:
-            ValueError: If critical validations fail.
-        """
-        ctx = {
-            "name": name,
-            "action_type": action_type,
-            "category": category,
-            "description": description,
-            "cooldown": cooldown,
-            "maximum_uses": maximum_uses,
-            "target_restrictions": target_restrictions or [],
-        }
-
-        # === CRITICAL VALIDATIONS ===
-        self.name = validate_type(
-            obj=name,
-            name="Action name",
-            expected_type=str,
-            context=ctx,
-        )
-        self.action_type = validate_type(
-            obj=action_type,
-            name="Action type",
-            expected_type=ActionType,
-            context=ctx,
-        )
-        self.category = validate_type(
-            obj=category,
-            name="Action category",
-            expected_type=ActionCategory,
-            context=ctx,
-        )
-
-        # === NON-CRITICAL VALIDATIONS ===
-
-        self.description = ensure_string(
-            obj=description,
-            name="Action description",
-            default="",
-            context=ctx,
-        )
-        self._cooldown = ensure_int_in_range(
-            obj=cooldown,
-            name="Action cooldown",
-            min_val=-1,
-            default=-1,
-            context=ctx,
-        )
-        self._maximum_uses = ensure_int_in_range(
-            obj=maximum_uses,
-            name="Action maximum_uses",
-            min_val=-1,
-            default=-1,
-            context=ctx,
-        )
-        self.target_restrictions = ensure_list_of_type(
-            values=target_restrictions,
-            name="Action target restrictions",
-            expected_type=str,
-            default=[],
-            context=ctx,
-        )
+    @property
+    def _maximum_uses(self) -> int:
+        return self.maximum_uses
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute the action against a target character.
@@ -182,39 +121,19 @@ class BaseAction:
         """
         return self._cooldown
 
-    @safe_operation(
-        default_value=False,
-        error_message="Character validation failed",
-        severity=ErrorSeverity.HIGH,
-    )
-    def _validate_character(
-        self, character: Any, context: dict[str, Any] | None = None
-    ) -> bool:
+    def _validate_character(self, character: Any) -> bool:
         """Validate that a character object has the required attributes.
 
         Args:
             character (Any): The character object to validate.
-            context (dict[str, Any]): Context for error messages.
 
         Returns:
             bool: True if valid, False otherwise.
         """
-        validate_object(
-            obj=character,
-            name="character",
-            context=context or {"action": self.name},
-            attributes=[
-                "name",
-                "char_type",
-                "mind",
-                "MIND_MAX",
-                "hp",
-                "HP_MAX",
-                "is_on_cooldown",
-                "get_expression_variables",
-                "effects_module",
-            ],
-        )
+        from character.main import Character
+
+        assert character is not None, "Character is required"
+        assert isinstance(character, Character), "Character must be an object"
         return True
 
     def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
@@ -265,7 +184,7 @@ class BaseAction:
         if not actor.is_alive() or not target.is_alive():
             return False
         # Validate and correct mind_level.
-        mind_level = ensure_non_negative_int(mind_level, "mind level", 0)
+        mind_level = 0 if mind_level < 0 else mind_level
         # Try to apply the effect using the target's effects module.
         if target.effects_module.add_effect(actor, effect, mind_level, self):
             return True
@@ -289,7 +208,10 @@ class BaseAction:
         return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
 
     def _roll_attack_with_crit(
-        self, actor, attack_bonus_expr: str, bonus_list: list[str]
+        self,
+        actor,
+        attack_bonus_expr: str,
+        bonus_list: list[str],
     ) -> Tuple[int, str, int]:
         """Roll an attack with critical hit detection.
 
@@ -305,12 +227,10 @@ class BaseAction:
             return 1, "1D20: 1 (error)", 1
         # Build attack expression
         expr = "1D20"
-        attack_bonus_expr = ensure_string(attack_bonus_expr, "attack bonus expression")
         if attack_bonus_expr:
             expr += f" + {attack_bonus_expr}"
 
         # Process bonus list
-        bonus_list = ensure_list_of_type(bonus_list, "bonus list", str, [])
         for bonus in bonus_list:
             if bonus:  # Only add non-empty bonuses
                 expr += f" + {bonus}"
@@ -318,12 +238,8 @@ class BaseAction:
         # Get actor variables and ensure it's a dict
         variables = actor.get_expression_variables()
         if not isinstance(variables, dict):
-            log_warning(
+            print(
                 f"Actor expression variables must be dict, got: {type(variables).__name__}, using empty dict",
-                {
-                    "variables": variables,
-                    "actor": safe_get_attribute(actor, "name", "Unknown"),
-                },
             )
             variables = {}
 
@@ -414,16 +330,10 @@ class BaseAction:
             return "0"
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
-            log_warning(
-                "Damage components must be a non-empty list",
-                {"damage_components": damage_components, "actor": actor.name},
-            )
+            print("Damage components must be a non-empty list")
             return "0"
         if not isinstance(extra_variables, dict):
-            log_warning(
-                "Extra variables must be a dictionary",
-                {"extra_variables": extra_variables, "actor": actor.name},
-            )
+            print("Extra variables must be a dictionary")
             extra_variables = {}
         # Get the base character variables.
         variables = actor.get_expression_variables()
@@ -456,16 +366,10 @@ class BaseAction:
             return 0
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
-            log_warning(
-                "Damage components must be a non-empty list",
-                {"damage_components": damage_components, "actor": actor.name},
-            )
+            print("Damage components must be a non-empty list")
             return 0
         if not isinstance(extra_variables, dict):
-            log_warning(
-                "Extra variables must be a dictionary",
-                {"extra_variables": extra_variables, "actor": actor.name},
-            )
+            print("Extra variables must be a dictionary")
             extra_variables = {}
         # Get the base character variables.
         variables = actor.get_expression_variables()
@@ -500,16 +404,10 @@ class BaseAction:
             return 0
         # Validate inputs.
         if not isinstance(damage_components, list) or not damage_components:
-            log_warning(
-                "Damage components must be a non-empty list",
-                {"damage_components": damage_components, "actor": actor.name},
-            )
+            print("Damage components must be a non-empty list")
             return 0
         if not isinstance(extra_variables, dict):
-            log_warning(
-                "Extra variables must be a dictionary",
-                {"extra_variables": extra_variables, "actor": actor.name},
-            )
+            print("Extra variables must be a dictionary")
             extra_variables = {}
         # Get the base character variables.
         variables = actor.get_expression_variables()
@@ -601,55 +499,3 @@ class BaseAction:
 
         # Unknown category - default to no targeting.
         return False
-
-    # ============================================================================
-    # UTILITY METHODS
-    # ============================================================================
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the action to a dictionary representation for serialization.
-
-        Returns:
-            dict[str, Any]: Dictionary containing all action data.
-
-        Raises:
-            NotImplementedError: If the subclass does not implement this method.
-        """
-        raise NotImplementedError("Subclasses must implement the to_dict")
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Any":
-        """Create an action instance from a dictionary representation.
-
-        Args:
-            data (dict[str, Any]): Dictionary containing action data.
-
-        Returns:
-            Any: An instance of the action class represented by the data.
-
-        Raises:
-            NotImplementedError: If the subclass does not implement this method.
-        """
-        raise NotImplementedError("Subclasses must implement the from_dict method")
-
-
-class ActionSerializer:
-    """Utility class for serializing and deserializing action instances."""
-
-    @staticmethod
-    def serialize(ability: BaseAction) -> dict[str, Any]:
-        """Serialize common fields shared by all abilities."""
-        data = {
-            "class": ability.__class__.__name__,
-            "name": ability.name,
-            "type": ability.action_type.name,
-            "description": ability.description,
-            "": ability.target_restrictions or [],
-        }
-        if ability.has_cooldown():
-            data["cooldown"] = ability.get_cooldown()
-        if ability.has_limited_uses():
-            data["maximum_uses"] = ability.get_maximum_uses()
-        if ability.target_restrictions:
-            data["target_restrictions"] = ability.target_restrictions
-        return data

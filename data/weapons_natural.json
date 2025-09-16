@@ -7,7 +7,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Bite",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -27,7 +27,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Claw",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A sharp claw attack that can slash through armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -47,7 +47,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Bite",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -67,7 +67,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Crush",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A crushing mandible attack that can break bones.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -87,7 +87,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Acid spit",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A glob of acid that splashes on impact.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -107,7 +107,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Pounce",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A leaping attack that can knock down foes.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -127,7 +127,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Tail swipe",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
                 "cooldown": 1,
@@ -148,7 +148,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Punch",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A quick punch that can stun opponents.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -168,7 +168,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Punch",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A devastating punch that can crush bones and break armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -188,7 +188,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Claw",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A powerful claw attack that can slash through armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -208,7 +208,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Tail swipe",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
                 "cooldown": 2,
@@ -229,7 +229,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Claw",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A venomous claw attack that slashes and applies a lingering poison effect.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -259,7 +259,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Needle Shot",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "Shoots sharp needles at the target.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -279,7 +279,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Dust Cloud",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "Releases a cloud of sleep-inducing dust.",
                 "attack_roll": "[WIS]",
                 "damage": [
@@ -299,7 +299,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Armored Strike",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A powerful strike with armored claws.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -319,7 +319,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Horn Charge",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A powerful charging attack with the horn.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -339,7 +339,7 @@
             {
                 "class": "NaturalAttack",
                 "name": "Fire Bite",
-                "type": "STANDARD",
+                "action_type": "STANDARD",
                 "description": "A bite attack that burns the target.",
                 "attack_roll": "[STR]",
                 "damage": [

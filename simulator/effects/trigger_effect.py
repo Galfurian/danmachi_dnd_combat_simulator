@@ -1,8 +1,8 @@
-from typing import Any, Optional, Callable
+from typing import Any, ClassVar, Optional, Callable
 from enum import Enum
 
-from catchery import *
 from combat.damage import DamageComponent
+from pydantic import BaseModel, Field, model_validator
 
 from .base_effect import Effect
 
@@ -25,7 +25,7 @@ class TriggerType(Enum):
     ON_KILL = "on_kill"  # When character defeats an enemy
 
 
-class TriggerCondition:
+class TriggerCondition(BaseModel):
     """
     Defines the condition that must be met for a trigger to activate.
 
@@ -33,32 +33,30 @@ class TriggerCondition:
     with parameters, thresholds, and custom validation logic.
     """
 
-    def __init__(
-        self,
-        trigger_type: TriggerType,
-        threshold: Optional[float] = None,
-        damage_type: Optional[Any] = None,
-        spell_category: Optional[Any] = None,
-        custom_condition: Optional[Callable[[Any, dict], bool]] = None,
-        description: str = "",
-    ):
-        """
-        Initialize a trigger condition.
-
-        Args:
-            trigger_type (TriggerType): The type of trigger event.
-            threshold (Optional[float]): Numerical threshold (e.g., 0.25 for 25% HP).
-            damage_type (Optional[Any]): Specific damage type to trigger on.
-            spell_category (Optional[Any]): Specific spell category to trigger on.
-            custom_condition (Optional[Callable]): Custom validation function.
-            description (str): Human-readable description of the condition.
-        """
-        self.trigger_type = trigger_type
-        self.threshold = threshold
-        self.damage_type = damage_type
-        self.spell_category = spell_category
-        self.custom_condition = custom_condition
-        self.description = description or self._generate_description()
+    trigger_type: TriggerType = Field(
+        ...,
+        description="Type of trigger event.",
+    )
+    threshold: float | None = Field(
+        default=None,
+        description="Numerical threshold (e.g., 0.25 for 25% HP).",
+    )
+    damage_type: Any | None = Field(
+        default=None,
+        description="Specific damage type to trigger on (if applicable).",
+    )
+    spell_category: Any | None = Field(
+        default=None,
+        description="Specific spell category to trigger on (if applicable).",
+    )
+    custom_condition: Optional[Callable[[Any, dict], bool]] = Field(
+        default=None,
+        description="Custom function to evaluate the trigger condition.",
+    )
+    description: str = Field(
+        default="",
+        description="Human-readable description of the condition.",
+    )
 
     def _generate_description(self) -> str:
         """Generate a human-readable description of the trigger condition."""
@@ -131,7 +129,7 @@ class TriggerCondition:
             return False
 
         except Exception as e:
-            log_error(
+            print(
                 f"Error evaluating trigger condition: {str(e)}",
                 {
                     "trigger_type": self.trigger_type.value,
@@ -151,72 +149,86 @@ class TriggerEffect(Effect):
     Effects can stack, have cooldowns, and provide both immediate and ongoing benefits.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        trigger_condition: TriggerCondition,
-        trigger_effects: list["Effect"],
-        damage_bonus: list[DamageComponent] | None = None,
-        consumes_on_trigger: bool = True,
-        cooldown_turns: int = 0,
-        max_triggers: int | None = None,  # None for unlimited
-    ):
-        """
-        Initialize a universal trigger effect.
+    trigger_condition: TriggerCondition = Field(
+        ...,
+        description="Condition that activates the trigger.",
+    )
+    trigger_effects: list[Effect] = Field(
+        ..., description="Effects to apply when triggered."
+    )
+    damage_bonus: list[DamageComponent] | None = Field(
+        default_factory=list,
+        description="Additional damage components applied when triggered.",
+    )
+    consumes_on_trigger: bool = Field(
+        True,
+        description="Whether the effect is consumed when triggered.",
+    )
+    cooldown_turns: int = Field(
+        0,
+        ge=0,
+        description="Number of turns before trigger can activate again.",
+    )
+    max_triggers: int | None = Field(
+        None,
+        description="Maximum number of times trigger can activate (None for unlimited).",
+    )
 
-        Args:
-            name (str): Name of the effect.
-            description (str): Description of what the effect does.
-            duration (int): Duration in turns (0 for permanent).
-            trigger_condition (TriggerCondition): Condition that activates the trigger.
-            trigger_effects (list[Effect]): Effects to apply when triggered.
-            damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
-            consumes_on_trigger (bool): Whether the effect is consumed when triggered.
-            cooldown_turns (int): Number of turns before trigger can activate again.
-            max_triggers (int | None): Maximum number of times trigger can activate (None for unlimited).
-        """
-        super().__init__(name, description, duration)
-        self.trigger_condition = trigger_condition
-        self.trigger_effects: list[Effect] = trigger_effects or []
-        self.damage_bonus: list[DamageComponent] = damage_bonus or []
-        self.consumes_on_trigger = consumes_on_trigger
-        self.cooldown_turns = cooldown_turns
-        self.max_triggers = max_triggers
+    # Runtime state.
+    triggers_used: ClassVar[int] = 0
+    cooldown_remaining: ClassVar[int] = 0
+    has_triggered_this_turn: ClassVar[bool] = False
 
-        # Runtime state
-        self.triggers_used = 0
-        self.cooldown_remaining = 0
-        self.has_triggered_this_turn = False
+    @model_validator(mode="after")
+    def check_trigger_condition(self) -> Any:
+        if not isinstance(self.trigger_condition, TriggerCondition):
+            raise ValueError("Trigger condition must be a TriggerCondition instance.")
+        if not self.trigger_condition.description:
+            self.trigger_condition.description = (
+                self.trigger_condition._generate_description()
+            )
+        return self
 
-        self.validate()
-
-    def validate(self) -> None:
-        """
-        Validate the TriggerEffect effect's properties.
-
-        Raises:
-            AssertionError: If validation conditions are not met.
-        """
-        super().validate()
-        assert isinstance(
-            self.trigger_condition, TriggerCondition
-        ), "Trigger condition must be a TriggerCondition instance."
-        assert isinstance(self.trigger_effects, list), "Trigger effects must be a list."
+    @model_validator(mode="after")
+    def check_trigger_effects(self) -> Any:
+        if not self.trigger_effects or not isinstance(self.trigger_effects, list):
+            raise ValueError(
+                "Trigger effects must be a non-empty list of Effect instances."
+            )
         for effect in self.trigger_effects:
-            assert isinstance(
-                effect, Effect
-            ), f"Trigger effect '{effect}' must be of type Effect."
-        assert isinstance(self.damage_bonus, list), "Damage bonus must be a list."
-        for damage_comp in self.damage_bonus:
-            assert isinstance(
-                damage_comp, DamageComponent
-            ), f"Damage component '{damage_comp}' must be of type DamageComponent."
-        assert self.cooldown_turns >= 0, "Cooldown turns must be non-negative."
-        assert (
-            self.max_triggers is None or self.max_triggers >= 0
-        ), "Max triggers must be None (unlimited) or non-negative."
+            if not isinstance(effect, Effect):
+                raise ValueError(
+                    f"Each trigger effect must be an Effect instance, got {type(effect)}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def check_damage_bonus(self) -> Any:
+        if self.damage_bonus is None:
+            self.damage_bonus = []
+        elif not isinstance(self.damage_bonus, list):
+            raise ValueError(
+                "Damage bonus must be a list of DamageComponent instances."
+            )
+        else:
+            for dmg in self.damage_bonus:
+                if not isinstance(dmg, DamageComponent):
+                    raise ValueError(
+                        f"Each damage bonus must be a DamageComponent instance, got {type(dmg)}"
+                    )
+        return self
+
+    @model_validator(mode="after")
+    def check_cooldown_turns(self) -> Any:
+        if self.cooldown_turns < 0:
+            raise ValueError("Cooldown turns must be non-negative.")
+        return self
+
+    @model_validator(mode="after")
+    def check_max_triggers(self) -> Any:
+        if self.max_triggers is not None and self.max_triggers < 0:
+            raise ValueError("Max triggers must be None (unlimited) or non-negative.")
+        return self
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """TriggerEffect effects can be applied to any living target."""
@@ -263,7 +275,9 @@ class TriggerEffect(Effect):
         return self.trigger_condition.is_met(character, event_data)
 
     def activate_trigger(
-        self, character: Any, event_data: dict[str, Any]
+        self,
+        character: Any,
+        event_data: dict[str, Any],
     ) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
         """
         Activate the trigger and return effects and damage bonuses.
@@ -287,7 +301,9 @@ class TriggerEffect(Effect):
             (effect, mind_level) for effect in self.trigger_effects
         ]
 
-        return self.damage_bonus.copy(), trigger_effects_with_levels
+        assert self.damage_bonus is not None
+
+        return self.damage_bonus, trigger_effects_with_levels
 
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """
@@ -358,19 +374,20 @@ def create_on_hit_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(
-        TriggerType.ON_HIT, description="when hitting with an attack"
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_HIT,
+        description="when hitting with an attack",
     )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        consumes_on_trigger,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=consumes_on_trigger,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )
 
 
@@ -402,17 +419,20 @@ def create_low_health_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(TriggerType.ON_LOW_HEALTH, threshold=hp_threshold)
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_LOW_HEALTH,
+        threshold=hp_threshold,
+    )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        consumes_on_trigger,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=consumes_on_trigger,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )
 
 
@@ -442,19 +462,20 @@ def create_spell_cast_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(
-        TriggerType.ON_SPELL_CAST, spell_category=spell_category
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_SPELL_CAST,
+        spell_category=spell_category,
     )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        False,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=False,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )  # Don't consume by default for spell triggers
 
 
@@ -484,17 +505,20 @@ def create_damage_taken_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(TriggerType.ON_DAMAGE_TAKEN, damage_type=damage_type)
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_DAMAGE_TAKEN,
+        damage_type=damage_type,
+    )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        False,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=False,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )
 
 
@@ -523,17 +547,19 @@ def create_turn_based_trigger(
     trigger_type = (
         TriggerType.ON_TURN_START if trigger_on_start else TriggerType.ON_TURN_END
     )
-    condition = TriggerCondition(trigger_type)
+    trigger_condition = TriggerCondition(
+        trigger_type=trigger_type,
+    )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        None,
-        False,
-        0,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=None,
+        consumes_on_trigger=False,
+        cooldown_turns=0,
+        max_triggers=max_uses,
     )
 
 
@@ -561,19 +587,20 @@ def create_critical_hit_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(
-        TriggerType.ON_CRITICAL_HIT, description="when scoring a critical hit"
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_CRITICAL_HIT,
+        description="when scoring a critical hit",
     )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        consumes_on_trigger,
-        cooldown,
-        -1,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=consumes_on_trigger,
+        cooldown_turns=cooldown,
+        max_triggers=-1,
     )
 
 
@@ -601,19 +628,20 @@ def create_kill_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(
-        TriggerType.ON_KILL, description="when defeating an enemy"
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_KILL,
+        description="when defeating an enemy",
     )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        False,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=False,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )
 
 
@@ -645,21 +673,21 @@ def create_custom_trigger(
     Returns:
         TriggerEffect: The created trigger effect.
     """
-    condition = TriggerCondition(
-        TriggerType.ON_HIT,  # Placeholder type for custom conditions
+    trigger_condition = TriggerCondition(
+        trigger_type=TriggerType.ON_HIT,  # Placeholder type for custom conditions
         custom_condition=custom_condition,
         description=description,
     )
     return TriggerEffect(
-        name,
-        description,
-        duration,
-        condition,
-        trigger_effects,
-        damage_bonus,
-        consumes_on_trigger,
-        cooldown,
-        max_uses,
+        name=name,
+        description=description,
+        duration=duration,
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        damage_bonus=damage_bonus,
+        consumes_on_trigger=consumes_on_trigger,
+        cooldown_turns=cooldown,
+        max_triggers=max_uses,
     )
 
 
@@ -720,7 +748,7 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
     trigger_type = trigger_type_map.get(trigger_type_str, TriggerType.ON_HIT)
 
     # Create condition
-    condition = TriggerCondition(
+    trigger_condition = TriggerCondition(
         trigger_type=trigger_type,
         threshold=config.get("threshold"),
         # damage_type and spell_category would be resolved from strings here
@@ -730,7 +758,7 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
     # Parse trigger effects
     trigger_effects = []
     for effect_config in config.get("effects", []):
-        effect = Effect.from_dict(effect_config)
+        effect = Effect(**effect_config)
         if effect:
             trigger_effects.append(effect)
 
@@ -745,10 +773,10 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
         name=config["name"],
         description=config["description"],
         duration=config.get("duration", 0),
-        trigger_condition=condition,
+        trigger_condition=trigger_condition,
         trigger_effects=trigger_effects,
         damage_bonus=damage_bonus,
         consumes_on_trigger=config.get("consumes", True),
         cooldown_turns=config.get("cooldown", 0),
-        max_triggers=config.get("max_triggers"),  # None for unlimited
+        max_triggers=config.get("max_triggers"),
     )

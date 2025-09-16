@@ -11,82 +11,82 @@ GLOBAL_VERBOSE_LEVEL = 0
 class CharacterType(Enum):
     """Defines the type of character in the game."""
 
-    PLAYER = auto()
-    ENEMY = auto()
-    ALLY = auto()
+    PLAYER = "PLAYER"
+    ENEMY = "ENEMY"
+    ALLY = "ALLY"
 
 
 class BonusType(Enum):
     """Defines the types of bonuses that can be applied to characters."""
 
-    HP = auto()
-    MIND = auto()
-    AC = auto()
-    INITIATIVE = auto()
-    ATTACK = auto()
-    DAMAGE = auto()
-    CONCENTRATION = auto()  # For effects that modify concentration limit
+    HP = "HP"
+    MIND = "MIND"
+    AC = "AC"
+    INITIATIVE = "INITIATIVE"
+    ATTACK = "ATTACK"
+    DAMAGE = "DAMAGE"
+    CONCENTRATION = "CONCENTRATION"
 
 
 class ActionType(Enum):
     """Defines the type of action that can be performed."""
 
-    NONE = auto()
-    STANDARD = auto()
-    BONUS = auto()
-    FREE = auto()
-    REACTION = auto()
+    NONE = "NONE"
+    STANDARD = "STANDARD"
+    BONUS = "BONUS"
+    FREE = "FREE"
+    REACTION = "REACTION"
 
 
 class DamageType(Enum):
     """Defines various types of damage that can be inflicted."""
 
-    PIERCING = auto()
-    SLASHING = auto()
-    BLUDGEONING = auto()
-    FIRE = auto()
-    COLD = auto()
-    LIGHTNING = auto()
-    THUNDER = auto()
-    POISON = auto()
-    NECROTIC = auto()
-    RADIANT = auto()
-    PSYCHIC = auto()
-    FORCE = auto()
-    ACID = auto()
+    PIERCING = "PIERCING"
+    SLASHING = "SLASHING"
+    BLUDGEONING = "BLUDGEONING"
+    FIRE = "FIRE"
+    COLD = "COLD"
+    LIGHTNING = "LIGHTNING"
+    THUNDER = "THUNDER"
+    POISON = "POISON"
+    NECROTIC = "NECROTIC"
+    RADIANT = "RADIANT"
+    PSYCHIC = "PSYCHIC"
+    FORCE = "FORCE"
+    ACID = "ACID"
 
 
 class ActionCategory(Enum):
     """Defines the primary purpose or effect category of an action or spell."""
 
-    OFFENSIVE = auto()
-    HEALING = auto()
-    BUFF = auto()
-    DEBUFF = auto()
-    UTILITY = auto()
-    DEBUG = auto()
+    OFFENSIVE = "OFFENSIVE"
+    HEALING = "HEALING"
+    BUFF = "BUFF"
+    DEBUFF = "DEBUFF"
+    UTILITY = "UTILITY"
+    DEBUG = "DEBUG"
 
 
 class ArmorSlot(Enum):
     """Defines the slots where armor can be equipped."""
 
-    HEAD = auto()
-    TORSO = auto()
-    SHIELD = auto()
-    LEGS = auto()
-    CLOAK = auto()
-    GLOVES = auto()
-    RING = auto()
-    COMBAT_STYLE = auto()
+    HEAD = "HEAD"
+    TORSO = "TORSO"
+    SHIELD = "SHIELD"
+    LEGS = "LEGS"
+    CLOAK = "CLOAK"
+    GLOVES = "GLOVES"
+    RING = "RING"
+    COMBAT_STYLE = "COMBAT_STYLE"
 
 
 class ArmorType(Enum):
     """Defines the type of armor that can be equipped."""
 
-    HEAVY = auto()
-    MEDIUM = auto()
-    LIGHT = auto()
-    OTHER = auto()
+    HEAVY = "HEAVY"
+    MEDIUM = "MEDIUM"
+    LIGHT = "LIGHT"
+    OTHER = "OTHER"
 
 
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
@@ -130,11 +130,11 @@ def get_character_type_color(character_type: CharacterType) -> str:
 def apply_character_type_color(character_type: CharacterType, message: str) -> str:
     """
     Applies character type color formatting to a message.
-    
+
     Args:
         character_type (CharacterType): The character type to get color for.
         message (str): The message to format with color.
-        
+
     Returns:
         str: The message wrapped in color formatting tags.
     """
@@ -171,11 +171,11 @@ def get_damage_type_color(damage_type: DamageType) -> str:
 def apply_damage_type_color(damage_type: DamageType, message: str) -> str:
     """
     Applies damage type color formatting to a message.
-    
+
     Args:
         damage_type (DamageType): The damage type to get color for.
         message (str): The message to format with color.
-        
+
     Returns:
         str: The message wrapped in color formatting tags.
     """
@@ -203,11 +203,11 @@ def get_action_type_color(action_type: ActionType) -> str:
 def apply_action_type_color(action_type: ActionType, message: str) -> str:
     """
     Applies action type color formatting to a message.
-    
+
     Args:
         action_type (ActionType): The action type to get color for.
         message (str): The message to format with color.
-        
+
     Returns:
         str: The message wrapped in color formatting tags.
     """
@@ -237,11 +237,11 @@ def get_action_category_color(category: ActionCategory) -> str:
 def apply_action_category_color(category: ActionCategory, message: str) -> str:
     """
     Applies action category color formatting to a message.
-    
+
     Args:
         category (ActionCategory): The action category to get color for.
         message (str): The message to format with color.
-        
+
     Returns:
         str: The message wrapped in color formatting tags.
     """
@@ -259,7 +259,7 @@ def get_effect_color(effect: Any) -> str:
     """
     color_map = {
         "BuffEffect": "bold cyan",
-        "DebuffEffect": "bold red", 
+        "DebuffEffect": "bold red",
         "DamageOverTimeEffect": "bold magenta",
         "HealingOverTimeEffect": "bold green",
         "ModifierEffect": "bold yellow",

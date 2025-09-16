@@ -1,5 +1,7 @@
 from typing import Any
 
+from pydantic import Field, model_validator
+
 from .base_effect import Effect, Modifier
 
 
@@ -11,30 +13,25 @@ class ModifierEffect(Effect):
     like HP, AC, damage bonuses, etc.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        modifiers: list[Modifier],
-    ):
-        super().__init__(name, description, duration)
-        self.modifiers: list[Modifier] = modifiers
-        self.validate()
+    modifiers: list[Modifier] = Field(
+        ...,
+        description="List of modifiers applied by this effect.",
+    )
 
-    def validate(self) -> None:
+    @model_validator(mode="after")
+    def check_modifiers(self) -> "ModifierEffect":
         """
-        Validate the modifier effect's properties.
+        Ensure that the modifiers list is not empty.
 
         Raises:
-            AssertionError: If validation conditions are not met.
+            ValueError: If the modifiers list is empty.
         """
-        super().validate()
-        assert isinstance(self.modifiers, list), "Modifiers must be a list."
+        if not self.modifiers:
+            raise ValueError("Modifiers list cannot be empty.")
         for modifier in self.modifiers:
-            assert isinstance(
-                modifier, Modifier
-            ), f"Modifier '{modifier}' must be of type Modifier."
+            if not isinstance(modifier, Modifier):
+                raise ValueError(f"Invalid modifier: {modifier}")
+        return self
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """
@@ -68,15 +65,6 @@ class BuffEffect(ModifierEffect):
     damage, improved AC, or additional HP.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        modifiers: list[Modifier],
-    ):
-        super().__init__(name, description, duration, modifiers)
-
 
 class DebuffEffect(ModifierEffect):
     """
@@ -85,12 +73,3 @@ class DebuffEffect(ModifierEffect):
     Debuffs provide temporary penalties to character attributes such as reduced
     damage, lowered AC, or decreased HP.
     """
-
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        modifiers: list[Modifier],
-    ):
-        super().__init__(name, description, duration, modifiers)

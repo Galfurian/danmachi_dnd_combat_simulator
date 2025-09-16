@@ -6,73 +6,26 @@ from actions.abilities.base_ability import BaseAbility
 from combat.damage import (
     DamageComponent,
     roll_damage_components_no_mind,
-    roll_damage_components,
 )
 from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
 from core.constants import BonusType
-from catchery import *
 from core.utils import cprint
 from effects.base_effect import Effect
+from pydantic import Field
 
 
-class OffensiveAbility(BaseAbility):
+class AbilityOffensive(BaseAbility):
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        damage: list[DamageComponent],
-        effect: Effect | None = None,
-        target_expr: str = "",
-        target_restrictions: list[str] | None = None,
-        attack_roll: str = "",
-    ):
-        """Initialize a new OffensiveAbility.
+    category: ActionCategory = ActionCategory.OFFENSIVE
 
-        Args:
-            name (str): Display name of the ability.
-            action_type (ActionType): Action type (STANDARD, BONUS, REACTION, etc.).
-            description (str): Flavor text describing what the ability does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            damage (list[DamageComponent]): List of damage components to roll when used.
-            effect (Effect | None): Optional effect applied to targets on successful hits.
-            target_expr (str): Expression determining number of targets ("" = single target).
-            target_restrictions (list[str] | None): Override default targeting if needed.
-
-        Raises:
-            ValueError: If name is empty or required parameters are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            ActionCategory.OFFENSIVE,
-            description,
-            cooldown,
-            maximum_uses,
-            effect,
-            target_expr,
-            target_restrictions,
-        )
-
-        ctx = {"name": name}
-
-        self.attack_roll: str = ensure_string(
-            obj=attack_roll,
-            name="OffensiveAbility.attack_roll",
-            default="",
-            context=ctx,
-        )
-        self.damage: list[DamageComponent] = ensure_list_of_type(
-            values=damage,
-            name="OffensiveAbility.damage",
-            expected_type=DamageComponent,
-            default=[],
-            context=ctx,
-        )
+    attack_roll: str = Field(
+        default="",
+        description="Expression for attack roll, e.g. '1d20 + 5'",
+    )
+    damage: list[DamageComponent] = Field(
+        ...,
+        description="List of damage components for this ability",
+    )
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this offensive ability against a target.
@@ -94,7 +47,7 @@ class OffensiveAbility(BaseAbility):
             return False
         # Validate cooldown.
         if actor.is_on_cooldown(self):
-            log_critical(
+            print(
                 f"{actor.name} cannot use {self.name} yet, still on cooldown.",
                 {"actor": actor.name, "ability": self.name},
             )

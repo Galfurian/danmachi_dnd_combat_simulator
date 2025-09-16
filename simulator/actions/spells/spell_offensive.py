@@ -12,17 +12,12 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from catchery import *
-from core.utils import (
-    parse_expr_and_assume_max_roll,
-    parse_expr_and_assume_min_roll,
-    substitute_variables,
-    cprint,
-)
+from pydantic import Field
+from core.utils import cprint
 from effects.base_effect import Effect
 
 
-class SpellAttack(Spell):
+class SpellOffensive(Spell):
     """Offensive spell that deals damage through magical attacks.
 
     This class represents spells designed to inflict damage on targets using
@@ -30,85 +25,16 @@ class SpellAttack(Spell):
     effects, and methods for calculating and applying damage during combat.
     """
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        level: int,
-        mind_cost: list[int],
-        damage: list[DamageComponent],
-        effect: Effect | None = None,
-        target_expr: str = "",
-        requires_concentration: bool = False,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new SpellAttack.
+    category: ActionCategory = ActionCategory.OFFENSIVE
 
-        Args:
-            name (str): Display name of the spell.
-            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
-            description (str): Flavor text describing the spell's appearance/effects.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            level (int): Base spell level determining scaling and prerequisites.
-            mind_cost (list[int]): List of mind point costs per casting level.
-            damage (list[DamageComponent]): List of damage components with scaling expressions.
-            effect (Effect | None): Optional effect applied on successful spell attacks.
-            target_expr (str): Expression for multi-target spells.
-            requires_concentration (bool): Whether spell needs ongoing mental focus.
-            target_restrictions (list[str] | None): Override default targeting restrictions.
-
-        Raises:
-            ValueError: If damage list is empty or contains invalid components.
-        """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                description,
-                cooldown,
-                maximum_uses,
-                level,
-                mind_cost,
-                ActionCategory.OFFENSIVE,
-                target_expr,
-                requires_concentration,
-                target_restrictions,
-            )
-
-            # Validate damage components using helper.
-            self.damage = ensure_list_of_type(
-                validate_type(
-                    damage,
-                    "SpellAttack damage",
-                    list,
-                    {"name": name, "damage": damage},
-                ),
-                "SpellAttack damage",
-                DamageComponent,
-                context={"name": name},
-            )
-
-            # Validate optional effect
-            if effect is not None and not isinstance(effect, Effect):
-                log_warning(
-                    f"SpellAttack {name} effect must be Effect or None, got: {type(effect).__name__}, setting to None",
-                    {"name": name, "effect_type": type(effect).__name__},
-                )
-                effect = None
-
-            self.effect = effect
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing SpellAttack {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+    damage: list[DamageComponent] = Field(
+        ...,
+        description="List of damage components for this ability",
+    )
+    effect: Effect | None = Field(
+        None,
+        description="An optional beneficial effect that this healing spell applies.",
+    )
 
     # ============================================================================
     # SPELL ATTACK METHODS

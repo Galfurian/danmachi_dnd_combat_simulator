@@ -5,7 +5,6 @@ from typing import Any, Optional, Tuple
 from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
-from catchery import *
 from core.constants import (
     ActionType,
     ArmorSlot,

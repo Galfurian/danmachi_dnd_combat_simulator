@@ -10,7 +10,7 @@ from core.constants import (
     BonusType,
     get_effect_color,
 )
-from catchery import *
+from pydantic import Field
 from core.utils import (
     substitute_variables,
     cprint,
@@ -27,68 +27,13 @@ class SpellDebuff(Spell):
     applying those effects during combat.
     """
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        level: int,
-        mind_cost: list[int],
-        effect: Effect,
-        target_expr: str = "",
-        requires_concentration: bool = False,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new SpellDebuff.
-
-        Args:
-            name (str): Display name of the spell.
-            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
-            description (str): Flavor text describing what the spell does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
-            mind_cost (list[int]): List of mind point costs per casting level.
-            effect (Effect): Required detrimental effect applied to targets.
-            target_expr (str): Expression determining number of targets.
-            requires_concentration (bool): Whether spell requires concentration.
-            target_restrictions (list[str] | None): Override default targeting if needed.
-
-        Raises:
-            ValueError: If effect is None or invalid.
-        """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                description,
-                cooldown,
-                maximum_uses,
-                level,
-                mind_cost,
-                ActionCategory.DEBUFF,
-                target_expr,
-                requires_concentration,
-                target_restrictions,
-            )
-
-            # Ensure effect is a valid type.
-            self.effect = validate_type(
-                effect,
-                "SpellDebuff effect",
-                Effect,
-                {"name": name, "effect_type": type(effect).__name__},
-            )
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing SpellDebuff {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+    category: ActionCategory = ActionCategory.DEBUFF
+    
+    # Assign the effect to the spell.
+    effect: Effect = Field(
+        ...,
+        description="The beneficial effect that this buff spell applies.",
+    )
 
     # ============================================================================
     # DEBUFF SPELL METHODS

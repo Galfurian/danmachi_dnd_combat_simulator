@@ -8,6 +8,7 @@ from core.constants import (
 )
 from core.utils import cprint, roll_and_describe
 from combat.damage import DamageComponent
+from pydantic import Field, model_validator
 
 from .base_effect import Effect
 
@@ -20,17 +21,24 @@ class DamageOverTimeEffect(Effect):
     using a damage roll expression that can include variables like MIND level.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        duration: int | None,
-        damage: DamageComponent,
-    ):
-        super().__init__(name, description, duration)
-        self.damage: DamageComponent = damage
+    damage: DamageComponent = Field(
+        ...,
+        description="Damage component defining the damage roll and type.",
+    )
 
-        self.validate()
+    @model_validator(mode="after")
+    def check_duration(self) -> Any:
+        if self.duration is None or self.duration <= 0:
+            raise ValueError(
+                "Duration must be a positive integer for DamageOverTimeEffect."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_damage(self) -> Any:
+        if not isinstance(self.damage, DamageComponent):
+            raise ValueError("Damage must be of type DamageComponent.")
+        return self
 
     def turn_update(
         self, actor: Any, target: Any, mind_level: Optional[int] = 1
@@ -72,18 +80,3 @@ class DamageOverTimeEffect(Effect):
         # If the target is defeated, print a message.
         if not target.is_alive():
             cprint(f"    [bold red]{target.name} has been defeated![/]")
-
-    def validate(self) -> None:
-        """
-        Validate the DoT effect's properties.
-
-        Raises:
-            AssertionError: If validation conditions are not met.
-        """
-        super().validate()
-        assert (
-            self.duration > 0
-        ), "DamageOverTimeEffect duration must be greater than 0."
-        assert isinstance(
-            self.damage, DamageComponent
-        ), "Damage must be of type DamageComponent."

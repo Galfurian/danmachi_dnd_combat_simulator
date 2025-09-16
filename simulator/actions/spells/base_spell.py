@@ -6,9 +6,9 @@ from typing import Any
 
 from actions.base_action import BaseAction
 from core.constants import ActionCategory, ActionType
-from catchery import *
 from core.utils import evaluate_expression
 from effects.base_effect import Effect
+from pydantic import Field
 
 
 class Spell(BaseAction):
@@ -20,84 +20,30 @@ class Spell(BaseAction):
     requiring subclasses to implement specific behavior through abstract methods.
     """
 
-    @re_raise_chained(
-        new_exception_type=RuntimeError,
-        message="Spell: Failed to initialize.",
-        severity=ErrorSeverity.HIGH,
+    level: int = Field(
+        default=0,
+        description="The level of the spell.",
+        ge=0,
     )
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        level: int,
-        mind_cost: list[int],
-        category: ActionCategory,
-        target_expr: str = "",
-        requires_concentration: bool = False,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new Spell.
 
-        Args:
-            name (str): Display name of the spell.
-            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
-            description (str): Flavor text describing what the spell does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
-            mind_cost (list[int]): List of mind point costs per casting level [level1, level2, ...].
-            category (ActionCategory): Spell category (OFFENSIVE, HEALING, SUPPORT, DEBUFF).
-            target_expr (str): Expression determining number of targets ("" = single target).
-            requires_concentration (bool): Whether spell requires ongoing mental focus.
-            target_restrictions (list[str] | None): Override default targeting if needed.
+    mind_cost: list[int] = Field(
+        default_factory=list,
+        description="List of mind costs for casting the spell at different levels.",
+    )
 
-        Raises:
-            ValueError: If name is empty or type/category are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            category,
-            description,
-            cooldown,
-            maximum_uses,
-            target_restrictions,
-        )
+    target_expr: str = Field(
+        default="",
+        description=(
+            "Expression defining the number of targets the spell can affect. "
+            "If empty, the spell targets a single entity. "
+            "Expressions can use variables like 'MIND' for the caster's spell level."
+        ),
+    )
 
-        ctx = {"name": name}
-
-        self.level = ensure_non_negative_int(
-            obj=level,
-            name="Spell.level",
-            default=0,
-            context=ctx,
-        )
-
-        self.mind_cost = ensure_list_of_type(
-            mind_cost,
-            name="Spell.mind_cost",
-            expected_type=int,
-            default=[0],
-            context=ctx,
-        )
-
-        self.target_expr = ensure_string(
-            obj=target_expr,
-            name="Spell.target_expr",
-            default="",
-            context=ctx,
-        )
-
-        self.requires_concentration = ensure_object(
-            obj=requires_concentration,
-            name="Spell.requires_concentration",
-            expected_type=bool,
-            default=False,
-            context=ctx,
-        )
+    requires_concentration: bool = Field(
+        default=False,
+        description="Whether the spell requires concentration to maintain.",
+    )
 
     # ============================================================================
     # TARGETING SYSTEM METHODS
@@ -166,7 +112,7 @@ class Spell(BaseAction):
 
         # Validate mind cost against the specified level.
         if mind_level not in self.mind_cost:
-            log_error(
+            print(
                 f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
                 {
                     "actor": actor.name,
@@ -179,7 +125,7 @@ class Spell(BaseAction):
 
         # Check if actor has enough mind points to cast the spell.
         if actor.mind < mind_level:
-            log_error(
+            print(
                 f"{actor.name} does not have enough mind to cast {self.name}",
                 {
                     "actor": actor.name,
@@ -192,7 +138,7 @@ class Spell(BaseAction):
 
         # Check cooldown restrictions.
         if actor.is_on_cooldown(self):
-            log_warning(
+            print(
                 f"Cannot cast {self.name} - spell is on cooldown",
                 {"actor": actor.name, "spell": self.name},
             )
@@ -200,30 +146,31 @@ class Spell(BaseAction):
 
         return True
 
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
 
-    def to_dict(self) -> dict[str, Any]:
-        """Transform this Spell into a dictionary representation.
+def deserialze_spell(data: dict[str, Any]) -> Spell | None:
+    """Deserialize a dictionary into a Spell instance.
 
-        Returns:
-            dict[str, Any]: Dictionary representation of the spell.
-        """
-        from actions.spells.spell_serializer import SpellSerializer
+    Args:
+        data (dict[str, Any]): The dictionary representation of the spell.
 
-        return SpellSerializer.serialize(self)
+    Returns:
+        Spell | None: The deserialized Spell instance, or None on failure.
+    """
+    from actions.spells.spell_offensive import SpellOffensive
+    from actions.spells.spell_heal import SpellHeal
+    from actions.spells.spell_buff import SpellBuff
+    from actions.spells.spell_debuff import SpellDebuff
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Any | None":
-        """Create a Spell instance from a dictionary.
+    if "class" not in data:
+        raise ValueError("Missing 'class' in data")
 
-        Args:
-            data (dict[str, Any]): Dictionary containing spell configuration data.
+    if data["class"] == "SpellOffensive":
+        return SpellOffensive(**data)
+    if data["class"] == "SpellHeal":
+        return SpellHeal(**data)
+    if data["class"] == "SpellBuff":
+        return SpellBuff(**data)
+    if data["class"] == "SpellDebuff":
+        return SpellDebuff(**data)
 
-        Returns:
-            Any | None: Spell instance or None if creation fails.
-        """
-        from actions.spells.spell_serializer import SpellDeserializer
-
-        return SpellDeserializer.deserialize(data)
+    return None

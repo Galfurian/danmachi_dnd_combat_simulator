@@ -13,9 +13,9 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from catchery import ensure_list_of_type, ensure_string, log_warning, ensure_object
 from core.utils import debug, cprint
 from effects.base_effect import Effect
+from pydantic import Field
 
 
 class BaseAttack(BaseAction):
@@ -27,66 +27,20 @@ class BaseAttack(BaseAction):
     subclasses to extend or override specific behavior.
     """
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        attack_roll: str,
-        damage: list[DamageComponent],
-        effect: Effect | None = None,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new BaseAttack.
+    category: ActionCategory = ActionCategory.OFFENSIVE
 
-        Args:
-            name (str): The display name of the attack.
-            type (ActionType): The type of action (usually ActionType.ATTACK).
-            description (str): Description of what the attack does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            attack_roll (str): Attack bonus expression.
-            damage (list[DamageComponent]): List of damage components.
-            effect (Effect | None): Optional effect applied on successful hits.
-            target_restrictions (list[str] | None): Override default offensive targeting if needed.
-
-        Raises:
-            ValueError: If name is empty or type/category are invalid.
-        """
-        super().__init__(
-            name,
-            action_type,
-            ActionCategory.OFFENSIVE,
-            description,
-            cooldown,
-            maximum_uses,
-            target_restrictions,
-        )
-
-        ctx = {"name": name}
-
-        self.attack_roll: str = ensure_string(
-            obj=attack_roll,
-            name="BaseAttack.attack_roll",
-            default="",
-            context=ctx,
-        )
-        self.damage: list[DamageComponent] = ensure_list_of_type(
-            values=damage,
-            name="BaseAttack.damage",
-            expected_type=DamageComponent,
-            default=[],
-            context=ctx,
-        )
-        self.effect: Effect | None = ensure_object(
-            obj=effect,
-            name="BaseAttack.effect",
-            expected_type=Effect,
-            default=None,
-            context=ctx,
-        )
+    attack_roll: str = Field(
+        ...,
+        description="The attack roll expression (e.g., '1d20 + 5')",
+    )
+    damage: list[DamageComponent] = Field(
+        ...,
+        description="List of damage components for the attack",
+    )
+    effect: Effect | None = Field(
+        default=None,
+        description="Effect applied by this attack (if any)",
+    )
 
     # ============================================================================
     # COMBAT EXECUTION METHODS
@@ -116,7 +70,7 @@ class BaseAttack(BaseAction):
         # 2. Cooldown and Requirements
         # =============================
         if actor.is_on_cooldown(self):
-            log_warning(
+            print(
                 f"Action {self.name} is on cooldown",
                 {"action": self.name, "actor": actor.name},
             )
@@ -256,30 +210,29 @@ class BaseAttack(BaseAction):
         """
         return super()._common_get_max_damage(actor, self.damage)
 
-    # ============================================================================
-    # SERIALIZATION METHODS
-    # ============================================================================
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert attack to dictionary representation using AttackSerializer.
+def deserialze_attack(data: dict[str, Any]) -> BaseAttack | None:
+    """Deserialize a dictionary into the appropriate BaseAttack subclass.
 
-        Returns:
-            dict[str, Any]: Dictionary representation of the attack.
-        """
-        from actions.attacks.attack_serializer import AttackSerializer
+    Args:
+        data (dict[str, Any]): The dictionary representation of the attack.
 
-        return AttackSerializer.serialize(self)
+    Returns:
+        BaseAttack: An instance of the appropriate BaseAttack subclass.
 
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "BaseAttack":
-        """Create BaseAttack from dictionary data using AttackDeserializer.
+    Raises:
+        ValueError: If the action type is unknown or missing.
+    """
 
-        Args:
-            data (dict[str, Any]): Dictionary containing attack configuration data.
+    from actions.attacks.weapon_attack import WeaponAttack
+    from actions.attacks.natural_attack import NaturalAttack
 
-        Returns:
-            BaseAttack: Configured attack instance.
-        """
-        from actions.attacks.attack_serializer import AttackDeserializer
+    if "class" not in data:
+        raise ValueError("Missing 'class' in attack data")
 
-        return AttackDeserializer._deserialize_base_attack(data)
+    if data["class"] == "WeaponAttack":
+        return WeaponAttack(**data)
+    if data["class"] == "NaturalAttack":
+        return NaturalAttack(**data)
+
+    return None

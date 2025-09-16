@@ -5,7 +5,6 @@ from logging import debug
 from typing import Any, Optional, Callable
 from rich.console import Console
 from rich.rule import Rule
-from catchery import *
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
@@ -101,7 +100,7 @@ def _safe_eval(arith_expr: str) -> str:
     try:
         return _unsafe_eval()
     except Exception as e:
-        log_warning(
+        print(
             f"Failed to evaluate expression: {arith_expr}",
             {"expression": arith_expr},
             e,
@@ -135,14 +134,14 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
         str: The expression with variables substituted.
     """
     if not expr:
-        log_warning(
+        print(
             "Empty expression provided to substitute_variables",
             {"expression": expr, "variables": variables},
         )
         return ""
 
     if not isinstance(expr, str):
-        log_warning(
+        print(
             f"Expression must be a string, got {type(expr).__name__}",
             {"expression": expr, "type": type(expr).__name__},
         )
@@ -158,14 +157,14 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
     try:
         for key, value in variables.items() if variables else {}:
             if not isinstance(key, str):
-                log_error(
+                print(
                     f"Variable key must be string, got {type(key).__name__}",
                     {"key": key, "value": value},
                 )
                 continue
 
             if not isinstance(value, (int, float)):
-                log_error(
+                print(
                     f"Variable value must be numeric, got {type(value).__name__}",
                     {"key": key, "value": value},
                 )
@@ -174,7 +173,7 @@ def substitute_variables(expr: str, variables: Optional[dict[str, int]] = None) 
             if key.upper() in expr:
                 expr = expr.replace(f"[{key.upper()}]", str(int(value)))
     except Exception as e:
-        log_error(
+        print(
             f"Error during variable substitution: {str(e)}",
             {"expression": expr, "variables": variables},
             e,
@@ -217,11 +216,11 @@ def _parse_term_and_process_dice(
         tuple[int, list[int]]: The total and individual processed rolls.
     """
     if not term:
-        log_error("Empty dice term provided", {"term": term})
+        print("Empty dice term provided", {"term": term})
         return 0, []
 
     if not isinstance(term, str):
-        log_error(
+        print(
             f"Dice term must be string, got {type(term).__name__}",
             {"term": term},
         )
@@ -234,14 +233,14 @@ def _parse_term_and_process_dice(
         try:
             value = int(term)
             if value < 0:
-                log_error(
+                print(
                     f"Negative dice value not allowed: {value}",
                     {"term": term, "value": value},
                 )
                 return 0, []
             return value, [value]
         except ValueError as e:
-            log_error(
+            print(
                 f"Invalid numeric dice term: {term}",
                 {"term": term},
                 e,
@@ -250,7 +249,7 @@ def _parse_term_and_process_dice(
 
     match = DICE_PATTERN.match(term)
     if not match:
-        log_error(
+        print(
             f"Invalid dice string format: '{term}'",
             {"term": term},
         )
@@ -263,28 +262,28 @@ def _parse_term_and_process_dice(
 
         # Validate dice parameters
         if num <= 0:
-            log_error(
+            print(
                 f"Number of dice must be positive, got {num}",
                 {"term": term, "num": num, "sides": sides},
             )
             return 0, []
 
         if sides <= 0:
-            log_error(
+            print(
                 f"Number of sides must be positive, got {sides}",
                 {"term": term, "num": num, "sides": sides},
             )
             return 0, []
 
         if num > 100:  # Reasonable limit
-            log_error(
+            print(
                 f"Too many dice requested: {num} (limit: 100)",
                 {"term": term, "num": num, "sides": sides},
             )
             return 0, []
 
         if sides > 1000:  # Reasonable limit
-            log_error(
+            print(
                 f"Too many sides on dice: {sides} (limit: 1000)",
                 {"term": term, "num": num, "sides": sides},
             )
@@ -294,14 +293,14 @@ def _parse_term_and_process_dice(
         return sum(rolls), rolls
 
     except ValueError as e:
-        log_error(
+        print(
             f"Error parsing dice values from '{term}': {str(e)}",
             {"term": term},
             e,
         )
         return 0, []
     except Exception as e:
-        log_error(
+        print(
             f"Unexpected error processing dice '{term}': {str(e)}",
             {"term": term},
             e,
@@ -448,7 +447,7 @@ def _process_dice_expression(
     try:
         return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        log_warning(
+        print(
             f"Failed to evaluate '{processed_expr}': {e}",
             {
                 "expression": processed_expr,
@@ -579,7 +578,7 @@ def roll_and_describe(
         comment = f"{substituted} → {breakdown}"
         return result, comment, dice_rolls
     except Exception as e:
-        log_warning(
+        print(
             f"Failed to evaluate '{breakdown}': {e}",
             {
                 "breakdown": breakdown,
@@ -613,7 +612,7 @@ def evaluate_expression(expr: str, variables: Optional[dict[str, int]] = None) -
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        log_warning(
+        print(
             f"Failed to evaluate '{substituted}': {e}",
             {
                 "expression": substituted,

@@ -3,7 +3,6 @@
 from typing import Any, Generator, Iterator, Optional
 from core.constants import *
 from core.utils import cprint, get_max_roll
-from catchery import *
 from combat.damage import DamageComponent
 from effects import *
 
@@ -54,21 +53,21 @@ class CharacterEffects:
         try:
             # Validate inputs
             if not source:
-                log_error(
+                print(
                     "Source cannot be None when adding effect",
                     {"effect": getattr(effect, "name", "unknown")},
                 )
                 return False
 
             if not effect:
-                log_error(
+                print(
                     "Effect cannot be None when adding to effect manager",
                     {"source": getattr(source, "name", "unknown")},
                 )
                 return False
 
             if not isinstance(mind_level, int) or mind_level < 0:
-                log_warning(
+                print(
                     f"Mind level must be non-negative integer, got: {mind_level}",
                     {"effect": effect.name, "mind_level": mind_level},
                 )
@@ -139,7 +138,7 @@ class CharacterEffects:
             return True
 
         except Exception as e:
-            log_critical(
+            print(
                 f"Error adding effect to manager: {str(e)}",
                 {
                     "ctx_effect": getattr(effect, "name", "unknown"),
@@ -197,7 +196,7 @@ class CharacterEffects:
                 return True
             return False
         except Exception as e:
-            log_error(
+            print(
                 f"Error removing effect from manager: {str(e)}",
                 {
                     "ctx_effect": getattr(effect.effect, "name", "unknown"),

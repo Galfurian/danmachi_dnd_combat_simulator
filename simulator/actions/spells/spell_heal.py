@@ -10,7 +10,6 @@ from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )
-from catchery import *
 from core.utils import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
@@ -20,6 +19,7 @@ from core.utils import (
     cprint,
 )
 from effects.base_effect import Effect, ensure_effect
+from pydantic import Field
 
 
 class SpellHeal(Spell):
@@ -29,79 +29,17 @@ class SpellHeal(Spell):
     attributes for healing expressions and optional beneficial effects, as well as
     methods for calculating and applying healing during combat.
     """
+    
+    category: ActionCategory = ActionCategory.HEALING
 
-    def __init__(
-        self,
-        name: str,
-        action_type: ActionType,
-        description: str,
-        cooldown: int,
-        maximum_uses: int,
-        level: int,
-        mind_cost: list[int],
-        heal_roll: str,
-        effect: Effect | None = None,
-        target_expr: str = "",
-        requires_concentration: bool = False,
-        target_restrictions: list[str] | None = None,
-    ):
-        """Initialize a new SpellHeal.
-
-        Args:
-            name (str): Display name of the spell.
-            type (ActionType): Action type (ACTION, BONUS_ACTION, REACTION, etc.).
-            description (str): Flavor text describing what the spell does.
-            cooldown (int): Turns to wait before reusing (0 = no cooldown).
-            maximum_uses (int): Max uses per encounter/day (-1 = unlimited).
-            level (int): Base spell level (1-9 for most spells, 0 for cantrips).
-            mind_cost (list[int]): List of mind point costs per casting level.
-            heal_roll (str): Healing expression with level scaling support.
-            effect (Effect | None): Optional beneficial effect applied alongside healing.
-            target_expr (str): Expression determining number of targets.
-            requires_concentration (bool): Whether spell requires concentration.
-            target_restrictions (list[str] | None): Override default targeting if needed.
-
-        Raises:
-            ValueError: If heal_roll is invalid or other parameters are invalid.
-        """
-        try:
-            super().__init__(
-                name,
-                action_type,
-                description,
-                cooldown,
-                maximum_uses,
-                level,
-                mind_cost,
-                ActionCategory.HEALING,
-                target_expr,
-                requires_concentration,
-                target_restrictions,
-            )
-
-            # Validate heal_roll expression using helper
-            self.heal_roll = validate_type(
-                heal_roll,
-                "heal roll",
-                str,
-                {"name": name, "heal_roll": heal_roll},
-            )
-
-            # Ensure effect is a valid type or None.
-            self.effect = ensure_effect(
-                effect,
-                "SpellHeal effect",
-                None,
-                {"name": name},
-            )
-
-        except Exception as e:
-            log_critical(
-                f"Error initializing SpellHeal {name}: {str(e)}",
-                {"name": name, "error": str(e)},
-                e,
-                True,
-            )
+    heal_roll: str = Field(
+        ...,
+        description="The expression used to calculate healing amount.",
+    )
+    effect: Effect | None = Field(
+        None,
+        description="An optional beneficial effect that this healing spell applies.",
+    )
 
     # ============================================================================
     # HEALING SPELL METHODS

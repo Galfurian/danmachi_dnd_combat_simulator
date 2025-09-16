@@ -5,15 +5,14 @@ from logging import debug
 from typing import List, Optional
 
 from core.utils import cprint, crule
-from catchery import *
 from actions.base_action import BaseAction
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
-from actions.spells import Spell, SpellAttack, SpellBuff, SpellDebuff, SpellHeal
+from actions.spells import Spell, SpellOffensive, SpellBuff, SpellDebuff, SpellHeal
 from actions.abilities import (
-    OffensiveAbility,
-    HealingAbility,
-    BuffAbility,
-    DebuffAbility,
+    AbilityOffensive,
+    AbilityHeal,
+    AbilityBuff,
+    AbilityDebuff,
 )
 from combat.npc_ai import (
     choose_best_attack_spell_action,
@@ -36,7 +35,12 @@ from character import Character
 from ui.cli_interface import PlayerInterface
 
 
-FULL_ATTACK = BaseAction("Full Attack", ActionType.STANDARD, ActionCategory.OFFENSIVE)
+FULL_ATTACK = BaseAction(
+    name="Full Attack",
+    action_type=ActionType.STANDARD,
+    category=ActionCategory.OFFENSIVE,
+    description="Perform a full attack with all available attacks.",
+)
 
 
 class CombatManager:
@@ -246,7 +250,7 @@ class CombatManager:
         # Get the list of all attacks available in the full attack.
         attacks = self.player.get_available_attacks()
         if not attacks:
-            log_warning(
+            print(
                 "No available attacks for the full attack action",
                 {"player": self.player.name, "context": "full_attack_selection"},
             )
@@ -255,7 +259,7 @@ class CombatManager:
         # Choose the attack type to use for all attacks in the sequence
         attack = self.ui.choose_action(attacks)
         if attack is None or not isinstance(attack, BaseAttack):
-            log_warning(
+            print(
                 "Invalid attack selected. Ending full attack",
                 {
                     "player": self.player.name,
@@ -268,7 +272,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, attack)
         if not valid_targets:
-            log_warning(
+            print(
                 f"No valid targets for {attack.name}",
                 {
                     "player": self.player.name,
@@ -340,7 +344,7 @@ class CombatManager:
                     spell, spell.target_count(self.player, mind_level)
                 )
                 if not targets:
-                    log_warning(
+                    print(
                         f"No valid targets for {spell.name}",
                         {
                             "player": self.player.name,
@@ -406,7 +410,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if not valid_targets:
-            log_warning(
+            print(
                 f"No valid targets for {action.name}",
                 {
                     "player": self.player.name,
@@ -433,7 +437,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if len(valid_targets) == 0:
-            log_warning(
+            print(
                 f"No valid targets for {action.name}",
                 {
                     "player": self.player.name,
@@ -443,7 +447,7 @@ class CombatManager:
             )
             return None
         if max_targets <= 0:
-            log_warning(
+            print(
                 f"Invalid maximum number of targets: {max_targets}",
                 {
                     "player": self.player.name,
@@ -456,7 +460,7 @@ class CombatManager:
         if max_targets == 1 or len(valid_targets) == 1:
             target = self.ask_for_player_target(action)
             if target is None:
-                log_warning(
+                print(
                     f"No valid target for {action.name}",
                     {
                         "player": self.player.name,
@@ -481,7 +485,7 @@ class CombatManager:
         enemies = self.get_alive_opponents(npc)
 
         if not enemies:
-            log_warning(
+            print(
                 f"SKIP: {npc.name} has no enemies to attack",
                 {
                     "npc": npc.name,
@@ -508,8 +512,8 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for healing abilities.
-        healing_abilities: list[HealingAbility] = get_actions_by_type(
-            npc, HealingAbility
+        healing_abilities: list[AbilityHeal] = get_actions_by_type(
+            npc, AbilityHeal
         )
         if healing_abilities:
             result = choose_best_healing_ability_action(npc, allies, healing_abilities)
@@ -540,7 +544,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for buff abilities.
-        buff_abilities: list[BuffAbility] = get_actions_by_type(npc, BuffAbility)
+        buff_abilities: list[AbilityBuff] = get_actions_by_type(npc, AbilityBuff)
         if buff_abilities:
             result = choose_best_buff_ability_action(npc, allies, buff_abilities)
             if result:
@@ -570,7 +574,7 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for debuff abilities.
-        debuff_abilities: list[DebuffAbility] = get_actions_by_type(npc, DebuffAbility)
+        debuff_abilities: list[AbilityDebuff] = get_actions_by_type(npc, AbilityDebuff)
         if debuff_abilities:
             result = choose_best_debuff_ability_action(npc, enemies, debuff_abilities)
             if result:
@@ -584,7 +588,7 @@ class CombatManager:
                 npc.use_action_type(ability.action_type)
 
         # Check for attack spells.
-        spell_attacks: list[SpellAttack] = get_actions_by_type(npc, SpellAttack)
+        spell_attacks: list[SpellOffensive] = get_actions_by_type(npc, SpellOffensive)
         if spell_attacks:
             result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
             if result:
@@ -600,8 +604,8 @@ class CombatManager:
                 npc.mind -= mind_level
 
         # Check for offensive abilities.
-        offensive_abilities: list[OffensiveAbility] = get_actions_by_type(
-            npc, OffensiveAbility
+        offensive_abilities: list[AbilityOffensive] = get_actions_by_type(
+            npc, AbilityOffensive
         )
         if offensive_abilities:
             result = choose_best_offensive_ability_action(

@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
-from core.utils import log_warning
 from core.constants import CharacterType, DamageType
 from character.character_class import CharacterClass
 from effects.base_effect import Effect
@@ -142,7 +141,7 @@ class CharacterSerialization:
         for weapon_name in data.get("equipped_weapons", []):
             weapon = repo.get_weapon(weapon_name)
             if weapon is None:
-                log_warning(
+                print(
                     f"Invalid weapon '{weapon_name}' for character {data['name']}",
                     {
                         "character": data["name"],
@@ -157,7 +156,7 @@ class CharacterSerialization:
         for weapon_name in data.get("natural_weapons", []):
             weapon = repo.get_weapon(weapon_name)
             if weapon is None:
-                log_warning(
+                print(
                     f"Invalid natural weapon '{weapon_name}' for character {data['name']}",
                     {
                         "character": data["name"],
@@ -173,7 +172,7 @@ class CharacterSerialization:
         for armor_name in data.get("equipped_armor", []):
             armor = repo.get_armor(armor_name)
             if armor is None:
-                log_warning(
+                print(
                     f"Invalid armor '{armor_name}' for character {data['name']}",
                     {
                         "character": data["name"],
@@ -188,7 +187,7 @@ class CharacterSerialization:
         for action_name in data.get("actions", []):
             action = repo.get_action(action_name)
             if action is None:
-                log_warning(
+                print(
                     f"Invalid action '{action_name}' for character {data['name']}",
                     {
                         "character": data["name"],
@@ -203,7 +202,7 @@ class CharacterSerialization:
         for spell_data in data.get("spells", []):
             spell = repo.get_spell(spell_data)
             if spell is None:
-                log_warning(
+                print(
                     f"Invalid additional spell '{spell_data}' for character {data['name']}",
                     {
                         "character": data["name"],
@@ -219,11 +218,11 @@ class CharacterSerialization:
         # Load passive effects (like boss phase triggers).
         for effect_data in data.get("passive_effects", []):
             try:
-                effect = Effect.from_dict(effect_data)
+                effect = Effect(**effect_data)
                 if effect is not None:
                     char.add_passive_effect(effect)
             except Exception as e:
-                log_warning(
+                print(
                     f"Invalid passive effect for character {data['name']}: {e}",
                     {
                         "character": data["name"],
@@ -252,7 +251,7 @@ def load_character(file_path: Path) -> "Character | None":
             character_data = json.load(f)
             return CharacterSerialization.from_dict(character_data)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        log_warning(
+        print(
             f"Failed to load character from {file_path}: {e}",
             {
                 "file_path": str(file_path),

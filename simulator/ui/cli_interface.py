@@ -22,7 +22,7 @@ session = PromptSession(erase_when_done=True)
 class PlayerInterface:
     """
     Command-line interface for player interactions in the combat simulator.
-    
+
     Provides Rich table-based menus for action selection, target selection,
     spell selection, and other combat-related choices. Uses prompt_toolkit
     for interactive input with numeric and alphabetic shortcuts.
@@ -63,8 +63,8 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 action.name,
-                action.action_type.name.title(),
-                action.category.name.title(),
+                action.action_type,
+                action.category,
             )
         # Add an empty row if there are submenus or an exit entry.
         if sorted_submenus or exit_entry:
@@ -285,8 +285,8 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 spell.name,
-                f"[{get_action_type_color(spell.action_type)}]{spell.action_type.name.title()}[/]",
-                f"[{get_action_category_color(spell.category)}]{spell.category.name.title()}[/]",
+                f"[{get_action_type_color(spell.action_type)}]{spell.action_type}[/]",
+                f"[{get_action_category_color(spell.category)}]{spell.category}[/]",
             )
         # Add an empty row if there are submenus or an exit entry.
         if sorted_submenus or exit_entry:
@@ -327,15 +327,15 @@ class PlayerInterface:
     ) -> int:
         """
         Prompt the user to select the amount of MIND to spend on a spell.
-        
+
         Displays upcasting options if the spell supports it, showing damage/healing
         ranges and target counts for each MIND level.
-        
+
         Args:
             actor (Character): The character casting the spell.
             spell (Spell): The spell being cast.
             exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
-            
+
         Returns:
             int: The selected MIND level to spend, or -1 if user chose to go back.
         """
@@ -362,11 +362,11 @@ class PlayerInterface:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
-            elif isinstance(spell, SpellAttack):
+            elif isinstance(spell, SpellOffensive):
                 prompt += f"Deals "
                 prompt += "+ ".join(
                     f"{simplify_expression(component.damage_roll, variables)}"
-                    f" [{get_damage_type_color(component.damage_type)}]{component.damage_type.name.title()}[/]"
+                    f" [{get_damage_type_color(component.damage_type)}]{component.damage_type}[/]"
                     for component in spell.damage
                 )
                 prompt += f" (~ {spell.get_min_damage(actor, mind_level):>2}-{spell.get_max_damage(actor, mind_level):<2})"
@@ -391,7 +391,7 @@ class PlayerInterface:
                         if isinstance(value, DamageComponent):
                             prompt += (
                                 f" {simplify_expression(value.damage_roll, variables)} "
-                                f"[{get_damage_type_color(value.damage_type)}]{value.damage_type.name.title()}[/]"
+                                f"[{get_damage_type_color(value.damage_type)}]{value.damage_type}[/]"
                             )
                         else:
                             prompt += f" {value} to {bonus_type.name.title()}"
@@ -431,16 +431,16 @@ class PlayerInterface:
     def sort_actions(actions: list[Any]) -> list[Any]:
         """
         Sort actions by their type, category, and name for consistent display.
-        
+
         Prioritizes action types (Standard, Bonus, Free) then categories
         (Offensive, Healing, Buff, Debuff, Utility, Debug), then alphabetically by name.
-        
+
         Args:
             actions (list[Any]): List of BaseAction instances to sort.
-            
+
         Returns:
             list[Any]: The sorted list of actions.
-            
+
         Raises:
             AssertionError: If any action is not an instance of BaseAction.
         """
@@ -475,10 +475,10 @@ class PlayerInterface:
     def get_digit_choice(answer: str) -> int:
         """
         Convert a single digit string input to its integer value.
-        
+
         Args:
             answer (str): User input string to parse.
-            
+
         Returns:
             int: The integer value of the digit (0-9), or -1 if invalid input.
         """
@@ -490,12 +490,12 @@ class PlayerInterface:
     def get_alpha_choice(answer: Any) -> int:
         """
         Convert a single alphabetic character to its index position.
-        
+
         Maps 'a' or 'A' to 0, 'b' or 'B' to 1, etc. Case-insensitive.
-        
+
         Args:
             answer (Any): User input to parse.
-            
+
         Returns:
             int: The index position (0-25 for a-z), or -1 if invalid input.
         """

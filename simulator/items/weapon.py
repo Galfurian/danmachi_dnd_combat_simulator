@@ -73,7 +73,7 @@ class Weapon:
             "class": self.__class__.__name__,
             "name": self.name,
             "description": self.description,
-            "attacks": [action.to_dict() for action in self.attacks],
+            "attacks": [action.model_dump() for action in self.attacks],
         }
         if self.requires_hands():
             data["hands_required"] = self.get_required_hands()
@@ -94,12 +94,12 @@ class Weapon:
         Raises:
             KeyError: If required keys are missing from the data.
         """
-        from actions.attacks.attack_serializer import AttackDeserializer
+        from actions.attacks.base_attack import deserialze_attack
 
         # Load attacks using the dynamic attack factory
         attack_list = []
         for action_data in data.get("attacks", []):
-            attack = AttackDeserializer.deserialize(action_data)
+            attack = deserialze_attack(action_data)
             if attack is not None:
                 attack_list.append(attack)
 
