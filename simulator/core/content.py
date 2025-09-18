@@ -10,6 +10,7 @@ from actions.spells import (
     SpellHeal,
     SpellOffensive,
 )
+from actions.spells.base_spell import Spell
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from items.armor import Armor
@@ -34,7 +35,7 @@ class ContentRepository(metaclass=Singleton):
     weapons: dict[str, Weapon]
     armors: dict[str, Armor]
     # Action-related attributes.
-    spells: dict[str, BaseAction]
+    spells: dict[str, Spell]
     actions: dict[str, BaseAction]
 
     def __init__(self, data_dir: Path | None = None) -> None:
@@ -47,105 +48,61 @@ class ContentRepository(metaclass=Singleton):
         """
         if data_dir:
             self.reload(data_dir)
+            self.loaded = True
+        elif not hasattr(self, "loaded"):
+            raise ValueError(
+                "ContentRepository must be initialized with a valid data_dir on first use."
+            )   
 
     def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
-        cprint(f"Loading content from: [bold blue]{root}[/bold blue]")
+        # Load all content using the helper
+        self.classes = _load_json_file(
+            root / "character_classes.json",
+            self._load_character_classes,
+            "character classes",
+        )
+        self.races = _load_json_file(
+            root / "character_races.json",
+            self._load_character_races,
+            "character races",
+        )
 
-        def load_json_file(
-            filename: str, loader_func: Callable, description: str
-        ) -> dict:
-            """Helper to load and validate JSON files"""
-            try:
-                cprint(f"Loading {description}...")
-
-                # Validate file path
-                file_path = root / filename
-                if not file_path.exists():
-                    print(
-                        f"Data file not found: {filename}",
-                        {"filename": filename, "path": str(file_path)},
-                    )
-                    raise FileNotFoundError(f"File not found: {file_path}")
-
-                if not file_path.is_file():
-                    print(
-                        f"Path is not a file: {filename}",
-                        {"filename": filename, "path": str(file_path)},
-                    )
-                    raise ValueError(f"Not a file: {file_path}")
-
-                # Load and validate JSON
-                with open(file_path, encoding="utf-8") as f:
-                    data = json.load(f)
-
-                if not isinstance(data, list):
-                    print(
-                        f"Expected a list in {filename}, got {type(data).__name__}",
-                        {"filename": filename, "data_type": type(data).__name__},
-                    )
-                    raise ValueError(
-                        f"Expected a list in {file_path}, got {type(data).__name__}"
-                    )
-
-                if not data:
-                    print(f"Empty data list in {filename}", {"filename": filename})
-                return loader_func(data)
-
-            except json.JSONDecodeError as e:
-                print(
-                    f"Invalid JSON in {filename}: {e!s}",
-                    {"filename": filename, "error": str(e)},
-                    e,
-                )
-                raise ValueError(f"Invalid JSON in {filename}: {e}")
-
-            except Exception as e:
-                print(
-                    f"Error loading {filename}: {e!s}",
-                    {"filename": filename, "description": description},
-                    e,
-                )
-                raise
-
-        try:
-            # Load all content using the helper
-            self.classes = load_json_file(
-                "character_classes.json",
-                self._load_character_classes,
-                "character classes",
+        # Load weapons (special case - two files)
+        self.weapons = _load_json_file(
+            root / "weapons_natural.json",
+            self._load_weapons,
+            "natural weapons",
+        )
+        self.weapons.update(
+            _load_json_file(
+                root / "weapons_wielded.json",
+                self._load_weapons,
+                "wielded weapons",
             )
-            self.races = load_json_file(
-                "character_races.json", self._load_character_races, "character races"
-            )
+        )
 
-            # Load weapons (special case - two files)
-            self.weapons = load_json_file(
-                "weapons_natural.json", self._load_weapons, "natural weapons"
-            )
-            self.weapons.update(
-                load_json_file(
-                    "weapons_wielded.json", self._load_weapons, "wielded weapons"
-                )
-            )
-
-            self.armors = load_json_file("armors.json", self._load_armors, "armors")
-            self.spells = load_json_file("spells.json", self._load_actions, "spells")
-            self.actions = load_json_file(
-                "abilities.json", self._load_actions, "actions"
-            )
-
-            cprint("Content loaded successfully!\n")
-
-        except Exception as e:
-            print(
-                f"Critical error during content loading: {e!s}",
-                {"root_path": str(root), "error": str(e)},
-            )
-            raise
+        self.armors = _load_json_file(
+            root / "armors.json",
+            self._load_armors,
+            "armors",
+        )
+        self.spells = _load_json_file(
+            root / "spells.json",
+            self._load_actions,
+            "spells",
+        )
+        self.actions = _load_json_file(
+            root / "abilities.json",
+            self._load_actions,
+            "actions",
+        )
 
     def _get_from_collection(
-        self, collection_name: str, item_name: str, expected_type: type | None = None
+        self,
+        collection_name: str,
+        item_name: str,
+        expected_type: type | None = None,
     ) -> Any | None:
         """Generic helper to get an item from any collection with optional type checking.
 
@@ -334,3 +291,28 @@ class ContentRepository(metaclass=Singleton):
             raise ValueError(f"Invalid action data: {action_data}")
 
         return actions
+
+
+def _load_json_file(
+    filepath: Path,
+    loader_func: Callable[[list[dict]], dict[str, Any]],
+    description: str,
+) -> dict[str, Any]:
+    """Helper to load and validate JSON files"""
+    try:
+        cprint(f"  Loading {description}...", style="bold green")
+        # Validate file path
+        if not filepath.exists():
+            raise FileNotFoundError(f"File not found: {filepath}")
+        if not filepath.is_file():
+            raise ValueError(f"Not a file: {filepath}")
+        # Load and validate JSON
+        with open(filepath, encoding="utf-8") as f:
+            data = json.load(f)
+        if not data:
+            raise ValueError(f"Empty data list in {filepath}")
+        if not isinstance(data, list):
+            raise ValueError(f"Expected list in {filepath}, got {type(data).__name__}")
+        return loader_func(data)
+    except (json.JSONDecodeError, FileNotFoundError, ValueError) as e:
+        raise ValueError(f"File {filepath} raised an error: {e}")

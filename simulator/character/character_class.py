@@ -25,11 +25,11 @@ class CharacterClass:
             spells_by_level (dict[str, list[str]], optional): Spells learned at each level. Defaults to {}.
 
         """
-        self.name = name
-        self.hp_mult = hp_mult
-        self.mind_mult = mind_mult
-        self.actions_by_level = actions_by_level
-        self.spells_by_level = spells_by_level
+        self.name: str = name
+        self.hp_mult: int = hp_mult
+        self.mind_mult: int = mind_mult
+        self.actions_by_level: dict[str, list[str]] = actions_by_level
+        self.spells_by_level: dict[str, list[str]] = spells_by_level
 
     def get_actions_at_level(self, level: int) -> list[str]:
         """

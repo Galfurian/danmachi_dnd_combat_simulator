@@ -1,14 +1,3 @@
-import logging
-from collections import Counter
-from copy import deepcopy
-from pathlib import Path
-
-from character import Character, load_character, load_characters
-from combat.combat_manager import CombatManager
-from core.content import ContentRepository
-from core.sheets import crule, print_character_sheet
-from core.utils import cprint
-
 """
 Main entry point for the DanMachi D&D Combat Simulator.
 
@@ -24,10 +13,22 @@ The combat simulator supports:
 - Combat logging and reporting
 """
 
+import logging
+from collections import Counter
+from copy import deepcopy
+from pathlib import Path
+import sys
+
+from character import Character, load_character, load_characters
+from combat.combat_manager import CombatManager
+from core.content import ContentRepository
+from core.sheets import crule, print_all_available_content, print_character_sheet
+from core.utils import cprint
+
 # Sets up basic logging configuration.
 logging.basicConfig(
-    level=logging.INFO,  # Set the minimum level of messages to be handled
-    format="%(message)s",  # Clean format - our error handler already includes severity and location
+    level=logging.INFO,
+    format="%(message)s",
     handlers=[logging.StreamHandler()],
 )
 
@@ -49,50 +50,39 @@ cprint(
 
 # =============================================================================
 
-crule("Loading Repository", style="bold green")
+cprint("Loading repository...", style="bold green")
 
 # Load the repository of content.
 repo = ContentRepository(data_dir)
 
 # =============================================================================
 
-crule("Loading Enemies", style="bold green")
+cprint("Loading enemies...", style="bold green")
 
 # Load the enemies.
 enemies: dict[str, Character] = load_characters(
     data_dir / "enemies_danmachi_f1_f10.json"
 )
-print("Enemies loaded:")
-for enemy in enemies.values():
-    print_character_sheet(enemy)
-    cprint("\n")
-
 
 # =============================================================================
 
-crule("Loading Characters", style="bold green")
+cprint("Loading characters...", style="bold green")
 
 # Load the characters.
 characters: dict[str, Character] = load_characters(data_dir / "characters.json")
-for character in characters.values():
-    print_character_sheet(character)
-    cprint("\n")
 
 # =============================================================================
 
-crule("Loading Player Character", style="bold green")
+cprint("Loading player character...", style="bold green")
 
 # Load the player character.
 player = load_character(data_dir / "player.json")
 if player is None:
     print(
         "Failed to load player character. Please check the data file",
-        {"data_file": str(data_dir / "player.json"), "context": "main_startup"}
+        {"data_file": str(data_dir / "player.json"), "context": "main_startup"},
     )
-    exit(1)
-
-print_character_sheet(player)
-cprint("\n")
+    sys.exit(1)
 
 # =============================================================================
 
@@ -101,13 +91,15 @@ opponents: list[Character] = []
 allies: list[Character] = []
 
 
-def add_to_list(from_group: dict[str, Character], to_list: list[Character], name: str) -> None:
+def add_to_list(
+    from_group: dict[str, Character], to_list: list[Character], name: str
+) -> None:
     """
     Add a character from a source group to a destination list for combat.
-    
+
     Creates a deep copy of the character to avoid modifying the original data.
     Logs a warning if the character name is not found in the source group.
-    
+
     Args:
         from_group (dict[str, Character]): Source dictionary of available characters.
         to_list (list[Character]): Destination list to add the character to.
@@ -119,20 +111,24 @@ def add_to_list(from_group: dict[str, Character], to_list: list[Character], name
     else:
         print(
             f"Opponent '{name}' not found in enemies data",
-            {"opponent_name": name, "available_opponents": list(from_group.keys()), "context": "combat_setup"}
+            {
+                "opponent_name": name,
+                "available_opponents": list(from_group.keys()),
+                "context": "combat_setup",
+            },
         )
 
 
 def make_names_unique(in_list: list[Character]) -> None:
     """
     Ensure all character names in a list are unique by appending numbers.
-    
+
     Modifies character names in-place by appending (1), (2), etc. to duplicate names.
     Only adds numbers when duplicates exist - single instances keep original names.
-    
+
     Args:
         in_list (list[Character]): List of characters to make names unique for.
-        
+
     Example:
         Input: ["Goblin", "Goblin", "Orc"]
         Output: ["Goblin (1)", "Goblin (2)", "Orc"]

@@ -1,3 +1,4 @@
+import sys
 from actions.abilities import *
 from actions.base_action import BaseAction
 from actions.spells import *
@@ -396,7 +397,9 @@ def print_character_sheet(char: Character) -> None:
     if char.effects_module.active_effects:
         cprint("  [yellow]Active Effects[/]:")
         for active_effect in char.effects_module.active_effects:
-            effect_info = f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
+            effect_info = (
+                f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
+            )
             if active_effect.duration and active_effect.duration > 0:
                 effect_info += f" ({active_effect.duration} turns remaining)"
             cprint(Padding(effect_info, (0, 4)))
@@ -477,7 +480,7 @@ def print_content_repository_summary() -> None:
     # Spells
     if hasattr(repo, "spells") and repo.spells:
         cprint(f"\n[green]Spells ({len(repo.spells)})[/green]:")
-        spell_types = {}
+        spell_types: dict[str, list[tuple[str, Spell]]] = {}
         for name, spell in repo.spells.items():
             spell_type = type(spell).__name__
             if spell_type not in spell_types:
@@ -518,67 +521,59 @@ def print_all_available_content() -> None:
 
     repo = ContentRepository()
 
-    cprint("\n[bold cyan]📚 Complete Content Catalog[/bold cyan]")
-    cprint("=" * 60)
+    crule("📚 Complete Content Catalog", style="bold blue", characters="=")
 
     # Print detailed information for each category
     if hasattr(repo, "classes") and repo.classes:
-        cprint(f"\n[bold green]🏛️ Character Classes ({len(repo.classes)})[/bold green]")
-        cprint("-" * 30)
+        crule(f"🏛️ Character Classes ({len(repo.classes)})", style="bold green")
         for name, char_class in sorted(repo.classes.items()):
-            cprint(f"[blue]{name}[/]")
-            cprint(f"  HP Multiplier: {char_class.hp_mult}")
-            cprint(f"  Mind Multiplier: {char_class.mind_mult}")
-            if char_class.levels:
-                total_levels = len(char_class.levels)
-                cprint(f"  Available Levels: {total_levels}")
-            cprint("")
+            cprint(
+                f"[blue]{name}[/], "
+                f"hp-mult: {char_class.hp_mult}, "
+                f"mind-mult: {char_class.mind_mult}"
+            )
+            if char_class.actions_by_level:
+                cprint(f"  [magenta]Actions[/]:")
+                for level, actions in char_class.actions_by_level.items():
+                    cprint(f"    Level {level}: {actions}")
+            if char_class.spells_by_level:
+                cprint(f"  [cyan]Abilities[/]:")
+                for level, spells in char_class.spells_by_level.items():
+                    cprint(f"    Level {level}: {spells}")
 
     if hasattr(repo, "races") and repo.races:
-        cprint(f"\n[bold green]🧬 Character Races ({len(repo.races)})[/bold green]")
-        cprint("-" * 30)
+        crule(f"🧬 Character Races ({len(repo.races)})", style="bold green")
         for name, race in sorted(repo.races.items()):
-            cprint(f"[blue]{name}[/]")
-            if race.natural_ac > 0:
-                cprint(f"  Natural AC: +{race.natural_ac}")
+            cprint(f"[blue]{name:16}[/] natural ac: +{race.natural_ac}")
             if race.default_actions:
-                cprint(f"  Default Actions: {', '.join(race.default_actions)}")
+                cprint(f"  [magenta]Actions[/]:")
+                for action in race.default_actions:
+                    cprint(f"    {action}")
             if race.default_spells:
-                cprint(f"  Default Spells: {', '.join(race.default_spells)}")
-            cprint("")
+                cprint(f"  [cyan]Spell[/]:")
+                for spell in race.default_spells:
+                    cprint(f"    {spell}")
 
     if hasattr(repo, "weapons") and repo.weapons:
-        cprint(f"\n[bold green]⚔️ Weapons ({len(repo.weapons)})[/bold green]")
-        cprint("-" * 30)
+        crule(f"⚔️ Weapons ({len(repo.weapons)})", style="bold green")
         for name, weapon in sorted(repo.weapons.items()):
             print_weapon_sheet(weapon, 0)
-            cprint("")
 
     if hasattr(repo, "armors") and repo.armors:
-        cprint(f"\n[bold green]🛡️ Armor ({len(repo.armors)})[/bold green]")
-        cprint("-" * 30)
+        crule(f"🛡️ Armor ({len(repo.armors)})", style="bold green")
         for name, armor in sorted(repo.armors.items()):
             print_armor_sheet(armor, 0)
-            cprint("")
 
     if hasattr(repo, "actions") and repo.actions:
-        cprint(
-            f"\n[bold green]⚡ Actions & Abilities ({len(repo.actions)})[/bold green]"
-        )
-        cprint("-" * 30)
+        crule(f"⚡ Actions & Abilities ({len(repo.actions)})", style="bold green")
         for name, action in sorted(repo.actions.items()):
             print_action_sheet(action, 0)
-            cprint("")
 
     if hasattr(repo, "spells") and repo.spells:
-        cprint(f"\n[bold green]🔮 Spells ({len(repo.spells)})[/bold green]")
-        cprint("-" * 30)
+        crule(f"🔮 Spells ({len(repo.spells)})", style="bold green")
         for name, spell in sorted(repo.spells.items()):
-            if isinstance(spell, Spell):  # Type check for safety
-                print_spell_sheet(spell, 0)
-            else:
-                print_action_sheet(spell, 0)  # Fallback for non-spell actions
-            cprint("")
+            print_spell_sheet(spell, 0)
+    crule("", style="bold blue", characters="=")
 
 
 def print_damage_types_reference() -> None:

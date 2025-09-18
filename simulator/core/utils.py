@@ -10,8 +10,11 @@ from rich.rule import Rule
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
+# Initialize the rich console.
+_console = Console(markup=True, width=120, force_terminal=True, force_jupyter=False)
 
-def cprint(*args, **kwargs) -> None:
+
+def cprint(*args: Any, **kwargs: Any) -> None:
     """
     Custom print function to handle colored output.
 
@@ -20,11 +23,10 @@ def cprint(*args, **kwargs) -> None:
         **kwargs: Keyword arguments to pass to the console print function.
 
     """
-    console = Console()
-    console.print(*args, **kwargs)
+    _console.print(*args, **kwargs)
 
 
-def crule(*args, **kwargs) -> None:
+def crule(*args: Any, **kwargs: Any) -> None:
     """
     Custom print function to handle colored output with a rule.
 
@@ -33,8 +35,7 @@ def crule(*args, **kwargs) -> None:
         **kwargs: Keyword arguments to pass to the Rule constructor.
 
     """
-    console = Console()
-    console.print(Rule(*args, **kwargs))
+    _console.print(Rule(*args, **kwargs))
 
 
 def ccapture(content: Any) -> str:
@@ -48,9 +49,8 @@ def ccapture(content: Any) -> str:
         str: The captured output as a string.
 
     """
-    console = Console()
-    with console.capture() as capture:
-        console.print(content, markup=True, end="")
+    with _console.capture() as capture:
+        _console.print(content, markup=True, end="")
     return capture.get()
 
 
@@ -60,22 +60,22 @@ def ccapture(content: Any) -> str:
 class Singleton(type):
     """Metaclass that returns the same instance every time."""
 
-    _inst = None
+    _inst: "Singleton | None" = None
 
-    def __call__(cls, *a, **kw) -> Any:
+    def __call__(cls: Any, *args: Any, **kwargs: Any) -> Any:
         """
         Creates or returns the singleton instance.
 
         Args:
-            *a: Positional arguments for instance creation.
-            **kw: Keyword arguments for instance creation.
+            *args: Positional arguments for instance creation.
+            **kwargs: Keyword arguments for instance creation.
 
         Returns:
             Any: The singleton instance.
 
         """
         if cls._inst is None:
-            cls._inst = super().__call__(*a, **kw)
+            cls._inst = super().__call__(*args, **kwargs)
         return cls._inst
 
 
@@ -132,62 +132,34 @@ def get_stat_modifier(score: int) -> int:
 
 
 # ---- Variable Substitution ----
-def substitute_variables(expr: str, variables: dict[str, int] | None = None) -> str:
-    """Substitutes variables in the expression with their corresponding values.
+def substitute_variables(
+    expr: str,
+    variables: dict[str, int] | None = None,
+) -> str:
+    """
+    Substitutes variables in the expression with their corresponding values.
 
     Args:
-        expr (str): The expression to substitute variables in.
-        variables (Optional[dict], optional): The variables values to use for substitution. Defaults to None.
+        expr (str):
+            The expression to substitute variables in.
+        variables (Optional[dict], optional):
+            The variables values to use for substitution. Defaults to None.
 
     Returns:
         str: The expression with variables substituted.
 
     """
-    if not expr:
-        print(
-            "Empty expression provided to substitute_variables",
-            {"expression": expr, "variables": variables},
-        )
-        return ""
-
-    if not isinstance(expr, str):
-        print(
-            f"Expression must be a string, got {type(expr).__name__}",
-            {"expression": expr, "type": type(expr).__name__},
-        )
-        return str(expr) if expr is not None else ""
-
     expr = expr.upper().strip()
     if expr == "":
         return ""
     if expr.isdigit():
         return str(expr)
-
-    # Replace [MIND] with the mind value.
-    try:
-        for key, value in variables.items() if variables else {}:
-            if not isinstance(key, str):
-                print(
-                    f"Variable key must be string, got {type(key).__name__}",
-                    {"key": key, "value": value},
-                )
-                continue
-
-            if not isinstance(value, (int, float)):
-                print(
-                    f"Variable value must be numeric, got {type(value).__name__}",
-                    {"key": key, "value": value},
-                )
-                continue
-
-            if key.upper() in expr:
-                expr = expr.replace(f"[{key.upper()}]", str(int(value)))
-    except Exception as e:
-        print(
-            f"Error during variable substitution: {e!s}",
-            {"expression": expr, "variables": variables},
-            e,
-        )
+    if not variables:
+        return expr
+    # Replace the variables with their actual values.
+    for key, value in variables.items():
+        if key.upper() in expr:
+            expr = expr.replace(f"[{key.upper()}]", str(int(value)))
     return expr
 
 
@@ -203,10 +175,8 @@ def extract_dice_terms(expr: str) -> list[str]:
         list[str]: List of dice terms found in the expression.
 
     """
-    if not expr:
-        return []
     expr = expr.upper().strip()
-    if expr == "":
+    if not expr:
         return []
     if expr.isdigit():
         return []
@@ -214,7 +184,8 @@ def extract_dice_terms(expr: str) -> list[str]:
 
 
 def _parse_term_and_process_dice(
-    term: str, dice_action: Callable[[int, int], list[int]]
+    term: str,
+    dice_action: Callable[[int, int], list[int]],
 ) -> tuple[int, list[int]]:
     """Parses a dice term and processes the dice based on the provided action.
 
@@ -227,37 +198,18 @@ def _parse_term_and_process_dice(
         tuple[int, list[int]]: The total and individual processed rolls.
 
     """
-    if not term:
-        print("Empty dice term provided", {"term": term})
-        return 0, []
-
-    if not isinstance(term, str):
-        print(
-            f"Dice term must be string, got {type(term).__name__}",
-            {"term": term},
-        )
-        return 0, []
-
     term = term.upper().strip()
-    if term == "":
+    if not term:
         return 0, []
     if term.isdigit():
-        try:
-            value = int(term)
-            if value < 0:
-                print(
-                    f"Negative dice value not allowed: {value}",
-                    {"term": term, "value": value},
-                )
-                return 0, []
-            return value, [value]
-        except ValueError as e:
+        value = int(term)
+        if value < 0:
             print(
-                f"Invalid numeric dice term: {term}",
-                {"term": term},
-                e,
+                f"Negative dice value not allowed: {value}",
+                {"term": term, "value": value},
             )
             return 0, []
+        return value, [value]
 
     match = DICE_PATTERN.match(term)
     if not match:
@@ -267,57 +219,41 @@ def _parse_term_and_process_dice(
         )
         return 0, []
 
-    try:
-        num_str, sides_str = match.groups()
-        num = int(num_str) if num_str else 1
-        sides = int(sides_str)
+    num_str, sides_str = match.groups()
+    num = int(num_str) if num_str else 1
+    sides = int(sides_str)
 
-        # Validate dice parameters
-        if num <= 0:
-            print(
-                f"Number of dice must be positive, got {num}",
-                {"term": term, "num": num, "sides": sides},
-            )
-            return 0, []
-
-        if sides <= 0:
-            print(
-                f"Number of sides must be positive, got {sides}",
-                {"term": term, "num": num, "sides": sides},
-            )
-            return 0, []
-
-        if num > 100:  # Reasonable limit
-            print(
-                f"Too many dice requested: {num} (limit: 100)",
-                {"term": term, "num": num, "sides": sides},
-            )
-            return 0, []
-
-        if sides > 1000:  # Reasonable limit
-            print(
-                f"Too many sides on dice: {sides} (limit: 1000)",
-                {"term": term, "num": num, "sides": sides},
-            )
-            return 0, []
-
-        rolls = dice_action(num, sides)
-        return sum(rolls), rolls
-
-    except ValueError as e:
+    # Validate dice parameters
+    if num <= 0:
         print(
-            f"Error parsing dice values from '{term}': {e!s}",
-            {"term": term},
-            e,
+            f"Number of dice must be positive, got {num}",
+            {"term": term, "num": num, "sides": sides},
         )
         return 0, []
-    except Exception as e:
+
+    if sides <= 0:
         print(
-            f"Unexpected error processing dice '{term}': {e!s}",
-            {"term": term},
-            e,
+            f"Number of sides must be positive, got {sides}",
+            {"term": term, "num": num, "sides": sides},
         )
         return 0, []
+
+    if num > 100:  # Reasonable limit
+        print(
+            f"Too many dice requested: {num} (limit: 100)",
+            {"term": term, "num": num, "sides": sides},
+        )
+        return 0, []
+
+    if sides > 1000:  # Reasonable limit
+        print(
+            f"Too many sides on dice: {sides} (limit: 1000)",
+            {"term": term, "num": num, "sides": sides},
+        )
+        return 0, []
+
+    rolls = dice_action(num, sides)
+    return sum(rolls), rolls
 
 
 def _roll_individual_dice(num: int, sides: int) -> list[int]:
@@ -430,7 +366,8 @@ def roll_dice(term: str) -> int:
 
 
 def _process_dice_expression(
-    expr: str, term_processor: Callable[[str], tuple[int, list[int]]]
+    expr: str,
+    term_processor: Callable[[str], tuple[int, list[int]]],
 ) -> int:
     """Processes a dice expression by replacing dice terms with their processed values.
 

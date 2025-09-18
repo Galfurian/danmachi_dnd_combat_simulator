@@ -31,13 +31,6 @@ class DiceParser:
             print("Empty dice expression provided", {"expression": expression})
             raise ValueError("Invalid dice expression: empty")
 
-        if not isinstance(expression, str):
-            print(
-                f"Dice expression must be string, got {type(expression).__name__}",
-                {"expression": expression, "type": type(expression).__name__},
-            )
-            raise ValueError("Invalid dice expression: not string")
-
         # Remove whitespace and convert to uppercase
         try:
             expr = expression.strip().upper()
