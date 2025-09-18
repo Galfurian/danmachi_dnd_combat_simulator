@@ -151,7 +151,8 @@ class TriggerEffect(Effect):
     trigger_condition: TriggerCondition = Field(
         description="Condition that activates the trigger.",
     )
-    trigger_effects: list[Effect] = Field( description="Effects to apply when triggered."
+    trigger_effects: list[Effect] = Field(
+        description="Effects to apply when triggered."
     )
     damage_bonus: list[DamageComponent] | None = Field(
         default_factory=list,
@@ -171,10 +172,14 @@ class TriggerEffect(Effect):
         description="Maximum number of times trigger can activate (None for unlimited).",
     )
 
-    # Runtime state.
-    triggers_used: ClassVar[int] = 0
-    cooldown_remaining: ClassVar[int] = 0
-    has_triggered_this_turn: ClassVar[bool] = False
+    @model_validator(mode="after")
+    def initialize_runtime_state(self) -> Any:
+        """Initialize runtime state for this trigger effect instance."""
+        # Initialize runtime state as instance variables
+        self.triggers_used = 0
+        self.cooldown_remaining = 0
+        self.has_triggered_this_turn = False
+        return self
 
     @property
     def color(self) -> str:
