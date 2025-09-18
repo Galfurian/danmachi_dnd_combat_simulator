@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from core.constants import BonusType
 from pydantic import BaseModel, Field, model_validator
@@ -52,6 +52,7 @@ class Effect(BaseModel):
             actor (Any): The character applying the effect.
             target (Any): The character receiving the effect.
             mind_level (int, optional): The mind level of the actor. Defaults to 0.
+
         """
         try:
             if not actor:
@@ -79,7 +80,7 @@ class Effect(BaseModel):
 
         except Exception as e:
             print(
-                f"Error during turn_update validation for effect {self.name}: {str(e)}",
+                f"Error during turn_update validation for effect {self.name}: {e!s}",
                 {
                     "effect": self.name,
                     "actor": getattr(actor, "name", "unknown"),
@@ -93,6 +94,7 @@ class Effect(BaseModel):
 
         Returns:
             bool: True if the effect is permanent (None duration) or instant (0 duration), False otherwise.
+
         """
         return self.duration is None or self.duration <= 0
 
@@ -105,6 +107,7 @@ class Effect(BaseModel):
 
         Returns:
             bool: True if the effect can be applied, False otherwise.
+
         """
         try:
             if not actor:
@@ -125,7 +128,7 @@ class Effect(BaseModel):
 
         except Exception as e:
             print(
-                f"Error checking if effect {self.name} can be applied: {str(e)}",
+                f"Error checking if effect {self.name} can be applied: {e!s}",
                 {"effect": self.name},
                 e,
             )
@@ -189,6 +192,7 @@ class Modifier(BaseModel):
 
         Returns:
             bool: True if the modifiers are equal, False otherwise.
+
         """
         if not isinstance(other, Modifier):
             return False

@@ -7,11 +7,11 @@ instances from data.
 """
 
 from .base_attack import BaseAttack
-from .weapon_attack import WeaponAttack
 from .natural_attack import NaturalAttack
+from .weapon_attack import WeaponAttack
 
 __all__ = [
     "BaseAttack",
-    "WeaponAttack", 
     "NaturalAttack",
+    "WeaponAttack",
 ]

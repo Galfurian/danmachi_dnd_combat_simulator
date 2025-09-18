@@ -2,8 +2,8 @@
 Safe dice expression parser to replace eval() usage.
 """
 
-import re
 import random
+import re
 
 
 class DiceParser:
@@ -25,6 +25,7 @@ class DiceParser:
 
         Raises:
             ValueError: If expression is invalid
+
         """
         if not expression:
             print("Empty dice expression provided", {"expression": expression})
@@ -42,7 +43,7 @@ class DiceParser:
             expr = expression.strip().upper()
         except Exception as e:
             print(
-                f"Error processing dice expression: {str(e)}",
+                f"Error processing dice expression: {e!s}",
                 {"expression": expression},
                 e,
                 True,
@@ -85,6 +86,7 @@ class DiceParser:
 
             Raises:
                 ValueError: If dice parameters are invalid.
+
             """
             nonlocal total, details
 
@@ -140,7 +142,7 @@ class DiceParser:
 
             except Exception as e:
                 print(
-                    f"Error rolling dice in expression '{expression}': {str(e)}",
+                    f"Error rolling dice in expression '{expression}': {e!s}",
                     {"expression": expression, "match": match.group()},
                     e,
                 )
@@ -159,7 +161,7 @@ class DiceParser:
                     return int(total), description
                 except Exception as e:
                     print(
-                        f"Error evaluating processed expression '{processed}': {str(e)}",
+                        f"Error evaluating processed expression '{processed}': {e!s}",
                         {"original": expression, "processed": processed},
                         e,
                     )
@@ -175,7 +177,7 @@ class DiceParser:
             raise  # Re-raise ValueError as-is
         except Exception as e:
             print(
-                f"Unexpected error parsing dice expression '{expression}': {str(e)}",
+                f"Unexpected error parsing dice expression '{expression}': {e!s}",
                 {"expression": expression},
                 e,
                 True,

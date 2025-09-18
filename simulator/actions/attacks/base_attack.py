@@ -1,20 +1,20 @@
 from typing import Any
 
-from actions.base_action import BaseAction
 from combat.damage import (
     DamageComponent,
     roll_damage_components,
     roll_damage_components_no_mind,
 )
 from core.constants import (
-    ActionCategory,
-    ActionType,
-    BonusType,
     GLOBAL_VERBOSE_LEVEL,
+    ActionCategory,
+    BonusType,
 )
-from core.utils import debug, cprint
+from core.utils import cprint, debug
 from effects.base_effect import Effect
 from pydantic import Field
+
+from actions.base_action import BaseAction
 
 
 class BaseAttack(BaseAction):
@@ -52,6 +52,7 @@ class BaseAttack(BaseAction):
 
         Returns:
             bool: True if attack was executed successfully, False on validation errors.
+
         """
         # =============================
         # 1. Validation and Setup
@@ -141,14 +142,14 @@ class BaseAttack(BaseAction):
                 msg += f" defeating {target_str}"
             elif self.effect:
                 if self._common_apply_effect(actor, target, self.effect):
-                    msg += f" and applying"
+                    msg += " and applying"
                 else:
-                    msg += f" and failing to apply"
+                    msg += " and failing to apply"
                 msg += f" [{self.effect.color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
-            msg += f"[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
+            msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target_str} → "
             msg += " + ".join(damage_details) + ".\n"
             if is_dead:
@@ -182,6 +183,7 @@ class BaseAttack(BaseAction):
 
         Returns:
             str: Complete damage expression with variables replaced by values.
+
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
@@ -193,6 +195,7 @@ class BaseAttack(BaseAction):
 
         Returns:
             int: Minimum total damage across all damage components.
+
         """
         return super()._common_get_min_damage(actor, self.damage)
 
@@ -204,6 +207,7 @@ class BaseAttack(BaseAction):
 
         Returns:
             int: Maximum total damage across all damage components.
+
         """
         return super()._common_get_max_damage(actor, self.damage)
 
@@ -219,10 +223,10 @@ def deserialze_attack(data: dict[str, Any]) -> BaseAttack | None:
 
     Raises:
         ValueError: If the action type is unknown or missing.
-    """
 
-    from actions.attacks.weapon_attack import WeaponAttack
+    """
     from actions.attacks.natural_attack import NaturalAttack
+    from actions.attacks.weapon_attack import WeaponAttack
 
     if "class" not in data:
         raise ValueError("Missing 'class' in attack data")

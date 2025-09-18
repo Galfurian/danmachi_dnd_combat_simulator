@@ -2,9 +2,7 @@
 
 from typing import Any
 
-from actions.abilities.base_ability import BaseAbility
-from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from pydantic import Field
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import (
     cprint,
     parse_expr_and_assume_max_roll,
@@ -12,14 +10,16 @@ from core.utils import (
     roll_and_describe,
     substitute_variables,
 )
-from effects.base_effect import Effect
+from pydantic import Field
+
+from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityHeal(BaseAbility):
     """Represents abilities that restore hit points to targets during combat."""
 
     category: ActionCategory = ActionCategory.HEALING
-    
+
     # Validate the heal_roll expression.
     heal_roll: str = Field(
         description="Expression for healing amount, e.g. '1d8 + 3'",
@@ -34,6 +34,7 @@ class AbilityHeal(BaseAbility):
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
+
         """
         # Validate actor and target.
         if not self._validate_character(actor):
@@ -99,6 +100,7 @@ class AbilityHeal(BaseAbility):
 
         Returns:
             str: Complete healing expression with variables replaced by values.
+
         """
         variables = actor.get_expression_variables()
         return substitute_variables(self.heal_roll, variables)
@@ -111,6 +113,7 @@ class AbilityHeal(BaseAbility):
 
         Returns:
             int: Minimum healing amount.
+
         """
         variables = actor.get_expression_variables()
         substituted = substitute_variables(self.heal_roll, variables)
@@ -124,6 +127,7 @@ class AbilityHeal(BaseAbility):
 
         Returns:
             int: Maximum healing amount.
+
         """
         variables = actor.get_expression_variables()
         substituted = substitute_variables(self.heal_roll, variables)

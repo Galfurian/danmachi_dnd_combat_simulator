@@ -1,15 +1,15 @@
 """Beneficial spell buff implementation."""
 
-from logging import debug
 from typing import Any
 
-from actions.spells.base_spell import Spell
+from combat.damage import DamageComponent
 from core.constants import ActionCategory, BonusType
-from pydantic import Field
-from core.utils import substitute_variables, cprint
+from core.utils import cprint, substitute_variables
 from effects.base_effect import Effect
 from effects.modifier_effect import ModifierEffect
-from combat.damage import DamageComponent
+from pydantic import Field
+
+from actions.spells.base_spell import Spell
 
 
 class SpellBuff(Spell):
@@ -41,6 +41,7 @@ class SpellBuff(Spell):
 
         Returns:
             bool: True if spell was cast successfully, False on failure.
+
         """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
@@ -87,6 +88,7 @@ class SpellBuff(Spell):
 
         Returns:
             dict[BonusType, str]: Dictionary mapping bonus types to their expressions.
+
         """
         if mind_level is None:
             mind_level = 1

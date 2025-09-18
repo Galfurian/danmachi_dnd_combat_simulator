@@ -1,15 +1,14 @@
-from typing import Optional, Tuple, Any
+from typing import Any, Optional
 
-from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
-from actions.base_action import BaseAction
-from actions.spells import SpellOffensive, SpellBuff, SpellDebuff, SpellHeal
 from actions.abilities import (
-    AbilityOffensive,
-    AbilityHeal,
     AbilityBuff,
     AbilityDebuff,
+    AbilityHeal,
+    AbilityOffensive,
 )
-
+from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
+from actions.base_action import BaseAction
+from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from character import Character
 
 # =============================================================================
@@ -26,6 +25,7 @@ def _hp_ratio(character: Character) -> float:
 
     Returns:
         float: The HP ratio (current HP / max HP), or 1.0 if max HP is 0.
+
     """
     return character.hp / character.HP_MAX if character.HP_MAX > 0 else 1.0
 
@@ -50,6 +50,7 @@ def _sort_targets_by_usefulness_and_hp_offensive(
 
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
+
     """
     useful = [
         t
@@ -80,8 +81,8 @@ def _sort_targets_by_usefulness_and_hp_healing(
 
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
-    """
 
+    """
     useful = [
         t
         for t in targets
@@ -108,6 +109,7 @@ def _sort_for_base_attack(
 
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
+
     """
     return _sort_targets_by_usefulness_and_hp_offensive(targets, action, 0)
 
@@ -125,6 +127,7 @@ def _sort_for_spell_attack(
 
     Returns:
         tuple[int, list[Character], float]: The best mind level and corresponding sorted targets.
+
     """
     best_score = -float("inf")
     best_mind_level = spell.mind_cost[0]
@@ -173,8 +176,8 @@ def _sort_for_spell_heal(
 
     Returns:
         list[Character]: Sorted list of targets based on HP ratio and usefulness of the healing effect.
-    """
 
+    """
     return _sort_targets_by_usefulness_and_hp_healing(
         targets, spell, spell.mind_cost[0]
     )
@@ -193,6 +196,7 @@ def _sort_for_spell_buff(
 
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
+
     """
     return _sort_targets_by_usefulness_and_hp_offensive(
         targets, action, action.mind_cost[0]
@@ -212,6 +216,7 @@ def _sort_for_spell_debuff(
 
     Returns:
         list[Character]: Sorted list of targets based on usefulness and HP ratio.
+
     """
     return _sort_targets_by_usefulness_and_hp_offensive(
         targets, spell, spell.mind_cost[0]
@@ -238,6 +243,7 @@ def choose_best_weapon_for_situation(
 
     Returns:
         Optional[WeaponAttack]: The best weapon for the situation, or None if no valid weapon is found.
+
     """
     if not weapons or not enemies:
         return None
@@ -287,7 +293,7 @@ def choose_best_weapon_for_situation(
 
 def choose_best_target_for_weapon(
     npc: Character, weapon: "WeaponAttack", enemies: list[Character]
-) -> Optional[Character]:
+) -> Character | None:
     """
     Choose the best target for a specific weapon.
 
@@ -300,6 +306,7 @@ def choose_best_target_for_weapon(
 
     Returns:
         Optional[Character]: The best target for the weapon, or None if no valid target is found.
+
     """
     if not weapon or not enemies:
         return None
@@ -324,6 +331,7 @@ def get_weapon_attacks(npc: Character) -> list["WeaponAttack"]:
 
     Returns:
         list[WeaponAttack]: List of available weapon attacks.
+
     """
     return npc.get_available_weapon_attacks()
 
@@ -337,6 +345,7 @@ def get_natural_attacks(npc: Character) -> list["NaturalAttack"]:
 
     Returns:
         list[NaturalAttack]: List of available natural attacks.
+
     """
     return npc.get_available_natural_weapon_attacks()
 
@@ -355,6 +364,7 @@ def get_all_combat_actions(npc: Character) -> list[BaseAction]:
 
     Returns:
         list[BaseAction]: List of all available combat actions including attacks, actions, and spells.
+
     """
     return (
         npc.get_available_attacks()
@@ -373,6 +383,7 @@ def get_actions_by_type(npc: Character, action_type: type) -> list[Any]:
 
     Returns:
         list[Any]: List of actions of the specified type.
+
     """
     return [a for a in get_all_combat_actions(npc) if isinstance(a, action_type)]
 
@@ -381,7 +392,7 @@ def choose_best_base_attack_action(
     npc: Character,
     enemies: list[Character],
     base_attacks: list[BaseAttack],
-) -> Optional[tuple[BaseAttack, Character]]:
+) -> tuple[BaseAttack, Character] | None:
     """
     Chooses the best attack and target combo based on:
     - Usefulness of the attack’s effect (if any)
@@ -395,10 +406,11 @@ def choose_best_base_attack_action(
 
     Returns:
         Optional[tuple[BaseAttack, Character]]: The best attack and target combo, or None if no valid combo is found.
+
     """
     best_score: float = -1
-    best_attack: Optional[BaseAttack] = None
-    best_target: Optional[Character] = None
+    best_attack: BaseAttack | None = None
+    best_target: Character | None = None
 
     for attack in base_attacks:
         # Skip if the attack is not available (e.g., on cooldown).
@@ -436,7 +448,7 @@ def choose_best_attack_spell_action(
     npc: Character,
     enemies: list[Character],
     spells: list[SpellOffensive],
-) -> Optional[tuple[SpellOffensive, int, list[Character]]]:
+) -> tuple[SpellOffensive, int, list[Character]] | None:
     """
     Chooses the best SpellOffensive, mind level, and list of targets based on usefulness and value.
 
@@ -447,6 +459,7 @@ def choose_best_attack_spell_action(
 
     Returns:
         Optional[tuple[SpellOffensive, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+
     """
     best_score = -1
     best_spell = None
@@ -480,7 +493,7 @@ def choose_best_healing_spell_action(
     npc: Character,
     allies: list[Character],
     spells: list[SpellHeal],
-) -> Optional[tuple[SpellHeal, int, list[Character]]]:
+) -> tuple[SpellHeal, int, list[Character]] | None:
     """
     Chooses the best healing spell, mind level, and set of targets based on:
     - Amount of HP missing.
@@ -495,6 +508,7 @@ def choose_best_healing_spell_action(
 
     Returns:
         Optional[tuple[SpellHeal, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+
     """
     best_score = -1
     best_spell = None
@@ -549,7 +563,7 @@ def choose_best_buff_spell_action(
     npc: Character,
     allies: list[Character],
     spells: list[SpellBuff],
-) -> Optional[tuple[SpellBuff, int, list[Character]]]:
+) -> tuple[SpellBuff, int, list[Character]] | None:
     """
     Chooses the best SpellBuff, mind level, and set of targets based on:
     - Usefulness of the buff effect.
@@ -563,6 +577,7 @@ def choose_best_buff_spell_action(
 
     Returns:
         Optional[tuple[SpellBuff, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+
     """
     best_score = -1
     best_spell = None
@@ -614,7 +629,7 @@ def choose_best_debuff_spell_action(
     npc: Character,
     enemies: list[Character],
     spells: list[SpellDebuff],
-) -> Optional[tuple[SpellDebuff, int, list[Character]]]:
+) -> tuple[SpellDebuff, int, list[Character]] | None:
     """
     Chooses the best SpellDebuff, mind level, and set of enemy targets based on:
     - Whether the effect would be useful (not already applied).
@@ -628,6 +643,7 @@ def choose_best_debuff_spell_action(
 
     Returns:
         Optional[tuple[SpellDebuff, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+
     """
     best_score = -1
     best_spell = None
@@ -685,7 +701,7 @@ def choose_best_offensive_ability_action(
     npc: Character,
     enemies: list[Character],
     abilities: list[AbilityOffensive],
-) -> Optional[tuple[AbilityOffensive, list[Character]]]:
+) -> tuple[AbilityOffensive, list[Character]] | None:
     """
     Chooses the best offensive ability and targets (no mind cost).
     """
@@ -722,7 +738,7 @@ def choose_best_healing_ability_action(
     npc: Character,
     allies: list[Character],
     abilities: list[AbilityHeal],
-) -> Optional[tuple[AbilityHeal, list[Character]]]:
+) -> tuple[AbilityHeal, list[Character]] | None:
     """
     Chooses the best healing ability and targets (no mind cost).
     """
@@ -760,7 +776,7 @@ def choose_best_buff_ability_action(
     npc: Character,
     allies: list[Character],
     abilities: list[AbilityBuff],
-) -> Optional[tuple[AbilityBuff, list[Character]]]:
+) -> tuple[AbilityBuff, list[Character]] | None:
     """
     Chooses the best buff ability and targets (no mind cost).
     """
@@ -797,7 +813,7 @@ def choose_best_debuff_ability_action(
     npc: Character,
     enemies: list[Character],
     abilities: list[AbilityDebuff],
-) -> Optional[tuple[AbilityDebuff, list[Character]]]:
+) -> tuple[AbilityDebuff, list[Character]] | None:
     """
     Chooses the best debuff ability and targets (no mind cost).
     """

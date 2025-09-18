@@ -1,6 +1,6 @@
 """Character Display Module - handles character display, formatting, and UI functionality."""
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from core.constants import (
     CharacterType,
@@ -20,6 +20,7 @@ class CharacterDisplay:
 
         Args:
             character (Character): The character instance to display.
+
         """
         self._character = character
 
@@ -41,6 +42,7 @@ class CharacterDisplay:
 
         Returns:
             str: A formatted string representing the character's status line.
+
         """
         # Collect all effects with better formatting
         effects_list = []
@@ -172,6 +174,7 @@ class CharacterDisplay:
 
         Returns:
             str: A detailed string of all active effects with descriptions.
+
         """
         if not self._character.effects_module.active_effects:
             return "No active effects"

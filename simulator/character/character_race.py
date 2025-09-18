@@ -25,6 +25,7 @@ class CharacterRace:
             default_spells (list[str] | None, optional): Default spells for the race. Defaults to None.
             available_actions (dict[int, list[str]] | None, optional): Actions available by level. Defaults to None.
             available_spells (dict[int, list[str]] | None, optional): Spells available by level. Defaults to None.
+
         """
         self.name = name
         self.natural_ac = natural_ac
@@ -39,6 +40,7 @@ class CharacterRace:
 
         Returns:
             dict[str, Any]: The dictionary representation of the CharacterRace instance.
+
         """
         return {
             "name": self.name,
@@ -59,6 +61,7 @@ class CharacterRace:
 
         Returns:
             CharacterRace: The CharacterRace instance.
+
         """
         return CharacterRace(
             name=data["name"],

@@ -1,20 +1,19 @@
-from logging import debug
-from typing import Any, Tuple
+from typing import Any
 
 from combat.damage import (
     DamageComponent,
     roll_and_describe,
     roll_damage_components_no_mind,
 )
+from core.constants import (
+    ActionCategory,
+    ActionType,
+    is_oponent,
+)
 from core.utils import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     substitute_variables,
-)
-from core.constants import (
-    ActionType,
-    ActionCategory,
-    is_oponent,
 )
 from effects import Effect
 from pydantic import BaseModel, Field
@@ -78,6 +77,7 @@ class BaseAction(BaseModel):
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
+
         """
         raise NotImplementedError("Subclasses must implement the execute method")
 
@@ -90,6 +90,7 @@ class BaseAction(BaseModel):
 
         Returns:
             bool: True if maximum uses is greater than 0, False if unlimited.
+
         """
         return self._maximum_uses > 0
 
@@ -98,6 +99,7 @@ class BaseAction(BaseModel):
 
         Returns:
             int: Maximum uses per encounter/day (-1 for unlimited).
+
         """
         return self._maximum_uses
 
@@ -106,6 +108,7 @@ class BaseAction(BaseModel):
 
         Returns:
             bool: True if cooldown is greater than 0, False otherwise.
+
         """
         return self._cooldown > 0
 
@@ -114,6 +117,7 @@ class BaseAction(BaseModel):
 
         Returns:
             int: Cooldown period in turns (-1 for no cooldown).
+
         """
         return self._cooldown
 
@@ -125,6 +129,7 @@ class BaseAction(BaseModel):
 
         Returns:
             bool: True if valid, False otherwise.
+
         """
         from character.main import Character
 
@@ -141,6 +146,7 @@ class BaseAction(BaseModel):
 
         Returns:
             tuple[str, str]: (actor_display, target_display)
+
         """
         actor_str = actor.char_type.colorize(actor.name)
         target_str = target.char_type.colorize(target.name)
@@ -167,6 +173,7 @@ class BaseAction(BaseModel):
 
         Returns:
             bool: True if effect was successfully applied, False otherwise
+
         """
         # Validate actor and target.
         if not self._validate_character(actor):
@@ -180,7 +187,7 @@ class BaseAction(BaseModel):
         if not actor.is_alive() or not target.is_alive():
             return False
         # Validate and correct mind_level.
-        mind_level = 0 if mind_level < 0 else mind_level
+        mind_level = max(mind_level, 0)
         # Try to apply the effect using the target's effects module.
         if target.effects_module.add_effect(actor, effect, mind_level, self):
             return True
@@ -199,6 +206,7 @@ class BaseAction(BaseModel):
 
         Returns:
             tuple[int, list[str]]: (bonus_damage, damage_descriptions)
+
         """
         all_damage_modifiers = actor.effects_module.get_damage_modifiers()
         return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
@@ -208,7 +216,7 @@ class BaseAction(BaseModel):
         actor,
         attack_bonus_expr: str,
         bonus_list: list[str],
-    ) -> Tuple[int, str, int]:
+    ) -> tuple[int, str, int]:
         """Roll an attack with critical hit detection.
 
         Args:
@@ -218,6 +226,7 @@ class BaseAction(BaseModel):
 
         Returns:
             Tuple[int, str, int]: (total_result, description, raw_d20_roll)
+
         """
         if not self._validate_character(actor):
             return 1, "1D20: 1 (error)", 1
@@ -274,6 +283,7 @@ class BaseAction(BaseModel):
                 'msg': str,
                 'd20_roll': int,
             }
+
         """
         if bonus_list is None:
             bonus_list = []
@@ -320,6 +330,7 @@ class BaseAction(BaseModel):
 
         Returns:
             str: Complete damage expression with variables replaced by values
+
         """
         # Validate actor.
         if not self._validate_character(actor):
@@ -356,6 +367,7 @@ class BaseAction(BaseModel):
 
         Returns:
             int: Minimum total damage across all damage components
+
         """
         # Validate actor.
         if not self._validate_character(actor):
@@ -394,6 +406,7 @@ class BaseAction(BaseModel):
 
         Returns:
             int: Maximum total damage across all damage components
+
         """
         # Validate actor.
         if not self._validate_character(actor):
@@ -430,6 +443,7 @@ class BaseAction(BaseModel):
 
         Returns:
             bool: True if the target is valid for this action, False otherwise.
+
         """
         from core.constants import ActionCategory
 
@@ -448,8 +462,7 @@ class BaseAction(BaseModel):
             are_opponents = is_oponent(actor.char_type, target.char_type)
             if is_ally:
                 return not are_opponents
-            else:
-                return are_opponents
+            return are_opponents
 
         # Check each restriction - return True on first match (OR logic).
         for restriction in self.target_restrictions:

@@ -15,4 +15,4 @@ full backward compatibility with existing code.
 # Import the main classes to make them available at the package level
 from .main import Character, load_character, load_characters
 
-__all__ = ['Character', 'load_character', 'load_characters']
+__all__ = ["Character", "load_character", "load_characters"]

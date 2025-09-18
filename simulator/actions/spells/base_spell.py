@@ -1,14 +1,12 @@
 """Base spell classes for the magical combat system."""
 
 from abc import abstractmethod
-from logging import debug
 from typing import Any
 
-from actions.base_action import BaseAction
-from core.constants import ActionCategory, ActionType
 from core.utils import evaluate_expression
-from effects.base_effect import Effect
 from pydantic import Field
+
+from actions.base_action import BaseAction
 
 
 class Spell(BaseAction):
@@ -54,6 +52,7 @@ class Spell(BaseAction):
 
         Returns:
             bool: True if spell targets one entity, False for multi-target.
+
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
@@ -66,6 +65,7 @@ class Spell(BaseAction):
 
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions).
+
         """
         if self.target_expr:
             variables = actor.get_expression_variables()
@@ -90,6 +90,7 @@ class Spell(BaseAction):
 
         Raises:
             NotImplementedError: Always raised to enforce using cast_spell().
+
         """
         raise NotImplementedError("Spells must use the cast_spell method.")
 
@@ -104,6 +105,7 @@ class Spell(BaseAction):
 
         Returns:
             bool: True if spell was cast successfully, False on failure.
+
         """
         if not self._validate_character(actor):
             return False
@@ -155,11 +157,12 @@ def deserialze_spell(data: dict[str, Any]) -> Spell | None:
 
     Returns:
         Spell | None: The deserialized Spell instance, or None on failure.
+
     """
-    from actions.spells.spell_offensive import SpellOffensive
-    from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_buff import SpellBuff
     from actions.spells.spell_debuff import SpellDebuff
+    from actions.spells.spell_heal import SpellHeal
+    from actions.spells.spell_offensive import SpellOffensive
 
     if "class" not in data:
         raise ValueError("Missing 'class' in data")

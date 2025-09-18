@@ -1,18 +1,18 @@
 """Offensive spell attack implementation."""
 
-from logging import debug
 from typing import Any
 
-from actions.spells.base_spell import Spell
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import (
+    GLOBAL_VERBOSE_LEVEL,
     ActionCategory,
     BonusType,
-    GLOBAL_VERBOSE_LEVEL,
 )
-from pydantic import Field
 from core.utils import cprint
 from effects.base_effect import Effect
+from pydantic import Field
+
+from actions.spells.base_spell import Spell
 
 
 class SpellOffensive(Spell):
@@ -47,6 +47,7 @@ class SpellOffensive(Spell):
 
         Returns:
             bool: True if spell was successfully cast (regardless of hit/miss).
+
         """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
@@ -141,6 +142,7 @@ class SpellOffensive(Spell):
 
         Returns:
             str: Complete damage expression with variables substituted.
+
         """
         return super()._common_get_damage_expr(actor, self.damage, {"MIND": mind_level})
 
@@ -153,6 +155,7 @@ class SpellOffensive(Spell):
 
         Returns:
             int: Minimum possible damage (sum of all components' minimums).
+
         """
         return super()._common_get_min_damage(actor, self.damage, {"MIND": mind_level})
 
@@ -165,5 +168,6 @@ class SpellOffensive(Spell):
 
         Returns:
             int: Maximum possible damage (sum of all components' maximums).
+
         """
         return super()._common_get_max_damage(actor, self.damage, {"MIND": mind_level})

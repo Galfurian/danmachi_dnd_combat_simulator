@@ -1,8 +1,8 @@
 # armor.py
 
-from typing import Any, Optional
+from typing import Any
 
-from core.constants import ArmorSlot, ArmorType, BonusType
+from core.constants import ArmorSlot, ArmorType
 from effects.base_effect import Effect
 
 
@@ -14,6 +14,7 @@ class Armor:
     Different armor types (light, medium, heavy) interact differently with
     Dexterity modifiers, and armor can be equipped in different slots.
     """
+
     def __init__(
         self,
         name: str,
@@ -22,7 +23,7 @@ class Armor:
         armor_slot: ArmorSlot,
         armor_type: ArmorType,
         max_dex_bonus: int = 0,
-        effect: Optional[Effect] = None,
+        effect: Effect | None = None,
     ):
         self.name = name
         self.description = description
@@ -30,7 +31,7 @@ class Armor:
         self.armor_slot: ArmorSlot = armor_slot
         self.armor_type: ArmorType = armor_type
         self.max_dex_bonus = max_dex_bonus
-        self.effect: Optional[Effect] = effect
+        self.effect: Effect | None = effect
 
         self.validate()
 
@@ -40,6 +41,7 @@ class Armor:
         
         Raises:
             AssertionError: If any armor property is invalid.
+
         """
         assert self.name and isinstance(self.name, str), "Armor name must not be empty."
         assert self.ac >= 0, "Armor AC bonus must be a non-negative integer."
@@ -62,6 +64,7 @@ class Armor:
             
         Returns:
             int: The total AC bonus provided by this armor piece.
+
         """
         if self.armor_slot == ArmorSlot.TORSO:
             if self.armor_type == ArmorType.LIGHT:
@@ -71,7 +74,7 @@ class Armor:
             if self.armor_type == ArmorType.HEAVY:
                 return self.ac
             return self.ac
-        elif self.armor_slot == ArmorSlot.SHIELD:
+        if self.armor_slot == ArmorSlot.SHIELD:
             return self.ac
         return 0
 
@@ -81,6 +84,7 @@ class Armor:
         
         Returns:
             dict[str, Any]: Dictionary containing the armor's properties.
+
         """
         data = {
             "name": self.name,
@@ -105,6 +109,7 @@ class Armor:
         Raises:
             AssertionError: If the data is None.
             KeyError: If required keys are missing from the data.
+
         """
         assert data is not None, "Data must not be None."
         return Armor(

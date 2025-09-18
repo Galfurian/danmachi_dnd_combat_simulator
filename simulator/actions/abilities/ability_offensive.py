@@ -2,16 +2,15 @@
 
 from typing import Any
 
-from actions.abilities.base_ability import BaseAbility
 from combat.damage import (
     DamageComponent,
     roll_damage_components_no_mind,
 )
-from core.constants import ActionCategory, ActionType, GLOBAL_VERBOSE_LEVEL
-from core.constants import BonusType
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
-from effects.base_effect import Effect
 from pydantic import Field
+
+from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityOffensive(BaseAbility):
@@ -35,6 +34,7 @@ class AbilityOffensive(BaseAbility):
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
+
         """
         # =====================================================================
         # 1. VALIDATION AND PREPARATION
@@ -138,9 +138,9 @@ class AbilityOffensive(BaseAbility):
                 msg += f" defeating {target_str}"
             elif self.effect:
                 if effect_applied:
-                    msg += f" and applying"
+                    msg += " and applying"
                 else:
-                    msg += f" and failing to apply"
+                    msg += " and failing to apply"
                 msg += f" [bold yellow]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
@@ -217,6 +217,7 @@ class AbilityOffensive(BaseAbility):
 
         Returns:
             str: Complete damage expression with variables replaced by values.
+
         """
         return super()._common_get_damage_expr(actor, self.damage)
 
@@ -228,6 +229,7 @@ class AbilityOffensive(BaseAbility):
 
         Returns:
             int: Minimum total damage across all damage components.
+
         """
         return super()._common_get_min_damage(actor, self.damage)
 
@@ -239,5 +241,6 @@ class AbilityOffensive(BaseAbility):
 
         Returns:
             int: Maximum total damage across all damage components.
+
         """
         return super()._common_get_max_damage(actor, self.damage)

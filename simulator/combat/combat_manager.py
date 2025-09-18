@@ -2,38 +2,35 @@
 import random
 from collections import deque
 from logging import debug
-from typing import List, Optional
 
-from core.utils import cprint, crule
-from actions.base_action import BaseAction
-from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
-from actions.spells import Spell, SpellOffensive, SpellBuff, SpellDebuff, SpellHeal
 from actions.abilities import (
-    AbilityOffensive,
-    AbilityHeal,
     AbilityBuff,
     AbilityDebuff,
+    AbilityHeal,
+    AbilityOffensive,
 )
+from actions.attacks import BaseAttack, WeaponAttack
+from actions.base_action import BaseAction
+from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
+from character import Character
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_base_attack_action,
+    choose_best_buff_ability_action,
     choose_best_buff_spell_action,
+    choose_best_debuff_ability_action,
     choose_best_debuff_spell_action,
+    choose_best_healing_ability_action,
     choose_best_healing_spell_action,
+    choose_best_offensive_ability_action,
     choose_best_target_for_weapon,
     choose_best_weapon_for_situation,
-    choose_best_healing_ability_action,
-    choose_best_offensive_ability_action,
-    choose_best_buff_ability_action,
-    choose_best_debuff_ability_action,
     get_actions_by_type,
     get_natural_attacks,
 )
 from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
-from core.sheets import print_character_sheet
-from character import Character
+from core.utils import cprint, crule
 from ui.cli_interface import PlayerInterface
-
 
 FULL_ATTACK = BaseAction(
     name="Full Attack",
@@ -64,6 +61,7 @@ class CombatManager:
             player (Character): The player character controlled by the user.
             enemies (list[Character]): List of enemy characters.
             friendlies (list[Character]): List of friendly characters.
+
         """
         # Store the ui.
         self.ui: PlayerInterface = PlayerInterface()
@@ -108,6 +106,7 @@ class CombatManager:
 
         Returns:
             list[Character]: A list of alive characters.
+
         """
         return [char for char in self.participants if char.is_alive()]
 
@@ -119,6 +118,7 @@ class CombatManager:
 
         Returns:
             list[Character]: A list of alive opponents.
+
         """
         return [
             char
@@ -134,6 +134,7 @@ class CombatManager:
 
         Returns:
             list[Character]: A list of alive friendly characters.
+
         """
         return [
             char
@@ -146,8 +147,8 @@ class CombatManager:
 
         Returns:
             bool: True if the turn was successfully executed, False if combat should end.
-        """
 
+        """
         alive_participants = deque(self.get_alive_participants())
 
         # If there are no more participants alive, combat ends.
@@ -181,6 +182,7 @@ class CombatManager:
 
         Args:
             participant (Character): The participant whose turn is being run.
+
         """
         if participant.is_alive():
             # Reset the participant's turn flags to allow for new actions.
@@ -205,12 +207,11 @@ class CombatManager:
                 cprint(
                     f"    💤 {participant.name} is incapacitated and cannot act this turn."
                 )
+            # Execute the participant's action based on whether they are the player or an NPC.
+            elif participant == self.player:
+                self.ask_for_player_action()
             else:
-                # Execute the participant's action based on whether they are the player or an NPC.
-                if participant == self.player:
-                    self.ask_for_player_action()
-                else:
-                    self.execute_npc_action(participant)
+                self.execute_npc_action(participant)
 
             # Apply end-of-turn updates and check for expiration
             participant.turn_update()
@@ -237,7 +238,7 @@ class CombatManager:
 
             # Player selects an action or submenu option.
             choice = self.ui.choose_action(actions, submenus, "Skip")
-            if choice is None or isinstance(choice, str) and choice == "q":
+            if choice is None or (isinstance(choice, str) and choice == "q"):
                 break
             # If the action is a Spell, we need to handle it differently.
             if choice == FULL_ATTACK:
@@ -326,6 +327,7 @@ class CombatManager:
 
         Returns:
             bool: True if a spell was successfully cast, False otherwise.
+
         """
         while True:
             # Ask for the spell and the mind level.
@@ -373,7 +375,7 @@ class CombatManager:
 
     def ask_for_player_spell_and_mind(
         self, spells: list[Spell]
-    ) -> Optional[tuple[Spell, int] | str]:
+    ) -> tuple[Spell, int] | str | None:
         """Asks the player to choose a spell from their available spells.
 
         Args:
@@ -381,6 +383,7 @@ class CombatManager:
 
         Returns:
             Optional[tuple[Spell, int] | str]: The chosen spell and mind level, or None if no spell was selected.
+
         """
         while True:
             # Let the player choose a spell.
@@ -398,7 +401,7 @@ class CombatManager:
             return spell, mind
         return None
 
-    def ask_for_player_target(self, action: BaseAction) -> Optional[Character | str]:
+    def ask_for_player_target(self, action: BaseAction) -> Character | str | None:
         """Asks the player to choose a target for the given action.
 
         Args:
@@ -406,6 +409,7 @@ class CombatManager:
 
         Returns:
             Optional[Character | str]: The chosen target, or None if no valid target was selected.
+
         """
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
@@ -424,7 +428,7 @@ class CombatManager:
 
     def ask_for_player_targets(
         self, action: BaseAction, max_targets: int
-    ) -> Optional[List[Character] | str]:
+    ) -> list[Character] | str | None:
         """Asks the player to choose multiple targets for the given action.
 
         Args:
@@ -433,6 +437,7 @@ class CombatManager:
 
         Returns:
             Optional[list[Character] | str]: The chosen targets, or None if no valid targets were selected.
+
         """
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
@@ -480,6 +485,7 @@ class CombatManager:
 
         Args:
             npc (Character): The NPC whose action is being executed.
+
         """
         allies = self.get_alive_friendlies(npc)
         enemies = self.get_alive_opponents(npc)
@@ -678,6 +684,7 @@ class CombatManager:
 
         Returns:
             list[Character]: A list of legal targets for the action or spell.
+
         """
         return [
             participant
@@ -771,6 +778,7 @@ class CombatManager:
 
         Returns:
             bool: True if combat has ended, False otherwise.
+
         """
         if not self.player.is_alive():
             cprint("[bold red]Combat ends. You have been defeated![/]")

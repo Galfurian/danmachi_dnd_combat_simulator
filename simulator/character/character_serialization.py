@@ -7,11 +7,12 @@ Extracted from the main Character class to improve modularity.
 
 import json
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from core.constants import CharacterType, DamageType
-from character.character_class import CharacterClass
 from effects.base_effect import Effect
+
+from character.character_class import CharacterClass
 
 if TYPE_CHECKING:
     from .main import Character
@@ -28,6 +29,7 @@ class CharacterSerialization:
 
         Args:
             character (Character): The character instance to serialize/deserialize.
+
         """
         self._character = character
 
@@ -37,6 +39,7 @@ class CharacterSerialization:
 
         Returns:
             dict[str, Any]: The dictionary representation of the character.
+
         """
         data: dict[str, Any] = {}
         data["type"] = self._character.char_type.name
@@ -78,10 +81,12 @@ class CharacterSerialization:
 
         Returns:
             Character | None: The Character instance if successful, None otherwise.
+
         """
         # Import here to avoid circular imports
-        from .main import Character
         from core.content import ContentRepository
+
+        from .main import Character
 
         # Get the content repositories (assume singleton is already initialized).
         repo = ContentRepository()
@@ -106,7 +111,7 @@ class CharacterSerialization:
         # Get the stats.
         stats = data["stats"]
         # Get the spellcasting ability if present.
-        spellcasting_ability = data.get("spellcasting_ability", None)
+        spellcasting_ability = data.get("spellcasting_ability")
         # Get the total hands.
         total_hands = data.get("total_hands", 2)
         # Get the resistances.
@@ -245,9 +250,10 @@ def load_character(file_path: Path) -> "Character | None":
 
     Returns:
         Character | None: A Character instance if the file is valid, None otherwise.
+
     """
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             character_data = json.load(f)
             return CharacterSerialization.from_dict(character_data)
     except (FileNotFoundError, json.JSONDecodeError) as e:
@@ -271,11 +277,12 @@ def load_characters(file_path: Path) -> dict[str, "Character"]:
 
     Returns:
         dict[str, Character]: A dictionary mapping character names to Character instances.
+
     """
     from .main import Character
 
     characters: dict[str, Character] = {}
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         character_data = json.load(f)
         for entry in character_data:
             character = CharacterSerialization.from_dict(entry)

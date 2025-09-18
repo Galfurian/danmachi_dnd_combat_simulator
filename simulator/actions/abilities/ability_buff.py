@@ -2,16 +2,14 @@
 
 from typing import Any
 
-from actions.abilities.base_ability import BaseAbility
 from core.constants import (
-    ActionCategory,
-    ActionType,
     GLOBAL_VERBOSE_LEVEL,
+    ActionCategory,
 )
 from core.utils import cprint
-from effects.base_effect import Effect
 from effects.modifier_effect import BuffEffect
-from pydantic import Field
+
+from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityBuff(BaseAbility):
@@ -32,6 +30,7 @@ class AbilityBuff(BaseAbility):
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
+
         """
         # Validate actor and target.
         if not self._validate_character(actor):
@@ -96,6 +95,7 @@ class AbilityBuff(BaseAbility):
 
         Returns:
             str: Description of the buff effect.
+
         """
         if self.effect and hasattr(self.effect, "description"):
             return self.effect.description

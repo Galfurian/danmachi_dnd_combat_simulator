@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from core.utils import cprint, roll_and_describe
 from pydantic import Field, model_validator
@@ -43,7 +43,7 @@ class HealingOverTimeEffect(Effect):
         return self
 
     def turn_update(
-        self, actor: Any, target: Any, mind_level: Optional[int] = 1
+        self, actor: Any, target: Any, mind_level: int | None = 1
     ) -> None:
         """
         Apply healing over time to the target.
@@ -52,6 +52,7 @@ class HealingOverTimeEffect(Effect):
             actor (Any): The character who applied the HoT effect.
             target (Any): The character receiving the healing.
             mind_level (Optional[int]): The mind level for healing calculation. Defaults to 1.
+
         """
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level

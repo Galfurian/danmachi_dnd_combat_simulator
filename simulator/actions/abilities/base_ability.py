@@ -3,24 +3,13 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from actions.base_action import BaseAction
-from combat.damage import DamageComponent, roll_damage_components_no_mind
-from core.constants import (
-    ActionCategory,
-    ActionType,
-    BonusType,
-    GLOBAL_VERBOSE_LEVEL,
-)
-from pydantic import Field
 from core.utils import (
-    debug,
-    parse_expr_and_assume_max_roll,
-    parse_expr_and_assume_min_roll,
-    substitute_variables,
-    cprint,
     evaluate_expression,
 )
-from effects.base_effect import Effect, ensure_effect
+from effects.base_effect import Effect
+from pydantic import Field
+
+from actions.base_action import BaseAction
 
 
 class BaseAbility(BaseAction, ABC):
@@ -50,6 +39,7 @@ class BaseAbility(BaseAction, ABC):
 
         Returns:
             bool: True if ability targets one entity, False for multi-target.
+
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
@@ -61,6 +51,7 @@ class BaseAbility(BaseAction, ABC):
 
         Returns:
             int: Number of targets (minimum 1, even for invalid expressions).
+
         """
         if self.target_expr:
             variables = actor.get_expression_variables()
@@ -81,8 +72,8 @@ class BaseAbility(BaseAction, ABC):
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
+
         """
-        pass
 
 
 def deserialze_ability(data: dict[str, Any]) -> BaseAbility | None:
@@ -93,6 +84,7 @@ def deserialze_ability(data: dict[str, Any]) -> BaseAbility | None:
 
     Returns:
         BaseAbility | None: The deserialized ability instance, or None if deserialization fails.
+
     """
     from actions.abilities.ability_buff import AbilityBuff
     from actions.abilities.ability_debuff import AbilityDebuff

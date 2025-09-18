@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Any
 
 # Global verbose level for combat output:
 # 0 - Minimal (e.g., only final results)
@@ -241,6 +240,7 @@ def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
 
     Returns:
         bool: True if char2 is an opponent of char1, False otherwise.
+
     """
     group1 = [CharacterType.PLAYER, CharacterType.ALLY]
     group2 = [CharacterType.ENEMY]

@@ -1,9 +1,9 @@
 """Character Inventory Management Module - handles inventory-related functionality."""
 
+from logging import debug
 from typing import TYPE_CHECKING
 
 from core.constants import ArmorSlot
-from logging import debug
 from items.armor import Armor
 from items.weapon import Weapon
 
@@ -22,6 +22,7 @@ class CharacterInventory:
 
         Args:
             character (Character): The Character instance this inventory manager belongs to.
+
         """
         self._character = character
 
@@ -31,6 +32,7 @@ class CharacterInventory:
 
         Returns:
             int: The number of hands currently occupied.
+
         """
         used_hands = sum(
             item.get_required_hands()
@@ -49,6 +51,7 @@ class CharacterInventory:
 
         Returns:
             int: The number of free hands available.
+
         """
         return self._character.total_hands - self.get_occupied_hands()
 
@@ -61,6 +64,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the weapon can be equipped, False otherwise.
+
         """
         # If the weapon requires no hands, it can always be equipped.
         if not weapon.requires_hands():
@@ -88,6 +92,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the weapon was equipped successfully, False otherwise.
+
         """
         if self.can_equip_weapon(weapon):
             debug(f"Equipping weapon: {weapon.name} for {self._character.name}")
@@ -109,6 +114,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the weapon was removed successfully, False otherwise.
+
         """
         if weapon in self._character.equipped_weapons:
             debug(f"Unequipping weapon: {weapon.name} from {self._character.name}")
@@ -130,6 +136,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the armor can be equipped, False otherwise.
+
         """
         # If the armor is a shield, it can be equipped if the character has a free hand.
         if armor.armor_slot == ArmorSlot.SHIELD:
@@ -169,6 +176,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the armor was equipped successfully, False otherwise.
+
         """
         if self.can_equip_armor(armor):
             debug(f"Equipping armor: {armor.name} for {self._character.name}")
@@ -194,6 +202,7 @@ class CharacterInventory:
 
         Returns:
             bool: True if the armor was removed successfully, False otherwise.
+
         """
         if armor in self._character.equipped_armor:
             debug(f"Unequipping armor: {armor.name} from {self._character.name}")

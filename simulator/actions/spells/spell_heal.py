@@ -1,23 +1,23 @@
 """Healing spell implementation."""
 
-from logging import debug
 from typing import Any
 
-from actions.spells.base_spell import Spell
 from core.constants import (
-    ActionCategory,
     GLOBAL_VERBOSE_LEVEL,
+    ActionCategory,
 )
 from core.utils import (
+    cprint,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     roll_and_describe,
     simplify_expression,
     substitute_variables,
-    cprint,
 )
-from effects.base_effect import Effect, ensure_effect
+from effects.base_effect import Effect
 from pydantic import Field
+
+from actions.spells.base_spell import Spell
 
 
 class SpellHeal(Spell):
@@ -27,7 +27,7 @@ class SpellHeal(Spell):
     attributes for healing expressions and optional beneficial effects, as well as
     methods for calculating and applying healing during combat.
     """
-    
+
     category: ActionCategory = ActionCategory.HEALING
 
     heal_roll: str = Field(
@@ -52,8 +52,8 @@ class SpellHeal(Spell):
 
         Returns:
             bool: True if spell was cast successfully, False on failure.
-        """
 
+        """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
             return False
@@ -109,6 +109,7 @@ class SpellHeal(Spell):
 
         Returns:
             str: Complete healing expression with variables substituted.
+
         """
         if mind_level is None:
             mind_level = 1
@@ -126,6 +127,7 @@ class SpellHeal(Spell):
 
         Returns:
             int: Minimum possible healing amount.
+
         """
         if mind_level is None:
             mind_level = 1
@@ -145,6 +147,7 @@ class SpellHeal(Spell):
 
         Returns:
             int: Maximum possible healing amount.
+
         """
         if mind_level is None:
             mind_level = 1

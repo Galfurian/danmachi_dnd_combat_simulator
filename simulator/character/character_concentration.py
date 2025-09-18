@@ -1,8 +1,9 @@
 """Character concentration management module for D&D 5e-style spellcasting."""
 
-from typing import Any, Dict, List, Optional
-from core.utils import cprint
+from typing import Any
+
 from actions.spells import Spell
+from core.utils import cprint
 
 
 class ConcentrationSpell:
@@ -15,12 +16,13 @@ class ConcentrationSpell:
             spell: The spell being concentrated on
             caster: The character casting the spell
             mind_level: The mind level at which the spell was cast
+
         """
         self.spell: Spell = spell
         self.caster: Any = caster
         self.mind_level: int = mind_level
-        self.targets: List[Any] = []  # Characters affected by this concentration spell
-        self.active_effects: List[Any] = []  # ActiveEffect instances for this spell
+        self.targets: list[Any] = []  # Characters affected by this concentration spell
+        self.active_effects: list[Any] = []  # ActiveEffect instances for this spell
 
     def add_target(self, target: Any, active_effect: Any) -> None:
         """Add a target and its associated active effect to this concentration spell.
@@ -28,6 +30,7 @@ class ConcentrationSpell:
         Args:
             target: The character being targeted by the concentration spell
             active_effect: The active effect instance for this target
+
         """
         if target not in self.targets:
             self.targets.append(target)
@@ -38,6 +41,7 @@ class ConcentrationSpell:
         
         Args:
             target: The character to remove from the concentration spell
+
         """
         if target in self.targets:
             self.targets.remove(target)
@@ -49,6 +53,7 @@ class ConcentrationSpell:
         
         Returns:
             bool: True if the spell has no active effects, False otherwise
+
         """
         return len(self.active_effects) == 0
 
@@ -61,9 +66,10 @@ class CharacterConcentration:
         
         Args:
             character_ref: Reference to the Character object that owns this concentration manager
+
         """
         self._character = character_ref
-        self.concentration_spells: Dict[str, ConcentrationSpell] = (
+        self.concentration_spells: dict[str, ConcentrationSpell] = (
             {}
         )  # spell_name -> ConcentrationSpell
 
@@ -72,6 +78,7 @@ class CharacterConcentration:
         
         Returns:
             bool: True if another concentration spell can be added, False otherwise
+
         """
         return len(self.concentration_spells) < self._character.CONCENTRATION_LIMIT
 
@@ -88,6 +95,7 @@ class CharacterConcentration:
 
         Returns:
             bool: True if the effect was added successfully
+
         """
         spell_key = spell.name.lower()
 
@@ -115,6 +123,7 @@ class CharacterConcentration:
         Args:
             target: The character that was being affected
             active_effect: The active effect instance to remove
+
         """
         for spell_key, conc_spell in list(self.concentration_spells.items()):
             if active_effect in conc_spell.active_effects:
@@ -157,7 +166,7 @@ class CharacterConcentration:
         # Remove the concentration spell
         del self.concentration_spells[oldest_spell_key]
 
-    def break_concentration(self, spell: Optional[Spell] = None) -> bool:
+    def break_concentration(self, spell: Spell | None = None) -> bool:
         """Break concentration on a specific spell or all concentration spells.
 
         Args:
@@ -165,6 +174,7 @@ class CharacterConcentration:
 
         Returns:
             bool: True if any concentration was broken
+
         """
         if spell:
             # Break specific spell
@@ -191,37 +201,36 @@ class CharacterConcentration:
                 # Remove the concentration spell
                 del self.concentration_spells[spell_key]
                 return True
-        else:
-            # Break all concentration
-            if self.concentration_spells:
-                spell_info = []
-                for conc_spell in self.concentration_spells.values():
-                    target_names = [target.name for target in conc_spell.targets]
-                    spell_info.append((conc_spell.spell.name, target_names))
+        # Break all concentration
+        elif self.concentration_spells:
+            spell_info = []
+            for conc_spell in self.concentration_spells.values():
+                target_names = [target.name for target in conc_spell.targets]
+                spell_info.append((conc_spell.spell.name, target_names))
 
-                    # Remove all effects
-                    for active_effect in conc_spell.active_effects:
-                        active_effect.target.effects_module.remove_effect(active_effect)
+                # Remove all effects
+                for active_effect in conc_spell.active_effects:
+                    active_effect.target.effects_module.remove_effect(active_effect)
 
-                # Show message
-                if len(spell_info) == 1:
-                    spell_name, target_names = spell_info[0]
-                    targets_str = ", ".join(target_names)
-                    cprint(
-                        f"    :no_entry: [bold yellow]{spell_name}[/] concentration broken on [bold]{targets_str}[/]."
-                    )
-                else:
-                    spell_descriptions = [
-                        f"{name} on {', '.join(targets)}"
-                        for name, targets in spell_info
-                    ]
-                    cprint(
-                        f"    :no_entry: All concentration broken: [bold yellow]{'; '.join(spell_descriptions)}[/]."
-                    )
+            # Show message
+            if len(spell_info) == 1:
+                spell_name, target_names = spell_info[0]
+                targets_str = ", ".join(target_names)
+                cprint(
+                    f"    :no_entry: [bold yellow]{spell_name}[/] concentration broken on [bold]{targets_str}[/]."
+                )
+            else:
+                spell_descriptions = [
+                    f"{name} on {', '.join(targets)}"
+                    for name, targets in spell_info
+                ]
+                cprint(
+                    f"    :no_entry: All concentration broken: [bold yellow]{'; '.join(spell_descriptions)}[/]."
+                )
 
-                # Clear all concentration
-                self.concentration_spells.clear()
-                return True
+            # Clear all concentration
+            self.concentration_spells.clear()
+            return True
 
         return False
 
@@ -230,13 +239,15 @@ class CharacterConcentration:
         
         Returns:
             int: The number of active concentration spells
+
         """
         return len(self.concentration_spells)
 
-    def get_concentration_spells(self) -> List[ConcentrationSpell]:
+    def get_concentration_spells(self) -> list[ConcentrationSpell]:
         """Get a list of all active concentration spells.
         
         Returns:
             List[ConcentrationSpell]: A list containing all active concentration spells
+
         """
         return list(self.concentration_spells.values())

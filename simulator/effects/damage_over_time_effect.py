@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Any
 
-from core.utils import cprint, roll_and_describe
 from combat.damage import DamageComponent
+from core.utils import cprint, roll_and_describe
 from pydantic import Field, model_validator
 
 from .base_effect import Effect
@@ -44,7 +44,7 @@ class DamageOverTimeEffect(Effect):
         return self
 
     def turn_update(
-        self, actor: Any, target: Any, mind_level: Optional[int] = 1
+        self, actor: Any, target: Any, mind_level: int | None = 1
     ) -> None:
         """
         Apply damage over time to the target.
@@ -53,6 +53,7 @@ class DamageOverTimeEffect(Effect):
             actor (Any): The character who applied the DoT effect.
             target (Any): The character receiving the damage.
             mind_level (Optional[int]): The mind level for damage calculation. Defaults to 1.
+
         """
         variables = actor.get_expression_variables()
         variables["MIND"] = mind_level

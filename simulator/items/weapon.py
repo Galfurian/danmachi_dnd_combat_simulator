@@ -27,6 +27,7 @@ class Weapon:
             description (str): A description of the weapon.
             attacks (list[BaseAttack]): List of attacks this weapon can perform.
             hands_required (int): Number of hands required to wield this weapon. Defaults to 0.
+
         """
         self.name: str = name
         self.description: str = description
@@ -46,6 +47,7 @@ class Weapon:
 
         Returns:
             int: Number of hands required.
+
         """
         return self._hands_required > 0
 
@@ -54,6 +56,7 @@ class Weapon:
 
         Returns:
             int: Number of hands required.
+
         """
         return self._hands_required
 
@@ -68,6 +71,7 @@ class Weapon:
         Returns:
             dict[str, Any]: Dictionary containing the weapon's properties including
                           class name, name, description, attacks, and hands required.
+
         """
         data = {
             "class": self.__class__.__name__,
@@ -93,6 +97,7 @@ class Weapon:
 
         Raises:
             KeyError: If required keys are missing from the data.
+
         """
         from actions.attacks.base_attack import deserialze_attack
 

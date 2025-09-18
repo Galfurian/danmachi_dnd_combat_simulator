@@ -2,15 +2,14 @@
 
 from typing import Any
 
-from actions.abilities.base_ability import BaseAbility
 from core.constants import (
-    ActionCategory,
-    ActionType,
     GLOBAL_VERBOSE_LEVEL,
+    ActionCategory,
 )
 from core.utils import cprint
-from effects.base_effect import Effect
 from effects.modifier_effect import DebuffEffect
+
+from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityDebuff(BaseAbility):
@@ -18,7 +17,7 @@ class AbilityDebuff(BaseAbility):
     Represents a debuff ability that provides detrimental effects to targets in combat.
     Inherits from BaseAbility and applies an Effect to enemies.
     """
-    
+
     category: ActionCategory = ActionCategory.DEBUFF
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -31,6 +30,7 @@ class AbilityDebuff(BaseAbility):
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
+
         """
         # Validate actor and target.
         if not self._validate_character(actor):
@@ -95,6 +95,7 @@ class AbilityDebuff(BaseAbility):
 
         Returns:
             str: Description of the buff effect.
+
         """
         if self.effect and hasattr(self.effect, "description"):
             return self.effect.description

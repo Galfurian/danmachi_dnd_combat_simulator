@@ -1,31 +1,28 @@
-from logging import debug
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any
 
+from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
-from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.spells import Spell
 from core.constants import (
     ActionType,
-    ArmorSlot,
-    BonusType,
     CharacterType,
     DamageType,
 )
-from core.utils import get_stat_modifier
 from effects.base_effect import Effect
 from effects.incapacitating_effect import IncapacitatingEffect
-from character.character_effects import CharacterEffects
-from character.character_class import CharacterClass
-from character.character_race import CharacterRace
-from character.character_stats import CharacterStats
-from character.character_inventory import CharacterInventory
-from character.character_actions import CharacterActions
-from character.character_serialization import CharacterSerialization
-from character.character_display import CharacterDisplay
-from character.character_concentration import CharacterConcentration
 from items.armor import Armor
 from items.weapon import Weapon
+
+from character.character_actions import CharacterActions
+from character.character_class import CharacterClass
+from character.character_concentration import CharacterConcentration
+from character.character_display import CharacterDisplay
+from character.character_effects import CharacterEffects
+from character.character_inventory import CharacterInventory
+from character.character_race import CharacterRace
+from character.character_serialization import CharacterSerialization
+from character.character_stats import CharacterStats
 
 
 class Character:
@@ -41,7 +38,7 @@ class Character:
         race: CharacterRace,
         levels: dict[CharacterClass, int],
         stats: dict[str, int],
-        spellcasting_ability: Optional[str] = None,
+        spellcasting_ability: str | None = None,
         total_hands: int = 2,
         resistances: set[DamageType] = set(),
         vulnerabilities: set[DamageType] = set(),
@@ -61,6 +58,7 @@ class Character:
             resistances (set[DamageType], optional): Damage types the character resists. Defaults to set().
             vulnerabilities (set[DamageType], optional): Damage types the character is vulnerable to. Defaults to set().
             number_of_attacks (int, optional): Number of attacks per turn. Defaults to 1.
+
         """
         # Determines if the character is a player or an NPC.
         self.char_type: CharacterType = char_type
@@ -73,7 +71,7 @@ class Character:
         # Stats.
         self.stats: dict[str, int] = stats
         # Spellcasting Ability.
-        self.spellcasting_ability: Optional[str] = spellcasting_ability
+        self.spellcasting_ability: str | None = spellcasting_ability
         # List of available attacks.
         self.total_hands: int = total_hands
         # Resistances and vulnerabilities to damage types.
@@ -230,6 +228,7 @@ class Character:
 
         Returns:
             list[NaturalAttack]: A list of natural weapon attacks
+
         """
         return self.actions_module.get_available_natural_weapon_attacks()
 
@@ -254,6 +253,7 @@ class Character:
 
         Returns:
             bool: True if both actions are used, False otherwise
+
         """
         return self.actions_module.turn_done()
 
@@ -262,10 +262,11 @@ class Character:
 
         Returns:
             list[str]: Messages for effects that were triggered this check
+
         """
         return self.effects_module.check_passive_triggers()
 
-    def take_damage(self, amount: int, damage_type: DamageType) -> Tuple[int, int, int]:
+    def take_damage(self, amount: int, damage_type: DamageType) -> tuple[int, int, int]:
         """Applies damage to the character, factoring in resistances and vulnerabilities.
 
         Args:
@@ -274,6 +275,7 @@ class Character:
 
         Returns:
             Tuple[int, int, int]: (base_damage, adjusted_damage, damage_taken)
+
         """
         base = amount
         adjusted = base
@@ -313,6 +315,7 @@ class Character:
 
         Returns:
             int: The actual amount healed
+
         """
         # Compute the actual amount we can heal.
         amount = max(0, min(amount, self.HP_MAX - self.hp))
@@ -329,6 +332,7 @@ class Character:
 
         Returns:
             bool: True if the mind points were successfully used, False otherwise
+
         """
         if self.mind >= amount:
             self.mind -= amount
@@ -340,6 +344,7 @@ class Character:
 
         Returns:
             bool: True if the character is alive, False otherwise
+
         """
         return self.hp > 0
 
@@ -351,6 +356,7 @@ class Character:
 
         Returns:
             int: The spell attack bonus for the character
+
         """
         return self.SPELLCASTING + spell_level
 
@@ -359,6 +365,7 @@ class Character:
 
         Args:
             action (Any): The action to learn.
+
         """
         return self.actions_module.learn_action(action)
 
@@ -367,6 +374,7 @@ class Character:
 
         Args:
             action (Any): The action to unlearn.
+
         """
         return self.actions_module.unlearn_action(action)
 
@@ -375,6 +383,7 @@ class Character:
 
         Args:
             spell (Any): The spell to learn.
+
         """
         return self.actions_module.learn_spell(spell)
 
@@ -383,6 +392,7 @@ class Character:
 
         Args:
             spell (Any): The spell to unlearn.
+
         """
         return self.actions_module.unlearn_spell(spell)
 
@@ -448,6 +458,7 @@ class Character:
 
         Returns:
             bool: True if the weapon can be equipped, False otherwise.
+
         """
         return self.inventory_module.can_equip_weapon(weapon)
 
@@ -459,6 +470,7 @@ class Character:
 
         Returns:
             bool: True if the weapon was equipped successfully, False otherwise.
+
         """
         return self.inventory_module.add_weapon(weapon)
 
@@ -470,6 +482,7 @@ class Character:
 
         Returns:
             bool: True if the weapon was removed successfully, False otherwise.
+
         """
         return self.inventory_module.remove_weapon(weapon)
 
@@ -481,6 +494,7 @@ class Character:
 
         Returns:
             bool: True if the armor can be equipped, False otherwise.
+
         """
         return self.inventory_module.can_equip_armor(armor)
 
@@ -492,6 +506,7 @@ class Character:
 
         Returns:
             bool: True if the armor was equipped successfully, False otherwise.
+
         """
         return self.inventory_module.add_armor(armor)
 
@@ -503,13 +518,15 @@ class Character:
 
         Returns:
             bool: True if the armor was removed successfully, False otherwise.
+
         """
         return self.inventory_module.remove_armor(armor)
 
     def turn_update(self):
         """Updates the duration of all active effects, and cooldowns. Removes
         expired effects. This should be called at the end of a character's turn
-        or a round."""
+        or a round.
+        """
         return self.actions_module.turn_update()
 
     def add_cooldown(self, action: BaseAction):
@@ -517,6 +534,7 @@ class Character:
 
         Args:
             action_name (BaseAction): The action to add a cooldown to.
+
         """
         return self.actions_module.add_cooldown(action)
 
@@ -528,6 +546,7 @@ class Character:
 
         Returns:
             bool: True if the action is on cooldown, False otherwise.
+
         """
         return self.actions_module.is_on_cooldown(action)
 
@@ -536,6 +555,7 @@ class Character:
 
         Args:
             action (BaseAction): The action to initialize uses for.
+
         """
         return self.actions_module.initialize_uses(action)
 
@@ -547,6 +567,7 @@ class Character:
 
         Returns:
             int: The remaining uses of the action. Returns -1 for unlimited use actions.
+
         """
         return self.actions_module.get_remaining_uses(action)
 
@@ -555,6 +576,7 @@ class Character:
 
         Args:
             action (BaseAction): The action to decrement uses for.
+
         """
         return self.actions_module.decrement_uses(action)
 
@@ -593,6 +615,7 @@ def load_character(file_path: Path) -> Character | None:
 
     Returns:
         Character | None: A Character instance if the file is valid, None otherwise.
+
     """
     from .character_serialization import load_character as load_char_impl
 
@@ -607,6 +630,7 @@ def load_characters(file_path: Path) -> dict[str, Character]:
 
     Returns:
         dict[str, Character]: A dictionary mapping character names to Character instances.
+
     """
     from .character_serialization import load_characters as load_chars_impl
 

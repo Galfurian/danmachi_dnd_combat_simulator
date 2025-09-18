@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any
 
 from core.constants import DamageType
 from core.utils import roll_and_describe
@@ -31,8 +31,8 @@ class DamageComponent(BaseModel):
 def roll_damage_component(
     actor: Any,
     target: Any,
-    damage_component: Tuple[DamageComponent, int],
-) -> Tuple[int, str]:
+    damage_component: tuple[DamageComponent, int],
+) -> tuple[int, str]:
     """Applies a single damage component to the target, handles resistances,
     and returns the damage dealt along with a description string.
 
@@ -44,6 +44,7 @@ def roll_damage_component(
 
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
+
     """
     variables = actor.get_expression_variables()
     variables["MIND"] = damage_component[1]
@@ -72,8 +73,8 @@ def roll_damage_component(
 
 
 def roll_damage_components(
-    actor: Any, target: Any, damage_components: list[Tuple[DamageComponent, int]]
-) -> Tuple[int, list[str]]:
+    actor: Any, target: Any, damage_components: list[tuple[DamageComponent, int]]
+) -> tuple[int, list[str]]:
     """Rolls damage for multiple components and returns the total damage and details.
 
     Args:
@@ -83,6 +84,7 @@ def roll_damage_components(
 
     Returns:
         Tuple[int, list[str]]: The total damage dealt and a list of damage detail strings.
+
     """
     total_damage = 0
     damage_details: list[str] = []
@@ -98,7 +100,7 @@ def roll_damage_components(
 
 def roll_damage_component_no_mind(
     actor: Any, target: Any, damage_component: DamageComponent
-) -> Tuple[int, str]:
+) -> tuple[int, str]:
     """Rolls a single damage component without mind levels and returns the damage dealt and details.
 
     Args:
@@ -108,13 +110,14 @@ def roll_damage_component_no_mind(
 
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
+
     """
     return roll_damage_component(actor, target, (damage_component, 1))
 
 
 def roll_damage_components_no_mind(
     actor: Any, target: Any, damage_components: list[DamageComponent]
-) -> Tuple[int, list[str]]:
+) -> tuple[int, list[str]]:
     """Rolls damage for multiple components without mind levels and returns the total damage and details.
 
     Args:
@@ -124,5 +127,6 @@ def roll_damage_components_no_mind(
 
     Returns:
         Tuple[int, list[str]]: The total damage dealt and a list of damage detail strings.
+
     """
     return roll_damage_components(actor, target, [(dc, 1) for dc in damage_components])

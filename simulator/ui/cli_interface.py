@@ -1,19 +1,15 @@
 # cli_prompt.py
-from typing import Any, Optional
+from typing import Any
 
-from rich.table import Table
-
-from prompt_toolkit import PromptSession
-from prompt_toolkit import ANSI
-
-from character import *
-from actions.base_action import *
-from combat.damage import DamageComponent
-from actions.spells import *
 from actions.attacks import *
+from actions.base_action import *
+from actions.spells import *
+from character import *
+from combat.damage import DamageComponent
 from core.constants import *
 from core.utils import *
-
+from prompt_toolkit import ANSI, PromptSession
+from rich.table import Table
 
 # one session keeps history
 session = PromptSession(erase_when_done=True)
@@ -30,14 +26,13 @@ class PlayerInterface:
 
     def __init__(self) -> None:
         """Initialize the PlayerInterface with no configuration needed."""
-        pass
 
     def choose_action(
         self,
         actions: list[BaseAction],
         submenus: list[str] = [],
-        exit_entry: Optional[str] = "Back",
-    ) -> Optional[BaseAction | str]:
+        exit_entry: str | None = "Back",
+    ) -> BaseAction | str | None:
         """Choose an action from a list of available actions.
 
         Args:
@@ -47,6 +42,7 @@ class PlayerInterface:
 
         Returns:
             Optional[BaseAction | str]: The selected action, "q" for exit, or a submenu option.
+
         """
         if not actions and not submenus:
             return None
@@ -54,7 +50,7 @@ class PlayerInterface:
         # Sort targets and submenus for consistent display.
         actions_sorted = self.sort_actions(actions)
         # Create a table of actions.
-        table = Table(title=f"Actions", pad_edge=False)
+        table = Table(title="Actions", pad_edge=False)
         table.add_column("#", style="cyan")
         table.add_column("Name", style="bold")
         table.add_column("Type", style="magenta")
@@ -103,8 +99,8 @@ class PlayerInterface:
         self,
         targets: list[Character],
         submenus: list[str] = [],
-        exit_entry: Optional[str] = "Back",
-    ) -> Optional[Character | str]:
+        exit_entry: str | None = "Back",
+    ) -> Character | str | None:
         """Choose a target from a list of characters.
 
         Args:
@@ -114,6 +110,7 @@ class PlayerInterface:
 
         Returns:
             Optional[Character | str]: The selected target character, "q" for exit, or a submenu option.
+
         """
         # If there are no targets, return None.
         if not targets:
@@ -123,7 +120,7 @@ class PlayerInterface:
         # Sort targets and submenus for consistent display.
         sorted_targets = sorted(targets, key=lambda t: t.name.lower())
         # Create a table of targets.
-        table = Table(title=f"Targets", pad_edge=False)
+        table = Table(title="Targets", pad_edge=False)
         table.add_column("#", style="cyan", no_wrap=True)
         table.add_column("Name", style="bold")
         table.add_column("HP", justify="right")
@@ -171,8 +168,8 @@ class PlayerInterface:
         targets: list[Character],
         max_targets: int,
         submenus: list[str] = [],
-        exit_entry: Optional[str] = "Back",
-    ) -> Optional[list[Character] | str]:
+        exit_entry: str | None = "Back",
+    ) -> list[Character] | str | None:
         """Choose multiple targets from a list of characters.
 
         Args:
@@ -183,6 +180,7 @@ class PlayerInterface:
 
         Returns:
             Optional[list[Character] | str]: The list of selected characters, "q" for exit, or a submenu option.
+
         """
         if not targets:
             return None
@@ -259,8 +257,8 @@ class PlayerInterface:
         self,
         spells: list[Spell],
         submenus: list[str] = [],
-        exit_entry: Optional[str] = "Back",
-    ) -> Optional[Spell | str]:
+        exit_entry: str | None = "Back",
+    ) -> Spell | str | None:
         """Choose a spell from a list of available spells.
 
         Args:
@@ -270,13 +268,14 @@ class PlayerInterface:
 
         Returns:
             Optional[Spell | str]: The selected spell, "q" for exit, or submenu.
+
         """
         # Add "Back" to the submenus if requested.
         sorted_submenus = sorted(submenus, key=lambda s: s.lower())
         # Sort targets and submenus for consistent display.
         sorted_spells = self.sort_actions(spells)
         # Generate a table of spells.
-        table = Table(title=f"Spells", pad_edge=False)
+        table = Table(title="Spells", pad_edge=False)
         table.add_column("#", style="cyan")
         table.add_column("Name", style="bold")
         table.add_column("Type", style="magenta")
@@ -323,7 +322,7 @@ class PlayerInterface:
                 return "q"
 
     def choose_mind(
-        self, actor: Character, spell: Spell, exit_entry: Optional[str] = "Back"
+        self, actor: Character, spell: Spell, exit_entry: str | None = "Back"
     ) -> int:
         """
         Prompt the user to select the amount of MIND to spend on a spell.
@@ -338,6 +337,7 @@ class PlayerInterface:
 
         Returns:
             int: The selected MIND level to spend, or -1 if user chose to go back.
+
         """
         if len(spell.mind_cost) == 1:
             return spell.mind_cost[0]
@@ -363,7 +363,7 @@ class PlayerInterface:
                 prompt += "\n"
 
             elif isinstance(spell, SpellOffensive):
-                prompt += f"Deals "
+                prompt += "Deals "
                 prompt += "+ ".join(
                     f"{simplify_expression(component.damage_roll, variables)}"
                     f" {component.damage_type.emoji}"
@@ -380,7 +380,7 @@ class PlayerInterface:
                 if hasattr(spell.effect, "consumes_on_trigger") and getattr(
                     spell.effect, "consumes_on_trigger", False
                 ):
-                    prompt += f"(one-shot)"
+                    prompt += "(one-shot)"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
 
@@ -405,13 +405,13 @@ class PlayerInterface:
                     prompt += f" (up to {max_targets} targets)"
 
                 # Iterate over each modifier and bonus.
-                prompt += f", ".join(
+                prompt += ", ".join(
                     f"{modifier} to {bonus.name.title()}"
                     for bonus, modifier in modifiers.items()
                 )
                 prompt += "\n"
         if exit_entry:
-            prompt += f"\n[bold]Press [red]q[/] to go back[/]."
+            prompt += "\n[bold]Press [red]q[/] to go back[/]."
         prompt += "\nMind > "
 
         while True:
@@ -444,6 +444,7 @@ class PlayerInterface:
 
         Raises:
             AssertionError: If any action is not an instance of BaseAction.
+
         """
         assert all(
             isinstance(action, BaseAction) for action in actions
@@ -482,6 +483,7 @@ class PlayerInterface:
 
         Returns:
             int: The integer value of the digit (0-9), or -1 if invalid input.
+
         """
         if isinstance(answer, str) and len(answer) == 1 and answer.isdigit():
             return int(answer)
@@ -499,6 +501,7 @@ class PlayerInterface:
 
         Returns:
             int: The index position (0-25 for a-z), or -1 if invalid input.
+
         """
         if isinstance(answer, str) and len(answer) == 1 and answer.isalpha():
             return ord(answer.lower()) - ord("a")

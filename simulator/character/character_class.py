@@ -23,6 +23,7 @@ class CharacterClass:
             mind_mult (int): The Mind multiplier for this class.
             actions_by_level (dict[str, list[str]], optional): Actions available at each level. Defaults to {}.
             spells_by_level (dict[str, list[str]], optional): Spells learned at each level. Defaults to {}.
+
         """
         self.name = name
         self.hp_mult = hp_mult
@@ -39,6 +40,7 @@ class CharacterClass:
 
         Returns:
             list[str]: A list of action names available at the specified level.
+
         """
         # Return the actions directly from actions_by_level
         return self.actions_by_level.get(str(level), [])
@@ -52,6 +54,7 @@ class CharacterClass:
 
         Returns:
             list[str]: A list of all action names available up to the specified level.
+
         """
         all_actions = []
         for lvl in range(1, level + 1):
@@ -67,6 +70,7 @@ class CharacterClass:
 
         Returns:
             list[str]: A list of spell names available at the specified level.
+
         """
         return self.spells_by_level.get(str(level), [])
 
@@ -79,6 +83,7 @@ class CharacterClass:
 
         Returns:
             list[str]: A list of all spell names available up to the specified level.
+
         """
         all_spells = []
         for lvl in range(1, level + 1):
@@ -91,6 +96,7 @@ class CharacterClass:
 
         Returns:
             dict[str, Any]: The dictionary representation of the CharacterClass instance.
+
         """
         return {
             "name": self.name,
@@ -110,6 +116,7 @@ class CharacterClass:
 
         Returns:
             CharacterClass: An instance of CharacterClass created from the provided dictionary data.
+
         """
         return CharacterClass(
             name=data["name"],

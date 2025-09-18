@@ -1,9 +1,11 @@
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
-from typing import Any, Iterator, Optional
+from collections.abc import Iterator
+from typing import Any
+
+from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.utils import cprint, get_max_roll
-from combat.damage import DamageComponent
 from effects.base_effect import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.healing_over_time_effect import HealingOverTimeEffect
@@ -45,7 +47,7 @@ class CharacterEffects:
     # === Effect Management ===
 
     def add_effect(
-        self, source: Any, effect: Effect, mind_level: int, spell: Optional[Any] = None
+        self, source: Any, effect: Effect, mind_level: int, spell: Any | None = None
     ) -> bool:
         """
         Add a new effect to the character.
@@ -58,6 +60,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the effect was added successfully, False otherwise.
+
         """
         try:
             # Validate inputs
@@ -94,11 +97,7 @@ class CharacterEffects:
                 ):
                     return False  # Could not add due to concentration limits
 
-            if isinstance(effect, HealingOverTimeEffect):
-                if self.has_effect(effect):
-                    return False
-
-            elif isinstance(effect, DamageOverTimeEffect):
+            if isinstance(effect, HealingOverTimeEffect) or isinstance(effect, DamageOverTimeEffect):
                 if self.has_effect(effect):
                     return False
 
@@ -152,7 +151,7 @@ class CharacterEffects:
 
         except Exception as e:
             print(
-                f"Error adding effect to manager: {str(e)}",
+                f"Error adding effect to manager: {e!s}",
                 {
                     "ctx_effect": getattr(effect, "name", "unknown"),
                     "ctx_source": getattr(source, "name", "unknown"),
@@ -171,6 +170,7 @@ class CharacterEffects:
 
         Returns:
             list[str]: Messages about effects that were broken or triggered.
+
         """
         messages = []
 
@@ -202,6 +202,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the effect was removed successfully, False otherwise.
+
         """
         try:
             if effect in self.active_effects:
@@ -210,7 +211,7 @@ class CharacterEffects:
             return False
         except Exception as e:
             print(
-                f"Error removing effect from manager: {str(e)}",
+                f"Error removing effect from manager: {e!s}",
                 {
                     "ctx_effect": getattr(effect.effect, "name", "unknown"),
                     "ctx_target": getattr(self.owner, "name", "unknown"),
@@ -230,6 +231,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the passive effect was added, False if it was already present.
+
         """
         if effect not in self.passive_effects:
             self.passive_effects.append(effect)
@@ -245,6 +247,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the passive effect was removed, False otherwise.
+
         """
         if effect in self.passive_effects:
             self.passive_effects.remove(effect)
@@ -256,6 +259,7 @@ class CharacterEffects:
 
         Returns:
             list[str]: Messages for effects that were triggered this check.
+
         """
         activation_messages = []
 
@@ -301,6 +305,7 @@ class CharacterEffects:
 
         Returns:
             int | None: The remaining duration of the effect, None for indefinite effects, or 0 if not active.
+
         """
         for ae in self.active_effects:
             if ae.effect == effect:
@@ -316,6 +321,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the effect is active, False otherwise.
+
         """
         return any(ae.effect == effect for ae in self.active_effects)
 
@@ -330,6 +336,7 @@ class CharacterEffects:
 
         Returns:
             bool: True if the effect can be added, False otherwise.
+
         """
         if isinstance(effect, HealingOverTimeEffect):
             return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
@@ -373,6 +380,7 @@ class CharacterEffects:
 
         Returns:
             Any: The modifier value, which can be an integer, list, or 0.
+
         """
         ae = self.active_modifiers.get(bonus_type)
         if not ae:
@@ -403,14 +411,13 @@ class CharacterEffects:
         ]:
             if isinstance(modifier.value, int):
                 return modifier.value
-            elif isinstance(modifier.value, str):
+            if isinstance(modifier.value, str):
                 return int(modifier.value)
-            else:
-                # DamageComponent - shouldn't happen for these bonus types
-                return 0
-        elif bonus_type == BonusType.ATTACK:
+            # DamageComponent - shouldn't happen for these bonus types
+            return 0
+        if bonus_type == BonusType.ATTACK:
             return [modifier.value]
-        elif bonus_type == BonusType.DAMAGE:
+        if bonus_type == BonusType.DAMAGE:
             return (
                 [modifier.value] if isinstance(modifier.value, DamageComponent) else []
             )
@@ -421,6 +428,7 @@ class CharacterEffects:
 
         Returns:
             list[tuple[DamageComponent, int]]: List of (DamageComponent, mind_level) tuples for the best modifier of each type.
+
         """
         best_by_type: dict[DamageType, tuple[DamageComponent, int]] = {}
 
@@ -494,6 +502,7 @@ class CharacterEffects:
 
         Returns:
             int: The strength value of the modifier.
+
         """
         if not isinstance(ae.effect, ModifierEffect):
             return 0
@@ -519,22 +528,20 @@ class CharacterEffects:
         ]:
             if isinstance(modifier.value, int):
                 return modifier.value
-            elif isinstance(modifier.value, str):
+            if isinstance(modifier.value, str):
                 return int(modifier.value)
-            else:
-                # DamageComponent - shouldn't happen for these bonus types
-                return 0
-        elif bonus_type == BonusType.ATTACK:
+            # DamageComponent - shouldn't happen for these bonus types
+            return 0
+        if bonus_type == BonusType.ATTACK:
             if isinstance(modifier.value, str):
                 return get_max_roll(modifier.value, variables)
-            else:
-                # int or DamageComponent - convert to string or return 0
-                return (
-                    get_max_roll(str(modifier.value), variables)
-                    if isinstance(modifier.value, int)
-                    else 0
-                )
-        elif bonus_type == BonusType.DAMAGE:
+            # int or DamageComponent - convert to string or return 0
+            return (
+                get_max_roll(str(modifier.value), variables)
+                if isinstance(modifier.value, int)
+                else 0
+            )
+        if bonus_type == BonusType.DAMAGE:
             if isinstance(modifier.value, DamageComponent):
                 return get_max_roll(modifier.value.damage_roll, variables)
         return 0
@@ -545,6 +552,7 @@ class CharacterEffects:
 
         Returns:
             Iterator[ActiveEffect]: An iterator over active effects.
+
         """
         yield from self.active_effects
 
@@ -556,6 +564,7 @@ class CharacterEffects:
 
         Returns:
             list[ActiveEffect]: List of active OnHit trigger effects.
+
         """
         triggers = []
         for ae in self.active_effects:
@@ -582,6 +591,7 @@ class CharacterEffects:
                 - damage_bonuses: List of (DamageComponent, mind_level) tuples.
                 - effects_to_apply: List of (Effect, mind_level) tuples.
                 - consumed_triggers: List of TriggerEffect effects that were consumed.
+
         """
         damage_bonuses: list[tuple[DamageComponent, int]] = []
         effects_to_apply: list[tuple[Effect, int]] = []

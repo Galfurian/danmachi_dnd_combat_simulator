@@ -34,6 +34,7 @@ class ModifierEffect(Effect):
 
         Raises:
             ValueError: If the modifiers list is empty.
+
         """
         if not self.modifiers:
             raise ValueError("Modifiers list cannot be empty.")
@@ -52,6 +53,7 @@ class ModifierEffect(Effect):
 
         Returns:
             bool: True if the effect can be applied, False otherwise.
+
         """
         if not target.is_alive():
             return False

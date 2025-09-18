@@ -49,6 +49,7 @@ class IncapacitatingEffect(Effect):
 
         Returns:
             bool: True if actions are prevented, False otherwise.
+
         """
         return True
 
@@ -58,6 +59,7 @@ class IncapacitatingEffect(Effect):
 
         Returns:
             bool: True if movement is prevented, False otherwise.
+
         """
         return self.incapacitation_type in ["paralyzed", "stunned", "unconscious"]
 
@@ -67,6 +69,7 @@ class IncapacitatingEffect(Effect):
 
         Returns:
             bool: True if saves are automatically failed, False otherwise.
+
         """
         return self.incapacitation_type in ["unconscious"]
 
@@ -79,6 +82,7 @@ class IncapacitatingEffect(Effect):
 
         Returns:
             bool: True if damage breaks the effect, False otherwise.
+
         """
         # First check if this type of incapacitation can break on damage
         if self.incapacitation_type not in ["sleep", "charm"]:

@@ -1,17 +1,17 @@
 """Detrimental spell debuff implementation."""
 
-from logging import debug
 from typing import Any
 
-from actions.spells.base_spell import Spell
+from combat.damage import DamageComponent
 from core.constants import ActionCategory, BonusType
-from pydantic import Field
 from core.utils import (
-    substitute_variables,
     cprint,
+    substitute_variables,
 )
 from effects.base_effect import Effect
-from combat.damage import DamageComponent
+from pydantic import Field
+
+from actions.spells.base_spell import Spell
 
 
 class SpellDebuff(Spell):
@@ -43,6 +43,7 @@ class SpellDebuff(Spell):
 
         Returns:
             bool: True if spell was cast successfully, False on failure.
+
         """
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
@@ -76,7 +77,7 @@ class SpellDebuff(Spell):
         else:
             msg += f"but fails to apply [{self.effect.color}]{self.effect.name}[/]"
             if save_result:
-                msg += f" (saved)"
+                msg += " (saved)"
         msg += "."
 
         cprint(msg)
@@ -98,6 +99,7 @@ class SpellDebuff(Spell):
 
         Returns:
             dict[BonusType, str]: Dictionary mapping bonus types to their expressions.
+
         """
         if mind_level is None:
             mind_level = 1

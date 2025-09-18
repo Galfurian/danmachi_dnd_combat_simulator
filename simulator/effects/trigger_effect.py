@@ -1,5 +1,6 @@
-from typing import Any, ClassVar, Optional, Callable
+from collections.abc import Callable
 from enum import Enum
+from typing import Any
 
 from combat.damage import DamageComponent
 from pydantic import BaseModel, Field, model_validator
@@ -48,7 +49,7 @@ class TriggerCondition(BaseModel):
         default=None,
         description="Specific spell category to trigger on (if applicable).",
     )
-    custom_condition: Optional[Callable[[Any, dict], bool]] = Field(
+    custom_condition: Callable[[Any, dict], bool] | None = Field(
         default=None,
         description="Custom function to evaluate the trigger condition.",
     )
@@ -61,14 +62,13 @@ class TriggerCondition(BaseModel):
         """Generate a human-readable description of the trigger condition."""
         if self.trigger_type == TriggerType.ON_LOW_HEALTH:
             return f"when HP drops below {(self.threshold or 0.25) * 100:.0f}%"
-        elif self.trigger_type == TriggerType.ON_HIGH_HEALTH:
+        if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
             return f"when HP rises above {(self.threshold or 0.75) * 100:.0f}%"
-        elif self.trigger_type == TriggerType.ON_DAMAGE_TAKEN and self.damage_type:
+        if self.trigger_type == TriggerType.ON_DAMAGE_TAKEN and self.damage_type:
             return f"when taking {self.damage_type.name.lower()} damage"
-        elif self.trigger_type == TriggerType.ON_SPELL_CAST and self.spell_category:
+        if self.trigger_type == TriggerType.ON_SPELL_CAST and self.spell_category:
             return f"when casting {self.spell_category.name.lower()} spells"
-        else:
-            return self.trigger_type.value.replace("_", " ")
+        return self.trigger_type.value.replace("_", " ")
 
     def is_met(self, character: Any, event_data: dict[str, Any]) -> bool:
         """
@@ -80,6 +80,7 @@ class TriggerCondition(BaseModel):
 
         Returns:
             bool: True if the condition is met, False otherwise.
+
         """
         try:
             # Handle custom conditions first
@@ -94,25 +95,25 @@ class TriggerCondition(BaseModel):
                 )
                 return hp_ratio <= threshold
 
-            elif self.trigger_type == TriggerType.ON_HIGH_HEALTH:
+            if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
                 threshold = self.threshold or 0.75
                 hp_ratio = (
                     character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
                 )
                 return hp_ratio >= threshold
 
-            elif self.trigger_type == TriggerType.ON_DAMAGE_TAKEN:
+            if self.trigger_type == TriggerType.ON_DAMAGE_TAKEN:
                 if self.damage_type:
                     return event_data.get("damage_type") == self.damage_type
                 return event_data.get("damage_taken", 0) > 0
 
-            elif self.trigger_type == TriggerType.ON_SPELL_CAST:
+            if self.trigger_type == TriggerType.ON_SPELL_CAST:
                 if self.spell_category:
                     return event_data.get("spell_category") == self.spell_category
                 return event_data.get("spell_cast") is not None
 
             # Simple event-based triggers
-            elif self.trigger_type in [
+            if self.trigger_type in [
                 TriggerType.ON_HIT,
                 TriggerType.ON_BEING_HIT,
                 TriggerType.ON_TURN_START,
@@ -129,7 +130,7 @@ class TriggerCondition(BaseModel):
 
         except Exception as e:
             print(
-                f"Error evaluating trigger condition: {str(e)}",
+                f"Error evaluating trigger condition: {e!s}",
                 {
                     "trigger_type": self.trigger_type.value,
                     "character": getattr(character, "name", "unknown"),
@@ -252,6 +253,7 @@ class TriggerEffect(Effect):
 
         Returns:
             bool: True if the trigger can activate, False otherwise.
+
         """
         # Check if we've exceeded max triggers (None means unlimited)
         if self.max_triggers is not None and self.triggers_used >= self.max_triggers:
@@ -280,6 +282,7 @@ class TriggerEffect(Effect):
 
         Returns:
             bool: True if the trigger should activate, False otherwise.
+
         """
         if not self.can_trigger():
             return False
@@ -300,6 +303,7 @@ class TriggerEffect(Effect):
 
         Returns:
             tuple[list[DamageComponent], list[tuple[Effect, int]]]: Damage bonuses and effects with mind levels.
+
         """
         self.triggers_used += 1
         self.cooldown_remaining = self.cooldown_turns
@@ -325,6 +329,7 @@ class TriggerEffect(Effect):
             actor (Any): The character who applied the effect.
             target (Any): The character with the effect.
             mind_level (int): The mind level (unused for triggers).
+
         """
         super().turn_update(actor, target, mind_level)
 
@@ -341,6 +346,7 @@ class TriggerEffect(Effect):
 
         Returns:
             str: Status description including triggers used, cooldown, etc.
+
         """
         status_parts = [self.trigger_condition.description]
 
@@ -385,6 +391,7 @@ def create_on_hit_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_HIT,
@@ -430,6 +437,7 @@ def create_low_health_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_LOW_HEALTH,
@@ -452,7 +460,7 @@ def create_spell_cast_trigger(
     name: str,
     description: str,
     trigger_effects: list[Effect],
-    spell_category: Optional[Any] = None,
+    spell_category: Any | None = None,
     damage_bonus: list[DamageComponent] | None = None,
     duration: int | None = None,
     cooldown: int = 0,
@@ -473,6 +481,7 @@ def create_spell_cast_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_SPELL_CAST,
@@ -495,7 +504,7 @@ def create_damage_taken_trigger(
     name: str,
     description: str,
     trigger_effects: list[Effect],
-    damage_type: Optional[Any] = None,
+    damage_type: Any | None = None,
     damage_bonus: list[DamageComponent] | None = None,
     duration: int | None = None,
     cooldown: int = 1,
@@ -516,6 +525,7 @@ def create_damage_taken_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_DAMAGE_TAKEN,
@@ -555,6 +565,7 @@ def create_turn_based_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_type = (
         TriggerType.ON_TURN_START if trigger_on_start else TriggerType.ON_TURN_END
@@ -598,6 +609,7 @@ def create_critical_hit_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_CRITICAL_HIT,
@@ -639,6 +651,7 @@ def create_kill_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_KILL,
@@ -684,6 +697,7 @@ def create_custom_trigger(
 
     Returns:
         TriggerEffect: The created trigger effect.
+
     """
     trigger_condition = TriggerCondition(
         trigger_type=TriggerType.ON_HIT,  # Placeholder type for custom conditions
@@ -738,6 +752,7 @@ def create_trigger_from_json_config(config: dict[str, Any]) -> TriggerEffect:
             "effects": [{"class": "Buff", "modifiers": [...]}],
             "consumes": false
         }
+
     """
     trigger_type_map = {
         "on_hit": TriggerType.ON_HIT,

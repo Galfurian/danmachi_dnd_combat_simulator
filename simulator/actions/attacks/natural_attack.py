@@ -1,9 +1,6 @@
-from typing import Any
+
 
 from .base_attack import BaseAttack
-from combat.damage import DamageComponent
-from core.constants import ActionType
-from effects.base_effect import Effect
 
 
 class NaturalAttack(BaseAttack):

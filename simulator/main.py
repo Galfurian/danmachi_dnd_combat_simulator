@@ -3,12 +3,11 @@ from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
+from character import Character, load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
-from character import Character, load_character, load_characters
-
 
 """
 Main entry point for the DanMachi D&D Combat Simulator.
@@ -113,6 +112,7 @@ def add_to_list(from_group: dict[str, Character], to_list: list[Character], name
         from_group (dict[str, Character]): Source dictionary of available characters.
         to_list (list[Character]): Destination list to add the character to.
         name (str): Name of the character to add from the source group.
+
     """
     if name in from_group:
         to_list.append(deepcopy(from_group[name]))
@@ -136,6 +136,7 @@ def make_names_unique(in_list: list[Character]) -> None:
     Example:
         Input: ["Goblin", "Goblin", "Orc"]
         Output: ["Goblin (1)", "Goblin (2)", "Orc"]
+
     """
     # Count how many times each base name appears
     name_counts = Counter(o.name for o in in_list)
