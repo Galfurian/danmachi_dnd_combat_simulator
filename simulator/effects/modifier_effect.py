@@ -17,6 +17,16 @@ class ModifierEffect(Effect):
         description="List of modifiers applied by this effect.",
     )
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for modifier effects."""
+        return "bold yellow"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for modifier effects."""
+        return "🛡️"
+
     @model_validator(mode="after")
     def check_modifiers(self) -> "ModifierEffect":
         """
@@ -64,6 +74,16 @@ class BuffEffect(ModifierEffect):
     damage, improved AC, or additional HP.
     """
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for buff effects."""
+        return "bold cyan"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for buff effects."""
+        return "💫"
+
 
 class DebuffEffect(ModifierEffect):
     """
@@ -72,3 +92,13 @@ class DebuffEffect(ModifierEffect):
     Debuffs provide temporary penalties to character attributes such as reduced
     damage, lowered AC, or decreased HP.
     """
+
+    @property
+    def color(self) -> str:
+        """Returns the color string for debuff effects."""
+        return "bold red"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for debuff effects."""
+        return "☠️"

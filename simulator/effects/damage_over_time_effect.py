@@ -19,6 +19,16 @@ class DamageOverTimeEffect(Effect):
         description="Damage component defining the damage roll and type.",
     )
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for damage over time effects."""
+        return "bold magenta"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for damage over time effects."""
+        return "❣️"
+
     @model_validator(mode="after")
     def check_duration(self) -> Any:
         if self.duration is None or self.duration <= 0:

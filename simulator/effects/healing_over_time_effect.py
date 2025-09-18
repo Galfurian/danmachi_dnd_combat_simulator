@@ -18,6 +18,16 @@ class HealingOverTimeEffect(Effect):
         description="Heal expression defining the heal amount per turn.",
     )
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for healing over time effects."""
+        return "bold green"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for healing over time effects."""
+        return "💚"
+
     @model_validator(mode="after")
     def check_duration(self) -> Any:
         if self.duration is None or self.duration <= 0:

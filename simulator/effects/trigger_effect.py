@@ -176,6 +176,16 @@ class TriggerEffect(Effect):
     cooldown_remaining: ClassVar[int] = 0
     has_triggered_this_turn: ClassVar[bool] = False
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for trigger effects."""
+        return "bold white"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for trigger effects."""
+        return "⚡"
+
     @model_validator(mode="after")
     def check_trigger_condition(self) -> Any:
         if not isinstance(self.trigger_condition, TriggerCondition):

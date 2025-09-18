@@ -34,30 +34,12 @@ class Effect(BaseModel):
     @property
     def color(self) -> str:
         """Returns the color string associated with this effect type."""
-        color_map = {
-            "BuffEffect": "bold cyan",
-            "DebuffEffect": "bold red",
-            "DamageOverTimeEffect": "bold magenta",
-            "HealingOverTimeEffect": "bold green",
-            "ModifierEffect": "bold yellow",
-            "TriggerEffect": "bold white",
-            "IncapacitatingEffect": "bold red",
-        }
-        return color_map.get(self.__class__.__name__, "dim white")
+        return "dim white"  # Default fallback
 
     @property
     def emoji(self) -> str:
         """Returns the emoji associated with this effect type."""
-        emoji_map = {
-            "BuffEffect": "💫",
-            "DebuffEffect": "☠️",
-            "DamageOverTimeEffect": "❣️",
-            "HealingOverTimeEffect": "💚",
-            "ModifierEffect": "🛡️",
-            "TriggerEffect": "⚡",
-            "IncapacitatingEffect": "😵‍💫",
-        }
-        return emoji_map.get(self.__class__.__name__, "❔")
+        return "❔"  # Default fallback
 
     def colorize(self, message: str) -> str:
         """Applies effect color formatting to a message."""

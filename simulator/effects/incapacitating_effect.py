@@ -33,6 +33,16 @@ class IncapacitatingEffect(Effect):
         description="Minimum damage needed to break effect (if applicable).",
     )
 
+    @property
+    def color(self) -> str:
+        """Returns the color string for incapacitating effects."""
+        return "bold red"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji for incapacitating effects."""
+        return "😵‍💫"
+
     def prevents_actions(self) -> bool:
         """
         Check if this effect prevents the character from taking actions.
