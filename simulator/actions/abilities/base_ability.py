@@ -10,7 +10,6 @@ from core.constants import (
     ActionType,
     BonusType,
     GLOBAL_VERBOSE_LEVEL,
-    apply_character_type_color,
     get_effect_color,
 )
 from pydantic import Field

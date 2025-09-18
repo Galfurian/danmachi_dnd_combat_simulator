@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from core.constants import (
     get_effect_emoji,
-    apply_character_type_color,
     apply_effect_color,
 )
 from core.utils import cprint, roll_and_describe
@@ -61,7 +60,7 @@ class HealingOverTimeEffect(Effect):
         hot_value = target.heal(hot_value)
         # If the heal value is positive, print the heal message.
         message = f"    {get_effect_emoji(self)} "
-        message += apply_character_type_color(target.action_type, target.name)
+        message += target.char_type.colorize(target.name)
         message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
         message += apply_effect_color(self, self.name) + "."
         cprint(message)

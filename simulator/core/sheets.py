@@ -201,9 +201,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """
     sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
     sheet += f"lvl {spell.level}, "
-    sheet += (
-        f"[{get_action_type_color(spell.action_type)}]{spell.action_type}[/], "
-    )
+    sheet += f"[{get_action_type_color(spell.action_type)}]{spell.action_type}[/], "
     sheet += f"mind {spell.mind_cost}, "
     if spell.has_limited_uses():
         sheet += f"max uses: {spell.get_maximum_uses()}, "
@@ -240,9 +238,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
     """
     sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
-    sheet += (
-        f"[{get_action_type_color(ability.action_type)}]{ability.action_type}[/], "
-    )
+    sheet += f"[{get_action_type_color(ability.action_type)}]{ability.action_type}[/], "
 
     if ability.has_cooldown():
         sheet += f"cooldown: {ability.get_cooldown()}, "
@@ -292,7 +288,9 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     else:
         # Generic action display
         sheet: str = f"[{get_action_category_color(action.category)}]{action.name}[/], "
-        sheet += f"[{get_action_type_color(action.action_type)}]{action.action_type}[/], "
+        sheet += (
+            f"[{get_action_type_color(action.action_type)}]{action.action_type}[/], "
+        )
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
 
@@ -316,7 +314,7 @@ def print_character_sheet(char: Character) -> None:
         [f"[green]{cls.name} {lvl}[/]" for cls, lvl in char.levels.items()]
     )
     cprint(
-        f"{get_character_type_emoji(char.char_type)} [{char.char_type.color}]{char.name}[/], "
+        f"{char.char_type.emoji} [{char.char_type.color}]{char.name}[/], "
         f"[blue]{char.race.name}[/], {class_levels}"
     )
 

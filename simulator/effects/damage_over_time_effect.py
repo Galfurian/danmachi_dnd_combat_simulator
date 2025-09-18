@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from core.constants import (
     get_effect_emoji,
-    apply_character_type_color,
     apply_damage_type_color,
     get_damage_type_emoji,
 )
@@ -63,7 +62,7 @@ class DamageOverTimeEffect(Effect):
         base, adjusted, taken = target.take_damage(dot_value, self.damage.damage_type)
         # If the damage value is positive, print the damage message.
         dot_str = f"    {get_effect_emoji(self)} "
-        dot_str += apply_character_type_color(target.char_type, target.name) + " takes "
+        dot_str += target.char_type.colorize(target.name) + " takes "
         # Create a damage string for display.
         dot_str += apply_damage_type_color(
             self.damage.damage_type,

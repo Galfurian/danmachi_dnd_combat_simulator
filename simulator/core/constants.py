@@ -29,12 +29,24 @@ class CharacterType(NiceEnum):
     @property
     def color(self) -> str:
         """Returns the color string associated with this character type."""
-        color_map = {
+        return {
             CharacterType.PLAYER: "bold blue",
             CharacterType.ENEMY: "bold red",
             CharacterType.ALLY: "bold green",
-        }
-        return color_map.get(self, "dim white")
+        }.get(self, "dim white")
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this character type."""
+        return {
+            CharacterType.PLAYER: "👤",
+            CharacterType.ENEMY: "👹",
+            CharacterType.ALLY: "🤝",
+        }.get(self, "❔")
+
+    def colorize(self, message: str) -> str:
+        """Applies character type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
 
 
 class BonusType(NiceEnum):
@@ -129,20 +141,6 @@ def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     if char1 in group2 and char2 in group2:
         return False
     return True
-
-
-def apply_character_type_color(character_type: CharacterType, message: str) -> str:
-    """
-    Applies character type color formatting to a message.
-
-    Args:
-        character_type (CharacterType): The character type to get color for.
-        message (str): The message to format with color.
-
-    Returns:
-        str: The message wrapped in color formatting tags.
-    """
-    return f"[{character_type.color}]{message}[/]"
 
 
 def get_damage_type_color(damage_type: DamageType) -> str:
@@ -285,23 +283,6 @@ def apply_effect_color(effect: Any, message: str) -> str:
         str: The message wrapped in color formatting tags.
     """
     return f"[{get_effect_color(effect)}]{message}[/]"
-
-
-def get_character_type_emoji(character_type: CharacterType) -> str:
-    """Returns an emoji representation based on the character type.
-
-    Args:
-        character_type (CharacterType): The character type.
-
-    Returns:
-        str: The emoji associated with the character type.
-    """
-    emoji_map = {
-        CharacterType.PLAYER: "👤",
-        CharacterType.ENEMY: "👹",
-        CharacterType.ALLY: "🤝",
-    }
-    return emoji_map.get(character_type, "❔")
 
 
 def get_damage_type_emoji(damage_type: DamageType) -> str:

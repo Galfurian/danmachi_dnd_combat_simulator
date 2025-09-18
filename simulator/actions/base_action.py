@@ -14,7 +14,6 @@ from core.utils import (
 from core.constants import (
     ActionType,
     ActionCategory,
-    apply_character_type_color,
     is_oponent,
 )
 from effects import Effect
@@ -146,8 +145,8 @@ class BaseAction(BaseModel, use_enum_values=True):
         Returns:
             tuple[str, str]: (actor_display, target_display)
         """
-        actor_str = apply_character_type_color(actor.char_type, actor.name)
-        target_str = apply_character_type_color(target.char_type, target.name)
+        actor_str = actor.char_type.colorize(actor.name)
+        target_str = target.char_type.colorize(target.name)
         return actor_str, target_str
 
     # ============================================================================

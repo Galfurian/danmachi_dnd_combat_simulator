@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List
 
 from core.constants import (
     CharacterType,
-    get_character_type_emoji,
     get_effect_color,
 )
 from core.utils import make_bar
@@ -68,7 +67,7 @@ class CharacterDisplay:
 
         # Use dynamic name width based on name length, but cap it
         name_width = min(max(len(self._character.name), 8), 16)
-        status = f"{get_character_type_emoji(self._character.char_type)} [bold]{self._character.name:<{name_width}}[/] "
+        status = f"{self._character.char_type.emoji} [bold]{self._character.name:<{name_width}}[/] "
 
         # Show AC only for player and allies (not enemies) with yellow color
         if show_ac:
