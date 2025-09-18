@@ -30,15 +30,12 @@ class BaseAction(BaseModel, use_enum_values=True):
     """
 
     name: str = Field(
-        ...,
         description="Name of the action",
     )
     action_type: ActionType = Field(
-        ...,
         description="Type of the action (e.g., ACTION, BONUS_ACTION)",
     )
     category: ActionCategory = Field(
-        ...,
         description="Category of the action (e.g., OFFENSIVE, HEALING)",
     )
     description: str = Field(

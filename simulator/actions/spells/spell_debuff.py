@@ -31,7 +31,6 @@ class SpellDebuff(Spell):
     
     # Assign the effect to the spell.
     effect: Effect = Field(
-        ...,
         description="The beneficial effect that this buff spell applies.",
     )
 

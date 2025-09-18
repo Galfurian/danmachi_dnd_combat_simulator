@@ -285,7 +285,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 spell.name,
-                f"[{get_action_type_color(spell.action_type)}]{spell.action_type}[/]",
+                f"{spell.action_type.colored_name}",
                 f"[{get_action_category_color(spell.category)}]{spell.category}[/]",
             )
         # Add an empty row if there are submenus or an exit entry.

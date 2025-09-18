@@ -14,7 +14,6 @@ class ModifierEffect(Effect):
     """
 
     modifiers: list[Modifier] = Field(
-        ...,
         description="List of modifiers applied by this effect.",
     )
 

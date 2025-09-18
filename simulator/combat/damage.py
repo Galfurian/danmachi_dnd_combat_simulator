@@ -20,11 +20,9 @@ class DamageComponent(BaseModel):
     """
 
     damage_roll: str = Field(
-        ...,
         description="The damage roll expression (e.g., '1d6+3')",
     )
     damage_type: DamageType = Field(
-        ...,
         description="The type of damage (e.g., PHYSICAL, FIRE)",
     )
 

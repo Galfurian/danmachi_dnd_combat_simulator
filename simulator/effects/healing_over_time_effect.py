@@ -19,7 +19,6 @@ class HealingOverTimeEffect(Effect):
     """
 
     heal_per_turn: str = Field(
-        ...,
         description="Heal expression defining the heal amount per turn.",
     )
 

@@ -21,7 +21,6 @@ class DamageOverTimeEffect(Effect):
     """
 
     damage: DamageComponent = Field(
-        ...,
         description="Damage component defining the damage roll and type.",
     )
 

@@ -33,7 +33,6 @@ class SpellHeal(Spell):
     category: ActionCategory = ActionCategory.HEALING
 
     heal_roll: str = Field(
-        ...,
         description="The expression used to calculate healing amount.",
     )
     effect: Effect | None = Field(

@@ -70,6 +70,24 @@ class ActionType(NiceEnum):
     FREE = "FREE"
     REACTION = "REACTION"
 
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this action type."""
+        return {
+            ActionType.STANDARD: "bold yellow",
+            ActionType.BONUS: "bold green",
+            ActionType.FREE: "bold cyan",
+            ActionType.REACTION: "bold red",
+        }.get(self, "dim white")
+
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
+
+    def colorize(self, message: str) -> str:
+        """Applies action type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
+
 
 class DamageType(NiceEnum):
     """Defines various types of damage that can be inflicted."""
@@ -88,6 +106,48 @@ class DamageType(NiceEnum):
     FORCE = "FORCE"
     ACID = "ACID"
 
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this damage type."""
+        return {
+            DamageType.PIERCING: "bold magenta",
+            DamageType.SLASHING: "bold yellow",
+            DamageType.BLUDGEONING: "bold red",
+            DamageType.FIRE: "bold red",
+            DamageType.COLD: "bold cyan",
+            DamageType.LIGHTNING: "bold blue",
+            DamageType.THUNDER: "bold purple",
+            DamageType.POISON: "bold green",
+            DamageType.NECROTIC: "dim white",
+            DamageType.RADIANT: "bold white",
+            DamageType.PSYCHIC: "magenta",
+            DamageType.FORCE: "cyan",
+            DamageType.ACID: "green",
+        }.get(self, "dim white")
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this damage type."""
+        return {
+            DamageType.PIERCING: "🗡️",
+            DamageType.SLASHING: "🪓",
+            DamageType.BLUDGEONING: "🔨",
+            DamageType.FIRE: "🔥",
+            DamageType.COLD: "❄️",
+            DamageType.LIGHTNING: "⚡",
+            DamageType.THUNDER: "🌩️",
+            DamageType.POISON: "☠️",
+            DamageType.NECROTIC: "🖤",
+            DamageType.RADIANT: "✨",
+            DamageType.PSYCHIC: "💫",
+            DamageType.FORCE: "🌀",
+            DamageType.ACID: "🧪",
+        }.get(self, "❔")
+
+    def colorize(self, message: str) -> str:
+        """Applies damage type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
+
 
 class ActionCategory(str, Enum):
     """Defines the primary purpose or effect category of an action or spell."""
@@ -98,6 +158,34 @@ class ActionCategory(str, Enum):
     DEBUFF = "DEBUFF"
     UTILITY = "UTILITY"
     DEBUG = "DEBUG"
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this action category."""
+        return {
+            ActionCategory.OFFENSIVE: "bold red",
+            ActionCategory.HEALING: "bold green",
+            ActionCategory.BUFF: "bold yellow",
+            ActionCategory.DEBUFF: "bold magenta",
+            ActionCategory.UTILITY: "bold cyan",
+            ActionCategory.DEBUG: "dim white",
+        }.get(self, "dim white")
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this action category."""
+        return {
+            ActionCategory.OFFENSIVE: "⚔️",
+            ActionCategory.HEALING: "💚",
+            ActionCategory.BUFF: "💪",
+            ActionCategory.DEBUFF: "😈",
+            ActionCategory.UTILITY: "🔧",
+            ActionCategory.DEBUG: "🐞",
+        }.get(self, "❔")
+
+    def colorize(self, message: str) -> str:
+        """Applies action category color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
 
 
 class ArmorSlot(NiceEnum):
@@ -120,6 +208,16 @@ class ArmorType(NiceEnum):
     MEDIUM = "MEDIUM"
     LIGHT = "LIGHT"
     OTHER = "OTHER"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this armor type."""
+        return {
+            ArmorType.LIGHT: "🧥",
+            ArmorType.MEDIUM: "🥋",
+            ArmorType.HEAVY: ":shield:",
+            ArmorType.OTHER: "🎭",
+        }.get(self, "❔")
 
 
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
@@ -182,38 +280,6 @@ def apply_damage_type_color(damage_type: DamageType, message: str) -> str:
         str: The message wrapped in color formatting tags.
     """
     return f"[{get_damage_type_color(damage_type)}]{message}[/]"
-
-
-def get_action_type_color(action_type: ActionType) -> str:
-    """Returns a color string based on the action type.
-
-    Args:
-        action_type (ActionType): The action type.
-
-    Returns:
-        str: The color string associated with the action type.
-    """
-    color_map = {
-        ActionType.STANDARD: "bold yellow",
-        ActionType.BONUS: "bold green",
-        ActionType.FREE: "bold cyan",
-        ActionType.REACTION: "bold red",
-    }
-    return color_map.get(action_type, "dim white")
-
-
-def apply_action_type_color(action_type: ActionType, message: str) -> str:
-    """
-    Applies action type color formatting to a message.
-
-    Args:
-        action_type (ActionType): The action type to get color for.
-        message (str): The message to format with color.
-
-    Returns:
-        str: The message wrapped in color formatting tags.
-    """
-    return f"[{get_action_type_color(action_type)}]{message}[/]"
 
 
 def get_action_category_color(category: ActionCategory) -> str:

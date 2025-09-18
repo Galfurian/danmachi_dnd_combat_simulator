@@ -14,7 +14,6 @@ class IncapacitatingEffect(Effect):
     """
 
     incapacitation_type: str = Field(
-        ...,
         description="Type of incapacitation (e.g., 'sleep', 'paralyzed', 'stunned').",
     )
     save_ends: bool = Field(

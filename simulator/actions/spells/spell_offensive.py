@@ -28,7 +28,6 @@ class SpellOffensive(Spell):
     category: ActionCategory = ActionCategory.OFFENSIVE
 
     damage: list[DamageComponent] = Field(
-        ...,
         description="List of damage components for this ability",
     )
     effect: Effect | None = Field(

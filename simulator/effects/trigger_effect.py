@@ -34,7 +34,6 @@ class TriggerCondition(BaseModel):
     """
 
     trigger_type: TriggerType = Field(
-        ...,
         description="Type of trigger event.",
     )
     threshold: float | None = Field(
@@ -150,11 +149,9 @@ class TriggerEffect(Effect):
     """
 
     trigger_condition: TriggerCondition = Field(
-        ...,
         description="Condition that activates the trigger.",
     )
-    trigger_effects: list[Effect] = Field(
-        ..., description="Effects to apply when triggered."
+    trigger_effects: list[Effect] = Field( description="Effects to apply when triggered."
     )
     damage_bonus: list[DamageComponent] | None = Field(
         default_factory=list,

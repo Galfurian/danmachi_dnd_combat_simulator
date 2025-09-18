@@ -23,7 +23,6 @@ class AbilityOffensive(BaseAbility):
         description="Expression for attack roll, e.g. '1d20 + 5'",
     )
     damage: list[DamageComponent] = Field(
-        ...,
         description="List of damage components for this ability",
     )
 

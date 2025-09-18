@@ -13,7 +13,6 @@ class Effect(BaseModel):
     """
 
     name: str = Field(
-        ...,
         description="The name of the effect.",
     )
     description: str = Field(
@@ -124,11 +123,9 @@ class Modifier(BaseModel):
     """
 
     bonus_type: BonusType = Field(
-        ...,
         description="The type of bonus the modifier applies.",
     )
     value: Any = Field(
-        ...,
         description=(
             "The value of the modifier. Can be an integer, string expression, or DamageComponent."
         ),

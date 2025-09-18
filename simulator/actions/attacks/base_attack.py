@@ -30,11 +30,9 @@ class BaseAttack(BaseAction):
     category: ActionCategory = ActionCategory.OFFENSIVE
 
     attack_roll: str = Field(
-        ...,
         description="The attack roll expression (e.g., '1d20 + 5')",
     )
     damage: list[DamageComponent] = Field(
-        ...,
         description="List of damage components for the attack",
     )
     effect: Effect | None = Field(

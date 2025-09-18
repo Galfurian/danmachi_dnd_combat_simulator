@@ -22,7 +22,6 @@ class AbilityHeal(BaseAbility):
     
     # Validate the heal_roll expression.
     heal_roll: str = Field(
-        ...,
         description="Expression for healing amount, e.g. '1d8 + 3'",
     )
 
