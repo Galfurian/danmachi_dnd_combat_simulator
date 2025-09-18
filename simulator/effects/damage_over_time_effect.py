@@ -1,10 +1,6 @@
 from typing import Any, Optional
 
-from core.constants import (
-    get_effect_emoji,
-    apply_damage_type_color,
-    get_damage_type_emoji,
-)
+from core.constants import get_effect_emoji
 from core.utils import cprint, roll_and_describe
 from combat.damage import DamageComponent
 from pydantic import Field, model_validator
@@ -63,10 +59,9 @@ class DamageOverTimeEffect(Effect):
         dot_str = f"    {get_effect_emoji(self)} "
         dot_str += target.char_type.colorize(target.name) + " takes "
         # Create a damage string for display.
-        dot_str += apply_damage_type_color(
-            self.damage.damage_type,
-            f"{taken} {get_damage_type_emoji(self.damage.damage_type)} ",
-        )
+        dot_str += f"{self.damage.damage_type.colorize(taken)} "
+        dot_str += f"{self.damage.damage_type.emoji} "
+        dot_str += f"{self.damage.damage_type.colored_name} "
         # If the base damage differs from the adjusted damage (due to resistances),
         # include the original and adjusted values in the damage string.
         if base != adjusted:

@@ -23,8 +23,11 @@ def damage_to_string(damage: DamageComponent) -> str:
     Returns:
         str: Formatted string with damage roll and type in appropriate colors.
     """
-    damage_color = get_damage_type_color(damage.damage_type)
-    return f"[{damage_color}]{damage.damage_roll} {damage.damage_type.name.lower()}[/]"
+    return (
+        f"{damage.damage_type.colorize(damage.damage_roll)} "
+        f"{damage.damage_type.emoji} "
+        f"{damage.damage_type.colored_name}"
+    )
 
 
 def modifier_to_string(modifier: Modifier) -> str:
@@ -38,7 +41,11 @@ def modifier_to_string(modifier: Modifier) -> str:
         str: Formatted string showing the modifier value and bonus type with appropriate colors.
     """
     if isinstance(modifier.value, DamageComponent):
-        return f"[{get_damage_type_color(modifier.value.damage_type)}]{modifier.value.damage_roll} {modifier.value.damage_type.name.lower()}[/] to {modifier.bonus_type.name.lower()}"
+        return (
+            f"{modifier.value.damage_type.colorize(modifier.value.damage_roll)}"
+            f"{modifier.value.damage_type.colored_name} "
+            f"to {modifier.bonus_type.name.lower()}"
+        )
     elif isinstance(modifier.value, str):
         return f"[blue]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
     else:
@@ -71,7 +78,7 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
     elif isinstance(effect, HealingOverTimeEffect):
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
     elif isinstance(effect, DamageOverTimeEffect):
-        sheet += f"deals {damage_to_string(effect.damage)} per turn"
+        sheet += f"deals {str(effect.damage)} per turn"
     elif isinstance(effect, TriggerEffect):
         # Handle TriggerEffect effects (like spell buffs that trigger on events)
         details = []
@@ -180,7 +187,7 @@ def print_weapon_sheet(weapon: Weapon, padding: int = 2) -> None:
 def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
     """Prints the details of an armor in a formatted way."""
     sheet: str = f"[blue]{armor.name}[/], "
-    sheet += f"{get_armor_type_emoji(armor.armor_type)}, "
+    sheet += f"{armor.armor_type.emoji}, "
     sheet += f"{armor.armor_slot.name}, "
     sheet += f"AC: {armor.ac}, "
     if armor.max_dex_bonus:
@@ -199,7 +206,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
         spell (Spell): The spell to display.
         padding (int): Left padding for the output. Defaults to 2.
     """
-    sheet: str = f"[{get_action_category_color(spell.category)}]{spell.name}[/], "
+    sheet: str = f"{spell.category.colorize(spell.name)}, "
     sheet += f"lvl {spell.level}, "
     sheet += f"{spell.action_type.colored_name}, "
     sheet += f"mind {spell.mind_cost}, "
@@ -237,7 +244,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         ability (BaseAbility): The ability to display.
         padding (int): Left padding for the output. Defaults to 2.
     """
-    sheet: str = f"[{get_action_category_color(ability.category)}]{ability.name}[/], "
+    sheet: str = f"{ability.category.colorize(ability.name)}, "
     sheet += f"{ability.action_type.colored_name}, "
 
     if ability.has_cooldown():
@@ -287,7 +294,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         print_base_attack_sheet(action, padding)
     else:
         # Generic action display
-        sheet: str = f"[{get_action_category_color(action.category)}]{action.name}[/], "
+        sheet: str = f"{action.category.colorize(action.name)}[/], "
         sheet += f"{action.action_type.colored_name}, "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
@@ -375,16 +382,12 @@ def print_character_sheet(char: Character) -> None:
 
     # Resistances and Vulnerabilities
     if char.resistances:
-        resistance_list = [
-            f"[{get_damage_type_color(r)}]{r.name}[/]" for r in char.resistances
-        ]
-        cprint(f"  [green]Resistances[/]: {', '.join(resistance_list)}")
+        rlist = [f"{r.colorize(r.name)}" for r in char.resistances]
+        cprint(f"  [green]Resistances[/]: {', '.join(rlist)}")
 
     if char.vulnerabilities:
-        vulnerability_list = [
-            f"[{get_damage_type_color(v)}]{v.name}[/]" for v in char.vulnerabilities
-        ]
-        cprint(f"  [red]Vulnerabilities[/]: {', '.join(vulnerability_list)}")
+        vlist = [f"[{v.colorize(v.name)}]" for v in char.vulnerabilities]
+        cprint(f"  [red]Vulnerabilities[/]: {', '.join(vlist)}")
 
     # Active Effects
     if char.effects_module.active_effects:
@@ -465,7 +468,7 @@ def print_content_repository_summary() -> None:
     if hasattr(repo, "actions") and repo.actions:
         cprint(f"\n[green]Actions & Abilities ({len(repo.actions)})[/green]:")
         for name, action in repo.actions.items():
-            action_info = f"[{get_action_category_color(action.category)}]{name}[/] "
+            action_info = f"{action.category.colorize(name)} "
             action_info += f"({action.action_type.colored_name})"
             cprint(Padding(action_info, (0, 2)))
 
@@ -481,7 +484,7 @@ def print_content_repository_summary() -> None:
 
         for spell_type, spells in spell_types.items():
             cprint(
-                f"  [{get_action_category_color(spells[0][1].category)}]{spell_type} ({len(spells)})[/]:"
+                f"  {spells[0][1].category.colorize(spell_type)} ({len(spells)})[/]:"
             )
             for name, spell in spells:
                 spell_info = f"[blue]{name}[/] - Lvl {spell.level}"
@@ -588,9 +591,7 @@ def print_damage_types_reference() -> None:
     cprint("=" * 40)
 
     for damage_type in DamageType:
-        emoji = get_damage_type_emoji(damage_type)
-        color = get_damage_type_color(damage_type)
-        cprint(f"{emoji} [{color}]{damage_type.display_name}[/]")
+        cprint(f"{damage_type.emoji} {damage_type.display_name}")
 
 
 def print_action_types_reference() -> None:
@@ -611,6 +612,4 @@ def print_action_types_reference() -> None:
 
     cprint("\n[green]Action Categories:[/green]")
     for category in ActionCategory:
-        emoji = get_action_category_emoji(category)
-        color = get_action_category_color(category)
-        cprint(f"  {emoji} [{color}]{category.name.title()}[/]")
+        cprint(f"  {category.emoji} {category.colored_name}")

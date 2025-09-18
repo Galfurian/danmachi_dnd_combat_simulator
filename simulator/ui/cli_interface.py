@@ -63,8 +63,8 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 action.name,
-                action.action_type,
-                action.category,
+                f"{action.action_type.colored_name}",
+                f"{action.category.colored_name}",
             )
         # Add an empty row if there are submenus or an exit entry.
         if sorted_submenus or exit_entry:
@@ -286,7 +286,7 @@ class PlayerInterface:
                 str(i),
                 spell.name,
                 f"{spell.action_type.colored_name}",
-                f"[{get_action_category_color(spell.category)}]{spell.category}[/]",
+                f"{spell.category.colored_name}",
             )
         # Add an empty row if there are submenus or an exit entry.
         if sorted_submenus or exit_entry:
@@ -366,7 +366,8 @@ class PlayerInterface:
                 prompt += f"Deals "
                 prompt += "+ ".join(
                     f"{simplify_expression(component.damage_roll, variables)}"
-                    f" [{get_damage_type_color(component.damage_type)}]{component.damage_type}[/]"
+                    f" {component.damage_type.emoji}"
+                    f" {component.damage_type.colored_name}"
                     for component in spell.damage
                 )
                 prompt += f" (~ {spell.get_min_damage(actor, mind_level):>2}-{spell.get_max_damage(actor, mind_level):<2})"
@@ -391,7 +392,7 @@ class PlayerInterface:
                         if isinstance(value, DamageComponent):
                             prompt += (
                                 f" {simplify_expression(value.damage_roll, variables)} "
-                                f"[{get_damage_type_color(value.damage_type)}]{value.damage_type}[/]"
+                                f"{value.damage_type.emoji} {value.damage_type.colored_name}"
                             )
                         else:
                             prompt += f" {value} to {bonus_type.name.title()}"

@@ -1,12 +1,6 @@
 from typing import Any, Tuple
 
-from core.constants import (
-    BonusType,
-    DamageType,
-    GLOBAL_VERBOSE_LEVEL,
-    apply_damage_type_color,
-    get_damage_type_emoji,
-)
+from core.constants import DamageType
 from core.utils import roll_and_describe
 from pydantic import BaseModel, Field
 
@@ -25,6 +19,13 @@ class DamageComponent(BaseModel):
     damage_type: DamageType = Field(
         description="The type of damage (e.g., PHYSICAL, FIRE)",
     )
+
+    def __str__(self) -> str:
+        return (
+            f"{self.damage_type.colorize(self.damage_roll)} "
+            f"{self.damage_type.emoji} "
+            f"{self.damage_type.colored_name}"
+        )
 
 
 def roll_damage_component(
@@ -58,10 +59,9 @@ def roll_damage_component(
         dmg_value, damage_component[0].damage_type
     )
     # Create a damage string for display.
-    dmg_str = apply_damage_type_color(
-        damage_component[0].damage_type,
-        f"{taken} {get_damage_type_emoji(damage_component[0].damage_type)} ",
-    )
+    dmg_str = f"{damage_component[0].damage_type.colorize(taken)} "
+    dmg_str += f"{damage_component[0].damage_type.emoji} "
+    dmg_str += f"{damage_component[0].damage_type.colored_name} "
     # If the base damage differs from the adjusted damage (due to resistances),
     # include the original and adjusted values in the damage string.
     if base != adjusted:
