@@ -20,7 +20,7 @@ from effects import Effect
 from pydantic import BaseModel, Field
 
 
-class BaseAction(BaseModel, use_enum_values=True):
+class BaseAction(BaseModel):
     """Base class for all character actions in the combat system.
 
     This class provides a foundation for implementing various types of actions,

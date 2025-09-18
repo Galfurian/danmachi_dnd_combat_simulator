@@ -7,7 +7,6 @@ from actions.spells.base_spell import Spell
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import (
     ActionCategory,
-    ActionType,
     BonusType,
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,

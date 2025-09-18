@@ -6,7 +6,6 @@ from typing import Any
 from actions.spells.base_spell import Spell
 from core.constants import (
     ActionCategory,
-    ActionType,
     GLOBAL_VERBOSE_LEVEL,
     get_effect_color,
 )

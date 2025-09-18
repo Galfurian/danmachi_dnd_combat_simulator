@@ -44,6 +44,10 @@ class CharacterType(NiceEnum):
             CharacterType.ALLY: "🤝",
         }.get(self, "❔")
 
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
+
     def colorize(self, message: str) -> str:
         """Applies character type color formatting to a message."""
         return f"[{self.color}]{message}[/]"
@@ -144,12 +148,16 @@ class DamageType(NiceEnum):
             DamageType.ACID: "🧪",
         }.get(self, "❔")
 
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
+
     def colorize(self, message: str) -> str:
         """Applies damage type color formatting to a message."""
         return f"[{self.color}]{message}[/]"
 
 
-class ActionCategory(str, Enum):
+class ActionCategory(NiceEnum):
     """Defines the primary purpose or effect category of an action or spell."""
 
     OFFENSIVE = "OFFENSIVE"
@@ -182,6 +190,10 @@ class ActionCategory(str, Enum):
             ActionCategory.UTILITY: "🔧",
             ActionCategory.DEBUG: "🐞",
         }.get(self, "❔")
+
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
 
     def colorize(self, message: str) -> str:
         """Applies action category color formatting to a message."""
