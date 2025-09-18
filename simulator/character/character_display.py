@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List
 
 from core.constants import (
     CharacterType,
-    get_effect_color,
 )
 from core.utils import make_bar
 
@@ -47,7 +46,7 @@ class CharacterDisplay:
         effects_list = []
         if self._character.effects_module.active_effects:
             for e in self._character.effects_module.active_effects:
-                color = get_effect_color(e.effect)
+                color = e.effect.color
                 # Truncate long effect names and show duration more compactly
                 effect_name = (
                     e.effect.name[:12] + "..."
@@ -179,7 +178,7 @@ class CharacterDisplay:
 
         effects_info = []
         for e in self._character.effects_module.active_effects:
-            color = get_effect_color(e.effect)
+            color = e.effect.color
             effects_info.append(
                 f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"
             )

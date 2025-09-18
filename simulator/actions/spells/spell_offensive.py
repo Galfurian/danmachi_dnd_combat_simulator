@@ -9,7 +9,6 @@ from core.constants import (
     ActionCategory,
     BonusType,
     GLOBAL_VERBOSE_LEVEL,
-    get_effect_color,
 )
 from pydantic import Field
 from core.utils import cprint
@@ -113,7 +112,7 @@ class SpellOffensive(Spell):
             if is_dead:
                 msg += f" defeating {target_str}"
             elif effect_applied and self.effect:
-                msg += f" and applying [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+                msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
@@ -124,7 +123,7 @@ class SpellOffensive(Spell):
                 msg += f"        {target_str} is defeated."
             elif effect_applied and self.effect:
                 msg += f"        {target_str} is affected by "
-                msg += f"[{get_effect_color(self.effect)}]{self.effect.name}[/]."
+                msg += f"[{self.effect.color}]{self.effect.name}[/]."
         cprint(msg)
 
         return True

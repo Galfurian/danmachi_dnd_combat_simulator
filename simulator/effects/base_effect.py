@@ -27,6 +27,42 @@ class Effect(BaseModel):
         ),
     )
 
+    @property
+    def display_name(self) -> str:
+        return self.name.lower().capitalize()
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this effect type."""
+        color_map = {
+            "BuffEffect": "bold cyan",
+            "DebuffEffect": "bold red",
+            "DamageOverTimeEffect": "bold magenta",
+            "HealingOverTimeEffect": "bold green",
+            "ModifierEffect": "bold yellow",
+            "TriggerEffect": "bold white",
+            "IncapacitatingEffect": "bold red",
+        }
+        return color_map.get(self.__class__.__name__, "dim white")
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this effect type."""
+        emoji_map = {
+            "BuffEffect": "💫",
+            "DebuffEffect": "☠️",
+            "DamageOverTimeEffect": "❣️",
+            "HealingOverTimeEffect": "💚",
+            "ModifierEffect": "🛡️",
+            "TriggerEffect": "⚡",
+            "IncapacitatingEffect": "😵‍💫",
+        }
+        return emoji_map.get(self.__class__.__name__, "❔")
+
+    def colorize(self, message: str) -> str:
+        """Applies effect color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
+
     def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
         """Update the effect for the current turn.
 

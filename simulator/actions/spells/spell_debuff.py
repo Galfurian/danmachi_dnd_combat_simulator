@@ -4,11 +4,7 @@ from logging import debug
 from typing import Any
 
 from actions.spells.base_spell import Spell
-from core.constants import (
-    ActionCategory,
-    BonusType,
-    get_effect_color,
-)
+from core.constants import ActionCategory, BonusType
 from pydantic import Field
 from core.utils import (
     substitute_variables,
@@ -27,7 +23,7 @@ class SpellDebuff(Spell):
     """
 
     category: ActionCategory = ActionCategory.DEBUFF
-    
+
     # Assign the effect to the spell.
     effect: Effect = Field(
         description="The beneficial effect that this buff spell applies.",
@@ -76,9 +72,9 @@ class SpellDebuff(Spell):
         # Display debuff results with save information
         msg = f"    🔮 {actor_str} casts [bold]{self.name}[/] on {target_str} "
         if effect_applied:
-            msg += f"applying [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += f"applying [{self.effect.color}]{self.effect.name}[/]"
         else:
-            msg += f"but fails to apply [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += f"but fails to apply [{self.effect.color}]{self.effect.name}[/]"
             if save_result:
                 msg += f" (saved)"
         msg += "."

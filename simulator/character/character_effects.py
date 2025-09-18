@@ -93,13 +93,17 @@ class CharacterEffects:
                 if self.has_effect(effect):
                     return False
 
-            elif isinstance(effect, TriggerEffect) and effect.trigger_condition.trigger_type.value == "on_hit":
+            elif (
+                isinstance(effect, TriggerEffect)
+                and effect.trigger_condition.trigger_type.value == "on_hit"
+            ):
                 # Only allow one OnHit trigger spell at a time (like D&D 5e smite spells)
                 # Remove any existing OnHit trigger effects first
                 existing_triggers = [
                     ae
                     for ae in self.active_effects
-                    if isinstance(ae.effect, TriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit"
+                    if isinstance(ae.effect, TriggerEffect)
+                    and ae.effect.trigger_condition.trigger_type.value == "on_hit"
                 ]
                 for existing_trigger in existing_triggers:
                     self.remove_effect(existing_trigger)
@@ -152,18 +156,18 @@ class CharacterEffects:
     def handle_damage_taken(self, damage_amount: int) -> list[str]:
         """
         Handle effects that should trigger or break when damage is taken.
-        
+
         Args:
             damage_amount (int): Amount of damage taken.
-            
+
         Returns:
             list[str]: Messages about effects that were broken or triggered.
         """
         messages = []
-        
+
         if damage_amount <= 0:
             return messages
-            
+
         # Check for incapacitating effects that should break on damage
         effects_to_remove = []
         for active_effect in self.active_effects:
@@ -173,11 +177,11 @@ class CharacterEffects:
                     messages.append(
                         f"{self.owner.name} wakes up from {active_effect.effect.name} due to taking damage!"
                     )
-        
+
         # Remove the effects that should break
         for effect_to_remove in effects_to_remove:
             self.remove_effect(effect_to_remove)
-            
+
         return messages
 
     def remove_effect(self, effect: "ActiveEffect") -> bool:
@@ -240,7 +244,7 @@ class CharacterEffects:
 
     def check_passive_triggers(self) -> list[str]:
         """Check all passive effects for trigger conditions and activate them.
-        
+
         Returns:
             list[str]: Messages for effects that were triggered this check.
         """
@@ -248,15 +252,15 @@ class CharacterEffects:
 
         for effect in self.passive_effects:
             # Check for low health triggers using the new TriggerEffect system
-            if isinstance(effect, TriggerEffect) and effect.trigger_condition.trigger_type.value == "on_low_health":
+            if (
+                isinstance(effect, TriggerEffect)
+                and effect.trigger_condition.trigger_type.value == "on_low_health"
+            ):
 
                 trigger_effect: TriggerEffect = effect  # type: ignore
 
                 # Create event data for health check
-                event_data = {
-                    "event_type": "health_check",
-                    "character": self.owner
-                }
+                event_data = {"event_type": "health_check", "character": self.owner}
 
                 if trigger_effect.check_trigger(self.owner, event_data):
                     # Activate the trigger
@@ -270,10 +274,9 @@ class CharacterEffects:
                             self.add_effect(self.owner, triggered_effect, mind_level)
 
                     # Create activation message
-                    from core.constants import get_effect_color
 
                     activation_messages.append(
-                        f"🔥 {self.owner.name}'s [bold][{get_effect_color(effect)}]{effect.name}[/][/] activates!"
+                        f"🔥 {self.owner.name}'s [bold][{effect.color}]{effect.name}[/][/] activates!"
                     )
 
         return activation_messages
@@ -448,11 +451,11 @@ class CharacterEffects:
         updated = []
         for ae in self.active_effects:
             ae.effect.turn_update(ae.source, self.owner, ae.mind_level)
-            
+
             # Only decrement duration if it's not None (indefinite effects)
             if ae.duration is not None:
                 ae.duration -= 1
-                
+
             # Keep effect if duration is None (indefinite) or still has time remaining
             if ae.duration is None or ae.duration > 0:
                 updated.append(ae)
@@ -547,7 +550,10 @@ class CharacterEffects:
         """
         triggers = []
         for ae in self.active_effects:
-            if isinstance(ae.effect, TriggerEffect) and ae.effect.trigger_condition.trigger_type.value == "on_hit":
+            if (
+                isinstance(ae.effect, TriggerEffect)
+                and ae.effect.trigger_condition.trigger_type.value == "on_hit"
+            ):
                 triggers.append(ae)
         return triggers
 
@@ -583,14 +589,16 @@ class CharacterEffects:
             event_data = {
                 "event_type": "on_hit",
                 "target": target,
-                "mind_level": ae.mind_level
+                "mind_level": ae.mind_level,
             }
 
             # Check if the trigger should activate
             if trigger.check_trigger(self.owner, event_data):
                 # Activate the trigger and get results
-                damage_bonus, trigger_effects_with_levels = trigger.activate_trigger(self.owner, event_data)
-                
+                damage_bonus, trigger_effects_with_levels = trigger.activate_trigger(
+                    self.owner, event_data
+                )
+
                 # Add damage bonuses from this trigger
                 for damage_comp in damage_bonus:
                     damage_bonuses.append((damage_comp, ae.mind_level))

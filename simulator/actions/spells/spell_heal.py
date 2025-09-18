@@ -7,7 +7,6 @@ from actions.spells.base_spell import Spell
 from core.constants import (
     ActionCategory,
     GLOBAL_VERBOSE_LEVEL,
-    get_effect_color,
 )
 from core.utils import (
     parse_expr_and_assume_max_roll,
@@ -88,10 +87,10 @@ class SpellHeal(Spell):
             msg += f" ({heal_desc})"
         if effect_applied and self.effect:
             msg += (
-                f" and applying [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+                f" and applying [{self.effect.color}]{self.effect.name}[/]"
             )
         elif self.effect and not effect_applied:
-            msg += f" but failing to apply [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += f" but failing to apply [{self.effect.color}]{self.effect.name}[/]"
         msg += "."
         cprint(msg)
 

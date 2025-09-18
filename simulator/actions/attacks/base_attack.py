@@ -11,7 +11,6 @@ from core.constants import (
     ActionType,
     BonusType,
     GLOBAL_VERBOSE_LEVEL,
-    get_effect_color,
 )
 from core.utils import debug, cprint
 from effects.base_effect import Effect
@@ -145,7 +144,7 @@ class BaseAttack(BaseAction):
                     msg += f" and applying"
                 else:
                     msg += f" and failing to apply"
-                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+                msg += f" [{self.effect.color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] and "
@@ -159,13 +158,13 @@ class BaseAttack(BaseAction):
                     msg += f"        {target_str} is affected by"
                 else:
                     msg += f"        {target_str} is not affected by"
-                msg += f" [{get_effect_color(self.effect)}]{self.effect.name}[/]."
+                msg += f" [{self.effect.color}]{self.effect.name}[/]."
 
         # =============================
         # 9. On-Hit Trigger Messaging
         # =============================
         for trigger in consumed_triggers:
-            trigger_msg = f"    ⚡ {actor_str}'s [bold][{get_effect_color(trigger)}]{trigger.name}[/][/] activates!"
+            trigger_msg = f"    ⚡ {actor_str}'s [bold][{trigger.color}]{trigger.name}[/][/] activates!"
             cprint(trigger_msg)
 
         cprint(msg)

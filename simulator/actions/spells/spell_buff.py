@@ -4,16 +4,9 @@ from logging import debug
 from typing import Any
 
 from actions.spells.base_spell import Spell
-from core.constants import (
-    ActionCategory,
-    BonusType,
-    get_effect_color,
-)
+from core.constants import ActionCategory, BonusType
 from pydantic import Field
-from core.utils import (
-    substitute_variables,
-    cprint,
-)
+from core.utils import substitute_variables, cprint
 from effects.base_effect import Effect
 from effects.modifier_effect import ModifierEffect
 from combat.damage import DamageComponent
@@ -70,9 +63,9 @@ class SpellBuff(Spell):
         # Display enhancement results
         msg = f"    ✨ {actor_str} casts [bold]{self.name}[/] on {target_str} "
         if effect_applied:
-            msg += f"applying [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += f"applying [{self.effect.color}]{self.effect.name}[/]"
         else:
-            msg += f"but fails to apply [{get_effect_color(self.effect)}]{self.effect.name}[/]"
+            msg += f"but fails to apply [{self.effect.color}]{self.effect.name}[/]"
         msg += "."
 
         cprint(msg)

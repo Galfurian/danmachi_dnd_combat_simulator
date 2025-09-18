@@ -7,7 +7,6 @@ from core.constants import (
     ActionCategory,
     ActionType,
     GLOBAL_VERBOSE_LEVEL,
-    get_effect_color,
 )
 from core.utils import cprint
 from effects.base_effect import Effect
@@ -60,7 +59,7 @@ class AbilityDebuff(BaseAbility):
         effect_applied = self._common_apply_effect(actor, target, self.effect)
 
         # Display results
-        effect_color = get_effect_color(self.effect)
+        effect_color = self.effect.color
 
         msg = f"    ✨ {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
 
