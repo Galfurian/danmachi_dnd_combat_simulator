@@ -316,7 +316,7 @@ def print_character_sheet(char: Character) -> None:
         [f"[green]{cls.name} {lvl}[/]" for cls, lvl in char.levels.items()]
     )
     cprint(
-        f"{get_character_type_emoji(char.char_type)} [{get_character_type_color(char.char_type)}]{char.name}[/], "
+        f"{get_character_type_emoji(char.char_type)} [{char.char_type.color}]{char.name}[/], "
         f"[blue]{char.race.name}[/], {class_levels}"
     )
 
@@ -594,7 +594,7 @@ def print_damage_types_reference() -> None:
     for damage_type in DamageType:
         emoji = get_damage_type_emoji(damage_type)
         color = get_damage_type_color(damage_type)
-        cprint(f"{emoji} [{color}]{damage_type}[/]")
+        cprint(f"{emoji} [{color}]{damage_type.display_name}[/]")
 
 
 def print_action_types_reference() -> None:
@@ -612,7 +612,7 @@ def print_action_types_reference() -> None:
     for action_type in ActionType:
         if action_type != ActionType.NONE:  # Skip NONE type
             color = get_action_type_color(action_type)
-            cprint(f"  [{color}]{action_type.title()}[/]")
+            cprint(f"  [{color}]{action_type.display_name}[/]")
 
     cprint("\n[green]Action Categories:[/green]")
     for category in ActionCategory:

@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 from typing import Any
 
 # Global verbose level for combat output:
@@ -8,15 +8,36 @@ from typing import Any
 GLOBAL_VERBOSE_LEVEL = 0
 
 
-class CharacterType(Enum):
+class NiceEnum(Enum):
+    """An enumeration that provides a nicer string representation."""
+
+    def __str__(self) -> str:
+        return self.name
+
+    @property
+    def display_name(self) -> str:
+        return self.name.lower().capitalize()
+
+
+class CharacterType(NiceEnum):
     """Defines the type of character in the game."""
 
     PLAYER = "PLAYER"
     ENEMY = "ENEMY"
     ALLY = "ALLY"
 
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this character type."""
+        color_map = {
+            CharacterType.PLAYER: "bold blue",
+            CharacterType.ENEMY: "bold red",
+            CharacterType.ALLY: "bold green",
+        }
+        return color_map.get(self, "dim white")
 
-class BonusType(Enum):
+
+class BonusType(NiceEnum):
     """Defines the types of bonuses that can be applied to characters."""
 
     HP = "HP"
@@ -28,7 +49,7 @@ class BonusType(Enum):
     CONCENTRATION = "CONCENTRATION"
 
 
-class ActionType(Enum):
+class ActionType(NiceEnum):
     """Defines the type of action that can be performed."""
 
     NONE = "NONE"
@@ -38,7 +59,7 @@ class ActionType(Enum):
     REACTION = "REACTION"
 
 
-class DamageType(Enum):
+class DamageType(NiceEnum):
     """Defines various types of damage that can be inflicted."""
 
     PIERCING = "PIERCING"
@@ -56,7 +77,7 @@ class DamageType(Enum):
     ACID = "ACID"
 
 
-class ActionCategory(Enum):
+class ActionCategory(str, Enum):
     """Defines the primary purpose or effect category of an action or spell."""
 
     OFFENSIVE = "OFFENSIVE"
@@ -67,7 +88,7 @@ class ActionCategory(Enum):
     DEBUG = "DEBUG"
 
 
-class ArmorSlot(Enum):
+class ArmorSlot(NiceEnum):
     """Defines the slots where armor can be equipped."""
 
     HEAD = "HEAD"
@@ -80,7 +101,7 @@ class ArmorSlot(Enum):
     COMBAT_STYLE = "COMBAT_STYLE"
 
 
-class ArmorType(Enum):
+class ArmorType(NiceEnum):
     """Defines the type of armor that can be equipped."""
 
     HEAVY = "HEAVY"
@@ -110,23 +131,6 @@ def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     return True
 
 
-def get_character_type_color(character_type: CharacterType) -> str:
-    """Returns a color string based on the character type.
-
-    Args:
-        character_type (CharacterType): The character type.
-
-    Returns:
-        str: The color string associated with the character type.
-    """
-    color_map = {
-        CharacterType.PLAYER: "bold blue",
-        CharacterType.ENEMY: "bold red",
-        CharacterType.ALLY: "bold green",
-    }
-    return color_map.get(character_type, "dim white")
-
-
 def apply_character_type_color(character_type: CharacterType, message: str) -> str:
     """
     Applies character type color formatting to a message.
@@ -138,7 +142,7 @@ def apply_character_type_color(character_type: CharacterType, message: str) -> s
     Returns:
         str: The message wrapped in color formatting tags.
     """
-    return f"[{get_character_type_color(character_type)}]{message}[/]"
+    return f"[{character_type.color}]{message}[/]"
 
 
 def get_damage_type_color(damage_type: DamageType) -> str:
