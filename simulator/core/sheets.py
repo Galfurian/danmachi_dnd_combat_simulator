@@ -394,7 +394,7 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [yellow]Active Effects[/]:")
         for active_effect in char.effects_module.active_effects:
             effect_info = f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
-            if active_effect.duration > 0:
+            if active_effect.duration and active_effect.duration > 0:
                 effect_info += f" ({active_effect.duration} turns remaining)"
             cprint(Padding(effect_info, (0, 4)))
 

@@ -1,10 +1,15 @@
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
-from typing import Any, Generator, Iterator, Optional
-from core.constants import *
+from typing import Any, Iterator, Optional
+from core.constants import BonusType, DamageType
 from core.utils import cprint, get_max_roll
 from combat.damage import DamageComponent
-from effects import *
+from effects.base_effect import Effect
+from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.healing_over_time_effect import HealingOverTimeEffect
+from effects.incapacitating_effect import IncapacitatingEffect
+from effects.modifier_effect import ModifierEffect
+from effects.trigger_effect import TriggerEffect
 
 
 class ActiveEffect:
@@ -13,7 +18,11 @@ class ActiveEffect:
     """
 
     def __init__(
-        self, source: Any, target: Any, effect: Effect, mind_level: int
+        self,
+        source: Any,
+        target: Any,
+        effect: Effect,
+        mind_level: int,
     ) -> None:
         self.source: Any = source  # The caster
         self.target: Any = target  # The recipient
