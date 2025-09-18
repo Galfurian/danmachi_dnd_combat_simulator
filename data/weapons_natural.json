@@ -1,11 +1,11 @@
 [
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Fangs",
         "description": "A set of sharp fangs used for biting and tearing.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Bite",
                 "action_type": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
@@ -20,12 +20,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Claws",
         "description": "A natural weapon used by many creatures, capable of slashing attacks.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Claw",
                 "action_type": "STANDARD",
                 "description": "A sharp claw attack that can slash through armor.",
@@ -40,12 +40,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Worm Mouth",
         "description": "A large, gaping mouth used by worm-like creatures to engulf prey.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Bite",
                 "action_type": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
@@ -60,12 +60,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Mandibles",
         "description": "A powerful biting weapon used by insectoid creatures.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Crush",
                 "action_type": "STANDARD",
                 "description": "A crushing mandible attack that can break bones.",
@@ -80,12 +80,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Acid gland",
         "description": "A specialized organ that produces corrosive acid.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Acid spit",
                 "action_type": "STANDARD",
                 "description": "A glob of acid that splashes on impact.",
@@ -100,12 +100,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Leap",
         "description": "A powerful leap attack that can knock down opponents.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Pounce",
                 "action_type": "STANDARD",
                 "description": "A leaping attack that can knock down foes.",
@@ -120,12 +120,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Tail",
         "description": "A sweeping attack with the tail that can knock opponents off balance.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Tail swipe",
                 "action_type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
@@ -141,12 +141,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Fist",
         "description": "A natural weapon used for punching and striking.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Punch",
                 "action_type": "STANDARD",
                 "description": "A quick punch that can stun opponents.",
@@ -161,12 +161,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Massive Fist",
         "description": "A large fist capable of delivering powerful strikes that can devastate opponents.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Punch",
                 "action_type": "STANDARD",
                 "description": "A devastating punch that can crush bones and break armor.",
@@ -181,12 +181,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Massive Claws",
         "description": "A set of large claws capable of delivering powerful slashing attacks.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Claw",
                 "action_type": "STANDARD",
                 "description": "A powerful claw attack that can slash through armor.",
@@ -201,12 +201,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Massive Tail",
         "description": "A powerful tail capable of delivering devastating blows.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Tail swipe",
                 "action_type": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
@@ -222,12 +222,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Venomous Claws",
         "description": "Claws that have been enhanced with a potent venom, dealing increased damage and poisoning victims over time.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Claw",
                 "action_type": "STANDARD",
                 "description": "A venomous claw attack that slashes and applies a lingering poison effect.",
@@ -240,24 +240,24 @@
                 ],
                 "effect": {
                     "name": "Poison",
+                    "effect_type": "DamageOverTimeEffect",
                     "description": "A venomous toxin that causes ongoing damage over time.",
                     "duration": 3,
                     "damage": {
                         "damage_roll": "1D4",
                         "damage_type": "POISON"
-                    },
-                    "class": "DamageOverTimeEffect"
+                    }
                 }
             }
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Needle Spikes",
         "description": "Sharp needle-like spikes that protrude from the creature's body.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Needle Shot",
                 "action_type": "STANDARD",
                 "description": "Shoots sharp needles at the target.",
@@ -272,12 +272,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Wing Dust",
         "description": "Fine powder released from moth wings that can cause drowsiness.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Dust Cloud",
                 "action_type": "STANDARD",
                 "description": "Releases a cloud of sleep-inducing dust.",
@@ -292,12 +292,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Armored Claws",
         "description": "Heavily armored claws that deal crushing damage.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Armored Strike",
                 "action_type": "STANDARD",
                 "description": "A powerful strike with armored claws.",
@@ -312,12 +312,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Horn",
         "description": "A sharp horn used for charging attacks.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Horn Charge",
                 "action_type": "STANDARD",
                 "description": "A powerful charging attack with the horn.",
@@ -332,12 +332,12 @@
         ]
     },
     {
-        "class": "NaturalWeapon",
+        "type": "NaturalWeapon",
         "name": "Flame Bite",
         "description": "A bite attack infused with fire damage.",
         "attacks": [
             {
-                "class": "NaturalAttack",
+                "type": "NaturalAttack",
                 "name": "Fire Bite",
                 "action_type": "STANDARD",
                 "description": "A bite attack that burns the target.",
@@ -354,13 +354,13 @@
                 ],
                 "effect": {
                     "name": "Burning",
+                    "effect_type": "DamageOverTimeEffect",
                     "description": "The target is on fire and takes damage each turn.",
                     "duration": 3,
                     "damage": {
                         "damage_roll": "1D4",
                         "damage_type": "FIRE"
-                    },
-                    "class": "DamageOverTimeEffect"
+                    }
                 }
             }
         ]

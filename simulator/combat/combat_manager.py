@@ -13,6 +13,10 @@ from actions.attacks import BaseAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from character import Character
+from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
+from core.utils import cprint, crule
+from ui.cli_interface import PlayerInterface
+
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_base_attack_action,
@@ -28,9 +32,6 @@ from combat.npc_ai import (
     get_actions_by_type,
     get_natural_attacks,
 )
-from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
-from core.utils import cprint, crule
-from ui.cli_interface import PlayerInterface
 
 FULL_ATTACK = BaseAction(
     name="Full Attack",

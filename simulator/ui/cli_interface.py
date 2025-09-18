@@ -375,29 +375,7 @@ class PlayerInterface:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
-            elif isinstance(spell, SpellBuff):
-                # If the spell has a consumes_on_trigger effect, indicate it.
-                if hasattr(spell.effect, "consumes_on_trigger") and getattr(
-                    spell.effect, "consumes_on_trigger", False
-                ):
-                    prompt += "(one-shot)"
-                if max_targets > 1:
-                    prompt += f" (up to {max_targets} targets)"
-
-                # Iterate over each modifier and bonus (only for effects that have modifiers).
-                if hasattr(spell.effect, "modifiers"):
-                    for modifier in getattr(spell.effect, "modifiers", []):
-                        bonus_type = modifier.bonus_type
-                        value = modifier.value
-                        if isinstance(value, DamageComponent):
-                            prompt += (
-                                f" {simplify_expression(value.damage_roll, variables)} "
-                                f"{value.damage_type.emoji} {value.damage_type.colored_name}"
-                            )
-                        else:
-                            prompt += f" {value} to {bonus_type.name.title()}"
-                prompt += "\n"
-            elif isinstance(spell, SpellDebuff):
+            elif isinstance(spell, SpellBuff | SpellDebuff):
                 # Get the modifier expressions for debuffs.
                 modifiers = spell.get_modifier_expressions(actor, mind_level)
 

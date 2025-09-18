@@ -8,7 +8,7 @@ from combat.damage import (
 )
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.abilities.base_ability import BaseAbility
 
@@ -24,6 +24,16 @@ class AbilityOffensive(BaseAbility):
     damage: list[DamageComponent] = Field(
         description="List of damage components for this ability",
     )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "AbilityOffensive":
+        """Validates fields after model initialization."""
+        if not self.damage or not isinstance(self.damage, list):
+            raise ValueError("damage must be a non-empty list of DamageComponent")
+        # Remove spaces before and after '+' and '-'.
+        self.attack_roll = self.attack_roll.replace(" +", "+").replace("+ ", "+")
+        self.attack_roll = self.attack_roll.replace(" -", "-").replace("- ", "-")
+        return self
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this offensive ability against a target.

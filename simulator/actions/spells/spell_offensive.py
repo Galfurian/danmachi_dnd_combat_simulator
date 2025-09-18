@@ -9,8 +9,7 @@ from core.constants import (
     BonusType,
 )
 from core.utils import cprint
-from effects.base_effect import Effect
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.spells.base_spell import Spell
 
@@ -28,10 +27,13 @@ class SpellOffensive(Spell):
     damage: list[DamageComponent] = Field(
         description="List of damage components for this ability",
     )
-    effect: Effect | None = Field(
-        None,
-        description="An optional beneficial effect that this healing spell applies.",
-    )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "SpellOffensive":
+        """Validates fields after model initialization."""
+        if not self.damage or not isinstance(self.damage, list):
+            raise ValueError("damage must be a non-empty list of DamageComponent")
+        return self
 
     # ============================================================================
     # SPELL ATTACK METHODS

@@ -17,12 +17,11 @@ import logging
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
-import sys
 
 from character import Character, load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
-from core.sheets import crule, print_all_available_content, print_character_sheet
+from core.sheets import crule
 from core.utils import cprint
 
 # Sets up basic logging configuration.
@@ -50,39 +49,20 @@ cprint(
 
 # =============================================================================
 
-cprint("Loading repository...", style="bold green")
+crule("Initiliaze Data", style="bold green")
 
-# Load the repository of content.
+cprint("Loading repository...", style="bold green")
 repo = ContentRepository(data_dir)
 
-# =============================================================================
-
 cprint("Loading enemies...", style="bold green")
-
-# Load the enemies.
-enemies: dict[str, Character] = load_characters(
-    data_dir / "enemies_danmachi_f1_f10.json"
-)
-
-# =============================================================================
+enemies = load_characters(data_dir / "enemies_danmachi_f1_f10.json")
 
 cprint("Loading characters...", style="bold green")
-
-# Load the characters.
 characters: dict[str, Character] = load_characters(data_dir / "characters.json")
 
-# =============================================================================
-
 cprint("Loading player character...", style="bold green")
-
-# Load the player character.
 player = load_character(data_dir / "player.json")
-if player is None:
-    print(
-        "Failed to load player character. Please check the data file",
-        {"data_file": str(data_dir / "player.json"), "context": "main_startup"},
-    )
-    sys.exit(1)
+assert player is not None, "Player character could not be loaded."
 
 # =============================================================================
 
@@ -146,7 +126,6 @@ def make_names_unique(in_list: list[Character]) -> None:
 
 
 if __name__ == "__main__":
-
     # Test the new incapacitation system with Sleep Powder
     add_to_list(enemies, opponents, "Purple Moth")
     # add_to_list(enemies, opponents, "Minotaur Boss")
@@ -165,6 +144,7 @@ if __name__ == "__main__":
 
     combat_manager = CombatManager(player, opponents, allies)
 
+    cprint()
     crule(":crossed_swords:  Initializing Combat", style="bold green")
     # Call the new initialize method.
     combat_manager.initialize()

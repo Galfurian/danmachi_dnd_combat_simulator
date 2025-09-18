@@ -2,7 +2,7 @@ from typing import Any
 
 from core.constants import DamageType
 from core.utils import roll_and_describe
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class DamageComponent(BaseModel):
@@ -19,6 +19,18 @@ class DamageComponent(BaseModel):
     damage_type: DamageType = Field(
         description="The type of damage (e.g., PHYSICAL, FIRE)",
     )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "DamageComponent":
+        """Validates fields after model initialization."""
+        if not self.damage_roll:
+            raise ValueError("damage_roll must be a non-empty string")
+        if not isinstance(self.damage_type, DamageType):
+            raise ValueError("damage_type must be an instance of DamageType")
+        # Remove space before and after '+' in damage_roll.
+        self.damage_roll = self.damage_roll.replace(" +", "+").replace("+ ", "+")
+        self.damage_roll = self.damage_roll.replace(" -", "-").replace("- ", "-")
+        return self
 
     def __str__(self) -> str:
         return (

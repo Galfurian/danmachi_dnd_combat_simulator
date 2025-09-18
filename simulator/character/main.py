@@ -123,6 +123,13 @@ class Character:
     # These properties delegate to the stats module for calculation
 
     @property
+    def colored_name(self) -> str:
+        """
+        Returns the character's name with color coding based on character type.
+        """
+        return self.char_type.colorize(self.name)
+
+    @property
     def HP_MAX(self) -> int:
         """Returns the maximum HP of the character."""
         return self.stats_module.HP_MAX

@@ -6,7 +6,7 @@ including game constants, dice rolling mechanics, content loading, and display u
 """
 
 # Import key classes for package-level access
-from .constants import DamageType, BonusType
+from .constants import BonusType, DamageType
 from .utils import cprint
 
-__all__ = ["DamageType", "BonusType", "cprint"]
+__all__ = ["BonusType", "DamageType", "cprint"]

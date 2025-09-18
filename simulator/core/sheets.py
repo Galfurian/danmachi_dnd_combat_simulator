@@ -1,4 +1,3 @@
-import sys
 from actions.abilities import *
 from actions.base_action import BaseAction
 from actions.spells import *
@@ -533,11 +532,11 @@ def print_all_available_content() -> None:
                 f"mind-mult: {char_class.mind_mult}"
             )
             if char_class.actions_by_level:
-                cprint(f"  [magenta]Actions[/]:")
+                cprint("  [magenta]Actions[/]:")
                 for level, actions in char_class.actions_by_level.items():
                     cprint(f"    Level {level}: {actions}")
             if char_class.spells_by_level:
-                cprint(f"  [cyan]Abilities[/]:")
+                cprint("  [cyan]Abilities[/]:")
                 for level, spells in char_class.spells_by_level.items():
                     cprint(f"    Level {level}: {spells}")
 
@@ -546,11 +545,11 @@ def print_all_available_content() -> None:
         for name, race in sorted(repo.races.items()):
             cprint(f"[blue]{name:16}[/] natural ac: +{race.natural_ac}")
             if race.default_actions:
-                cprint(f"  [magenta]Actions[/]:")
+                cprint("  [magenta]Actions[/]:")
                 for action in race.default_actions:
                     cprint(f"    {action}")
             if race.default_spells:
-                cprint(f"  [cyan]Spell[/]:")
+                cprint("  [cyan]Spell[/]:")
                 for spell in race.default_spells:
                     cprint(f"    {spell}")
 

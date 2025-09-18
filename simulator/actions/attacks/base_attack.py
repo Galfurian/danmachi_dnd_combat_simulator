@@ -11,8 +11,7 @@ from core.constants import (
     BonusType,
 )
 from core.utils import cprint, debug
-from effects.base_effect import Effect
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.base_action import BaseAction
 
@@ -34,10 +33,18 @@ class BaseAttack(BaseAction):
     damage: list[DamageComponent] = Field(
         description="List of damage components for the attack",
     )
-    effect: Effect | None = Field(
-        default=None,
-        description="Effect applied by this attack (if any)",
-    )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "BaseAttack":
+        """Validates fields after model initialization."""
+        if not self.attack_roll:
+            raise ValueError("attack_roll must be a non-empty string")
+        if not self.damage or not isinstance(self.damage, list):
+            raise ValueError("damage must be a non-empty list of DamageComponent")
+        # Remove spaces before and after '+' and '-'.
+        self.attack_roll = self.attack_roll.replace(" +", "+").replace("+ ", "+")
+        self.attack_roll = self.attack_roll.replace(" -", "-").replace("- ", "-")
+        return self
 
     # ============================================================================
     # COMBAT EXECUTION METHODS

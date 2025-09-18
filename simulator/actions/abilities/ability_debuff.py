@@ -2,12 +2,9 @@
 
 from typing import Any
 
-from core.constants import (
-    GLOBAL_VERBOSE_LEVEL,
-    ActionCategory,
-)
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
-from effects.modifier_effect import DebuffEffect
+from pydantic import model_validator
 
 from actions.abilities.base_ability import BaseAbility
 
@@ -20,30 +17,38 @@ class AbilityDebuff(BaseAbility):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
+    @model_validator(mode="after")
+    def validate_fields(self) -> "AbilityDebuff":
+        """Ensure that the effect field is properly set."""
+        from effects.base_effect import Effect
+
+        if not isinstance(self.effect, Effect):
+            raise ValueError("AbilityDebuff must have a valid effect assigned.")
+        return self
+
     def execute(self, actor: Any, target: Any) -> bool:
         """
-        Execute this buff ability on a target in combat.
+        Execute this debuff ability on a target in combat.
 
         Args:
             actor (Any): The character using the ability.
-            target (Any): The character being buffed.
+            target (Any): The character being debuffed.
 
         Returns:
             bool: True if ability was executed successfully, False on system errors.
 
         """
-        # Validate actor and target.
-        if not self._validate_character(actor):
-            return False
-        if not self._validate_character(target):
-            return False
+        from character.main import Character
+        from effects.modifier_effect import DebuffEffect
+
         # Validate effect.
-        if not self.effect or not isinstance(self.effect, DebuffEffect):
-            print(
-                f"{self.name} has invalid effect type: {type(self.effect).__name__}",
-                {"name": self.name, "effect_type": type(self.effect).__name__},
-            )
-            return False
+        assert self.effect is not None
+        assert isinstance(self.effect, DebuffEffect)
+        assert actor is not None, "Actor is required"
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert target is not None, "Target is required"
+        assert isinstance(target, Character), "Target must be an object"
+
         # Validate cooldown.
         if actor.is_on_cooldown(self):
             print(
@@ -52,35 +57,21 @@ class AbilityDebuff(BaseAbility):
             )
             return False
 
-        # Get display strings for logging.
-        actor_str, target_str = self._get_display_strings(actor, target)
-
         # Apply the buff effect
         effect_applied = self._common_apply_effect(actor, target, self.effect)
 
-        # Display results
-        effect_color = self.effect.color
-
-        msg = f"    ✨ {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
-
-        if GLOBAL_VERBOSE_LEVEL == 0:
+        # Display the outcome.
+        msg = f"    ✨ {actor.colored_name} "
+        msg += f"uses [bold blue]{self.name}[/] "
+        msg += f"on {target.colored_name}"
+        if effect_applied:
+            msg += f" applying {self.effect.colored_name}"
+        else:
+            msg += f" but fails to apply {self.effect.colored_name}"
+        msg += "."
+        if GLOBAL_VERBOSE_LEVEL >= 1:
             if effect_applied:
-                msg += f" applying [{effect_color}]{self.effect.name}[/]"
-            else:
-                msg += f" but fails to apply [{effect_color}]{self.effect.name}[/]"
-            msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
-            if effect_applied:
-                msg += f" successfully applying [{effect_color}]{self.effect.name}[/]"
-            else:
-                msg += (
-                    f" but {target_str} resists [{effect_color}]{self.effect.name}[/]"
-                )
-            msg += ".\n"
-
-            if effect_applied and hasattr(self.effect, "description"):
-                msg += f"        Effect: {self.effect.description}"
-
+                msg += f"\n        Effect: {self.effect.description}"
         cprint(msg)
 
         return True

@@ -55,6 +55,10 @@ class BaseAction(BaseModel):
         default_factory=list,
         description="Restrictions on valid targets",
     )
+    effect: Effect | None = Field(
+        default=None,
+        description="An optional beneficial effect that this ability applies.",
+    )
 
     # For compatibility with old code using _cooldown and _maximum_uses
     @property
@@ -233,12 +237,12 @@ class BaseAction(BaseModel):
         # Build attack expression
         expr = "1D20"
         if attack_bonus_expr:
-            expr += f" + {attack_bonus_expr}"
+            expr += f"+{attack_bonus_expr}"
 
         # Process bonus list
         for bonus in bonus_list:
             if bonus:  # Only add non-empty bonuses
-                expr += f" + {bonus}"
+                expr += f"+{bonus}"
 
         # Get actor variables and ensure it's a dict
         variables = actor.get_expression_variables()

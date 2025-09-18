@@ -1,6 +1,6 @@
 [
     {
-        "class": "SpellHeal",
+        "type": "SpellHeal",
         "name": "Cure Wounds",
         "action_type": "STANDARD",
         "description": "A basic healing spell that restores a small amount of health.",
@@ -17,7 +17,7 @@
         ]
     },
     {
-        "class": "SpellHeal",
+        "type": "SpellHeal",
         "name": "Healing Word",
         "action_type": "BONUS",
         "description": "A quick healing spell that can be cast as a bonus action.",
@@ -34,7 +34,7 @@
         ]
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Bless",
         "action_type": "STANDARD",
         "description": "A spell that blesses allies, enhancing their attacks.",
@@ -52,7 +52,7 @@
         ],
         "effect": {
             "name": "Bless",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Adds a dice to the attack rolls.",
             "duration": 10,
             "modifiers": [
@@ -64,7 +64,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Shield of Faith",
         "action_type": "BONUS",
         "description": "A protective spell that increases the target's armor class.",
@@ -79,7 +79,7 @@
         "requires_concentration": true,
         "effect": {
             "name": "Shield of Faith",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Increases the target's armor class.",
             "duration": 10,
             "modifiers": [
@@ -91,7 +91,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Divine Favor",
         "action_type": "BONUS",
         "description": "A spell that grants divine power to enhance attacks.",
@@ -105,7 +105,7 @@
         ],
         "effect": {
             "name": "Divine Favor",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Adds radiant damage to successful attacks.",
             "duration": 10,
             "modifiers": [
@@ -120,7 +120,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Divine Smite",
         "action_type": "BONUS",
         "description": "A powerful smite that deals extra radiant damage on a successful hit.",
@@ -135,7 +135,7 @@
         ],
         "effect": {
             "name": "Divine Smite",
-            "class": "TriggerEffect",
+            "type": "TriggerEffect",
             "description": "Next weapon attack deals extra radiant damage.",
             "trigger_condition": {
                 "trigger_type": "on_hit",
@@ -152,7 +152,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Searing Smite",
         "action_type": "BONUS",
         "description": "Your next weapon attack deals extra fire damage and ignites the target.",
@@ -167,7 +167,7 @@
         ],
         "effect": {
             "name": "Searing Smite",
-            "class": "TriggerEffect",
+            "type": "TriggerEffect",
             "description": "Next weapon attack deals extra fire damage and applies burning.",
             "duration": 10,
             "trigger_condition": {
@@ -183,7 +183,7 @@
                         "damage_roll": "[MIND]D6",
                         "damage_type": "FIRE"
                     },
-                    "class": "DamageOverTimeEffect"
+                    "type": "DamageOverTimeEffect"
                 }
             ],
             "damage_bonus": [
@@ -196,7 +196,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Wrathful Smite",
         "action_type": "BONUS",
         "description": "Your next weapon attack deals extra psychic damage and fills the target with dread.",
@@ -211,7 +211,7 @@
         ],
         "effect": {
             "name": "Wrathful Smite",
-            "class": "TriggerEffect",
+            "type": "TriggerEffect",
             "description": "Next weapon attack deals extra psychic damage and applies fear.",
             "duration": 10,
             "trigger_condition": {
@@ -229,7 +229,7 @@
                             "value": "-2"
                         }
                     ],
-                    "class": "DebuffEffect"
+                    "type": "DebuffEffect"
                 }
             ],
             "damage_bonus": [
@@ -243,7 +243,7 @@
     },
     {
         "name": "Shatter",
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "action_type": "STANDARD",
         "description": "A powerful spell that creates a loud, thunderous noise that damages enemies in a wide area.",
         "level": 2,
@@ -265,7 +265,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Poison Spit",
         "action_type": "STANDARD",
         "description": "A ranged attack that spits poison at the target, dealing damage and applying a poison effect.",
@@ -283,7 +283,7 @@
         ],
         "effect": {
             "name": "Poisoned",
-            "class": "DamageOverTimeEffect",
+            "type": "DamageOverTimeEffect",
             "description": "Deals poison damage over time.",
             "duration": 3,
             "damage": {
@@ -293,7 +293,7 @@
         }
     },
     {
-        "class": "SpellDebuff",
+        "type": "SpellDebuff",
         "name": "Sleep Powder",
         "action_type": "STANDARD",
         "description": "A magical powder that induces sleep in the target.",
@@ -314,11 +314,11 @@
             "save_ends": true,
             "save_dc": 13,
             "save_stat": "CON",
-            "class": "IncapacitatingEffect"
+            "type": "IncapacitatingEffect"
         }
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Magic Missile",
         "action_type": "STANDARD",
         "description": "A missile of magical energy darts forth from your fingertip and strikes its target, dealing force damage.",
@@ -333,7 +333,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Fire Bolt",
         "action_type": "STANDARD", 
         "description": "You hurl a mote of fire at a creature or object within range.",
@@ -348,7 +348,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Eldritch Blast",
         "action_type": "STANDARD",
         "description": "A beam of crackling energy streaks toward a creature within range.",
@@ -363,7 +363,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Burning Hands",
         "action_type": "STANDARD",
         "description": "A thin sheet of flames shoots forth from your outstretched fingertips.",
@@ -379,7 +379,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Thunderwave",
         "action_type": "STANDARD",
         "description": "A wave of thunderous force sweeps out from you.",
@@ -395,7 +395,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Scorching Ray",
         "action_type": "STANDARD",
         "description": "You create three rays of fire and hurl them at targets within range.",
@@ -411,7 +411,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Fireball",
         "action_type": "STANDARD",
         "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
@@ -427,7 +427,7 @@
         ]
     },
     {
-        "class": "SpellOffensive",
+        "type": "SpellOffensive",
         "name": "Lightning Bolt",
         "action_type": "STANDARD",
         "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out from you in a direction you choose.",
@@ -443,7 +443,7 @@
         ]
     },
     {
-        "class": "SpellHeal",
+        "type": "SpellHeal",
         "name": "Prayer of Healing",
         "action_type": "STANDARD",
         "description": "Up to six creatures of your choice that you can see within range each regain hit points.",
@@ -454,7 +454,7 @@
         "target_restrictions": ["SELF", "ALLY"]
     },
     {
-        "class": "SpellHeal",
+        "type": "SpellHeal",
         "name": "Mass Cure Wounds",
         "action_type": "STANDARD",
         "description": "A wave of healing energy washes out from a point of your choice within range.",
@@ -465,7 +465,7 @@
         "target_restrictions": ["SELF", "ALLY"]
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Mage Armor",
         "action_type": "STANDARD",
         "description": "You touch a willing creature who isn't wearing armor, and a protective magical force surrounds it.",
@@ -474,7 +474,7 @@
         "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "name": "Mage Armor",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Base AC becomes 13 + Dex modifier.",
             "duration": 80,
             "modifiers": [
@@ -486,7 +486,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Heroism",
         "action_type": "STANDARD",
         "description": "A willing creature you touch is imbued with bravery.",
@@ -496,7 +496,7 @@
         "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "name": "Heroism",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Gain temporary hit points and immunity to being frightened.",
             "duration": 10,
             "modifiers": [
@@ -508,7 +508,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Barkskin",
         "action_type": "STANDARD",
         "description": "You touch a willing creature. Until the spell ends, the target's skin has a rough, bark-like appearance, and the target's AC can't be less than 16.",
@@ -518,7 +518,7 @@
         "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "name": "Barkskin",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "AC cannot be less than 16.",
             "duration": 10,
             "modifiers": [
@@ -530,7 +530,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Haste",
         "action_type": "STANDARD",
         "description": "Choose a willing creature that you can see within range. Until the spell ends, the target's speed is doubled.",
@@ -540,7 +540,7 @@
         "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "name": "Haste",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Doubled speed, +2 AC, advantage on Dexterity saving throws, and an additional action.",
             "duration": 10,
             "modifiers": [
@@ -556,7 +556,7 @@
         }
     },
     {
-        "class": "SpellDebuff",
+        "type": "SpellDebuff",
         "name": "Hold Person",
         "action_type": "STANDARD",
         "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.",
@@ -572,11 +572,11 @@
             "save_ends": true,
             "save_dc": 13,
             "save_stat": "WIS",
-            "class": "IncapacitatingEffect"
+            "type": "IncapacitatingEffect"
         }
     },
     {
-        "class": "SpellDebuff",
+        "type": "SpellDebuff",
         "name": "Slow",
         "action_type": "STANDARD",
         "description": "You alter time around up to six creatures of your choice in a 40-foot cube within range.",
@@ -589,7 +589,7 @@
             "name": "Slowed",
             "description": "Speed halved, -2 penalty to AC and Dexterity saving throws.",
             "duration": 10,
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "modifiers": [
                 {
                     "bonus_type": "AC",
@@ -603,7 +603,7 @@
         }
     },
     {
-        "class": "SpellDebuff",
+        "type": "SpellDebuff",
         "name": "Counterspell",
         "action_type": "REACTION",
         "description": "You attempt to interrupt a creature in the process of casting a spell.",
@@ -614,11 +614,11 @@
             "name": "Spell Interrupted",
             "description": "The target's spell is countered and has no effect.",
             "duration": 1,
-            "class": "BuffEffect"
+            "type": "BuffEffect"
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Spiritual Weapon",
         "action_type": "BONUS",
         "description": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again.",
@@ -627,7 +627,7 @@
         "target_restrictions": ["SELF"],
         "effect": {
             "name": "Spiritual Weapon",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Creates a spectral weapon that can attack as a bonus action.",
             "duration": 10,
             "modifiers": [
@@ -642,7 +642,7 @@
         }
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Hunter's Mark",
         "action_type": "BONUS",
         "description": "You choose a creature you can see within range and mystically mark it as your quarry.",
@@ -652,7 +652,7 @@
         "target_restrictions": ["ENEMY"],
         "effect": {
             "name": "Hunter's Mark",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "Marked target takes extra damage from your attacks.",
             "duration": 10,
             "modifiers": [
@@ -667,7 +667,7 @@
         }
     },
     {
-        "class": "SpellHeal",
+        "type": "SpellHeal",
         "name": "Lesser Restoration",
         "action_type": "STANDARD",
         "description": "You touch a creature and can end either one disease or one condition afflicting it.",
@@ -677,7 +677,7 @@
         "target_restrictions": ["SELF", "ALLY"]
     },
     {
-        "class": "SpellBuff",
+        "type": "SpellBuff",
         "name": "Invisibility",
         "action_type": "STANDARD",
         "description": "A creature you touch becomes invisible until the spell ends.",
@@ -687,7 +687,7 @@
         "target_restrictions": ["SELF", "ALLY"],
         "effect": {
             "name": "Invisible",
-            "class": "BuffEffect",
+            "type": "BuffEffect",
             "description": "The target is invisible and has advantage on stealth.",
             "duration": 10,
             "modifiers": [

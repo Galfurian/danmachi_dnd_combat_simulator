@@ -14,8 +14,7 @@ from core.utils import (
     simplify_expression,
     substitute_variables,
 )
-from effects.base_effect import Effect
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.spells.base_spell import Spell
 
@@ -33,10 +32,16 @@ class SpellHeal(Spell):
     heal_roll: str = Field(
         description="The expression used to calculate healing amount.",
     )
-    effect: Effect | None = Field(
-        None,
-        description="An optional beneficial effect that this healing spell applies.",
-    )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "SpellHeal":
+        """Validates fields after model initialization."""
+        if not self.heal_roll or not isinstance(self.heal_roll, str):
+            raise ValueError("heal_roll must be a non-empty string")
+        # Remove spaces before and after '+' and '-'.
+        self.heal_roll = self.heal_roll.replace(" +", "+").replace("+ ", "+")
+        self.heal_roll = self.heal_roll.replace(" -", "-").replace("- ", "-")
+        return self
 
     # ============================================================================
     # HEALING SPELL METHODS
@@ -86,9 +91,7 @@ class SpellHeal(Spell):
         if GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" ({heal_desc})"
         if effect_applied and self.effect:
-            msg += (
-                f" and applying [{self.effect.color}]{self.effect.name}[/]"
-            )
+            msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
         elif self.effect and not effect_applied:
             msg += f" but failing to apply [{self.effect.color}]{self.effect.name}[/]"
         msg += "."

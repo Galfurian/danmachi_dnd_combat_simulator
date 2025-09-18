@@ -6,7 +6,6 @@ from typing import Any
 from core.utils import (
     evaluate_expression,
 )
-from effects.base_effect import Effect
 from pydantic import Field
 
 from actions.base_action import BaseAction
@@ -21,10 +20,6 @@ class BaseAbility(BaseAction, ABC):
     to implement specific behavior through abstract methods.
     """
 
-    effect: Effect | None = Field(
-        None,
-        description="Effect applied by this ability (if any)",
-    )
     target_expr: str = Field(
         "",
         description="Expression defining number of targets.",

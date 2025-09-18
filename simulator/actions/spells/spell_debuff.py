@@ -3,13 +3,9 @@
 from typing import Any
 
 from combat.damage import DamageComponent
-from core.constants import ActionCategory, BonusType
-from core.utils import (
-    cprint,
-    substitute_variables,
-)
-from effects.base_effect import Effect
-from pydantic import Field
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.utils import cprint, substitute_variables
+from pydantic import model_validator
 
 from actions.spells.base_spell import Spell
 
@@ -24,10 +20,14 @@ class SpellDebuff(Spell):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
-    # Assign the effect to the spell.
-    effect: Effect = Field(
-        description="The beneficial effect that this buff spell applies.",
-    )
+    @model_validator(mode="after")
+    def validate_fields(self) -> "SpellDebuff":
+        """Validates fields after model initialization."""
+        from effects.base_effect import Effect
+
+        if not isinstance(self.effect, Effect):
+            raise ValueError("effect must be a valid Effect instance")
+        return self
 
     # ============================================================================
     # DEBUFF SPELL METHODS
@@ -45,6 +45,14 @@ class SpellDebuff(Spell):
             bool: True if spell was cast successfully, False on failure.
 
         """
+        from character.main import Character
+        from effects.modifier_effect import DebuffEffect
+
+        # Validate effect.
+        assert isinstance(self.effect, DebuffEffect)
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert isinstance(target, Character), "Target must be an object"
+
         # Call the base class cast_spell to handle common checks.
         if super().cast_spell(actor, target, mind_level) is False:
             return False
@@ -53,74 +61,26 @@ class SpellDebuff(Spell):
         if self.requires_concentration:
             actor.concentration_module.break_concentration()
 
-        # Format character strings for output.
-        actor_str, target_str = self._get_display_strings(actor, target)
-
         # Apply the detrimental effect
-        effect_applied = False
-        save_result = None
-        if self.effect:
-            effect_applied = self._common_apply_effect(
-                actor, target, self.effect, mind_level
-            )
+        effect_applied = self._common_apply_effect(
+            actor,
+            target,
+            self.effect,
+            mind_level,
+        )
 
-            # Check if target made a successful save (effect-dependent)
-            if hasattr(self.effect, "save_type") and hasattr(self.effect, "save_dc"):
-                # This would be handled within apply_effect, but we can track the result
-                # for better feedback messages
-                pass
-
-        # Display debuff results with save information
-        msg = f"    🔮 {actor_str} casts [bold]{self.name}[/] on {target_str} "
+        # Display the outcome.
+        msg = f"    🔮 {actor.colored_name} "
+        msg += f"casts [bold blue]{self.name}[/] "
+        msg += f"on {target.colored_name}"
         if effect_applied:
-            msg += f"applying [{self.effect.color}]{self.effect.name}[/]"
+            msg += f" applying {self.effect.colored_name}"
         else:
-            msg += f"but fails to apply [{self.effect.color}]{self.effect.name}[/]"
-            if save_result:
-                msg += " (saved)"
+            msg += f" but fails to apply {self.effect.colored_name}"
         msg += "."
-
+        if GLOBAL_VERBOSE_LEVEL >= 1:
+            if effect_applied:
+                msg += f"\n        Effect: {self.effect.description}"
         cprint(msg)
 
         return True
-
-    # ============================================================================
-    # EFFECT ANALYSIS METHODS
-    # ============================================================================
-
-    def get_modifier_expressions(
-        self, actor: Any, mind_level: int = 1
-    ) -> dict[BonusType, str]:
-        """Get modifier expressions with variables substituted for display.
-
-        Args:
-            actor (Any): The character casting the spell.
-            mind_level (int | None): The spell level to use for MIND variable substitution.
-
-        Returns:
-            dict[BonusType, str]: Dictionary mapping bonus types to their expressions.
-
-        """
-        if mind_level is None:
-            mind_level = 1
-
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
-        expressions: dict[BonusType, str] = {}
-
-        # Handle effects that have modifiers (ModifierEffect)
-        if hasattr(self.effect, "modifiers"):
-            modifiers = getattr(self.effect, "modifiers", [])
-            for modifier in modifiers:
-                bonus_type = modifier.bonus_type
-                value = modifier.value
-                if isinstance(value, DamageComponent):
-                    expressions[bonus_type] = substitute_variables(
-                        value.damage_roll, variables
-                    )
-                elif isinstance(value, str):
-                    expressions[bonus_type] = substitute_variables(value, variables)
-                else:
-                    expressions[bonus_type] = str(value)
-
-        return expressions

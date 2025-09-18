@@ -52,7 +52,7 @@ class ContentRepository(metaclass=Singleton):
         elif not hasattr(self, "loaded"):
             raise ValueError(
                 "ContentRepository must be initialized with a valid data_dir on first use."
-            )   
+            )
 
     def reload(self, root: Path) -> None:
         """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
@@ -227,10 +227,7 @@ class ContentRepository(metaclass=Singleton):
         """
         armors = {}
         for armor_data in data:
-            armor = Armor.from_dict(armor_data)
-            if armor.name in armors:
-                raise ValueError(f"Duplicate armor name: {armor.name}")
-            armors[armor.name] = armor
+            armors[armor_data["name"]] = Armor(**armor_data)
         return armors
 
     @staticmethod
@@ -250,10 +247,7 @@ class ContentRepository(metaclass=Singleton):
         """
         weapons: dict[str, Weapon] = {}
         for weapon_data in data:
-            weapon = Weapon.from_dict(weapon_data)
-            if weapon.name in weapons:
-                raise ValueError(f"Duplicate weapon name: {weapon.name}")
-            weapons[weapon.name] = weapon
+            weapons[weapon_data["name"]] = Weapon(**weapon_data)
         return weapons
 
     def _load_actions(self, data: list[dict]) -> dict[str, BaseAction]:

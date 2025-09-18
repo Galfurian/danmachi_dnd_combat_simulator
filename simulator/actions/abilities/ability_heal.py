@@ -10,7 +10,7 @@ from core.utils import (
     roll_and_describe,
     substitute_variables,
 )
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.abilities.base_ability import BaseAbility
 
@@ -20,10 +20,19 @@ class AbilityHeal(BaseAbility):
 
     category: ActionCategory = ActionCategory.HEALING
 
-    # Validate the heal_roll expression.
     heal_roll: str = Field(
         description="Expression for healing amount, e.g. '1d8 + 3'",
     )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "AbilityHeal":
+        """Validates fields after model initialization."""
+        if not self.heal_roll or not isinstance(self.heal_roll, str):
+            raise ValueError("heal_roll must be a non-empty string.")
+        # Remove spaces before and after '+' and '-'.
+        self.heal_roll = self.heal_roll.replace(" +", "+").replace("+ ", "+")
+        self.heal_roll = self.heal_roll.replace(" -", "-").replace("- ", "-")
+        return self
 
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute this healing ability on a target.

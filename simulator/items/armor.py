@@ -4,41 +4,52 @@ from typing import Any
 
 from core.constants import ArmorSlot, ArmorType
 from effects.base_effect import Effect
+from pydantic import BaseModel, Field, model_validator
 
 
-class Armor:
+class Armor(BaseModel):
     """
     Represents a piece of armor that can be equipped by characters.
-    
+
     Armor provides Armor Class (AC) bonuses and may have special effects.
     Different armor types (light, medium, heavy) interact differently with
     Dexterity modifiers, and armor can be equipped in different slots.
     """
 
-    def __init__(
-        self,
-        name: str,
-        description: str,
-        ac: int,
-        armor_slot: ArmorSlot,
-        armor_type: ArmorType,
-        max_dex_bonus: int = 0,
-        effect: Effect | None = None,
-    ):
-        self.name = name
-        self.description = description
-        self.ac = ac
-        self.armor_slot: ArmorSlot = armor_slot
-        self.armor_type: ArmorType = armor_type
-        self.max_dex_bonus = max_dex_bonus
-        self.effect: Effect | None = effect
+    name: str = Field(
+        description="The name of the armor piece.",
+    )
+    description: str = Field(
+        description="A brief description of the armor piece.",
+    )
+    ac: int = Field(
+        description="The base Armor Class (AC) bonus provided by this armor piece.",
+        ge=0,
+    )
+    armor_slot: ArmorSlot = Field(
+        description="The slot where this armor piece is equipped (e.g., torso, shield).",
+    )
+    armor_type: ArmorType = Field(
+        description="The type of armor (light, medium, heavy).",
+    )
+    max_dex_bonus: int = Field(
+        default=0,
+        description=(
+            "The maximum Dexterity modifier that can be applied to the AC bonus. "
+            "Relevant for medium armor."
+        ),
+        ge=0,
+    )
+    effect: Effect | None = Field(
+        default=None,
+        description="An optional special effect granted by this armor piece.",
+    )
 
-        self.validate()
-
-    def validate(self) -> None:
+    @model_validator(mode="after")
+    def validate_fields(self) -> "Armor":
         """
         Validate the armor's properties.
-        
+
         Raises:
             AssertionError: If any armor property is invalid.
 
@@ -54,14 +65,15 @@ class Armor:
         assert (
             self.max_dex_bonus >= 0
         ), "Max Dexterity bonus must be a non-negative integer."
+        return self
 
     def get_ac(self, dex_mod: int = 0) -> int:
         """
         Returns the total AC of the armor, considering the Dexterity modifier.
-        
+
         Args:
             dex_mod (int): The character's Dexterity modifier. Defaults to 0.
-            
+
         Returns:
             int: The total AC bonus provided by this armor piece.
 
@@ -77,45 +89,3 @@ class Armor:
         if self.armor_slot == ArmorSlot.SHIELD:
             return self.ac
         return 0
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Convert the armor to a dictionary representation.
-        
-        Returns:
-            dict[str, Any]: Dictionary containing the armor's properties.
-
-        """
-        data = {
-            "name": self.name,
-            "description": self.description,
-            "ac": self.ac,
-            "armor_slot": self.armor_slot.name,
-            "armor_type": self.armor_type.name,
-        }
-        return data
-
-    @staticmethod
-    def from_dict(data: dict[str, Any]) -> "Armor":
-        """
-        Create an Armor instance from a dictionary representation.
-        
-        Args:
-            data (dict[str, Any]): Dictionary containing armor properties.
-            
-        Returns:
-            Armor: A new Armor instance created from the dictionary data.
-            
-        Raises:
-            AssertionError: If the data is None.
-            KeyError: If required keys are missing from the data.
-
-        """
-        assert data is not None, "Data must not be None."
-        return Armor(
-            name=data["name"],
-            description=data.get("description", ""),
-            ac=data["ac"],
-            armor_slot=ArmorSlot[data["armor_slot"]],
-            armor_type=ArmorType[data["armor_type"]],
-        )

@@ -3,8 +3,9 @@
 from abc import abstractmethod
 from typing import Any
 
+from core.constants import BonusType
 from core.utils import evaluate_expression
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from actions.base_action import BaseAction
 
@@ -42,6 +43,16 @@ class Spell(BaseAction):
         default=False,
         description="Whether the spell requires concentration to maintain.",
     )
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "Spell":
+        """Validates fields after model initialization."""
+        if not self.mind_cost or not isinstance(self.mind_cost, list):
+            raise ValueError("mind_cost must be a non-empty list of integers")
+        for cost in self.mind_cost:
+            if not isinstance(cost, int) or cost < 1:
+                raise ValueError("Each mind cost must be a positive integer")
+        return self
 
     # ============================================================================
     # TARGETING SYSTEM METHODS
@@ -107,10 +118,12 @@ class Spell(BaseAction):
             bool: True if spell was cast successfully, False on failure.
 
         """
-        if not self._validate_character(actor):
-            return False
-        if not self._validate_character(target):
-            return False
+        from character.main import Character
+
+        assert actor is not None, "Actor is required"
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert target is not None, "Target is required"
+        assert isinstance(target, Character), "Target must be an object"
 
         # Validate mind cost against the specified level.
         if mind_level not in self.mind_cost:
@@ -147,6 +160,54 @@ class Spell(BaseAction):
             return False
 
         return True
+
+    # ============================================================================
+    # EFFECT ANALYSIS METHODS
+    # ============================================================================
+
+    def get_modifier_expressions(
+        self,
+        actor: Any,
+        mind_level: int = 1,
+    ) -> dict[BonusType, str]:
+        """
+        Get modifier expressions with variables substituted for display.
+
+        Args:
+            actor (Any):
+                The character casting the spell.
+            mind_level (int):
+                The spell level to use for MIND variable substitution.
+
+        Returns:
+            dict[BonusType, str]:
+                Dictionary mapping bonus types to their expressions.
+
+        """
+        from effects.modifier_effect import ModifierEffect
+        from combat.damage import DamageComponent
+        from core.utils import substitute_variables
+
+        assert isinstance(self.effect, ModifierEffect)
+        assert mind_level >= 1
+
+        variables = actor.get_expression_variables()
+        variables["MIND"] = mind_level
+        expressions: dict[BonusType, str] = {}
+
+        for modifier in self.effect.modifiers:
+            bonus_type = modifier.bonus_type
+            value = modifier.value
+            if isinstance(value, DamageComponent):
+                expressions[bonus_type] = substitute_variables(
+                    value.damage_roll, variables
+                )
+            elif isinstance(value, str):
+                expressions[bonus_type] = substitute_variables(value, variables)
+            else:
+                expressions[bonus_type] = str(value)
+
+        return expressions
 
 
 def deserialze_spell(data: dict[str, Any]) -> Spell | None:

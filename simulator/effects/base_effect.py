@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, Literal
 
 from core.constants import BonusType
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Effect(BaseModel):
@@ -37,9 +37,39 @@ class Effect(BaseModel):
         return "dim white"  # Default fallback
 
     @property
+    def colored_name(self) -> str:
+        """Returns the effect name with color formatting applied."""
+        return self.colorize(self.display_name)
+
+    @property
     def emoji(self) -> str:
         """Returns the emoji associated with this effect type."""
         return "❔"  # Default fallback
+
+    @model_validator(mode="before")
+    def cast_to_child(cls, values: dict[str, Any]) -> "Any":
+        """Casts the base Effect to the appropriate subclass based on the 'type' field."""
+        from .damage_over_time_effect import DamageOverTimeEffect
+        from .healing_over_time_effect import HealingOverTimeEffect
+        from .incapacitating_effect import IncapacitatingEffect
+        from .modifier_effect import BuffEffect
+        from .modifier_effect import DebuffEffect
+        from .trigger_effect import TriggerEffect
+
+        effect_type = values.get("effect_type")
+        if effect_type == "DamageOverTimeEffect":
+            return DamageOverTimeEffect.model_validate(values)
+        if effect_type == "HealingOverTimeEffect":
+            return HealingOverTimeEffect.model_validate(values)
+        if effect_type == "IncapacitatingEffect":
+            return IncapacitatingEffect.model_validate(values)
+        if effect_type == "BuffEffect":
+            return BuffEffect.model_validate(values)
+        if effect_type == "DebuffEffect":
+            return DebuffEffect.model_validate(values)
+        if effect_type == "TriggerEffect":
+            return TriggerEffect.model_validate(values)
+        raise ValueError(f"Unknown effect type: {effect_type}")
 
     def colorize(self, message: str) -> str:
         """Applies effect color formatting to a message."""
