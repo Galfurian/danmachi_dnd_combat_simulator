@@ -23,10 +23,15 @@ class SpellDebuff(Spell):
     @model_validator(mode="after")
     def validate_fields(self) -> "SpellDebuff":
         """Validates fields after model initialization."""
-        from effects.base_effect import Effect
+        from effects.modifier_effect import ModifierEffect
+        from effects.incapacitating_effect import IncapacitatingEffect
 
-        if not isinstance(self.effect, Effect):
-            raise ValueError("effect must be a valid Effect instance")
+        if not isinstance(self.effect, ModifierEffect | IncapacitatingEffect):
+            print(self.effect)
+            print(type(self.effect))
+            raise ValueError(
+                "effect must be a valid ModifierEffect or IncapacitatingEffect instance"
+            )
         return self
 
     # ============================================================================
@@ -46,10 +51,11 @@ class SpellDebuff(Spell):
 
         """
         from character.main import Character
-        from effects.modifier_effect import DebuffEffect
+        from effects.modifier_effect import ModifierEffect
+        from effects.incapacitating_effect import IncapacitatingEffect
 
         # Validate effect.
-        assert isinstance(self.effect, DebuffEffect)
+        assert isinstance(self.effect, ModifierEffect | IncapacitatingEffect)
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"
 

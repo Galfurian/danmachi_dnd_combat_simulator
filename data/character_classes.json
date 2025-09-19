@@ -47,8 +47,7 @@
             ],
             "5": [
                 "Fireball",
-                "Lightning Bolt",
-                "Counterspell"
+                "Lightning Bolt"
             ],
             "6": [
                 "Haste"
@@ -96,7 +95,6 @@
             "5": [
                 "Fireball",
                 "Lightning Bolt",
-                "Counterspell",
                 "Haste",
                 "Slow"
             ]
@@ -166,7 +164,7 @@
                 "Hold Person"
             ],
             "5": [
-                "Counterspell"
+                "Mass Cure Wounds"
             ]
         }
     },

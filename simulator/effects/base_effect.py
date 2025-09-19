@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 from core.constants import BonusType
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class Effect(BaseModel):
@@ -46,31 +46,6 @@ class Effect(BaseModel):
         """Returns the emoji associated with this effect type."""
         return "❔"  # Default fallback
 
-    @model_validator(mode="before")
-    def cast_to_child(cls, values: dict[str, Any]) -> "Any":
-        """Casts the base Effect to the appropriate subclass based on the 'type' field."""
-        from .damage_over_time_effect import DamageOverTimeEffect
-        from .healing_over_time_effect import HealingOverTimeEffect
-        from .incapacitating_effect import IncapacitatingEffect
-        from .modifier_effect import BuffEffect
-        from .modifier_effect import DebuffEffect
-        from .trigger_effect import TriggerEffect
-
-        effect_type = values.get("effect_type")
-        if effect_type == "DamageOverTimeEffect":
-            return DamageOverTimeEffect.model_validate(values)
-        if effect_type == "HealingOverTimeEffect":
-            return HealingOverTimeEffect.model_validate(values)
-        if effect_type == "IncapacitatingEffect":
-            return IncapacitatingEffect.model_validate(values)
-        if effect_type == "BuffEffect":
-            return BuffEffect.model_validate(values)
-        if effect_type == "DebuffEffect":
-            return DebuffEffect.model_validate(values)
-        if effect_type == "TriggerEffect":
-            return TriggerEffect.model_validate(values)
-        raise ValueError(f"Unknown effect type: {effect_type}")
-
     def colorize(self, message: str) -> str:
         """Applies effect color formatting to a message."""
         return f"[{self.color}]{message}[/]"
@@ -88,21 +63,18 @@ class Effect(BaseModel):
             if not actor:
                 print(
                     f"Actor cannot be None for effect {self.name}",
-                    {"effect": self.name},
                 )
                 return
 
             if not target:
                 print(
                     f"Target cannot be None for effect {self.name}",
-                    {"effect": self.name},
                 )
                 return
 
             if not isinstance(mind_level, int) or mind_level < 0:
                 print(
                     f"Mind level must be non-negative integer for effect {self.name}, got: {mind_level}",
-                    {"effect": self.name, "mind_level": mind_level},
                 )
                 mind_level = max(
                     0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
@@ -111,11 +83,6 @@ class Effect(BaseModel):
         except Exception as e:
             print(
                 f"Error during turn_update validation for effect {self.name}: {e!s}",
-                {
-                    "effect": self.name,
-                    "actor": getattr(actor, "name", "unknown"),
-                    "target": getattr(target, "name", "unknown"),
-                },
                 e,
             )
 
@@ -143,14 +110,12 @@ class Effect(BaseModel):
             if not actor:
                 print(
                     f"Actor cannot be None when checking if effect {self.name} can be applied",
-                    {"effect": self.name},
                 )
                 return False
 
             if not target:
                 print(
                     f"Target cannot be None when checking if effect {self.name} can be applied",
-                    {"effect": self.name},
                 )
                 return False
 
@@ -159,7 +124,6 @@ class Effect(BaseModel):
         except Exception as e:
             print(
                 f"Error checking if effect {self.name} can be applied: {e!s}",
-                {"effect": self.name},
                 e,
             )
             return False
@@ -187,9 +151,7 @@ class Modifier(BaseModel):
         from combat.damage import DamageComponent
 
         if self.bonus_type == BonusType.DAMAGE:
-            assert isinstance(
-                self.value, DamageComponent
-            ), f"Modifier value for '{self.bonus_type}' must be a DamageComponent."
+            self.value = DamageComponent(**self.value)
             return self
 
         if self.bonus_type == BonusType.ATTACK:

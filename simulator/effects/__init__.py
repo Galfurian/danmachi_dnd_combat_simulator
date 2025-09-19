@@ -19,7 +19,7 @@ from .healing_over_time_effect import HealingOverTimeEffect
 from .incapacitating_effect import IncapacitatingEffect
 
 # Import modifier-based effects
-from .modifier_effect import BuffEffect, DebuffEffect, ModifierEffect
+from .modifier_effect import ModifierEffect
 
 # Import trigger effects and related classes
 from .trigger_effect import (
@@ -41,26 +41,18 @@ __all__ = [
     # Base classes
     "Effect",
     "Modifier",
-
     # Modifier-based effects
     "ModifierEffect",
-    "BuffEffect",
-    "DebuffEffect",
-
     # Damage effects
     "DamageOverTimeEffect",
-
     # Healing effects
     "HealingOverTimeEffect",
-
     # Incapacitating effects
     "IncapacitatingEffect",
-
     # Trigger effects
     "TriggerType",
     "TriggerCondition",
     "TriggerEffect",
-
     # Trigger factory functions
     "create_on_hit_trigger",
     "create_low_health_trigger",

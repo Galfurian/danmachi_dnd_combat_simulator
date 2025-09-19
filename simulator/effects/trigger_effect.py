@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from pydantic import BaseModel, Field, model_validator
@@ -149,11 +149,13 @@ class TriggerEffect(Effect):
     Effects can stack, have cooldowns, and provide both immediate and ongoing benefits.
     """
 
+    effect_type: Literal["TriggerEffect"] = "TriggerEffect"
+
     trigger_condition: TriggerCondition = Field(
         description="Condition that activates the trigger.",
     )
-    trigger_effects: list[Effect] = Field(
-        description="Effects to apply when triggered."
+    trigger_effects: list[Effect] | None = Field(
+        default_factory=list, description="Effects to apply when triggered."
     )
     damage_bonus: list[DamageComponent] | None = Field(
         default_factory=list,
@@ -173,15 +175,6 @@ class TriggerEffect(Effect):
         description="Maximum number of times trigger can activate (None for unlimited).",
     )
 
-    @model_validator(mode="after")
-    def initialize_runtime_state(self) -> Any:
-        """Initialize runtime state for this trigger effect instance."""
-        # Initialize runtime state as instance variables
-        self.triggers_used = 0
-        self.cooldown_remaining = 0
-        self.has_triggered_this_turn = False
-        return self
-
     @property
     def color(self) -> str:
         """Returns the color string for trigger effects."""
@@ -191,6 +184,15 @@ class TriggerEffect(Effect):
     def emoji(self) -> str:
         """Returns the emoji for trigger effects."""
         return "⚡"
+
+    # @model_validator(mode="after")
+    # def initialize_runtime_state(self) -> "TriggerEffect":
+    #    """Initialize runtime state for this trigger effect instance."""
+    #    # Initialize runtime state as instance variables
+    #    self.triggers_used = 0
+    #    self.cooldown_remaining = 0
+    #    self.has_triggered_this_turn = False
+    #    return self
 
     @model_validator(mode="after")
     def check_trigger_condition(self) -> Any:
@@ -204,11 +206,7 @@ class TriggerEffect(Effect):
 
     @model_validator(mode="after")
     def check_trigger_effects(self) -> Any:
-        if not self.trigger_effects or not isinstance(self.trigger_effects, list):
-            raise ValueError(
-                "Trigger effects must be a non-empty list of Effect instances."
-            )
-        for effect in self.trigger_effects:
+        for effect in self.trigger_effects or []:
             if not isinstance(effect, Effect):
                 raise ValueError(
                     f"Each trigger effect must be an Effect instance, got {type(effect)}"

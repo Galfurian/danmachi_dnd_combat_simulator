@@ -1,6 +1,6 @@
 [
     {
-        "class": "AbilityOffensive",
+        "ability_type": "AbilityOffensive",
         "name": "Fire Breath",
         "action_type": "STANDARD",
         "description": "Unleash a fiery breath attack that scorches enemies in front of you.",
@@ -15,7 +15,7 @@
         ],
         "effect": {
             "name": "Burning",
-            "class": "DamageOverTimeEffect",
+            "effect_type": "DamageOverTimeEffect",
             "description": "The target catches fire and burns.",
             "duration": 2,
             "damage": {
@@ -25,7 +25,7 @@
         }
     },
     {
-        "class": "AbilityOffensive",
+        "ability_type": "AbilityOffensive",
         "name": "Wing Buffet",
         "action_type": "STANDARD",
         "description": "Use your wings to create a powerful gust of wind that knocks back enemies.",
@@ -39,7 +39,7 @@
         ]
     },
     {
-        "class": "AbilityOffensive",
+        "ability_type": "AbilityOffensive",
         "name": "Flame Breath",
         "action_type": "STANDARD",
         "description": "A smaller flame breath attack used by hellhounds and similar creatures.",
@@ -54,7 +54,7 @@
         ],
         "effect": {
             "name": "Burning",
-            "class": "DamageOverTimeEffect",
+            "effect_type": "DamageOverTimeEffect",
             "description": "The target catches fire and burns.",
             "duration": 2,
             "damage": {
@@ -64,7 +64,7 @@
         }
     },
     {
-        "class": "AbilityOffensive",
+        "ability_type": "AbilityOffensive",
         "name": "Radiant Smite",
         "action_type": "STANDARD",
         "description": "A burst of radiant energy strikes your foe.",

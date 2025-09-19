@@ -67,21 +67,18 @@ class CharacterEffects:
             if not source:
                 print(
                     "Source cannot be None when adding effect",
-                    {"effect": getattr(effect, "name", "unknown")},
                 )
                 return False
 
             if not effect:
                 print(
                     "Effect cannot be None when adding to effect manager",
-                    {"source": getattr(source, "name", "unknown")},
                 )
                 return False
 
             if not isinstance(mind_level, int) or mind_level < 0:
                 print(
                     f"Mind level must be non-negative integer, got: {mind_level}",
-                    {"effect": effect.name, "mind_level": mind_level},
                 )
                 mind_level = max(
                     0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
@@ -97,7 +94,9 @@ class CharacterEffects:
                 ):
                     return False  # Could not add due to concentration limits
 
-            if isinstance(effect, HealingOverTimeEffect) or isinstance(effect, DamageOverTimeEffect):
+            if isinstance(effect, HealingOverTimeEffect) or isinstance(
+                effect, DamageOverTimeEffect
+            ):
                 if self.has_effect(effect):
                     return False
 

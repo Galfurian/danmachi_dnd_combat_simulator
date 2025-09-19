@@ -219,7 +219,7 @@ class BaseAttack(BaseAction):
         return super()._common_get_max_damage(actor, self.damage)
 
 
-def deserialze_attack(data: dict[str, Any]) -> BaseAttack | None:
+def deserialize_attack(data: dict[str, Any]) -> BaseAttack | None:
     """Deserialize a dictionary into the appropriate BaseAttack subclass.
 
     Args:
@@ -235,12 +235,11 @@ def deserialze_attack(data: dict[str, Any]) -> BaseAttack | None:
     from actions.attacks.natural_attack import NaturalAttack
     from actions.attacks.weapon_attack import WeaponAttack
 
-    if "class" not in data:
-        raise ValueError("Missing 'class' in attack data")
+    weapon_type = data.get("weapon_type", None)
 
-    if data["class"] == "WeaponAttack":
+    if weapon_type == "WeaponAttack":
         return WeaponAttack(**data)
-    if data["class"] == "NaturalAttack":
+    if weapon_type == "NaturalAttack":
         return NaturalAttack(**data)
 
     return None

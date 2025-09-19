@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.utils import cprint, roll_and_describe
@@ -15,6 +15,8 @@ class DamageOverTimeEffect(Effect):
     using a damage roll expression that can include variables like MIND level.
     """
 
+    effect_type: Literal["DamageOverTimeEffect"] = "DamageOverTimeEffect"
+    
     damage: DamageComponent = Field(
         description="Damage component defining the damage roll and type.",
     )
@@ -43,9 +45,7 @@ class DamageOverTimeEffect(Effect):
             raise ValueError("Damage must be of type DamageComponent.")
         return self
 
-    def turn_update(
-        self, actor: Any, target: Any, mind_level: int | None = 1
-    ) -> None:
+    def turn_update(self, actor: Any, target: Any, mind_level: int | None = 1) -> None:
         """
         Apply damage over time to the target.
 

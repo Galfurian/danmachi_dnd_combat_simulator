@@ -264,21 +264,21 @@ class ContentRepository(metaclass=Singleton):
             ValueError: If invalid action data is encountered.
 
         """
-        from actions.abilities.base_ability import deserialze_ability
-        from actions.attacks.base_attack import deserialze_attack
-        from actions.spells.base_spell import deserialze_spell
+        from actions.abilities.base_ability import deserialize_ability
+        from actions.attacks.base_attack import deserialize_attack
+        from actions.spells.base_spell import deserialize_spell
 
         actions: dict[str, BaseAction] = {}
         for action_data in data:
-            ability = deserialze_ability(action_data)
+            ability = deserialize_ability(action_data)
             if ability:
                 actions[ability.name] = ability
                 continue
-            attack = deserialze_attack(action_data)
+            attack = deserialize_attack(action_data)
             if attack:
                 actions[attack.name] = attack
                 continue
-            spell = deserialze_spell(action_data)
+            spell = deserialize_spell(action_data)
             if spell:
                 actions[spell.name] = spell
                 continue
@@ -294,7 +294,7 @@ def _load_json_file(
 ) -> dict[str, Any]:
     """Helper to load and validate JSON files"""
     try:
-        cprint(f"  Loading {description}...", style="bold green")
+        cprint(f"  Loading {description} using {loader_func.__name__}...", style="bold green")
         # Validate file path
         if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")

@@ -39,14 +39,12 @@ class AbilityDebuff(BaseAbility):
 
         """
         from character.main import Character
-        from effects.modifier_effect import DebuffEffect
+        from effects.modifier_effect import ModifierEffect
+        from effects.incapacitating_effect import IncapacitatingEffect
 
         # Validate effect.
-        assert self.effect is not None
-        assert isinstance(self.effect, DebuffEffect)
-        assert actor is not None, "Actor is required"
+        assert isinstance(self.effect, ModifierEffect | IncapacitatingEffect)
         assert isinstance(actor, Character), "Actor must be an object"
-        assert target is not None, "Target is required"
         assert isinstance(target, Character), "Target must be an object"
 
         # Validate cooldown.

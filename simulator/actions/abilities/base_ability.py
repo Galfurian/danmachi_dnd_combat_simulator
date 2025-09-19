@@ -71,7 +71,7 @@ class BaseAbility(BaseAction, ABC):
         """
 
 
-def deserialze_ability(data: dict[str, Any]) -> BaseAbility | None:
+def deserialize_ability(data: dict[str, Any]) -> BaseAbility | None:
     """Deserialize a dictionary into a BaseAbility instance.
 
     Args:
@@ -86,16 +86,15 @@ def deserialze_ability(data: dict[str, Any]) -> BaseAbility | None:
     from actions.abilities.ability_heal import AbilityHeal
     from actions.abilities.ability_offensive import AbilityOffensive
 
-    if "class" not in data:
-        raise ValueError("Missing 'class' in ability data")
+    ability_type = data.get("ability_type", None)
 
-    if data["class"] == "AbilityBuff":
+    if ability_type == "AbilityBuff":
         return AbilityBuff(**data)
-    if data["class"] == "AbilityDebuff":
+    if ability_type == "AbilityDebuff":
         return AbilityDebuff(**data)
-    if data["class"] == "AbilityHeal":
+    if ability_type == "AbilityHeal":
         return AbilityHeal(**data)
-    if data["class"] == "AbilityOffensive":
+    if ability_type == "AbilityOffensive":
         return AbilityOffensive(**data)
 
     return None

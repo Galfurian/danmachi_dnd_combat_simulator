@@ -210,7 +210,7 @@ class Spell(BaseAction):
         return expressions
 
 
-def deserialze_spell(data: dict[str, Any]) -> Spell | None:
+def deserialize_spell(data: dict[str, Any]) -> Spell | None:
     """Deserialize a dictionary into a Spell instance.
 
     Args:
@@ -225,16 +225,15 @@ def deserialze_spell(data: dict[str, Any]) -> Spell | None:
     from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_offensive import SpellOffensive
 
-    if "class" not in data:
-        raise ValueError("Missing 'class' in data")
+    ability_type = data.get("ability_type", None)
 
-    if data["class"] == "SpellOffensive":
+    if ability_type == "SpellOffensive":
         return SpellOffensive(**data)
-    if data["class"] == "SpellHeal":
+    if ability_type == "SpellHeal":
         return SpellHeal(**data)
-    if data["class"] == "SpellBuff":
+    if ability_type == "SpellBuff":
         return SpellBuff(**data)
-    if data["class"] == "SpellDebuff":
+    if ability_type == "SpellDebuff":
         return SpellDebuff(**data)
 
     return None

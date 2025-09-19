@@ -67,16 +67,11 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         sheet += f"[italic]{effect.description}[/], "
     if effect.duration:
         sheet += f"{effect.duration} turns, "
-    if isinstance(effect, BuffEffect):
+    if isinstance(effect, ModifierEffect):
         modifiers_str = ", ".join(
             [modifier_to_string(modifier) for modifier in effect.modifiers]
         )
-        sheet += f"[green]{modifiers_str}[/]"
-    elif isinstance(effect, DebuffEffect):
-        modifiers_str = ", ".join(
-            [modifier_to_string(modifier) for modifier in effect.modifiers]
-        )
-        sheet += f"[red]{modifiers_str}[/]"
+        sheet += f"[bold]{modifiers_str}[/]"
     elif isinstance(effect, HealingOverTimeEffect):
         sheet += f"heals [green]{effect.heal_per_turn}[/] per turn"
     elif isinstance(effect, DamageOverTimeEffect):

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
@@ -12,6 +12,8 @@ class ModifierEffect(Effect):
     This includes buffs and debuffs that temporarily modify character attributes
     like HP, AC, damage bonuses, etc.
     """
+
+    effect_type: Literal["ModifierEffect"] = "ModifierEffect"
 
     modifiers: list[Modifier] = Field(
         description="List of modifiers applied by this effect.",
@@ -66,41 +68,3 @@ class ModifierEffect(Effect):
             if modifier in existing_modifiers:
                 return False
         return True
-
-
-class BuffEffect(ModifierEffect):
-    """
-    Positive effect that applies beneficial modifiers to a character.
-
-    Buffs provide temporary bonuses to character attributes such as increased
-    damage, improved AC, or additional HP.
-    """
-
-    @property
-    def color(self) -> str:
-        """Returns the color string for buff effects."""
-        return "bold cyan"
-
-    @property
-    def emoji(self) -> str:
-        """Returns the emoji for buff effects."""
-        return "💫"
-
-
-class DebuffEffect(ModifierEffect):
-    """
-    Negative effect that applies detrimental modifiers to a character.
-
-    Debuffs provide temporary penalties to character attributes such as reduced
-    damage, lowered AC, or decreased HP.
-    """
-
-    @property
-    def color(self) -> str:
-        """Returns the color string for debuff effects."""
-        return "bold red"
-
-    @property
-    def emoji(self) -> str:
-        """Returns the emoji for debuff effects."""
-        return "☠️"

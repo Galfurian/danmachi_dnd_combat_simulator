@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from core.utils import cprint, roll_and_describe
 from pydantic import Field, model_validator
@@ -13,6 +13,8 @@ class HealingOverTimeEffect(Effect):
     Healing over Time effects continuously heal the target for a specified duration,
     using a heal expression that can include variables like MIND level.
     """
+
+    effect_type: Literal["HealingOverTimeEffect"] = "HealingOverTimeEffect"
 
     heal_per_turn: str = Field(
         description="Heal expression defining the heal amount per turn.",
@@ -42,9 +44,7 @@ class HealingOverTimeEffect(Effect):
             raise ValueError("Heal per turn must be a string expression.")
         return self
 
-    def turn_update(
-        self, actor: Any, target: Any, mind_level: int | None = 1
-    ) -> None:
+    def turn_update(self, actor: Any, target: Any, mind_level: int | None = 1) -> None:
         """
         Apply healing over time to the target.
 

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 from combat.damage import (
     DamageComponent,
@@ -16,6 +16,11 @@ from core.utils import (
     substitute_variables,
 )
 from effects import Effect
+from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.incapacitating_effect import IncapacitatingEffect
+from effects.modifier_effect import ModifierEffect
+from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
 
@@ -55,7 +60,13 @@ class BaseAction(BaseModel):
         default_factory=list,
         description="Restrictions on valid targets",
     )
-    effect: Effect | None = Field(
+    effect: Union[
+        DamageOverTimeEffect,
+        ModifierEffect,
+        IncapacitatingEffect,
+        TriggerEffect,
+        None,
+    ] = Field(
         default=None,
         description="An optional beneficial effect that this ability applies.",
     )

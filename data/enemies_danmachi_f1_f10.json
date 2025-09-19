@@ -398,12 +398,12 @@
                                 }
                             }
                         ],
-                        "class": "BuffEffect"
+                        "effect_type": "ModifierEffect"
                     }
                 ],
                 "damage_bonus": [],
                 "consumes_on_trigger": true,
-                "class": "TriggerEffect"
+                "ability_type": "TriggerEffect"
             }
         ]
     }

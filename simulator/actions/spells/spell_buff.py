@@ -23,10 +23,15 @@ class SpellBuff(Spell):
     @model_validator(mode="after")
     def validate_fields(self) -> "SpellBuff":
         """Ensure that the effect field is properly set."""
-        from effects.base_effect import Effect
+        from effects.modifier_effect import ModifierEffect
+        from effects.trigger_effect import TriggerEffect
 
-        if not isinstance(self.effect, Effect):
-            raise ValueError(f"SpellBuff must have a valid effect assigned.")
+        if not isinstance(self.effect, ModifierEffect | TriggerEffect):
+            print(self.effect)
+            print(type(self.effect))
+            raise ValueError(
+                f"SpellBuff must have a valid ModifierEffect or TriggerEffect assigned."
+            )
         return self
 
     # ============================================================================
@@ -46,10 +51,13 @@ class SpellBuff(Spell):
 
         """
         from character.main import Character
-        from effects.modifier_effect import BuffEffect
+        from effects.modifier_effect import ModifierEffect
+        from effects.trigger_effect import TriggerEffect
 
         # Validate effect.
-        assert isinstance(self.effect, BuffEffect)
+        assert isinstance(
+            self.effect, ModifierEffect | TriggerEffect
+        ), "Effect must be a ModifierEffect or TriggerEffect"
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"
 

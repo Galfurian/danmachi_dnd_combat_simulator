@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -12,6 +12,8 @@ class IncapacitatingEffect(Effect):
     Unlike ModifierEffect which only applies stat penalties, IncapacitatingEffect
     completely prevents the character from acting during their turn.
     """
+
+    effect_type: Literal["IncapacitatingEffect"] = "IncapacitatingEffect"
 
     incapacitation_type: str = Field(
         description="Type of incapacitation (e.g., 'sleep', 'paralyzed', 'stunned').",

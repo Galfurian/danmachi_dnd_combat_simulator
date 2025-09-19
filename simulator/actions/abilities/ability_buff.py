@@ -39,14 +39,14 @@ class AbilityBuff(BaseAbility):
 
         """
         from character.main import Character
-        from effects.modifier_effect import BuffEffect
+        from effects.modifier_effect import ModifierEffect
+        from effects.trigger_effect import TriggerEffect
 
         # Validate effect.
-        assert self.effect is not None
-        assert isinstance(self.effect, BuffEffect)
-        assert actor is not None, "Actor is required"
+        assert isinstance(
+            self.effect, ModifierEffect | TriggerEffect
+        ), "Effect must be a ModifierEffect or TriggerEffect"
         assert isinstance(actor, Character), "Actor must be an object"
-        assert target is not None, "Target is required"
         assert isinstance(target, Character), "Target must be an object"
 
         # Validate cooldown.
