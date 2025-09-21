@@ -74,15 +74,6 @@ class BaseAction(BaseModel):
         description="An optional beneficial effect that this ability applies.",
     )
 
-    # For compatibility with old code using _cooldown and _maximum_uses
-    @property
-    def _cooldown(self) -> int:
-        return self.cooldown
-
-    @property
-    def _maximum_uses(self) -> int:
-        return self.maximum_uses
-
     def execute(self, actor: Any, target: Any) -> bool:
         """Execute the action against a target character.
 
@@ -110,7 +101,7 @@ class BaseAction(BaseModel):
             bool: True if maximum uses is greater than 0, False if unlimited.
 
         """
-        return self._maximum_uses > 0
+        return self.maximum_uses > 0
 
     def get_maximum_uses(self) -> int:
         """Get the maximum number of uses for this action.
@@ -119,7 +110,7 @@ class BaseAction(BaseModel):
             int: Maximum uses per encounter/day (-1 for unlimited).
 
         """
-        return self._maximum_uses
+        return self.maximum_uses
 
     def has_cooldown(self) -> bool:
         """Check if the action has a cooldown period.
@@ -128,7 +119,7 @@ class BaseAction(BaseModel):
             bool: True if cooldown is greater than 0, False otherwise.
 
         """
-        return self._cooldown > 0
+        return self.cooldown > 0
 
     def target_count(
         self,
@@ -157,7 +148,7 @@ class BaseAction(BaseModel):
             int: Cooldown period in turns (-1 for no cooldown).
 
         """
-        return self._cooldown
+        return self.cooldown
 
     def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
         """Get formatted display strings for actor and target.
