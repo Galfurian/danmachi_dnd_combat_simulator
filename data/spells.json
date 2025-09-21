@@ -293,31 +293,6 @@
         }
     },
     {
-        "ability_type": "SpellDebuff",
-        "name": "Sleep Powder",
-        "action_type": "STANDARD",
-        "description": "A magical powder that induces sleep in the target.",
-        "level": 1,
-        "mind_cost": [
-            1,
-            2,
-            3
-        ],
-        "target_restrictions": [
-            "ENEMY"
-        ],
-        "effect": {
-            "name": "Sleeping",
-            "description": "The target falls asleep and cannot take actions.",
-            "duration": 3,
-            "incapacitation_type": "sleep",
-            "save_ends": true,
-            "save_dc": 13,
-            "save_stat": "CON",
-            "effect_type": "IncapacitatingEffect"
-        }
-    },
-    {
         "ability_type": "SpellOffensive",
         "name": "Magic Missile",
         "action_type": "STANDARD",

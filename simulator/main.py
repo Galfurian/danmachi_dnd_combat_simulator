@@ -21,7 +21,7 @@ from pathlib import Path
 from character import Character, load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
-from core.sheets import crule
+from core.sheets import crule, print_character_sheet
 from core.utils import cprint
 
 # Sets up basic logging configuration.
@@ -63,6 +63,12 @@ characters: dict[str, Character] = load_characters(data_dir / "characters.json")
 cprint("Loading player character...", style="bold green")
 player = load_character(data_dir / "player.json")
 assert player is not None, "Player character could not be loaded."
+
+crule("Data Initialized", style="bold green", characters="=")
+
+for enemy_name, enemy in enemies.items():
+    crule(f"Enemy: {enemy_name}", style="bold red", characters="-")
+    print_character_sheet(enemy)
 
 # =============================================================================
 

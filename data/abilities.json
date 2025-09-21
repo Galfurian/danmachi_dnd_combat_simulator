@@ -78,5 +78,24 @@
             }
         ],
         "attack_roll": "1D20 + SPELLCASTING + proficiency"
+    },
+    {
+        "ability_type": "AbilityDebuff",
+        "name": "Sleep Powder",
+        "action_type": "STANDARD",
+        "description": "A magical powder that induces sleep in the target.",
+        "target_restrictions": [
+            "ENEMY"
+        ],
+        "effect": {
+            "name": "Sleeping",
+            "effect_type": "IncapacitatingEffect",
+            "description": "The target falls asleep and cannot take actions.",
+            "duration": 3,
+            "incapacitation_type": "sleep",
+            "save_ends": true,
+            "save_dc": 13,
+            "save_stat": "CON"
+        }
     }
 ]

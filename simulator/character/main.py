@@ -807,6 +807,9 @@ class Character(BaseModel):
         """
         return hash(self.name)
 
+    def __eq__(self, other: object) -> bool:
+        return self.name == getattr(other, "name", None)
+
 
 def load_character(file_path: Path) -> Character | None:
     """
