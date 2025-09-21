@@ -95,44 +95,38 @@ class BaseAction(BaseModel):
     # ===========================================================================
 
     def has_limited_uses(self) -> bool:
-        """Check if the action has limited uses.
+        """
+        Check if the action has limited uses.
 
         Returns:
-            bool: True if maximum uses is greater than 0, False if unlimited.
+            bool:
+                True if maximum uses is greater than 0, False if unlimited.
 
         """
         return self.maximum_uses > 0
 
     def get_maximum_uses(self) -> int:
-        """Get the maximum number of uses for this action.
+        """
+        Get the maximum number of uses for this action.
 
         Returns:
-            int: Maximum uses per encounter/day (-1 for unlimited).
+            int:
+                Maximum uses per encounter/day (-1 for unlimited).
 
         """
         return self.maximum_uses
 
-    def has_cooldown(self) -> bool:
-        """Check if the action has a cooldown period.
-
-        Returns:
-            bool: True if cooldown is greater than 0, False otherwise.
-
-        """
-        return self.cooldown > 0
-
-    def target_count(
-        self,
-        variables: list[VarInfo] = [],
-    ) -> int:
+    def target_count(self, variables: list[VarInfo] = []) -> int:
         """
         Calculate the number of targets this ability can affect.
 
         Args:
-            actor (Any): The character using the ability.
+            actor (Any):
+                The character using the ability.
 
         Returns:
-            int: Number of targets (minimum 1, even for invalid expressions).
+            int:
+                Number of targets (minimum 1, even for invalid expressions).
 
         """
         from core.utils import evaluate_expression
@@ -141,11 +135,24 @@ class BaseAction(BaseModel):
             return max(1, int(evaluate_expression(self.target_expr, variables)))
         return 1
 
-    def get_cooldown(self) -> int:
-        """Get the cooldown period for this action.
+    def has_cooldown(self) -> bool:
+        """
+        Check if the action has a cooldown period.
 
         Returns:
-            int: Cooldown period in turns (-1 for no cooldown).
+            bool:
+                True if cooldown is greater than 0, False otherwise.
+
+        """
+        return self.cooldown > 0
+
+    def get_cooldown(self) -> int:
+        """
+        Get the cooldown period for this action.
+
+        Returns:
+            int:
+                Cooldown period in turns (-1 for no cooldown).
 
         """
         return self.cooldown
