@@ -11,7 +11,6 @@ from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from actions.spells.base_spell import Spell
-from catchery import log_info
 from character import Character
 from core.utils import VarInfo
 from pydantic import BaseModel, Field
@@ -366,15 +365,6 @@ def _get_best_base_attack(
         return None
     total_affected = len(sorted_targets)
     score = total_affected
-    log_info(
-        "Evaluated base attack",
-        {
-            "attack": attack.name,
-            "max_targets": max_targets,
-            "total_affected": total_affected,
-            "score": score,
-        },
-    )
     return AttackSelection(
         attack=attack,
         targets=sorted_targets,
@@ -426,17 +416,6 @@ def _get_best_spell_attack(
             continue
         total_affected = len(sorted_targets)
         score = total_affected * 10 - mind_level
-        log_info(
-            "Evaluated spell attack",
-            {
-                "spell": spell.name,
-                "rank": rank,
-                "mind_level": mind_level,
-                "max_targets": max_targets,
-                "total_affected": total_affected,
-                "score": score,
-            },
-        )
         if not best_spell or score > best_spell.score:
             best_spell = SpellSelection(
                 spell=spell,
@@ -496,18 +475,6 @@ def _get_best_spell_heal(
         total_affected = len(sorted_targets)
         score = total_hp_missing + total_affected * 10 - mind_level
 
-        log_info(
-            "Evaluated spell heal",
-            {
-                "spell": spell.name,
-                "rank": rank,
-                "mind_level": mind_level,
-                "max_targets": max_targets,
-                "total_affected": total_affected,
-                "score": score,
-            },
-        )
-
         if not best_spell or score > best_spell.score:
             best_spell = SpellSelection(
                 spell=spell,
@@ -566,18 +533,6 @@ def _get_best_spell_buff_or_debuff(
         total_affected = len(sorted_targets)
         score = total_affected * 10 - mind_level
 
-        log_info(
-            "Evaluated spell buff",
-            {
-                "spell": spell.name,
-                "rank": rank,
-                "mind_level": mind_level,
-                "max_targets": max_targets,
-                "total_affected": total_affected,
-                "score": score,
-            },
-        )
-
         if not best_spell or score > best_spell.score:
             best_spell = SpellSelection(
                 spell=spell,
@@ -635,15 +590,6 @@ def _get_best_ability_attack(
 
     total_affected = len(sorted_targets)
     score = total_affected
-    log_info(
-        "Evaluated ability attack",
-        {
-            "ability": ability.name,
-            "max_targets": max_targets,
-            "total_affected": total_affected,
-            "score": score,
-        },
-    )
     return AbilitySelection(
         ability=ability,
         targets=sorted_targets,
@@ -690,15 +636,6 @@ def _get_best_ability_heal(
 
     total_affected = len(sorted_targets)
     score = total_affected
-    log_info(
-        "Evaluated ability heal",
-        {
-            "ability": ability.name,
-            "max_targets": max_targets,
-            "total_affected": total_affected,
-            "score": score,
-        },
-    )
     return AbilitySelection(
         ability=ability,
         targets=sorted_targets,
@@ -745,15 +682,6 @@ def _get_best_ability_buff_or_debuff(
 
     total_affected = len(sorted_targets)
     score = total_affected
-    log_info(
-        "Evaluated ability buff/debuff",
-        {
-            "ability": ability.name,
-            "max_targets": max_targets,
-            "total_affected": total_affected,
-            "score": score,
-        },
-    )
     return AbilitySelection(
         ability=ability,
         targets=sorted_targets,

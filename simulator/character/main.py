@@ -177,6 +177,11 @@ class Character(BaseModel):
         """
         Post-initialization to set up dynamic properties and modules.
         """
+        from core.content import ContentRepository
+
+        # Import here to avoid circular imports.
+        repo: ContentRepository = ContentRepository()
+
         self._effects_module: CharacterEffects = CharacterEffects(owner=self)
         self._stats_module = CharacterStats(owner=self)
         self._inventory_module = CharacterInventory(owner=self)
@@ -185,6 +190,31 @@ class Character(BaseModel):
 
         self._stats_module.adjust_hp(self.HP_MAX)
         self._stats_module.adjust_mind(self.MIND_MAX)
+
+        # Add default race spells.
+        for spell_name in self.race.default_spells:
+            spell = repo.get_spell(spell_name)
+            if spell:
+                self.learn_spell(spell)
+
+        # Get spells from each class level
+        for character_class, class_level in self.levels.items():
+            # Get all spells up to the current class level
+            spell_names = character_class.get_all_spells_up_to_level(class_level)
+            # Get all actions up to the current class level
+            action_names = character_class.get_all_actions_up_to_level(class_level)
+            for spell_name in spell_names:
+                spell = repo.get_spell(spell_name)
+                if spell:
+                    self.learn_spell(spell)
+            for action_name in action_names:
+                action = repo.get_action(action_name)
+                if action:
+                    self.learn_action(action)
+                else:
+                    spell = repo.get_spell(action_name)
+                    if spell:
+                        self.learn_spell(spell)
 
         return self
 
@@ -512,52 +542,6 @@ class Character(BaseModel):
 
         """
         self._actions_module.unlearn_spell(spell)
-
-    def assign_class_and_race_spells(self) -> None:
-        """
-        Automatically assigns spells based on character class levels and race.
-        This should be called after character creation or level changes.
-        """
-        from core.content import ContentRepository
-
-        repo = ContentRepository()
-
-        # Get spells from race (default spells and level-based)
-        if self.race:
-            # Add default race spells
-            for spell_name in self.race.default_spells:
-                spell = repo.get_spell(spell_name)
-                if spell:
-                    self.learn_spell(spell)
-
-            # Add race spells based on character level
-            total_level = sum(self.levels.values())
-            for level_str, spell_names in self.race.available_spells.items():
-                required_level = int(level_str)
-                if total_level >= required_level:
-                    for spell_name in spell_names:
-                        spell = repo.get_spell(spell_name)
-                        if spell:
-                            self.learn_spell(spell)
-
-        # Get spells from each class level
-        for character_class, class_level in self.levels.items():
-            # Get all spells up to the current class level
-            spell_names = character_class.get_all_spells_up_to_level(class_level)
-            # Get all actions up to the current class level
-            action_names = character_class.get_all_actions_up_to_level(class_level)
-            for spell_name in spell_names:
-                spell = repo.get_spell(spell_name)
-                if spell:
-                    self.learn_spell(spell)
-            for action_name in action_names:
-                action = repo.get_action(action_name)
-                if action:
-                    self.learn_action(action)
-                else:
-                    spell = repo.get_spell(action_name)
-                    if spell:
-                        self.learn_spell(spell)
 
     def get_occupied_hands(self) -> int:
         """Returns the number of hands currently occupied by equipped weapons and armor."""

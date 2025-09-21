@@ -358,7 +358,7 @@ class PlayerInterface:
             # Get the maximum number of targets if applicable.
             max_targets = evaluate_expression(spell.target_expr, variables)
 
-            prompt += f"    Rank {rank} consumes {mind_level} mind → "
+            prompt += f"    Rank {rank + 1} consumes {mind_level} mind → "
 
             # Format each spell type accordingly.
             if isinstance(spell, SpellHeal):

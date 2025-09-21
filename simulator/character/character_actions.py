@@ -7,7 +7,7 @@ from typing import Any
 from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell
-from catchery import log_info, log_warning
+from catchery import log_warning
 from core.constants import ActionType
 from pydantic import BaseModel, Field
 
@@ -269,7 +269,6 @@ class CharacterActions(BaseModel):
         """
         if action.name.lower() not in self.owner.actions:
             self.owner.actions[action.name.lower()] = action
-            log_info(f"{self.owner.name} learned {action.name}!")
 
     def unlearn_action(self, action: BaseAction) -> None:
         """Remove an Action object from the character's known actions.
@@ -280,7 +279,6 @@ class CharacterActions(BaseModel):
         """
         if action.name.lower() in self.owner.actions:
             del self.owner.actions[action.name.lower()]
-            log_info(f"{self.owner.name} unlearned {action.name}!")
 
     def learn_spell(self, spell: Spell) -> None:
         """
@@ -292,7 +290,6 @@ class CharacterActions(BaseModel):
         """
         if spell.name.lower() not in self.owner.spells:
             self.owner.spells[spell.name.lower()] = spell
-            log_info(f"{self.owner.name} learned {spell.name}!")
 
     def unlearn_spell(self, spell: Spell) -> None:
         """
@@ -304,7 +301,6 @@ class CharacterActions(BaseModel):
         """
         if spell.name.lower() in self.owner.spells:
             del self.owner.spells[spell.name.lower()]
-            log_info(f"{self.owner.name} unlearned {spell.name}!")
 
     def turn_update(self) -> None:
         """

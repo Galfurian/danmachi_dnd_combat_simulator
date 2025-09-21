@@ -4,7 +4,7 @@ Character Inventory Management Module - handles inventory-related functionality.
 
 from typing import Any
 
-from catchery import log_info, log_warning
+from catchery import log_warning
 from core.constants import ArmorSlot
 from items.armor import Armor
 from items.weapon import Weapon
@@ -89,7 +89,6 @@ class CharacterInventory(BaseModel):
 
         """
         if self.can_equip_weapon(weapon):
-            log_info(f"Equipping weapon: {weapon.name} for {self.owner.name}")
             # Add the weapon to the character's weapon list.
             self.owner.equipped_weapons.append(weapon)
             return True
@@ -111,7 +110,6 @@ class CharacterInventory(BaseModel):
 
         """
         if weapon in self.owner.equipped_weapons:
-            log_info(f"Unequipping weapon: {weapon.name} from {self.owner.name}")
             # Remove the weapon from the character's weapon list.
             self.owner.equipped_weapons.remove(weapon)
             return True
@@ -173,7 +171,6 @@ class CharacterInventory(BaseModel):
 
         """
         if self.can_equip_armor(armor):
-            log_info(f"Equipping armor: {armor.name} for {self.owner.name}")
             # Add the armor to the character's armor list.
             self.owner.equipped_armor.append(armor)
             return True
@@ -199,7 +196,6 @@ class CharacterInventory(BaseModel):
 
         """
         if armor in self.owner.equipped_armor:
-            log_info(f"Unequipping armor: {armor.name} from {self.owner.name}")
             # Remove the armor from the character's armor list.
             self.owner.equipped_armor.remove(armor)
             return True

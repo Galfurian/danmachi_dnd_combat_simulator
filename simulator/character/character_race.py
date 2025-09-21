@@ -24,14 +24,6 @@ class CharacterRace(BaseModel):
         default_factory=list,
         description="Default spells available to the race",
     )
-    available_actions: dict[int, list[str]] = Field(
-        default_factory=dict,
-        description="Actions available to the race by level",
-    )
-    available_spells: dict[int, list[str]] = Field(
-        default_factory=dict,
-        description="Spells available to the race by level",
-    )
 
     def __hash__(self) -> int:
         """
