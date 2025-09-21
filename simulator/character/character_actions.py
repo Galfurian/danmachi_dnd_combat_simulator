@@ -32,6 +32,10 @@ class CharacterActions(BaseModel):
         default_factory=dict,
         description="Cooldowns for actions, mapping action names to remaining turns.",
     )
+    uses: dict[str, int] = Field(
+        default_factory=dict,
+        description="Tracks limited uses for actions, mapping action names to remaining uses.",
+    )
 
     def reset_turn_flags(self) -> None:
         """Reset the turn flags for the character."""
@@ -150,7 +154,7 @@ class CharacterActions(BaseModel):
                 spell.action_type
             ):
                 # Check if the character has enough mind points to cast the spell.
-                if self.owner.MIND >= (spell.mind_cost[0] if spell.mind_cost else 0):
+                if self.owner.mind >= (spell.mind_cost[0] if spell.mind_cost else 0):
                     available_spells.append(spell)
         return available_spells
 
@@ -201,9 +205,9 @@ class CharacterActions(BaseModel):
             action (BaseAction): The action to initialize uses for.
 
         """
-        if action.name not in self.owner.uses:
+        if action.name not in self.uses:
             if action.has_limited_uses():
-                self.owner.uses[action.name] = action.get_maximum_uses()
+                self.uses[action.name] = action.get_maximum_uses()
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Return the remaining uses of an action.
@@ -218,7 +222,7 @@ class CharacterActions(BaseModel):
         # Unlimited uses.
         if not action.has_limited_uses():
             return -1
-        return self.owner.uses.get(action.name, 0)
+        return self.uses.get(action.name, 0)
 
     def decrement_uses(self, action: BaseAction) -> bool:
         """Decrement the uses of an action by 1.
@@ -233,16 +237,16 @@ class CharacterActions(BaseModel):
         # Don't decrement unlimited use actions.
         if not action.has_limited_uses():
             return True
-        if action.name in self.owner.uses:
-            if self.owner.uses[action.name] > 0:
-                self.owner.uses[action.name] -= 1
+        if action.name in self.uses:
+            if self.uses[action.name] > 0:
+                self.uses[action.name] -= 1
                 return True
             log_warning(
                 f"{self.owner.name} has no remaining uses for {action.name}",
                 {
                     "character": self.owner.name,
                     "action": action.name,
-                    "remaining_uses": self.owner.uses[action.name],
+                    "remaining_uses": self.uses[action.name],
                 },
             )
         else:
@@ -251,7 +255,7 @@ class CharacterActions(BaseModel):
                 {
                     "character": self.owner.name,
                     "action": action.name,
-                    "available_actions": list(self.owner.uses.keys()),
+                    "available_actions": list(self.uses.keys()),
                 },
             )
         return False

@@ -92,14 +92,14 @@ class TriggerCondition(BaseModel):
             if self.trigger_type == TriggerType.ON_LOW_HEALTH:
                 threshold = self.threshold or 0.25
                 hp_ratio = (
-                    character.HP / character.HP_MAX if character.HP_MAX > 0 else 0
+                    character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
                 )
                 return hp_ratio <= threshold
 
             if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
                 threshold = self.threshold or 0.75
                 hp_ratio = (
-                    character.HP / character.HP_MAX if character.HP_MAX > 0 else 0
+                    character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
                 )
                 return hp_ratio >= threshold
 

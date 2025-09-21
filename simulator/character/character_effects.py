@@ -316,7 +316,7 @@ class CharacterEffects(BaseModel):
             raise GameException("Owner must be a Character instance.")
 
         if isinstance(effect, HealingOverTimeEffect):
-            return self.owner.HP < self.owner.HP_MAX and not self.has_effect(effect)
+            return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
 
         if isinstance(effect, DamageOverTimeEffect):
             return not self.has_effect(effect)

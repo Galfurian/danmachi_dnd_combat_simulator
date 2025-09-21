@@ -7,7 +7,7 @@ from actions.base_action import BaseAction
 from actions.spells import Spell
 from catchery import log_error
 from core.constants import ActionType, BonusType, CharacterType, DamageType
-from core.utils import VarInfo
+from core.utils import VarInfo, cprint
 from effects.base_effect import Effect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.trigger_effect import TriggerData
@@ -100,12 +100,6 @@ class Character(BaseModel):
     _actions_module: CharacterActions = PrivateAttr()
     _display_module: CharacterDisplay = PrivateAttr()
 
-    # === Private attributes ===
-
-    _uses: dict[str, int] = PrivateAttr(default_factory=dict)
-    _hp: int = PrivateAttr(default=0)
-    _mind: int = PrivateAttr(default=0)
-
     @model_validator(mode="before")
     def replace_with_real(cls, data: dict[str, Any]) -> dict[str, Any]:
         """
@@ -189,10 +183,8 @@ class Character(BaseModel):
         self._actions_module = CharacterActions(owner=self)
         self._display_module = CharacterDisplay(owner=self)
 
-        self._cooldowns: dict[str, int] = {}
-        self._uses: dict[str, int] = {}
-        self._hp: int = self._stats_module.HP_MAX
-        self._mind: int = self._stats_module.MIND_MAX
+        self._stats_module.adjust_hp(self.HP_MAX)
+        self._stats_module.adjust_mind(self.MIND_MAX)
 
         return self
 
@@ -209,14 +201,14 @@ class Character(BaseModel):
         return self.char_type.colorize(self.name)
 
     @property
-    def HP(self) -> int:
+    def hp(self) -> int:
         """Returns the current HP of the character."""
-        return self._hp
+        return self._stats_module.HP_CURRENT
 
     @property
-    def MIND(self) -> int:
+    def mind(self) -> int:
         """Returns the current Mind of the character."""
-        return self._mind
+        return self._stats_module.MIND_CURRENT
 
     @property
     def HP_MAX(self) -> int:
@@ -270,24 +262,18 @@ class Character(BaseModel):
 
     @property
     def INITIATIVE(self) -> int:
-        """Calculates the character's initiative based on dexterity and any active effects."""
+        """
+        Calculates the character's initiative based on dexterity and any active
+        effects.
+        """
         return self._stats_module.INITIATIVE
 
-    def add_hp(self, amount: int) -> None:
-        """Adds a specific amount to the character's HP, clamped between 0 and HP_MAX."""
-        self._hp = max(0, min(self._hp + amount, self.HP_MAX))
-
-    def add_mind(self, amount: int) -> None:
-        """Adds a specific amount to the character's Mind, clamped between 0 and MIND_MAX."""
-        self._mind = max(0, min(self._mind + amount, self.MIND_MAX))
-
-    def subtract_hp(self, amount: int) -> None:
-        """Subtracts a specific amount from the character's HP, clamped at a minimum of 0."""
-        self._hp = max(0, self._hp - amount)
-
-    def subtract_mind(self, amount: int) -> None:
-        """Subtracts a specific amount from the character's Mind, clamped at a minimum of 0."""
-        self._mind = max(0, self._mind - amount)
+    def adjust_mind(self, amount: int) -> int:
+        """
+        Adjusts the character's Mind by a specific amount, clamped between 0 and
+        MIND_MAX.
+        """
+        return self._stats_module.adjust_mind(amount)
 
     def get_expression_variables(self) -> list[VarInfo]:
         """Returns a dictionary of the character's modifiers."""
@@ -391,24 +377,21 @@ class Character(BaseModel):
         elif damage_type in self.vulnerabilities:
             adjusted = adjusted * 2
         adjusted = max(adjusted, 0)
-        actual = min(adjusted, self._hp)
-        self._hp = max(self._hp - adjusted, 0)
 
-        # Handle effects that break on damage (like sleep effects)
-        if actual > 0:  # Only if damage was actually taken
+        # Apply the damage and get the actual damage taken.
+        actual = self._stats_module.adjust_hp(amount)
+
+        # Handle effects that break on damage (like sleep effects), but only
+        # if actual damage was taken.
+        if actual > 0:
             wake_up_messages = self._effects_module.handle_damage_taken(actual)
             if wake_up_messages:
-                from core.utils import cprint
-
                 for msg in wake_up_messages:
                     cprint(f"    {msg}")
-
         # Check for passive triggers after taking damage (e.g., OnLowHealthTrigger)
         if self.passive_effects and self.is_alive():
             activation_messages = self.check_passive_triggers()
             if activation_messages:
-                from core.utils import cprint
-
                 for msg in activation_messages:
                     cprint(f"    {msg}")
 
@@ -424,36 +407,63 @@ class Character(BaseModel):
             int: The actual amount healed
 
         """
-        # Compute the actual amount we can heal.
-        amount = max(0, min(amount, self.HP_MAX - self._hp))
-        # Ensure we don't exceed the maximum hp.
-        self._hp += amount
-        # Return the actual amount healed.
-        return amount
+        return self._stats_module.adjust_hp(amount)
 
     def use_mind(self, amount: int) -> bool:
-        """Reduces the character's mind by the given amount, if they have enough mind points.
+        """
+        Reduces the character's mind by the given amount, if they have enough
+        mind points.
 
         Args:
-            amount: The amount of mind points to use
+            amount:
+                The amount of mind points to use
 
         Returns:
-            bool: True if the mind points were successfully used, False otherwise
+            bool:
+                True if the mind points were successfully used, False otherwise.
 
         """
-        if self._mind >= amount:
-            self._mind -= amount
+        if self.mind >= amount:
+            self._stats_module.adjust_mind(-amount)
             return True
         return False
 
-    def is_alive(self) -> bool:
-        """Checks if the character is alive (hp > 0).
+    def regain_mind(self, amount: int) -> int:
+        """
+        Increases the character's mind by the given amount, up to max_mind.
+
+        Args:
+            amount:
+                The amount of mind points to regain
 
         Returns:
-            bool: True if the character is alive, False otherwise
+            int:
+                The actual amount of mind points regained.
 
         """
-        return self._hp > 0
+        return self._stats_module.adjust_mind(amount)
+
+    def is_alive(self) -> bool:
+        """
+        Checks if the character is alive (hp > 0).
+
+        Returns:
+            bool:
+                True if the character is alive, False otherwise
+
+        """
+        return self.hp > 0
+
+    def is_dead(self) -> bool:
+        """
+        Checks if the character is dead (hp <= 0).
+
+        Returns:
+            bool:
+                True if the character is dead, False otherwise
+
+        """
+        return self.hp <= 0
 
     def get_spell_attack_bonus(self, spell_level: int = 1) -> int:
         """Calculates the spell attack bonus for the character.

@@ -129,7 +129,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 target.name,
-                f"{target.HP:>3}/{target.HP_MAX:<3}",
+                f"{target.hp:>3}/{target.HP_MAX:<3}",
                 str(target.AC),
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -204,7 +204,7 @@ class PlayerInterface:
                 table.add_row(
                     str(i),
                     t.name,
-                    str(t.HP),
+                    str(t.hp),
                     str(t.AC),
                     "[green]✓[/]" if t in selected else "",
                 )
@@ -399,9 +399,9 @@ class PlayerInterface:
                 continue
 
             # If the user typed a number, return the corresponding rank.
-            rank: int = self.get_digit_choice(answer)
-            if 0 < rank <= len(spell.mind_cost):
-                return rank
+            selected_rank: int = self.get_digit_choice(answer)
+            if 0 < selected_rank <= len(spell.mind_cost):
+                return selected_rank
             # If the user typed 'q', return -1 to indicate going back.
             if isinstance(answer, str) and answer.lower() == "q":
                 return -1

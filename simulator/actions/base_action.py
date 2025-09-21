@@ -509,9 +509,9 @@ class BaseAction(BaseModel):
         # Healing actions target self and allies (not enemies, not at full health for healing)
         if self.category == ActionCategory.HEALING:
             if target == actor:
-                return target.HP < target.HP_MAX
+                return target.hp < target.HP_MAX
             if not is_oponent(actor.char_type, target.char_type):
-                return target.HP < target.HP_MAX
+                return target.hp < target.HP_MAX
             return False
 
         # Buff actions target self and allies.

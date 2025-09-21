@@ -18,6 +18,14 @@ class CharacterStats(BaseModel):
     owner: Any = Field(
         description="Reference to the parent Character instance",
     )
+    hp: int = Field(
+        default=0,
+        description="Current hit points of the character",
+    )
+    mind: int = Field(
+        default=0,
+        description="Current mind points of the character",
+    )
 
     # ============================================================================
     # ABILITY SCORE MODIFIERS (D&D 5e Standard)
@@ -108,6 +116,22 @@ class CharacterStats(BaseModel):
     # ============================================================================
     # DERIVED STATS (HP, MIND, AC, etc.)
     # ============================================================================
+
+    @property
+    def HP_CURRENT(self) -> int:
+        """
+        Returns the current HP of the character.
+
+        """
+        return self.hp
+
+    @property
+    def MIND_CURRENT(self) -> int:
+        """
+        Returns the current Mind of the character.
+
+        """
+        return self.mind
 
     @property
     def HP_MAX(self) -> int:
@@ -213,6 +237,44 @@ class CharacterStats(BaseModel):
     # ============================================================================
     # UTILITY METHODS
     # ============================================================================
+
+    def adjust_hp(self, amount: int) -> int:
+        """
+        Adjusts the character's current HP by the specified amount.
+
+        Args:
+            amount (int):
+                The amount to adjust HP by (positive or negative).
+
+        Returns:
+            int:
+                The actual amount adjusted (may be less than requested if at max
+                or min).
+
+        """
+        new_hp = max(0, min(self.hp + amount, self.HP_MAX))
+        actual_adjustment = new_hp - self.hp
+        self.hp = new_hp
+        return actual_adjustment
+
+    def adjust_mind(self, amount: int) -> int:
+        """
+        Adjusts the character's current Mind by the specified amount.
+
+        Args:
+            amount (int):
+                The amount to adjust Mind by (positive or negative).
+
+        Returns:
+            int:
+                The actual amount adjusted (may be less than requested if at max
+                or min).
+
+        """
+        new_mind = max(0, min(self.mind + amount, self.MIND_MAX))
+        actual_adjustment = new_mind - self.mind
+        self.mind = new_mind
+        return actual_adjustment
 
     def get_expression_variables(self) -> list[VarInfo]:
         """

@@ -177,11 +177,13 @@ class CombatManager:
 
         return True
 
-    def run_participant_turn(self, participant: Character):
-        """Runs a single participant's turn in combat.
+    def run_participant_turn(self, participant: Character) -> None:
+        """
+        Runs a single participant's turn in combat.
 
         Args:
-            participant (Character): The participant whose turn is being run.
+            participant (Character):
+                The participant whose turn is being run.
 
         """
         if participant.is_alive():
@@ -296,20 +298,18 @@ class CombatManager:
                 break
 
             # If the current target is dead, ask for a new target
-            current_target = target
-            if not target.is_alive():
+            if target.is_dead():
+                # Get remaining legal targets
                 remaining_targets = self._get_legal_targets(self.player, attack)
                 if not remaining_targets:
                     break
-                current_target = self.ui.choose_target(
-                    remaining_targets, [], f"Attack {attack_num + 1} target"
-                )
-                if not isinstance(current_target, Character):
-                    break
-                target = current_target
+                target = self.ui.choose_target(remaining_targets, [])
+
+            if not isinstance(target, Character):
+                return
 
             # Perform the attack
-            attack.execute(self.player, current_target)
+            attack.execute(self.player, target)
             attacks_made += 1
 
             # Add cooldown only once for the attack type
@@ -371,7 +371,7 @@ class CombatManager:
                         rank=rank,
                     )
                 # Remove the MIND cost from the player.
-                self.player.subtract_mind(spell.mind_cost[rank])
+                self.player.use_mind(spell.mind_cost[rank])
                 # Mark the action type as used.
                 self.player.use_action_type(spell.action_type)
                 # Add the spell to the cooldowns if it has one.
@@ -490,11 +490,13 @@ class CombatManager:
         # Ask the player to choose multiple targets.
         return self.ui.choose_targets(valid_targets, max_targets)
 
-    def execute_npc_action(self, npc: Character):
-        """Executes the action logic for an NPC during their turn.
+    def execute_npc_action(self, npc: Character) -> None:
+        """
+        Executes the action logic for an NPC during their turn.
 
         Args:
-            npc (Character): The NPC whose action is being executed.
+            npc (Character):
+                The NPC whose action is being executed.
 
         """
         allies = self.get_alive_friendlies(npc)
@@ -511,135 +513,212 @@ class CombatManager:
             )
             return
 
+        # Try to heal allies first.
+        self._execute_npc_healing(npc, allies)
+
+        # Try to buff allies.
+        self._execute_npc_buff(npc, allies)
+
+        # Try to debuff enemies.
+        self._execute_npc_debuff(npc, enemies)
+
+        # Try to perform a spell attack if possible.
+        if self._execute_npc_spell_attack(npc, enemies):
+            return
+
+        # Try to perform a weapon attack if possible.
+        if self._execute_npc_ability_attack(npc, enemies):
+            return
+
+        # Try to perform a full attack if possible.
+        if self._execute_npc_full_attack(npc, enemies):
+            return
+
+        # Try to perform a full natural attack if possible.
+        if self._execute_npc_full_natural_attack(npc, enemies):
+            return
+
+        log_warning(
+            f"SKIP: {npc.name} could not find any action to perform",
+            {
+                "npc": npc.name,
+                "allies_count": len(allies),
+                "enemies_count": len(enemies),
+                "context": "npc_ai_decision",
+            },
+        )
+
+    def _execute_npc_healing(
+        self,
+        npc: Character,
+        allies: list[Character],
+    ) -> None:
+        """
+        Executes the best healing spell for the NPC if available.
+        """
+
         # Check for healing spells.
         spell_heals: list[SpellHeal] = get_actions_by_type(npc, SpellHeal)
         if spell_heals:
-            candidate = choose_best_healing_spell_action(
+            candidate_spell = choose_best_healing_spell_action(
                 source=npc,
                 allies=allies,
                 spells=spell_heals,
             )
-            if candidate:
+            if candidate_spell:
                 # Cast the healing spell on the targets.
-                for target in candidate.targets:
-                    candidate.spell.cast_spell(
+                for target in candidate_spell.targets:
+                    candidate_spell.spell.cast_spell(
                         actor=npc,
                         target=target,
-                        rank=candidate.rank,
+                        rank=candidate_spell.rank,
                     )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(candidate.spell)
+                npc.add_cooldown(candidate_spell.spell)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.spell.action_type)
+                npc.use_action_type(candidate_spell.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.subtract_mind(candidate.mind_level)
+                npc.use_mind(candidate_spell.mind_level)
 
         # Check for healing abilities.
         healing_abilities: list[AbilityHeal] = get_actions_by_type(npc, AbilityHeal)
         if healing_abilities:
-            candidate = choose_best_healing_ability_action(
+            candidate_ability = choose_best_healing_ability_action(
                 source=npc,
                 allies=allies,
                 abilities=healing_abilities,
             )
-            if candidate:
+            if candidate_ability:
                 # Use the healing ability on the targets.
-                for target in candidate.targets:
-                    candidate.ability.execute(
+                for target in candidate_ability.targets:
+                    candidate_ability.ability.execute(
                         actor=npc,
                         target=target,
                     )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(candidate.ability)
+                npc.add_cooldown(candidate_ability.ability)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.ability.action_type)
+                npc.use_action_type(candidate_ability.ability.action_type)
+
+    def _execute_npc_buff(
+        self,
+        npc: Character,
+        allies: list[Character],
+    ) -> None:
+        """
+        Executes the best buff spell for the NPC if available.
+        """
 
         # Check for buff spells.
         spell_buffs: list[SpellBuff] = get_actions_by_type(npc, SpellBuff)
         if spell_buffs:
-            candidate = choose_best_buff_or_debuff_spell_action(
+            candidate_spell = choose_best_buff_or_debuff_spell_action(
                 source=npc,
                 targets=allies,
                 spells=spell_buffs,
             )
-            if candidate:
+            if candidate_spell:
                 # Cast the buff spell on the targets.
-                for target in candidate.targets:
-                    candidate.spell.cast_spell(
+                for target in candidate_spell.targets:
+                    candidate_spell.spell.cast_spell(
                         actor=npc,
                         target=target,
-                        rank=candidate.rank,
+                        rank=candidate_spell.rank,
                     )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(candidate.spell)
+                npc.add_cooldown(candidate_spell.spell)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.spell.action_type)
+                npc.use_action_type(candidate_spell.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.subtract_mind(candidate.mind_level)
+                npc.use_mind(candidate_spell.mind_level)
 
         # Check for buff abilities.
         buff_abilities: list[AbilityBuff] = get_actions_by_type(npc, AbilityBuff)
         if buff_abilities:
-            candidate = choose_best_buff_or_debuff_ability_action(
+            candidate_ability = choose_best_buff_or_debuff_ability_action(
                 source=npc,
                 targets=allies,
                 abilities=buff_abilities,
             )
-            if candidate:
+            if candidate_ability:
                 # Use the buff ability on the targets.
-                for target in candidate.targets:
-                    candidate.ability.execute(
+                for target in candidate_ability.targets:
+                    candidate_ability.ability.execute(
                         actor=npc,
                         target=target,
                     )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(candidate.ability)
+                npc.add_cooldown(candidate_ability.ability)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.ability.action_type)
+                npc.use_action_type(candidate_ability.ability.action_type)
+
+    def _execute_npc_debuff(
+        self,
+        npc: Character,
+        enemies: list[Character],
+    ) -> None:
+        """
+        Executes the best debuff spell for the NPC if available.
+        """
 
         # Check for debuff spells.
         spell_debuffs: list[SpellDebuff] = get_actions_by_type(npc, SpellDebuff)
         if spell_debuffs:
-            candidate = choose_best_buff_or_debuff_spell_action(
+            candidate_spell = choose_best_buff_or_debuff_spell_action(
                 source=npc,
-                targets=allies,
-                spells=spell_buffs,
+                targets=enemies,
+                spells=spell_debuffs,
             )
-            if candidate:
-                # Cast the buff spell on the targets.
-                for target in candidate.targets:
-                    candidate.spell.cast_spell(
+            if candidate_spell:
+                # Cast the debuff spell on the targets.
+                for target in candidate_spell.targets:
+                    candidate_spell.spell.cast_spell(
                         actor=npc,
                         target=target,
-                        rank=candidate.rank,
+                        rank=candidate_spell.rank,
                     )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(candidate.spell)
+                npc.add_cooldown(candidate_spell.spell)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.spell.action_type)
+                npc.use_action_type(candidate_spell.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.subtract_mind(candidate.mind_level)
+                npc.use_mind(candidate_spell.mind_level)
 
         # Check for debuff abilities.
         debuff_abilities: list[AbilityDebuff] = get_actions_by_type(npc, AbilityDebuff)
         if debuff_abilities:
-            candidate = choose_best_buff_or_debuff_ability_action(
+            candidate_ability = choose_best_buff_or_debuff_ability_action(
                 source=npc,
-                targets=allies,
-                abilities=buff_abilities,
+                targets=enemies,
+                abilities=debuff_abilities,
             )
-            if candidate:
-                # Use the buff ability on the targets.
-                for target in candidate.targets:
-                    candidate.ability.execute(
+            if candidate_ability:
+                # Use the debuff ability on the targets.
+                for target in candidate_ability.targets:
+                    candidate_ability.ability.execute(
                         actor=npc,
                         target=target,
                     )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(candidate.ability)
+                npc.add_cooldown(candidate_ability.ability)
                 # Mark the action type as used.
-                npc.use_action_type(candidate.ability.action_type)
+                npc.use_action_type(candidate_ability.ability.action_type)
 
+    def _execute_npc_spell_attack(
+        self,
+        npc: Character,
+        enemies: list[Character],
+    ) -> bool:
+        """Executes the best offensive spell for the NPC if available.
+
+        Args:
+            npc (Character): The NPC whose spell attack is being executed.
+            enemies (list[Character]): List of enemy characters.
+
+        Returns:
+            bool: True if a spell attack was executed, False otherwise.
+
+        """
         # Check for attack spells.
         spell_attacks: list[SpellOffensive] = get_actions_by_type(npc, SpellOffensive)
         if spell_attacks:
@@ -661,9 +740,26 @@ class CombatManager:
                 # Mark the action type as used.
                 npc.use_action_type(candidate.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.subtract_mind(candidate.mind_level)
+                npc.use_mind(candidate.mind_level)
+                return True
+        return False
 
-        # Check for offensive abilities.
+    def _execute_npc_ability_attack(
+        self,
+        npc: Character,
+        enemies: list[Character],
+    ) -> bool:
+        """Executes the best offensive ability for the NPC if available.
+
+        Args:
+            npc (Character): The NPC whose ability attack is being executed.
+            enemies (list[Character]): List of enemy characters.
+
+        Returns:
+            bool: True if an ability attack was executed, False otherwise.
+
+        """
+        # Check for attack abilities.
         offensive_abilities: list[AbilityOffensive] = get_actions_by_type(
             npc, AbilityOffensive
         )
@@ -681,52 +777,102 @@ class CombatManager:
                 npc.add_cooldown(candidate.ability)
                 # Mark the action type as used.
                 npc.use_action_type(candidate.ability.action_type)
+                return True
+        return False
 
-        # Check for base attacks.
+    def _execute_npc_full_attack(
+        self,
+        npc: Character,
+        enemies: list[Character],
+    ) -> bool:
+        """Executes a full attack sequence for the NPC if possible.
+
+        Args:
+            npc (Character): The NPC performing the full attack.
+            enemies (list[Character]): List of enemy characters.
+
+        Returns:
+            bool: True if a full attack was executed, False otherwise.
+
+        """
         weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
-        used_weapon_attack: bool = False
-        if weapon_attacks:
-            # Choose the best weapon type once for the full attack sequence
-            best_weapon = choose_best_weapon_for_situation(npc, weapon_attacks, enemies)
-            if best_weapon:
-                # Get initial target for this weapon
+        if not weapon_attacks:
+            return False
+
+        # Choose the best weapon type once for the full attack sequence
+        best_weapon = choose_best_weapon_for_situation(npc, weapon_attacks, enemies)
+        if not best_weapon:
+            return False
+
+        # Get initial target for this weapon
+        current_target = choose_best_target_for_weapon(npc, best_weapon, enemies)
+        if not current_target:
+            return False
+
+        # Perform multiple attacks with the same weapon type
+        attacks_made = 0
+        for _ in range(npc.number_of_attacks):
+            # If current target is dead, find a new one
+            if not current_target or not current_target.is_alive():
                 current_target = choose_best_target_for_weapon(
-                    npc, best_weapon, enemies
+                    npc,
+                    best_weapon,
+                    enemies,
                 )
+                if not current_target:
+                    # No more valid targets
+                    break
 
-                # Perform multiple attacks with the same weapon type
-                for attack_num in range(npc.number_of_attacks):
-                    # If current target is dead, find a new one
-                    if not current_target or not current_target.is_alive():
-                        current_target = choose_best_target_for_weapon(
-                            npc, best_weapon, enemies
-                        )
-                        if not current_target:
-                            # No more valid targets
-                            break
+            # Perform the attack
+            best_weapon.execute(npc, current_target)
+            attacks_made += 1
 
-                    # Perform the attack
-                    best_weapon.execute(npc, current_target)
-                    used_weapon_attack = True
+        if attacks_made > 0:
+            # Add cooldown and mark action type only once after all attacks
+            npc.add_cooldown(best_weapon)
+            npc.use_action_type(best_weapon.action_type)
+            return True
 
-                # Add cooldown and mark action type only once after all attacks
-                if used_weapon_attack:
-                    npc.add_cooldown(best_weapon)
-                    npc.use_action_type(best_weapon.action_type)
+        return False
 
-        # Check for natural attacks.
-        if not used_weapon_attack:
-            # Natural attacks are designed as a sequence - perform each different attack once
-            for attack in get_natural_attacks(npc):
-                result = choose_best_base_attack_action(npc, enemies, [attack])
-                if result:
-                    _, target = result
-                    # Perform the natural attack on the target.
-                    attack.execute(npc, target)
-                    # Add the attack to the cooldowns if it has one.
-                    npc.add_cooldown(attack)
-                    # Mark the action type as used.
-                    npc.use_action_type(attack.action_type)
+    def _execute_npc_full_natural_attack(
+        self,
+        npc: Character,
+        enemies: list[Character],
+    ) -> bool:
+        """Executes a full sequence of natural attacks for the NPC if possible.
+
+        Args:
+            npc (Character): The NPC performing the natural attacks.
+            enemies (list[Character]): List of enemy characters.
+
+        Returns:
+            bool: True if natural attacks were executed, False otherwise.
+
+        """
+        from actions.attacks.natural_attack import NaturalAttack
+
+        natural_attacks: list[NaturalAttack] = get_natural_attacks(npc)
+        if not natural_attacks:
+            return False
+
+        attacks_made = 0
+        for attack in natural_attacks:
+            # Choose the best target for this attack.
+            target = choose_best_target_for_weapon(npc, attack, enemies)
+            if not target:
+                continue
+
+            # Perform the attack
+            attack.execute(npc, target)
+            attacks_made += 1
+
+            # Add cooldown only once for the attack type
+            npc.add_cooldown(attack)
+            # Mark the action type as used.
+            npc.use_action_type(attack.action_type)
+
+        return attacks_made > 0
 
     def _get_legal_targets(
         self, character: Character, ability: BaseAction
@@ -756,7 +902,7 @@ class CombatManager:
         ]
         heals: list[Spell] = (
             [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
-            if any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player))
+            if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
             else []
         )
         # If the player has no spells, skip this phase.
@@ -774,7 +920,7 @@ class CombatManager:
         """Handles the post-combat phase where the player can heal friendly characters."""
         crule(":hourglass_done: Post-Combat Healing", style="green")
         # Stop now if there are no friendly character that needs healing.
-        if not any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+        if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             cprint("[yellow]No friendly characters to heal.[/]")
             return
         # Gather viable healing spells.
@@ -793,7 +939,7 @@ class CombatManager:
                         show_numbers=True, show_bars=True, show_ac=True
                     )
                 )
-            if not any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+            if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.

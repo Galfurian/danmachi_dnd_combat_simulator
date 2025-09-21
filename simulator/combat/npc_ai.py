@@ -36,6 +36,11 @@ class AttackSelection(BaseModel):
 
 
 class SpellSelection(BaseModel):
+    """
+    Represents a selected spell along with its rank, mind level, targets, and
+    score.
+    """
+
     spell: Spell = Field(
         description="The spell being considered.",
     )
@@ -55,6 +60,10 @@ class SpellSelection(BaseModel):
 
 
 class AbilitySelection(BaseModel):
+    """
+    Represents a selected ability along with its targets and score.
+    """
+
     ability: BaseAbility = Field(
         description="The ability being considered.",
     )
@@ -82,7 +91,7 @@ def _hp_ratio(character: Character, missing: bool = False) -> float:
             The HP ratio (0.0 to 1.0), or missing HP ratio if specified.
 
     """
-    ratio = (character.HP / character.HP_MAX) if character.HP_MAX > 0 else 1.0
+    ratio = (character.hp / character.HP_MAX) if character.HP_MAX > 0 else 1.0
     return 1.0 - ratio if missing else ratio
 
 
@@ -399,7 +408,7 @@ def _get_best_spell_attack(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.MIND:
+        if mind_level > source.mind:
             continue
 
         max_targets = spell.target_count(variables)
@@ -466,7 +475,7 @@ def _get_best_spell_heal(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.MIND:
+        if mind_level > source.mind:
             continue
 
         max_targets = spell.target_count(variables)
@@ -483,7 +492,7 @@ def _get_best_spell_heal(
         if not sorted_targets:
             continue
 
-        total_hp_missing = sum(t.HP_MAX - t.HP for t in sorted_targets)
+        total_hp_missing = sum(t.HP_MAX - t.hp for t in sorted_targets)
         total_affected = len(sorted_targets)
         score = total_hp_missing + total_affected * 10 - mind_level
 
@@ -537,7 +546,7 @@ def _get_best_spell_buff_or_debuff(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.MIND:
+        if mind_level > source.mind:
             continue
 
         max_targets = spell.target_count(variables)
@@ -895,33 +904,31 @@ def choose_best_weapon_for_situation(
 
 def choose_best_target_for_weapon(
     source: Character,
-    weapon: WeaponAttack,
+    attack: BaseAttack,
     enemies: list[Character],
 ) -> Character | None:
     """
-    Choose the best target for a specific weapon.
-
-    This is much faster than re-evaluating all weapon-target combinations.
+    Choose the best target for a specific attack.
 
     Args:
         source (Character):
             The NPC making the decision.
-        weapon (WeaponAttack):
-            The weapon being used.
+        attack (BaseAttack):
+            The attack being used.
         enemies (list[Character]):
             List of enemy characters.
 
     Returns:
         Character | None:
-            The best target for the weapon, or None if no valid target is found.
+            The best target for the attack, or None if no valid target is found.
 
     """
-    if not weapon or not enemies:
+    if not attack or not enemies:
         return None
 
-    # Use existing sorting logic but only for this weapon
+    # Use existing sorting logic but only for this attack
     best_attack = _get_best_base_attack(
-        attack=weapon,
+        attack=attack,
         source=source,
         targets=enemies,
     )
