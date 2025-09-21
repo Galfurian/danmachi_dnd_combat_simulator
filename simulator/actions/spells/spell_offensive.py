@@ -56,7 +56,7 @@ class SpellOffensive(Spell):
 
         """
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, rank) is False:
+        if not super().cast_spell(actor, target, rank):
             return False
 
         # Calculate spell attack components

@@ -61,12 +61,12 @@ class SpellDebuff(Spell):
                 False otherwise.
 
         """
-        # Validate effect.
-        assert self.effect is not None, "Effect must be defined"
-
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, rank) is False:
+        if not super().cast_spell(actor, target, rank):
             return False
+        # Validate that the effect is set.
+        if not self.effect:
+            raise ValueError("The effect field must be set.")
 
         # Apply the detrimental effect
         effect_applied = self._spell_apply_effect(actor, target, rank)

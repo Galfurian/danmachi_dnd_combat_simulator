@@ -111,10 +111,16 @@ class Spell(BaseAction):
         """
         from character.main import Character
 
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert isinstance(target, Character), "Target must be an object"
-        assert rank >= 0, "Rank must be non-negative"
-        assert rank < len(self.mind_cost), "Rank exceeds available mind cost levels"
+        if not isinstance(actor, Character):
+            raise ValueError("The actor must be a Character instance.")
+        if not isinstance(target, Character):
+            raise ValueError("The target must be a Character instance.")
+        if rank < 0 or rank >= len(self.mind_cost):
+            raise ValueError("Rank is out of bounds for this spell.")
+
+        # Check if the ability is on cooldown.
+        if actor.is_on_cooldown(self):
+            return False
 
         # Get the mind cost for the specified rank.
         mind_level = self.mind_cost[rank]

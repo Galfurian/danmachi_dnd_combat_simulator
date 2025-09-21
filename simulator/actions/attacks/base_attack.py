@@ -75,22 +75,12 @@ class BaseAttack(BaseAction):
         # =====================================================================
 
         if not isinstance(actor, Character):
-            log_warning(
-                "AbilityBuff.execute called without valid actor.",
-                {"ability": self.name, "actor": actor},
-            )
-            return False
+            raise ValueError("The actor must be a Character instance.")
         if not isinstance(target, Character):
-            log_warning(
-                "AbilityBuff.execute called without valid target.",
-                {"ability": self.name, "target": target},
-            )
-            return False
+            raise ValueError("The target must be a Character instance.")
+
+        # Check if the ability is on cooldown.
         if actor.is_on_cooldown(self):
-            log_warning(
-                "AbilityBuff.execute called while actor is on cooldown.",
-                {"ability": self.name, "actor": actor.name},
-            )
             return False
 
         # =====================================================================
