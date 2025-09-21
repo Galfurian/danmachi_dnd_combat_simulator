@@ -5,8 +5,10 @@ from collections.abc import Callable
 from logging import debug
 from typing import Any
 
+from pydantic import BaseModel, Field, model_validator
 from rich.console import Console
 from rich.rule import Rule
+from catchery import log_warning
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
@@ -54,6 +56,12 @@ def ccapture(content: Any) -> str:
     return capture.get()
 
 
+class GameException(Exception):
+    """Custom exception for game errors."""
+
+    pass
+
+
 # ---- Singleton Metaclass ----
 
 
@@ -77,6 +85,75 @@ class Singleton(type):
         if cls._inst is None:
             cls._inst = super().__call__(*args, **kwargs)
         return cls._inst
+
+
+class VarInfo(BaseModel):
+    """Class to hold variable information."""
+
+    name: str = Field(description="Variable name")
+    value: int = Field(description="Variable value")
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "VarInfo":
+        """Validates fields after model initialization."""
+        if not self.name or not isinstance(self.name, str):
+            raise ValueError("name must be a non-empty string")
+        if not isinstance(self.value, int):
+            raise ValueError("value must be an integer")
+        # Normalize name to uppercase.
+        self.name = self.name.upper().strip()
+        return self
+
+    def replace_in_expr(self, expr: str) -> str:
+        """
+        Replaces occurrences of the variable in the expression with its value.
+
+        Args:
+            expr (str): The expression to perform replacements in.
+
+        Returns:
+            str: The expression with variable replaced by its value.
+
+        """
+        if not expr or not self.name:
+            return expr
+        return expr.replace(f"[{self.name}]", str(self.value))
+
+
+class RollBreakdown(BaseModel):
+    """Class to hold roll breakdown information."""
+
+    value: int = Field(
+        description="Total roll result",
+    )
+    description: str = Field(
+        description="Description of the roll",
+    )
+    rolls: list[int] = Field(
+        description="List of individual dice rolls",
+        default_factory=list,
+    )
+
+    def get_roll(self) -> int:
+        """
+        Returns the total roll value.
+
+        Returns:
+            int: The total roll value.
+        """
+        return self.value
+
+    def is_critical(self) -> bool:
+        """
+        Determines if the roll is a critical hit (natural 20).
+        """
+        return self.rolls[0] == 20 if self.rolls else False
+
+    def is_fumble(self) -> bool:
+        """
+        Determines if the roll is a fumble (natural 1).
+        """
+        return self.rolls[0] == 1 if self.rolls else False
 
 
 def _safe_eval(arith_expr: str) -> str:
@@ -108,7 +185,7 @@ def _safe_eval(arith_expr: str) -> str:
     try:
         return _unsafe_eval()
     except Exception as e:
-        print(
+        log_warning(
             f"Failed to evaluate expression: {arith_expr}",
             {"expression": arith_expr},
             e,
@@ -134,7 +211,7 @@ def get_stat_modifier(score: int) -> int:
 # ---- Variable Substitution ----
 def substitute_variables(
     expr: str,
-    variables: dict[str, int] | None = None,
+    variables: list[VarInfo] = [],
 ) -> str:
     """
     Substitutes variables in the expression with their corresponding values.
@@ -154,12 +231,9 @@ def substitute_variables(
         return ""
     if expr.isdigit():
         return str(expr)
-    if not variables:
-        return expr
     # Replace the variables with their actual values.
-    for key, value in variables.items():
-        if key.upper() in expr:
-            expr = expr.replace(f"[{key.upper()}]", str(int(value)))
+    for variable in variables or []:
+        expr = variable.replace_in_expr(expr)
     return expr
 
 
@@ -204,7 +278,7 @@ def _parse_term_and_process_dice(
     if term.isdigit():
         value = int(term)
         if value < 0:
-            print(
+            log_warning(
                 f"Negative dice value not allowed: {value}",
                 {"term": term, "value": value},
             )
@@ -213,7 +287,7 @@ def _parse_term_and_process_dice(
 
     match = DICE_PATTERN.match(term)
     if not match:
-        print(
+        log_warning(
             f"Invalid dice string format: '{term}'",
             {"term": term},
         )
@@ -225,28 +299,28 @@ def _parse_term_and_process_dice(
 
     # Validate dice parameters
     if num <= 0:
-        print(
+        log_warning(
             f"Number of dice must be positive, got {num}",
             {"term": term, "num": num, "sides": sides},
         )
         return 0, []
 
     if sides <= 0:
-        print(
+        log_warning(
             f"Number of sides must be positive, got {sides}",
             {"term": term, "num": num, "sides": sides},
         )
         return 0, []
 
     if num > 100:  # Reasonable limit
-        print(
+        log_warning(
             f"Too many dice requested: {num} (limit: 100)",
             {"term": term, "num": num, "sides": sides},
         )
         return 0, []
 
     if sides > 1000:  # Reasonable limit
-        print(
+        log_warning(
             f"Too many sides on dice: {sides} (limit: 1000)",
             {"term": term, "num": num, "sides": sides},
         )
@@ -404,13 +478,16 @@ def _process_dice_expression(
     try:
         return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        print(
+        log_warning(
             f"Failed to evaluate '{processed_expr}': {e}",
             {
                 "expression": processed_expr,
                 "error": str(e),
                 "context": "dice_expression_evaluation",
             },
+            GameException("Error evaluating dice expression."),
+            True,
+            e,
         )
         return 0
 
@@ -458,16 +535,22 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 
 
 # ---- Public API ----
-def roll_expression(expr: str, variables: dict[str, int] | None = None) -> int:
+def roll_expression(
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> int:
     """
     Rolls a dice expression with variable substitution.
 
     Args:
-        expr (str): The dice expression to roll.
-        variables (Optional[dict[str, int]]): Variables to substitute in the expression.
+        expr (str):
+            The dice expression to roll.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
 
     Returns:
-        int: The total result of the roll.
+        int:
+            The total result of the roll.
 
     """
     if not expr:
@@ -477,21 +560,25 @@ def roll_expression(expr: str, variables: dict[str, int] | None = None) -> int:
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, variables)
-    debug(f"Substituted expression: {substituted}")
-    return roll_dice_expression(substituted)
+    return roll_dice_expression(substitute_variables(expr, variables))
 
 
-def get_max_roll(expr: str, variables: dict[str, int] | None = None) -> int:
+def get_max_roll(
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> int:
     """
     Gets the maximum possible roll for a dice expression.
 
     Args:
-        expr (str): The dice expression to analyze.
-        variables (Optional[dict[str, int]]): Variables to substitute in the expression.
+        expr (str):
+            The dice expression to analyze.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
 
     Returns:
-        int: The maximum possible result.
+        int:
+            The maximum possible result.
 
     """
     if not expr:
@@ -501,32 +588,39 @@ def get_max_roll(expr: str, variables: dict[str, int] | None = None) -> int:
         return 0
     if expr.isdigit():
         return int(expr)
-    substituted = substitute_variables(expr, variables)
-    debug(f"Substituted expression for max roll: {substituted}")
-    return parse_expr_and_assume_max_roll(substituted)
+    return parse_expr_and_assume_max_roll(substitute_variables(expr, variables))
 
 
 def roll_and_describe(
-    expr: str, variables: dict[str, int] | None = None
-) -> tuple[int, str, list[int]]:
-    """Rolls a dice expression and returns the total, a description, and the individual rolls.
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> RollBreakdown:
+    """
+    Rolls a dice expression with variable substitution and provides a breakdown.
 
     Args:
-        expr (str): The dice expression to roll.
-        entity (Optional[Any], optional): The entity rolling the dice. Defaults to None.
-        mind (Optional[int], optional): The mind level to use for the roll. Defaults to 1.
+        expr (str):
+            The dice expression to roll.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
 
     Returns:
-        tuple[int, str, list[int]]: The total roll, a description of the roll, and the individual rolls.
+        RollBreakdown:
+            An object containing the total roll value, a description of the roll,
+            and a list of individual dice rolls.
 
     """
     if not expr:
-        return 0, "", []
+        return RollBreakdown(value=0, description="", rolls=[])
     expr = expr.upper().strip()
     if expr == "":
-        return 0, "", []
+        return RollBreakdown(value=0, description="", rolls=[])
     if expr.isdigit():
-        return int(expr), f"{expr} = {expr}", []
+        return RollBreakdown(
+            value=int(expr),
+            description=f"{expr} → {expr}",
+            rolls=[],
+        )
     original_expr = expr
     substituted = substitute_variables(expr, variables)
     dice_terms = extract_dice_terms(substituted)
@@ -539,9 +633,13 @@ def roll_and_describe(
     try:
         result = int(eval(breakdown, {"__builtins__": None}, math.__dict__))
         comment = f"{substituted} → {breakdown}"
-        return result, comment, dice_rolls
+        return RollBreakdown(
+            value=result,
+            description=comment,
+            rolls=dice_rolls,
+        )
     except Exception as e:
-        print(
+        log_warning(
             f"Failed to evaluate '{breakdown}': {e}",
             {
                 "breakdown": breakdown,
@@ -549,20 +647,29 @@ def roll_and_describe(
                 "error": str(e),
                 "context": "dice_breakdown_evaluation",
             },
+            GameException("Error evaluating dice expression."),
+            True,
+            e,
         )
-        return 0, f"{original_expr} = ERROR", []
+        return RollBreakdown(value=0, description="", rolls=[])
 
 
-def evaluate_expression(expr: str, variables: dict[str, int] | None = None) -> int:
+def evaluate_expression(
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> int:
     """
     Evaluates a mathematical expression with variable substitution.
 
     Args:
-        expr (str): The expression to evaluate.
-        variables (Optional[dict[str, int]]): Variables to substitute in the expression.
+        expr (str):
+            The expression to evaluate.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
 
     Returns:
-        int: The result of the expression evaluation.
+        int:
+            The result of the expression evaluation.
 
     """
     if not expr:
@@ -576,7 +683,7 @@ def evaluate_expression(expr: str, variables: dict[str, int] | None = None) -> i
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        print(
+        log_warning(
             f"Failed to evaluate '{substituted}': {e}",
             {
                 "expression": substituted,
@@ -589,16 +696,22 @@ def evaluate_expression(expr: str, variables: dict[str, int] | None = None) -> i
         return 0
 
 
-def simplify_expression(expr: str, variables: dict[str, int] | None = None) -> str:
+def simplify_expression(
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> str:
     """
     Simplifies an expression by substituting variables and evaluating arithmetic.
 
     Args:
-        expr (str): The expression to simplify.
-        variables (Optional[dict[str, int]]): Variables to substitute in the expression.
+        expr (str):
+            The expression to simplify.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
 
     Returns:
-        str: The simplified expression.
+        str:
+            The simplified expression.
 
     """
     if not expr:

@@ -1,7 +1,7 @@
 from typing import Any
 
 from core.constants import DamageType
-from core.utils import roll_and_describe
+from core.utils import VarInfo, roll_and_describe
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -43,102 +43,84 @@ class DamageComponent(BaseModel):
 def roll_damage_component(
     actor: Any,
     target: Any,
-    damage_component: tuple[DamageComponent, int],
+    damage_component: DamageComponent,
+    variables: list[VarInfo] = [],
 ) -> tuple[int, str]:
-    """Applies a single damage component to the target, handles resistances,
+    """
+    Applies a single damage component to the target, handles resistances,
     and returns the damage dealt along with a description string.
 
     Args:
-        actor (Any): The actor applying the damage.
-        target (Any): The target receiving the damage.
-        damage_component (Tuple[DamageComponent, int]): A tuple containing the damage component
-            and the mind level to use for the damage roll.
+        actor (Any):
+            The actor applying the damage.
+        target (Any):
+            The target receiving the damage.
+        damage_component (DamageComponent):
+            The damage component being applied.
+        variables (list[VarInfo]):
+            Optional variables for damage roll expressions.
 
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
 
     """
-    variables = actor.get_expression_variables()
-    variables["MIND"] = damage_component[1]
-    # Substitute variables in the damage roll expression.
-    dmg_value, dmg_desc, _ = roll_and_describe(
-        damage_component[0].damage_roll, variables
+    damage = roll_and_describe(
+        damage_component.damage_roll,
+        variables,
     )
-    assert (
-        isinstance(dmg_value, int) and dmg_value >= 0
-    ), f"Damange must have a non-negative integer damage value, got {dmg_value}."
     # Apply the damage to the target, taking into account resistances.
     base, adjusted, taken = target.take_damage(
-        dmg_value, damage_component[0].damage_type
+        damage.value,
+        damage_component.damage_type,
     )
     # Create a damage string for display.
-    dmg_str = f"{damage_component[0].damage_type.colorize(taken)} "
-    dmg_str += f"{damage_component[0].damage_type.emoji} "
-    dmg_str += f"{damage_component[0].damage_type.colored_name} "
+    dmg_str = f"{damage_component.damage_type.colorize(taken)} "
+    dmg_str += f"{damage_component.damage_type.emoji} "
+    dmg_str += f"{damage_component.damage_type.colored_name} "
     # If the base damage differs from the adjusted damage (due to resistances),
     # include the original and adjusted values in the damage string.
     if base != adjusted:
         dmg_str += f"[dim](reduced: {base} → {adjusted})[/]"
     # Append the rolled damage expression to the damage string.
-    dmg_str += f"({dmg_desc})"
+    dmg_str += f"({damage.description})"
     return taken, dmg_str
 
 
 def roll_damage_components(
-    actor: Any, target: Any, damage_components: list[tuple[DamageComponent, int]]
+    actor: Any,
+    target: Any,
+    damage_components: list[DamageComponent],
+    variables: list[VarInfo] = [],
 ) -> tuple[int, list[str]]:
-    """Rolls damage for multiple components and returns the total damage and details.
+    """
+    Rolls damage for multiple components and returns the total damage and details.
 
     Args:
-        actor (Any): The actor applying the damage.
-        target (Any): The target receiving the damage.
-        damage_components (list[Tuple[DamageComponent, int]]): The damage components being applied.
+        actor (Any):
+            The actor applying the damage.
+        target (Any):
+            The target receiving the damage.
+        damage (list[DamageComponent]):
+            The damage components being applied.
+        variables (list[VarInfo]):
+            Optional variables for damage roll expressions.
 
     Returns:
-        Tuple[int, list[str]]: The total damage dealt and a list of damage detail strings.
-
+        tuple[int, list[str]]:
+            The total damage dealt and a list of damage detail strings.
     """
     total_damage = 0
     damage_details: list[str] = []
-    for component in damage_components:
+    for damage_component in damage_components:
         # Roll the damage for the current component.
-        dmg_value, dmg_str = roll_damage_component(actor, target, component)
+        dmg_value, dmg_str = roll_damage_component(
+            actor,
+            target,
+            damage_component,
+            variables,
+        )
         # Add the rolled damage to the total.
         total_damage += dmg_value
         # Add the damage string to the list of damage details.
         damage_details.append(dmg_str)
     return total_damage, damage_details
-
-
-def roll_damage_component_no_mind(
-    actor: Any, target: Any, damage_component: DamageComponent
-) -> tuple[int, str]:
-    """Rolls a single damage component without mind levels and returns the damage dealt and details.
-
-    Args:
-        actor (Any): The actor applying the damage.
-        target (Any): The target receiving the damage.
-        damage_component (DamageComponent): The damage component being applied.
-
-    Returns:
-        Tuple[int, str]: The damage dealt and a description string.
-
-    """
-    return roll_damage_component(actor, target, (damage_component, 1))
-
-
-def roll_damage_components_no_mind(
-    actor: Any, target: Any, damage_components: list[DamageComponent]
-) -> tuple[int, list[str]]:
-    """Rolls damage for multiple components without mind levels and returns the total damage and details.
-
-    Args:
-        actor (Any): The actor applying the damage.
-        target (Any): The target receiving the damage.
-        damage_components (list[DamageComponent]): The damage components being applied.
-
-    Returns:
-        Tuple[int, list[str]]: The total damage dealt and a list of damage detail strings.
-
-    """
-    return roll_damage_components(actor, target, [(dc, 1) for dc in damage_components])

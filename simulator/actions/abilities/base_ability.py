@@ -20,11 +20,6 @@ class BaseAbility(BaseAction, ABC):
     to implement specific behavior through abstract methods.
     """
 
-    target_expr: str = Field(
-        "",
-        description="Expression defining number of targets.",
-    )
-
     # ============================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)
     # ============================================================================
@@ -37,21 +32,6 @@ class BaseAbility(BaseAction, ABC):
 
         """
         return not self.target_expr or self.target_expr.strip() == ""
-
-    def target_count(self, actor: Any) -> int:
-        """Calculate the number of targets this ability can affect.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            int: Number of targets (minimum 1, even for invalid expressions).
-
-        """
-        if self.target_expr:
-            variables = actor.get_expression_variables()
-            return max(1, int(evaluate_expression(self.target_expr, variables)))
-        return 1
 
     # ============================================================================
     # ABSTRACT METHODS (MUST BE IMPLEMENTED BY SUBCLASSES)

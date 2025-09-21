@@ -1,35 +1,37 @@
-"""Character Action Management Module - handles action-related functionality."""
+"""
+Character Action Management Module - handles action-related functionality.
+"""
 
-from logging import debug
-from typing import TYPE_CHECKING
+from typing import Any
 
 from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell
+from catchery import log_info, log_warning
 from core.constants import ActionType
-
-if TYPE_CHECKING:
-    from character.main import Character
+from pydantic import BaseModel, Field
 
 
-class CharacterActions:
+class CharacterActions(BaseModel):
     """
-    Manages character actions, turn state, cooldowns, and action availability for a Character.
+    Manages character actions, turn state, cooldowns, and action availability
+    for a Character.
     """
 
-    def __init__(self, character: "Character") -> None:
-        """Initialize the action manager.
-
-        Args:
-            character (Character): The Character instance this action manager belongs to.
-
-        """
-        self._character = character
-        # Turn flags to track used actions.
-        self.turn_flags: dict[str, bool] = {
+    owner: Any = Field(
+        description="The Character instance this action manager belongs to."
+    )
+    turn_flags: dict[str, bool] = Field(
+        default={
             "standard_action_used": False,
             "bonus_action_used": False,
-        }
+        },
+        description="Flags to track used actions during the turn.",
+    )
+    cooldowns: dict[str, int] = Field(
+        default_factory=dict,
+        description="Cooldowns for actions, mapping action names to remaining turns.",
+    )
 
     def reset_turn_flags(self) -> None:
         """Reset the turn flags for the character."""
@@ -59,7 +61,7 @@ class CharacterActions:
 
         """
         # Check if incapacitated first
-        if self._character.is_incapacitated():
+        if self.owner.is_incapacitated():
             return False
 
         if action_type == ActionType.STANDARD:
@@ -77,7 +79,7 @@ class CharacterActions:
         """
         result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
-        for weapon in self._character.natural_weapons:
+        for weapon in self.owner.natural_weapons:
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue
@@ -97,7 +99,7 @@ class CharacterActions:
         """
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
-        for weapon in self._character.equipped_weapons:
+        for weapon in self.owner.equipped_weapons:
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue
@@ -128,7 +130,7 @@ class CharacterActions:
 
         """
         available_actions: list[BaseAction] = []
-        for action in self._character.actions.values():
+        for action in self.owner.actions.values():
             if not self.is_on_cooldown(action) and self.has_action_type(
                 action.action_type
             ):
@@ -143,14 +145,12 @@ class CharacterActions:
 
         """
         available_spells: list[Spell] = []
-        for spell in self._character.spells.values():
+        for spell in self.owner.spells.values():
             if not self.is_on_cooldown(spell) and self.has_action_type(
                 spell.action_type
             ):
                 # Check if the character has enough mind points to cast the spell.
-                if self._character.mind >= (
-                    spell.mind_cost[0] if spell.mind_cost else 0
-                ):
+                if self.owner.MIND >= (spell.mind_cost[0] if spell.mind_cost else 0):
                     available_spells.append(spell)
         return available_spells
 
@@ -179,8 +179,8 @@ class CharacterActions:
             action (BaseAction): The action to add a cooldown to.
 
         """
-        if action.name not in self._character.cooldowns and action.has_cooldown():
-            self._character.cooldowns[action.name] = action.get_cooldown()
+        if action.name not in self.cooldowns and action.has_cooldown():
+            self.cooldowns[action.name] = action.get_cooldown()
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Check if an action is currently on cooldown.
@@ -192,7 +192,7 @@ class CharacterActions:
             bool: True if the action is on cooldown, False otherwise.
 
         """
-        return self._character.cooldowns.get(action.name, 0) > 0
+        return self.cooldowns.get(action.name, 0) > 0
 
     def initialize_uses(self, action: BaseAction) -> None:
         """Initialize the uses of an action to its maximum uses.
@@ -201,9 +201,9 @@ class CharacterActions:
             action (BaseAction): The action to initialize uses for.
 
         """
-        if action.name not in self._character.uses:
+        if action.name not in self.owner.uses:
             if action.has_limited_uses():
-                self._character.uses[action.name] = action.get_maximum_uses()
+                self.owner.uses[action.name] = action.get_maximum_uses()
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Return the remaining uses of an action.
@@ -218,7 +218,7 @@ class CharacterActions:
         # Unlimited uses.
         if not action.has_limited_uses():
             return -1
-        return self._character.uses.get(action.name, 0)
+        return self.owner.uses.get(action.name, 0)
 
     def decrement_uses(self, action: BaseAction) -> bool:
         """Decrement the uses of an action by 1.
@@ -233,42 +233,28 @@ class CharacterActions:
         # Don't decrement unlimited use actions.
         if not action.has_limited_uses():
             return True
-        if action.name in self._character.uses:
-            if self._character.uses[action.name] > 0:
-                self._character.uses[action.name] -= 1
+        if action.name in self.owner.uses:
+            if self.owner.uses[action.name] > 0:
+                self.owner.uses[action.name] -= 1
                 return True
-            print(
-                f"{self._character.name} has no remaining uses for {action.name}",
+            log_warning(
+                f"{self.owner.name} has no remaining uses for {action.name}",
                 {
-                    "character": self._character.name,
+                    "character": self.owner.name,
                     "action": action.name,
-                    "remaining_uses": self._character.uses[action.name],
+                    "remaining_uses": self.owner.uses[action.name],
                 },
             )
         else:
-            print(
-                f"{self._character.name} does not have {action.name} in their uses",
+            log_warning(
+                f"{self.owner.name} does not have {action.name} in their uses",
                 {
-                    "character": self._character.name,
+                    "character": self.owner.name,
                     "action": action.name,
-                    "available_actions": list(self._character.uses.keys()),
+                    "available_actions": list(self.owner.uses.keys()),
                 },
             )
         return False
-
-    def turn_update(self) -> None:
-        """Update the duration of all active effects and cooldowns."""
-        self._character.effects_module.turn_update()
-        # Iterate the cooldowns and decrement them.
-        for action_name in list(self._character.cooldowns.keys()):
-            if self._character.cooldowns[action_name] > 0:
-                self._character.cooldowns[action_name] -= 1
-        # Clear expired cooldowns.
-        self._character.cooldowns = {
-            action_name: cd
-            for action_name, cd in self._character.cooldowns.items()
-            if cd > 0
-        }
 
     def learn_action(self, action: BaseAction) -> None:
         """Add an Action object to the character's known actions.
@@ -277,9 +263,9 @@ class CharacterActions:
             action (BaseAction): The action to learn.
 
         """
-        if action.name.lower() not in self._character.actions:
-            self._character.actions[action.name.lower()] = action
-            debug(f"{self._character.name} learned {action.name}!")
+        if action.name.lower() not in self.owner.actions:
+            self.owner.actions[action.name.lower()] = action
+            log_info(f"{self.owner.name} learned {action.name}!")
 
     def unlearn_action(self, action: BaseAction) -> None:
         """Remove an Action object from the character's known actions.
@@ -288,9 +274,9 @@ class CharacterActions:
             action (BaseAction): The action to unlearn.
 
         """
-        if action.name.lower() in self._character.actions:
-            del self._character.actions[action.name.lower()]
-            debug(f"{self._character.name} unlearned {action.name}!")
+        if action.name.lower() in self.owner.actions:
+            del self.owner.actions[action.name.lower()]
+            log_info(f"{self.owner.name} unlearned {action.name}!")
 
     def learn_spell(self, spell: Spell) -> None:
         """
@@ -300,9 +286,9 @@ class CharacterActions:
             spell (Spell): The spell to learn.
 
         """
-        if spell.name.lower() not in self._character.spells:
-            self._character.spells[spell.name.lower()] = spell
-            debug(f"{self._character.name} learned {spell.name}!")
+        if spell.name.lower() not in self.owner.spells:
+            self.owner.spells[spell.name.lower()] = spell
+            log_info(f"{self.owner.name} learned {spell.name}!")
 
     def unlearn_spell(self, spell: Spell) -> None:
         """
@@ -312,6 +298,20 @@ class CharacterActions:
             spell (Spell): The spell to unlearn.
 
         """
-        if spell.name.lower() in self._character.spells:
-            del self._character.spells[spell.name.lower()]
-            debug(f"{self._character.name} unlearned {spell.name}!")
+        if spell.name.lower() in self.owner.spells:
+            del self.owner.spells[spell.name.lower()]
+            log_info(f"{self.owner.name} unlearned {spell.name}!")
+
+    def turn_update(self) -> None:
+        """
+        Update the character's action state at the end of their turn.
+        This includes decrementing cooldowns and resetting turn flags.
+        """
+        # Decrement cooldowns.
+        for action_name in list(self.cooldowns.keys()):
+            if self.cooldowns[action_name] > 0:
+                self.cooldowns[action_name] -= 1
+            if self.cooldowns[action_name] == 0:
+                del self.cooldowns[action_name]
+        # Reset turn flags.
+        self.reset_turn_flags()

@@ -6,220 +6,749 @@ from actions.abilities import (
     AbilityHeal,
     AbilityOffensive,
 )
+from actions.abilities.base_ability import BaseAbility
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
+from actions.spells.base_spell import Spell
+from catchery import log_info
 from character import Character
+from core.utils import VarInfo
+from pydantic import BaseModel, Field
+
 
 # =============================================================================
 # Support Functions
 # =============================================================================
 
 
-def _hp_ratio(character: Character) -> float:
+class AttackSelection(BaseModel):
+    attack: BaseAttack = Field(
+        description="The attack being considered.",
+    )
+    targets: list[Character] = Field(
+        default_factory=list,
+        description="List of selected targets for the spell.",
+    )
+    score: float = Field(
+        description="Score of the selection (higher is better).",
+    )
+
+
+class SpellSelection(BaseModel):
+    spell: Spell = Field(
+        description="The spell being considered.",
+    )
+    rank: int = Field(
+        description="The rank of the spell being considered.",
+    )
+    mind_level: int = Field(
+        description="The mind level to cast the spell at.",
+    )
+    targets: list[Character] = Field(
+        default_factory=list,
+        description="List of selected targets for the spell.",
+    )
+    score: float = Field(
+        description="Score of the selection (higher is better).",
+    )
+
+
+class AbilitySelection(BaseModel):
+    ability: BaseAbility = Field(
+        description="The ability being considered.",
+    )
+    targets: list[Character] = Field(
+        default_factory=list,
+        description="List of selected targets for the ability.",
+    )
+    score: float = Field(
+        description="Score of the selection (higher is better).",
+    )
+
+
+def _hp_ratio(character: Character, missing: bool = False) -> float:
     """
     Helper function to calculate HP ratio.
 
     Args:
-        character (Character): The character whose HP ratio to calculate.
+        character (Character):
+            The character whose HP ratio to calculate.
+        missing (bool):
+            If True, returns the missing HP ratio (1 - current HP / max HP).
 
     Returns:
-        float: The HP ratio (current HP / max HP), or 1.0 if max HP is 0.
+        float:
+            The HP ratio (0.0 to 1.0), or missing HP ratio if specified.
 
     """
-    return character.hp / character.HP_MAX if character.HP_MAX > 0 else 1.0
+    ratio = (character.HP / character.HP_MAX) if character.HP_MAX > 0 else 1.0
+    return 1.0 - ratio if missing else ratio
+
+
+def _can_apply_effect(
+    source: Character,
+    target: Character,
+    effect: Any,
+    variables: list[VarInfo] = [],
+) -> bool:
+    """
+    Helper function to determine if a given effect is useful on a target.
+
+    Args:
+        source (Character):
+            The character applying the effect.
+        target (Character):
+            The character receiving the effect.
+        effect (Any):
+            The effect being applied.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness.
+
+    Returns:
+        bool:
+            True if the effect is useful on the target, False otherwise.
+
+    """
+    if effect is None:
+        return False
+    return target.can_add_effect(
+        source=source,
+        effect=effect,
+        variables=variables,
+    )
+
+
+def _filter_can_add_effect(
+    source: Character,
+    targets: list[Character],
+    effect: Any,
+    variables: list[VarInfo] = [],
+) -> list[Character]:
+    """
+    Filters targets that can have the effect applied.
+
+    Args:
+        source (Character):
+            The character applying the effect.
+        targets (list[Character]):
+            List of potential targets.
+        effect (Any):
+            The effect being applied.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness.
+
+    Returns:
+        list[Character]:
+            List of targets that can have the effect applied.
+
+    """
+    if effect is None:
+        return []
+    return [
+        target
+        for target in targets
+        if target.can_add_effect(
+            source=source,
+            effect=effect,
+            variables=variables,
+        )
+    ]
 
 
 # =============================================================================
-# Sorting Functions
+# TARGETS SORTING FUNCTIONS
 # =============================================================================
 
 
 def _sort_targets_by_usefulness_and_hp_offensive(
-    targets: list[Character], action: Any, mind_level: int = 0
+    action: BaseAttack | AbilityOffensive | SpellOffensive,
+    source: Character,
+    targets: list[Character],
+    variables: list[VarInfo] = [],
+    max_targets: int = 0,
 ) -> list[Character]:
     """
     Generic sorting function that prioritizes:
-    1. Targets where the effect would be useful.
-    2. Lower HP ratio within each group.
+        1. Targets where the effect would be useful.
+        2. Lower HP ratio within each group.
 
     Args:
-        targets (list[Character]): List of potential targets.
-        action (Any): The action being considered for the targets. Can be a spell, attack, or other action.
-        mind_level (int): The mind level to use for evaluating usefulness. Defaults to 0.
+        source (Character):
+            The character performing the action.
+        targets (list[Character]):
+            List of potential targets.
+        action (Any):
+            The action being considered for the targets. Can be a spell, attack,
+            or other action.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness. Defaults to an
+            empty list.
+        max_targets (int):
+            The maximum number of targets to return. If 0 or less, returns all
+            sorted targets. Defaults to 0.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
+        list[Character]:
+            Sorted list of targets based on usefulness and HP ratio.
 
     """
-    useful = [
-        t
-        for t in targets
-        if not hasattr(action, "effect")
-        or action.effect is None
-        or t.effects_module.can_add_effect(action.effect, t, mind_level)
-    ]
-    not_useful = [t for t in targets if t not in useful]
-
-    useful_sorted = sorted(useful, key=_hp_ratio)
-    not_useful_sorted = sorted(not_useful, key=_hp_ratio)
-
-    return useful_sorted + not_useful_sorted
+    # So here is the order of importance:
+    # 1. Targets that have higher HP ratio (primary).
+    # 2. Targets that can benefit from the effect (secondary).
+    sorted_targets = sorted(
+        targets,
+        key=lambda target: (
+            _hp_ratio(target),
+            _can_apply_effect(
+                source,
+                target,
+                action.effect,
+                variables,
+            ),
+        ),
+    )
+    if max_targets > 0 and len(sorted_targets) > max_targets:
+        return sorted_targets[:max_targets]
+    return sorted_targets
 
 
 def _sort_targets_by_usefulness_and_hp_healing(
-    targets: list[Character], action: Any, mind_level: int = 0
+    action: AbilityHeal | SpellHeal,
+    source: Character,
+    targets: list[Character],
+    variables: list[VarInfo] = [],
+    max_targets: int = 0,
 ) -> list[Character]:
     """
     Generic sorting function for healing actions.
     Prioritizes targets that need healing or where the effect would be useful.
 
     Args:
-        targets (list[Character]): List of potential targets.
-        action (Any): The healing action being considered.
-        mind_level (int): The mind level to use for evaluating usefulness. Defaults to 0
+        source (Character):
+            The character performing the action.
+        targets (list[Character]):
+            List of potential targets.
+        action (Any):
+            The healing action being considered for the targets. Can be a spell,
+            ability, or other action.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness. Defaults to an
+            empty list.
+        max_targets (int):
+            The maximum number of targets to return. If 0 or less, returns all
+            sorted targets. Defaults to 0.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
+        list[Character]:
+            Sorted list of targets based on usefulness and HP ratio.
 
     """
-    useful = [
-        t
-        for t in targets
-        if t.hp < t.HP_MAX
-        or action.effect is None
-        or t.effects_module.can_add_effect(action.effect, t, mind_level)
-    ]
+    # So here is the order of importance:
+    # 1. Targets that has a low HP ratio (primary).
+    # 2. Targets that can benefit from the effect (secondary).
+    sorted_targets = sorted(
+        targets,
+        key=lambda target: (
+            _hp_ratio(target, missing=True),
+            _can_apply_effect(
+                source,
+                target,
+                action.effect,
+                variables,
+            ),
+        ),
+    )
+    if max_targets > 0 and len(sorted_targets) > max_targets:
+        return sorted_targets[:max_targets]
+    return sorted_targets
 
-    useful = sorted(useful, key=lambda t: t.HP_MAX - t.hp, reverse=True)
 
-    return useful
-
-
-def _sort_for_base_attack(
-    actor: Character, action: BaseAttack, targets: list[Character]
+def _sort_targets_by_usefulness_and_buff(
+    action: AbilityBuff | AbilityDebuff | SpellBuff | SpellDebuff,
+    source: Character,
+    targets: list[Character],
+    variables: list[VarInfo] = [],
+    max_targets: int = 0,
 ) -> list[Character]:
+    """
+    Generic sorting function for buff actions.
+    Prioritizes targets that would benefit from the buff.
+
+    Args:
+        source (Character):
+            The character performing the action.
+        targets (list[Character]):
+            List of potential targets.
+        action (Any):
+            The buff action being considered for the targets.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness. Defaults to an
+            empty list.
+        max_targets (int):
+            The maximum number of targets to return. If 0 or less, returns all
+            sorted targets. Defaults to 0.
+
+    Returns:
+        list[Character]:
+            Sorted list of targets based on usefulness.
+
+    """
+    # So here is the order of importance:
+    # 1. Targets that can benefit from the effect (primary).
+    sorted_targets = sorted(
+        targets,
+        key=lambda target: _can_apply_effect(
+            source,
+            target,
+            action.effect,
+            variables,
+        ),
+    )
+    if max_targets > 0 and len(sorted_targets) > max_targets:
+        return sorted_targets[:max_targets]
+    return sorted_targets
+
+
+# =============================================================================
+# ACTION-SPECIFIC SORTING FUNCTIONS
+# =============================================================================
+
+
+def _get_best_base_attack(
+    attack: BaseAttack,
+    source: Character,
+    targets: list[Character],
+    variables: list[VarInfo] = [],
+) -> AttackSelection | None:
     """
     Prioritizes targets for base attacks.
 
     Args:
-        actor (Character): The character performing the attack.
-        action (BaseAttack): The base attack being considered.
-        targets (list[Character]): List of potential targets.
+        attack (BaseAttack):
+            The base attack being considered.
+        source (Character):
+            The character performing the attack.
+        targets (list[Character]):
+            List of potential targets.
+        variables (list[VarInfo]):
+            List of variables to use for evaluating usefulness. Defaults to an
+            empty list.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
+        AttackSelection | None:
+            The best attack and targets, or None if no valid targets are found.
 
     """
-    return _sort_targets_by_usefulness_and_hp_offensive(targets, action, 0)
+    variables = source.get_expression_variables()
+
+    max_targets = attack.target_count(variables)
+    if max_targets <= 0:
+        return None
+
+    sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(
+        action=attack,
+        source=source,
+        targets=targets,
+        variables=variables,
+        max_targets=max_targets,
+    )
+    if not sorted_targets:
+        return None
+    total_affected = len(sorted_targets)
+    score = total_affected
+    log_info(
+        "Evaluated base attack",
+        {
+            "attack": attack.name,
+            "max_targets": max_targets,
+            "total_affected": total_affected,
+            "score": score,
+        },
+    )
+    return AttackSelection(
+        attack=attack,
+        targets=sorted_targets,
+        score=score,
+    )
 
 
-def _sort_for_spell_attack(
-    actor: Character, spell: SpellOffensive, targets: list[Character]
-) -> tuple[int, list[Character], float]:
+def _get_best_spell_attack(
+    spell: SpellOffensive,
+    source: Character,
+    targets: list[Character],
+) -> SpellSelection | None:
     """
     Optimizes both mind_level and targets for offensive spells.
 
     Args:
-        actor (Character): The character casting the spell.
-        spell (SpellOffensive): The offensive spell being considered.
-        targets (list[Character]): List of potential targets.
+        source (Character):
+            The character casting the spell.
+        spell (SpellOffensive):
+            The offensive spell being considered.
+        targets (list[Character]):
+            List of potential targets.
 
     Returns:
-        tuple[int, list[Character], float]: The best mind level and corresponding sorted targets.
+        SpellSelection | None:
+            The best spell the source can cast.
 
     """
-    best_score = -float("inf")
-    best_mind_level = spell.mind_cost[0]
-    best_targets = []
+    best_spell: SpellSelection | None = None
 
-    for mind_level in spell.mind_cost:
-        if mind_level > actor.mind:
+    for rank, mind_level in enumerate(spell.mind_cost, 0):
+        variables = spell.spell_get_variables(source, rank)
+
+        if mind_level > source.MIND:
             continue
-        max_targets = spell.target_count(actor, mind_level)
+
+        max_targets = spell.target_count(variables)
         if max_targets <= 0:
             continue
+
         sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(
-            targets, spell, mind_level
+            action=spell,
+            source=source,
+            targets=targets,
+            variables=variables,
+            max_targets=max_targets,
         )
-        candidate_targets = sorted_targets[:max_targets]
-        if not candidate_targets:
+        if not sorted_targets:
             continue
-        usefulness = sum(
-            1
-            for t in candidate_targets
-            if spell.effect is None
-            or t.effects_module.can_add_effect(spell.effect, t, mind_level)
+        total_affected = len(sorted_targets)
+        score = total_affected * 10 - mind_level
+        log_info(
+            "Evaluated spell attack",
+            {
+                "spell": spell.name,
+                "rank": rank,
+                "mind_level": mind_level,
+                "max_targets": max_targets,
+                "total_affected": total_affected,
+                "score": score,
+            },
         )
-        score = usefulness * 10 - mind_level
-        print(
-            f"[DEBUG] mind_level={mind_level}, score={score}, max_targets={max_targets}, targets={len(candidate_targets)}"
-        )
-        if score > best_score:
-            best_score = score
-            best_mind_level = mind_level
-            best_targets = candidate_targets
+        if not best_spell or score > best_spell.score:
+            best_spell = SpellSelection(
+                spell=spell,
+                rank=rank,
+                mind_level=mind_level,
+                targets=sorted_targets,
+                score=score,
+            )
 
-    return best_mind_level, best_targets, best_score
+    return best_spell
 
 
-def _sort_for_spell_heal(
-    actor: Character, spell: SpellHeal, targets: list[Character]
-) -> list[Character]:
+def _get_best_spell_heal(
+    spell: SpellHeal,
+    source: Character,
+    targets: list[Character],
+) -> SpellSelection | None:
     """
-    Prioritizes targets by how much they need healing.
+    Returns targets sorted by usefulness and HP for healing spells.
 
     Args:
-        actor (Character): The character casting the healing spell.
-        spell (SpellHeal): The healing spell being considered.
-        targets (list[Character]): List of potential targets.
+        source (Character):
+            The character casting the healing spell.
+        spell (SpellHeal):
+            The healing spell being considered.
+        targets (list[Character]):
+            List of potential targets.
 
     Returns:
-        list[Character]: Sorted list of targets based on HP ratio and usefulness of the healing effect.
+        SpellSelection | None:
+            The best spell the source can cast.
 
     """
-    return _sort_targets_by_usefulness_and_hp_healing(
-        targets, spell, spell.mind_cost[0]
+    best_spell: SpellSelection | None = None
+
+    for rank, mind_level in enumerate(spell.mind_cost, 0):
+        variables = spell.spell_get_variables(source, rank)
+
+        if mind_level > source.MIND:
+            continue
+
+        max_targets = spell.target_count(variables)
+        if max_targets <= 0:
+            continue
+
+        sorted_targets = _sort_targets_by_usefulness_and_hp_healing(
+            action=spell,
+            source=source,
+            targets=targets,
+            variables=variables,
+            max_targets=max_targets,
+        )
+        if not sorted_targets:
+            continue
+
+        total_hp_missing = sum(t.HP_MAX - t.HP for t in sorted_targets)
+        total_affected = len(sorted_targets)
+        score = total_hp_missing + total_affected * 10 - mind_level
+
+        log_info(
+            "Evaluated spell heal",
+            {
+                "spell": spell.name,
+                "rank": rank,
+                "mind_level": mind_level,
+                "max_targets": max_targets,
+                "total_affected": total_affected,
+                "score": score,
+            },
+        )
+
+        if not best_spell or score > best_spell.score:
+            best_spell = SpellSelection(
+                spell=spell,
+                rank=rank,
+                mind_level=mind_level,
+                targets=sorted_targets,
+                score=score,
+            )
+
+    return best_spell
+
+
+def _get_best_spell_buff_or_debuff(
+    spell: SpellBuff | SpellDebuff,
+    source: Character,
+    targets: list[Character],
+) -> SpellSelection | None:
+    """
+    Returns targets sorted by usefulness and HP for buff spells.
+
+    Args:
+        spell (SpellBuff | SpellDebuff):
+            The buff or debuff spell being considered.
+        source (Character):
+            The character casting the buff or debuff spell.
+        targets (list[Character]):
+            List of potential targets.
+
+    Returns:
+        SpellSelection | None:
+            The best spell the source can cast.
+
+    """
+    best_spell: SpellSelection | None = None
+
+    for rank, mind_level in enumerate(spell.mind_cost, 0):
+        variables = spell.spell_get_variables(source, rank)
+
+        if mind_level > source.MIND:
+            continue
+
+        max_targets = spell.target_count(variables)
+        if max_targets <= 0:
+            continue
+
+        sorted_targets = _sort_targets_by_usefulness_and_buff(
+            action=spell,
+            source=source,
+            targets=targets,
+            variables=variables,
+            max_targets=max_targets,
+        )
+        if not sorted_targets:
+            continue
+
+        total_affected = len(sorted_targets)
+        score = total_affected * 10 - mind_level
+
+        log_info(
+            "Evaluated spell buff",
+            {
+                "spell": spell.name,
+                "rank": rank,
+                "mind_level": mind_level,
+                "max_targets": max_targets,
+                "total_affected": total_affected,
+                "score": score,
+            },
+        )
+
+        if not best_spell or score > best_spell.score:
+            best_spell = SpellSelection(
+                spell=spell,
+                rank=rank,
+                mind_level=mind_level,
+                targets=sorted_targets,
+                score=score,
+            )
+
+    return best_spell
+
+
+def _get_best_ability_attack(
+    ability: AbilityOffensive,
+    source: Character,
+    targets: list[Character],
+    variables: list[VarInfo] = [],
+    max_targets: int = 0,
+) -> AbilitySelection | None:
+    """
+    Prioritizes targets for offensive abilities.
+
+    Args:
+        ability (AbilityOffensive):
+            The offensive ability being considered.
+        source (Character):
+            The character using the ability.
+        targets (list[Character]):
+            List of potential targets.
+        variables (list[VarInfo], optional):
+            List of variables to consider for the ability.
+        max_targets (int, optional):
+            Maximum number of targets to consider.
+
+    Returns:
+        AbilitySelection | None:
+            The best ability the source can use, or None if no valid targets
+            are found.
+    """
+    variables = source.get_expression_variables()
+
+    max_targets = ability.target_count(variables)
+    if max_targets <= 0:
+        return None
+
+    sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(
+        action=ability,
+        source=source,
+        targets=targets,
+        variables=variables,
+        max_targets=max_targets,
+    )
+    if not sorted_targets:
+        return None
+
+    total_affected = len(sorted_targets)
+    score = total_affected
+    log_info(
+        "Evaluated ability attack",
+        {
+            "ability": ability.name,
+            "max_targets": max_targets,
+            "total_affected": total_affected,
+            "score": score,
+        },
+    )
+    return AbilitySelection(
+        ability=ability,
+        targets=sorted_targets,
+        score=score,
     )
 
 
-def _sort_for_spell_buff(
-    actor: Character, action: SpellBuff, targets: list[Character]
-) -> list[Character]:
+def _get_best_ability_heal(
+    ability: AbilityHeal,
+    source: Character,
+    targets: list[Character],
+) -> AbilitySelection | None:
     """
-    Returns targets sorted by whether the effect would be useful.
+    Returns targets sorted by usefulness and HP for healing abilities.
 
     Args:
-        actor (Character): The character casting the buff spell.
-        action (SpellBuff): The buff spell being considered.
-        targets (list[Character]): List of potential targets.
+        ability (AbilityHeal):
+            The healing ability being considered.
+        source (Character):
+            The character using the ability.
+        targets (list[Character]):
+            List of potential targets.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
-
+        AbilitySelection | None:
+            The best ability the source can use, or None if no valid targets
+            are found.
     """
-    return _sort_targets_by_usefulness_and_hp_offensive(
-        targets, action, action.mind_cost[0]
+    variables = source.get_expression_variables()
+
+    max_targets = ability.target_count(variables)
+    if max_targets <= 0:
+        return None
+
+    sorted_targets = _sort_targets_by_usefulness_and_hp_healing(
+        action=ability,
+        source=source,
+        targets=targets,
+        variables=variables,
+        max_targets=max_targets,
+    )
+    if not sorted_targets:
+        return None
+
+    total_affected = len(sorted_targets)
+    score = total_affected
+    log_info(
+        "Evaluated ability heal",
+        {
+            "ability": ability.name,
+            "max_targets": max_targets,
+            "total_affected": total_affected,
+            "score": score,
+        },
+    )
+    return AbilitySelection(
+        ability=ability,
+        targets=sorted_targets,
+        score=score,
     )
 
 
-def _sort_for_spell_debuff(
-    actor: Character, spell: SpellDebuff, targets: list[Character]
-) -> list[Character]:
+def _get_best_ability_buff_or_debuff(
+    ability: AbilityBuff | AbilityDebuff,
+    source: Character,
+    targets: list[Character],
+) -> AbilitySelection | None:
     """
-    Sorts debuff targets by usefulness and HP.
+    Returns targets sorted by usefulness for buff or debuff abilities.
 
     Args:
-        actor (Character): The character casting the debuff spell.
-        spell (SpellDebuff): The debuff spell being considered.
-        targets (list[Character]): List of potential targets.
+        ability (AbilityBuff | AbilityDebuff):
+            The buff or debuff ability being considered.
+        source (Character):
+            The character using the ability.
+        targets (list[Character]):
+            List of potential targets.
 
     Returns:
-        list[Character]: Sorted list of targets based on usefulness and HP ratio.
-
+        AbilitySelection | None:
+            The best ability the source can use, or None if no valid targets
+            are found.
     """
-    return _sort_targets_by_usefulness_and_hp_offensive(
-        targets, spell, spell.mind_cost[0]
+    variables = source.get_expression_variables()
+
+    max_targets = ability.target_count(variables)
+    if max_targets <= 0:
+        return None
+
+    sorted_targets = _sort_targets_by_usefulness_and_buff(
+        action=ability,
+        source=source,
+        targets=targets,
+        variables=variables,
+        max_targets=max_targets,
+    )
+    if not sorted_targets:
+        return None
+
+    total_affected = len(sorted_targets)
+    score = total_affected
+    log_info(
+        "Evaluated ability buff/debuff",
+        {
+            "ability": ability.name,
+            "max_targets": max_targets,
+            "total_affected": total_affected,
+            "score": score,
+        },
+    )
+    return AbilitySelection(
+        ability=ability,
+        targets=sorted_targets,
+        score=score,
     )
 
 
@@ -228,21 +757,93 @@ def _sort_for_spell_debuff(
 # =============================================================================
 
 
+def get_weapon_attacks(source: Character) -> list["WeaponAttack"]:
+    """
+    Get available weapon attacks for a character.
+
+    Args:
+        source (Character): The character to get weapon attacks for.
+
+    Returns:
+        list[WeaponAttack]: List of available weapon attacks.
+
+    """
+    return source.get_available_weapon_attacks()
+
+
+def get_natural_attacks(source: Character) -> list["NaturalAttack"]:
+    """
+    Get available natural attacks for a character.
+
+    Args:
+        source (Character): The character to get natural attacks for.
+
+    Returns:
+        list[NaturalAttack]: List of available natural attacks.
+
+    """
+    return source.get_available_natural_weapon_attacks()
+
+
+# =============================================================================
+# Public API
+# =============================================================================
+
+
+def get_all_combat_actions(source: Character) -> list[BaseAction]:
+    """
+    Get all available combat actions for a character.
+
+    Args:
+        source (Character): The character to get combat actions for.
+
+    Returns:
+        list[BaseAction]: List of all available combat actions including attacks, actions, and spells.
+
+    """
+    return (
+        source.get_available_attacks()
+        + source.get_available_actions()
+        + source.get_available_spells()
+    )
+
+
+def get_actions_by_type(source: Character, action_type: type) -> list[Any]:
+    """
+    Generic function to get actions of a specific type.
+
+    Args:
+        source (Character): The character to get actions for.
+        action_type (type): The type of action to filter for.
+
+    Returns:
+        list[Any]: List of actions of the specified type.
+
+    """
+    return [a for a in get_all_combat_actions(source) if isinstance(a, action_type)]
+
+
 def choose_best_weapon_for_situation(
-    npc: Character, weapons: list["WeaponAttack"], enemies: list[Character]
-) -> Optional["WeaponAttack"]:
+    source: Character,
+    weapons: list[WeaponAttack],
+    enemies: list[Character],
+) -> WeaponAttack | None:
     """
     Choose the best weapon type based on overall battlefield effectiveness.
 
     This separates weapon selection from target selection for better performance.
 
     Args:
-        npc (Character): The NPC making the decision.
-        weapons (list[WeaponAttack]): List of available weapon attacks.
-        enemies (list[Character]): List of enemy characters.
+        source (Character):
+            The NPC making the decision.
+        weapons (list[WeaponAttack]):
+            List of available weapon attacks.
+        enemies (list[Character]):
+            List of enemy characters.
 
     Returns:
-        Optional[WeaponAttack]: The best weapon for the situation, or None if no valid weapon is found.
+        WeaponAttack | None:
+            The best weapon for the situation, or None if no valid weapon is found.
 
     """
     if not weapons or not enemies:
@@ -253,7 +854,7 @@ def choose_best_weapon_for_situation(
 
     for weapon in weapons:
         # Skip if weapon is on cooldown
-        if npc.is_on_cooldown(weapon):
+        if source.is_on_cooldown(weapon):
             continue
 
         # Calculate weapon effectiveness against all available targets
@@ -269,8 +870,9 @@ def choose_best_weapon_for_situation(
 
             # Effect score
             effect_score = 0
-            if weapon.effect and target.effects_module.can_add_effect(
-                weapon.effect, target, 0
+            if weapon.effect and target.can_add_effect(
+                source=source,
+                effect=weapon.effect,
             ):
                 effect_score = 10
 
@@ -292,7 +894,9 @@ def choose_best_weapon_for_situation(
 
 
 def choose_best_target_for_weapon(
-    npc: Character, weapon: "WeaponAttack", enemies: list[Character]
+    source: Character,
+    weapon: WeaponAttack,
+    enemies: list[Character],
 ) -> Character | None:
     """
     Choose the best target for a specific weapon.
@@ -300,200 +904,126 @@ def choose_best_target_for_weapon(
     This is much faster than re-evaluating all weapon-target combinations.
 
     Args:
-        npc (Character): The NPC making the decision.
-        weapon (WeaponAttack): The weapon being used.
-        enemies (list[Character]): List of enemy characters.
+        source (Character):
+            The NPC making the decision.
+        weapon (WeaponAttack):
+            The weapon being used.
+        enemies (list[Character]):
+            List of enemy characters.
 
     Returns:
-        Optional[Character]: The best target for the weapon, or None if no valid target is found.
+        Character | None:
+            The best target for the weapon, or None if no valid target is found.
 
     """
     if not weapon or not enemies:
         return None
 
     # Use existing sorting logic but only for this weapon
-    sorted_targets = _sort_for_base_attack(npc, weapon, enemies)
+    best_attack = _get_best_base_attack(
+        attack=weapon,
+        source=source,
+        targets=enemies,
+    )
+    if not best_attack:
+        return None
 
-    # Find the first alive target
-    for target in sorted_targets:
+    # Find the first alive target.
+    for target in best_attack.targets:
         if target.is_alive():
             return target
 
     return None
 
 
-def get_weapon_attacks(npc: Character) -> list["WeaponAttack"]:
-    """
-    Get available weapon attacks for a character.
-
-    Args:
-        npc (Character): The character to get weapon attacks for.
-
-    Returns:
-        list[WeaponAttack]: List of available weapon attacks.
-
-    """
-    return npc.get_available_weapon_attacks()
-
-
-def get_natural_attacks(npc: Character) -> list["NaturalAttack"]:
-    """
-    Get available natural attacks for a character.
-
-    Args:
-        npc (Character): The character to get natural attacks for.
-
-    Returns:
-        list[NaturalAttack]: List of available natural attacks.
-
-    """
-    return npc.get_available_natural_weapon_attacks()
-
-
-# =============================================================================
-# Public API
-# =============================================================================
-
-
-def get_all_combat_actions(npc: Character) -> list[BaseAction]:
-    """
-    Get all available combat actions for a character.
-
-    Args:
-        npc (Character): The character to get combat actions for.
-
-    Returns:
-        list[BaseAction]: List of all available combat actions including attacks, actions, and spells.
-
-    """
-    return (
-        npc.get_available_attacks()
-        + npc.get_available_actions()
-        + npc.get_available_spells()
-    )
-
-
-def get_actions_by_type(npc: Character, action_type: type) -> list[Any]:
-    """
-    Generic function to get actions of a specific type.
-
-    Args:
-        npc (Character): The character to get actions for.
-        action_type (type): The type of action to filter for.
-
-    Returns:
-        list[Any]: List of actions of the specified type.
-
-    """
-    return [a for a in get_all_combat_actions(npc) if isinstance(a, action_type)]
-
-
 def choose_best_base_attack_action(
-    npc: Character,
+    source: Character,
     enemies: list[Character],
     base_attacks: list[BaseAttack],
-) -> tuple[BaseAttack, Character] | None:
+) -> AttackSelection | None:
     """
     Chooses the best attack and target combo based on:
-    - Usefulness of the attack’s effect (if any)
-    - Target vulnerability (low HP)
-    - Number of damage components
+        - Usefulness of the attack's effect (if any)
+        - Target vulnerability (low HP)
+        - Number of damage components
 
     Args:
-        npc (Character): The NPC making the decision.
-        enemies (list[Character]): List of enemy characters.
-        base_attacks (list[BaseAttack]): List of available base attacks.
+        source (Character):
+            The NPC making the decision.
+        enemies (list[Character]):
+            List of enemy characters.
+        base_attacks (list[BaseAttack]):
+            List of available base attacks.
 
     Returns:
-        Optional[tuple[BaseAttack, Character]]: The best attack and target combo, or None if no valid combo is found.
+        tuple[BaseAttack, Character] | None:
+            The best attack and target combo, or None if no valid combo is found.
 
     """
-    best_score: float = -1
-    best_attack: BaseAttack | None = None
-    best_target: Character | None = None
+    best_attack: AttackSelection | None = None
 
     for attack in base_attacks:
-        # Skip if the attack is not available (e.g., on cooldown).
-        if npc.is_on_cooldown(attack):
+        if source.is_on_cooldown(attack):
             continue
-        # Sort targets based on their vulnerability to the attack.
-        sorted_targets = _sort_for_base_attack(npc, attack, enemies)
-        # Iterate through sorted targets to find the best one.
-        for target in sorted_targets:
-            # Score based on how much the effect helps and how close the target is to death
-            effect_score = 0
-            if attack.effect:
-                if target.effects_module.can_add_effect(attack.effect, target, 0):
-                    effect_score += 10
-            # HP-based vulnerability (lower is better)
-            hp_ratio = target.hp / target.HP_MAX if target.HP_MAX > 0 else 1
-            vulnerability_score = (1 - hp_ratio) * 10
-            # Damage component count (e.g., bonus fire + necrotic)
-            damage_bonus = len(attack.damage)
-            # Compute the total score.
-            score = effect_score + vulnerability_score + damage_bonus
-            # If the score is better than the current best, update.
-            if score > best_score:
-                best_score = score
-                best_attack = attack
-                best_target = target
+        candidate_attack = _get_best_base_attack(
+            attack=attack,
+            source=source,
+            targets=enemies,
+        )
+        if not candidate_attack:
+            continue
+        if not best_attack or candidate_attack.score > best_attack.score:
+            best_attack = candidate_attack
 
-    if best_attack and best_target:
-        return best_attack, best_target
-
-    return None
+    return best_attack
 
 
 def choose_best_attack_spell_action(
-    npc: Character,
+    source: Character,
     enemies: list[Character],
     spells: list[SpellOffensive],
-) -> tuple[SpellOffensive, int, list[Character]] | None:
+) -> SpellSelection | None:
     """
-    Chooses the best SpellOffensive, mind level, and list of targets based on usefulness and value.
+    Chooses the best SpellOffensive, mind level, and list of targets based on
+    usefulness and value.
 
     Args:
-        npc (Character): The NPC making the decision.
-        enemies (list[Character]): List of enemy characters.
-        spells (list[SpellOffensive]): List of available offensive spells.
+        source (Character):
+            The NPC making the decision.
+        enemies (list[Character]):
+            List of enemy characters.
+        spells (list[SpellOffensive]):
+            List of available offensive spells.
 
     Returns:
-        Optional[tuple[SpellOffensive, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+        SpellSelection | None:
+            The best spell the source can cast, or None if no viable spell
+            is found.
 
     """
-    best_score = -1
-    best_spell = None
-    best_level = -1
-    best_targets: list[Character] = []
+    best_spell: SpellSelection | None = None
 
     for spell in spells:
-        if not spell.mind_cost:
+        if source.is_on_cooldown(spell):
             continue
-
-        if npc.is_on_cooldown(spell):
-            continue
-
-        mind_level, candidate_targets, score = _sort_for_spell_attack(
-            npc, spell, enemies
+        candidate_spell = _get_best_spell_attack(
+            spell=spell,
+            source=source,
+            targets=enemies,
         )
-        if mind_level is None or not candidate_targets:
+        if not candidate_spell:
             continue
+        if not best_spell or candidate_spell.score > best_spell.score:
+            best_spell = candidate_spell
 
-        if score > best_score:
-            best_score = score
-            best_spell = spell
-            best_level = mind_level
-            best_targets = candidate_targets
-    if best_spell:
-        return best_spell, best_level, best_targets
-    return None
+    return best_spell
 
 
 def choose_best_healing_spell_action(
-    npc: Character,
+    source: Character,
     allies: list[Character],
     spells: list[SpellHeal],
-) -> tuple[SpellHeal, int, list[Character]] | None:
+) -> SpellSelection | None:
     """
     Chooses the best healing spell, mind level, and set of targets based on:
     - Amount of HP missing.
@@ -502,194 +1032,79 @@ def choose_best_healing_spell_action(
     - Mind cost efficiency.
 
     Args:
-        npc (Character): The NPC making the decision.
+        source (Character): The NPC making the decision.
         allies (list[Character]): List of friendly characters.
         spells (list[SpellHeal]): List of available healing spells.
 
     Returns:
-        Optional[tuple[SpellHeal, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+        SpellSelection | None:
+            The best spell the source can cast, or None if no viable spell is found.
 
     """
-    best_score = -1
-    best_spell = None
-    best_level = -1
-    best_targets: list[Character] = []
+    best_spell: SpellSelection | None = None
 
     for spell in spells:
         if not spell.mind_cost:
             continue
-
-        if npc.is_on_cooldown(spell):
+        if source.is_on_cooldown(spell):
             continue
+        candidate_spell = _get_best_spell_heal(
+            spell=spell,
+            source=source,
+            targets=allies,
+        )
+        if not candidate_spell:
+            continue
+        if not best_spell or candidate_spell.score > best_spell.score:
+            best_spell = candidate_spell
 
-        sorted_targets = _sort_for_spell_heal(npc, spell, allies)
-
-        for mind_level in spell.mind_cost:
-            if mind_level > npc.mind:
-                continue
-
-            num_targets = spell.target_count(npc, mind_level)
-            if num_targets <= 0:
-                continue
-
-            candidate_targets = sorted_targets[:num_targets]
-            if not candidate_targets:
-                continue
-
-            # Score = total HP missing + useful HoTs - mind cost
-            total_hp_missing = sum(t.HP_MAX - t.hp for t in candidate_targets)
-            useful_effects = sum(
-                1
-                for t in candidate_targets
-                if spell.effect
-                and t.effects_module.can_add_effect(spell.effect, t, mind_level)
-            )
-
-            score = total_hp_missing + useful_effects * 10 - mind_level
-
-            if score > best_score:
-                best_score = score
-                best_spell = spell
-                best_level = mind_level
-                best_targets = candidate_targets
-
-    if best_spell:
-        return best_spell, best_level, best_targets
-
-    return None
+    return best_spell
 
 
-def choose_best_buff_spell_action(
-    npc: Character,
-    allies: list[Character],
-    spells: list[SpellBuff],
-) -> tuple[SpellBuff, int, list[Character]] | None:
+def choose_best_buff_or_debuff_spell_action(
+    source: Character,
+    targets: list[Character],
+    spells: list[SpellBuff] | list[SpellDebuff],
+) -> SpellSelection | None:
     """
-    Chooses the best SpellBuff, mind level, and set of targets based on:
-    - Usefulness of the buff effect.
-    - Number of allies affected.
-    - Mind cost efficiency.
+    Chooses the best SpellBuff or SpellDebuff, mind level, and set of targets
+    based on:
+        - Usefulness of the buff effect.
+        - Number of allies affected.
+        - Mind cost efficiency.
 
     Args:
-        npc (Character): The NPC making the decision.
-        allies (list[Character]): List of friendly characters.
-        spells (list[SpellBuff]): List of available buff spells.
+        source (Character):
+            The NPC making the decision.
+        allies (list[Character]):
+            List of friendly characters.
+        spells (list[SpellBuff] | list[SpellDebuff]):
+            List of available buff spells.
 
     Returns:
-        Optional[tuple[SpellBuff, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
+        SpellSelection | None:
+            The best spell the source can cast, or None if no viable spell is
+            found.
 
     """
-    best_score = -1
-    best_spell = None
-    best_level = -1
-    best_targets: list[Character] = []
+    best_spell: SpellSelection | None = None
 
     for spell in spells:
         if not spell.mind_cost:
             continue
-
-        if npc.is_on_cooldown(spell):
+        if source.is_on_cooldown(spell):
             continue
-
-        sorted_targets = _sort_for_spell_buff(npc, spell, allies)
-
-        for mind_level in spell.mind_cost:
-            if mind_level > npc.mind:
-                continue
-
-            max_targets = spell.target_count(npc, mind_level)
-            if max_targets <= 0:
-                continue
-
-            candidate_targets = sorted_targets[:max_targets]
-            if not candidate_targets:
-                continue
-
-            usefulness = sum(
-                1
-                for t in candidate_targets
-                if t.effects_module.can_add_effect(spell.effect, t, mind_level)
-            )
-
-            score = usefulness * 10 - mind_level
-
-            if score > best_score:
-                best_score = score
-                best_spell = spell
-                best_level = mind_level
-                best_targets = candidate_targets
-
-    if best_spell:
-        return best_spell, best_level, best_targets
-
-    return None
-
-
-def choose_best_debuff_spell_action(
-    npc: Character,
-    enemies: list[Character],
-    spells: list[SpellDebuff],
-) -> tuple[SpellDebuff, int, list[Character]] | None:
-    """
-    Chooses the best SpellDebuff, mind level, and set of enemy targets based on:
-    - Whether the effect would be useful (not already applied).
-    - Number of valid targets.
-    - Mind cost efficiency.
-
-    Args:
-        npc (Character): The NPC making the decision.
-        enemies (list[Character]): List of enemy characters.
-        spells (list[SpellDebuff]): List of available debuff spells.
-
-    Returns:
-        Optional[tuple[SpellDebuff, int, list[Character]]]: The best spell, mind level, and targets, or None if no viable spell is found.
-
-    """
-    best_score = -1
-    best_spell = None
-    best_level = -1
-    best_targets: list[Character] = []
-
-    for spell in spells:
-        if not spell.mind_cost:
+        candidate_spell = _get_best_spell_buff_or_debuff(
+            spell=spell,
+            source=source,
+            targets=targets,
+        )
+        if not candidate_spell:
             continue
+        if not best_spell or candidate_spell.score > best_spell.score:
+            best_spell = candidate_spell
 
-        if npc.is_on_cooldown(spell):
-            continue
-
-        sorted_targets = _sort_for_spell_debuff(npc, spell, enemies)
-
-        for mind_level in spell.mind_cost:
-            if mind_level > npc.mind:
-                continue
-
-            max_targets = spell.target_count(npc, mind_level)
-            if max_targets <= 0:
-                continue
-
-            candidate_targets = sorted_targets[:max_targets]
-            if not candidate_targets:
-                continue
-
-            usefulness = sum(
-                1
-                for t in candidate_targets
-                if spell.effect
-                and t.effects_module.can_add_effect(spell.effect, t, mind_level)
-            )
-
-            score = usefulness * 10 - mind_level
-
-            if score > best_score:
-                best_score = score
-                best_spell = spell
-                best_level = mind_level
-                best_targets = candidate_targets
-
-    if best_spell:
-        return best_spell, best_level, best_targets
-
-    return None
+    return best_spell
 
 
 # =============================================================================
@@ -698,149 +1113,117 @@ def choose_best_debuff_spell_action(
 
 
 def choose_best_offensive_ability_action(
-    npc: Character,
+    source: Character,
     enemies: list[Character],
     abilities: list[AbilityOffensive],
-) -> tuple[AbilityOffensive, list[Character]] | None:
+) -> AbilitySelection | None:
     """
     Chooses the best offensive ability and targets (no mind cost).
+
+    Args:
+        source (Character):
+            The NPC making the decision.
+        enemies (list[Character]):
+            List of enemy characters.
+        abilities (list[AbilityOffensive]):
+            List of available offensive abilities.
+
+    Returns:
+        AbilitySelection | None:
+            The best ability the source can use, or None if no viable ability is
+            found.
     """
-    best_score = -1
-    best_ability = None
-    best_targets: list[Character] = []
+    best_ability: AbilitySelection | None = None
 
     for ability in abilities:
-        if npc.is_on_cooldown(ability):
+        if source.is_on_cooldown(ability):
             continue
-        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(enemies, ability)
-        max_targets = (
-            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        candidate_ability = _get_best_ability_attack(
+            ability=ability,
+            source=source,
+            targets=enemies,
         )
-        candidate_targets = sorted_targets[:max_targets]
-        if not candidate_targets:
+        if not candidate_ability:
             continue
-        usefulness = sum(
-            1
-            for t in candidate_targets
-            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
-        )
-        score = usefulness * 10
-        if score > best_score:
-            best_score = score
-            best_ability = ability
-            best_targets = candidate_targets
-    if best_ability:
-        return best_ability, best_targets
-    return None
+        if not best_ability or candidate_ability.score > best_ability.score:
+            best_ability = candidate_ability
+
+    return best_ability
 
 
 def choose_best_healing_ability_action(
-    npc: Character,
+    source: Character,
     allies: list[Character],
     abilities: list[AbilityHeal],
-) -> tuple[AbilityHeal, list[Character]] | None:
+) -> AbilitySelection | None:
     """
     Chooses the best healing ability and targets (no mind cost).
+
+    Args:
+        source (Character):
+            The NPC making the decision.
+        allies (list[Character]):
+            List of friendly characters.
+        abilities (list[AbilityHeal]):
+            List of available healing abilities.
+
+    Returns:
+        AbilitySelection | None:
+            The best ability the source can use, or None if no viable ability is
+            found.
     """
-    best_score = -1
-    best_ability = None
-    best_targets: list[Character] = []
+    best_ability: AbilitySelection | None = None
 
     for ability in abilities:
-        if npc.is_on_cooldown(ability):
+        if source.is_on_cooldown(ability):
             continue
-        sorted_targets = _sort_targets_by_usefulness_and_hp_healing(allies, ability)
-        max_targets = (
-            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        candidate_ability = _get_best_ability_heal(
+            ability=ability,
+            source=source,
+            targets=allies,
         )
-        candidate_targets = sorted_targets[:max_targets]
-        if not candidate_targets:
+        if not candidate_ability:
             continue
-        total_hp_missing = sum(t.HP_MAX - t.hp for t in candidate_targets)
-        useful_effects = sum(
-            1
-            for t in candidate_targets
-            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
-        )
-        score = total_hp_missing + useful_effects * 10
-        if score > best_score:
-            best_score = score
-            best_ability = ability
-            best_targets = candidate_targets
-    if best_ability:
-        return best_ability, best_targets
-    return None
+        if not best_ability or candidate_ability.score > best_ability.score:
+            best_ability = candidate_ability
+
+    return best_ability
 
 
-def choose_best_buff_ability_action(
-    npc: Character,
-    allies: list[Character],
-    abilities: list[AbilityBuff],
-) -> tuple[AbilityBuff, list[Character]] | None:
+def choose_best_buff_or_debuff_ability_action(
+    source: Character,
+    targets: list[Character],
+    abilities: list[AbilityBuff] | list[AbilityDebuff],
+) -> AbilitySelection | None:
     """
-    Chooses the best buff ability and targets (no mind cost).
+    Chooses the best buff or debuff ability and targets (no mind cost).
+
+    Args:
+        source (Character):
+            The NPC making the decision.
+        targets (list[Character]):
+            List of potential targets (allies or enemies).
+        abilities (list[AbilityBuff] | list[AbilityDebuff]):
+            List of available buff or debuff abilities.
+
+    Returns:
+        AbilitySelection | None:
+            The best ability the source can use, or None if no viable ability is
+            found.
     """
-    best_score = -1
-    best_ability = None
-    best_targets: list[Character] = []
+    best_ability: AbilitySelection | None = None
 
     for ability in abilities:
-        if npc.is_on_cooldown(ability):
+        if source.is_on_cooldown(ability):
             continue
-        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(allies, ability)
-        max_targets = (
-            ability.target_count(npc) if hasattr(ability, "target_count") else 1
+        candidate_ability = _get_best_ability_buff_or_debuff(
+            ability=ability,
+            source=source,
+            targets=targets,
         )
-        candidate_targets = sorted_targets[:max_targets]
-        if not candidate_targets:
+        if not candidate_ability:
             continue
-        usefulness = sum(
-            1
-            for t in candidate_targets
-            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
-        )
-        score = usefulness * 10
-        if score > best_score:
-            best_score = score
-            best_ability = ability
-            best_targets = candidate_targets
-    if best_ability:
-        return best_ability, best_targets
-    return None
+        if not best_ability or candidate_ability.score > best_ability.score:
+            best_ability = candidate_ability
 
-
-def choose_best_debuff_ability_action(
-    npc: Character,
-    enemies: list[Character],
-    abilities: list[AbilityDebuff],
-) -> tuple[AbilityDebuff, list[Character]] | None:
-    """
-    Chooses the best debuff ability and targets (no mind cost).
-    """
-    best_score = -1
-    best_ability = None
-    best_targets: list[Character] = []
-
-    for ability in abilities:
-        if npc.is_on_cooldown(ability):
-            continue
-        sorted_targets = _sort_targets_by_usefulness_and_hp_offensive(enemies, ability)
-        max_targets = (
-            ability.target_count(npc) if hasattr(ability, "target_count") else 1
-        )
-        candidate_targets = sorted_targets[:max_targets]
-        if not candidate_targets:
-            continue
-        usefulness = sum(
-            1
-            for t in candidate_targets
-            if ability.effect and t.effects_module.can_add_effect(ability.effect, t, 0)
-        )
-        score = usefulness * 10
-        if score > best_score:
-            best_score = score
-            best_ability = ability
-            best_targets = candidate_targets
-    if best_ability:
-        return best_ability, best_targets
-    return None
+    return best_ability

@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from combat.damage import (
-    DamageComponent,
-    roll_damage_components_no_mind,
-)
+from catchery import log_warning
+from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
+from effects.base_effect import Effect
+from effects.trigger_effect import TriggerEffect
 from pydantic import Field, model_validator
 
 from actions.abilities.base_ability import BaseAbility
@@ -35,117 +35,188 @@ class AbilityOffensive(BaseAbility):
         self.attack_roll = self.attack_roll.replace(" -", "-").replace("- ", "-")
         return self
 
+    @property
+    def colored_name(self) -> str:
+        """
+        Returns the ability name with color formatting for display.
+        """
+        return f"[bold blue]{self.name}[/]"
+
     def execute(self, actor: Any, target: Any) -> bool:
-        """Execute this offensive ability against a target.
+        """
+        Execute this offensive ability against a target.
 
         Args:
-            actor (Any): The character using the ability.
-            target (Any): The character being damaged.
+            actor (Any):
+                The character using the ability.
+            target (Any):
+                The character being damaged.
 
         Returns:
-            bool: True if ability was executed successfully, False on system errors.
+            bool:
+                True if ability was executed successfully, False on system
+                errors.
 
         """
+        from character.main import Character
+
         # =====================================================================
         # 1. VALIDATION AND PREPARATION
         # =====================================================================
 
-        if not self._validate_character(actor):
-            return False
-        if not self._validate_character(target):
-            return False
-        # Validate cooldown.
-        if actor.is_on_cooldown(self):
-            print(
-                f"{actor.name} cannot use {self.name} yet, still on cooldown.",
-                {"actor": actor.name, "ability": self.name},
+        if not isinstance(actor, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid actor.",
+                {"ability": self.name, "actor": actor},
             )
             return False
-
-        actor_str, target_str = self._get_display_strings(actor, target)
+        if not isinstance(target, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid target.",
+                {"ability": self.name, "target": target},
+            )
+            return False
+        if actor.is_on_cooldown(self):
+            log_warning(
+                "AbilityBuff.execute called while actor is on cooldown.",
+                {"ability": self.name, "actor": actor.name},
+            )
+            return False
 
         # =====================================================================
         # 2. ATTACK ROLL (TO-HIT, CRIT, FUMBLE)
         # =====================================================================
-        # If the ability requires an attack roll, perform it. Otherwise, auto-hit.
-        # This assumes a method self.requires_attack_roll() and self.roll_to_hit() exist or are inherited.
-        is_critical = False
-        is_fumble = False
-        hit = True
-        attack_roll_msg = ""
-        if self.requires_attack_roll():
-            hit, roll, is_critical, is_fumble, attack_roll_msg = self.roll_to_hit(
-                actor, target
+        """Perform an attack roll using the same logic as BaseAttack."""
+
+        # Get the attack modifier from effects.
+        modifiers = actor.get_modifier(BonusType.ATTACK)
+
+        if not all(isinstance(modifier, str) for modifier in modifiers):
+            log_warning(
+                "Modifiers for attack roll must be strings.",
+                {"ability": self.name, "modifiers": modifiers},
             )
-            if not hit:
-                msg = f"    ❌ {actor_str} uses [bold blue]{self.name}[/] on {target_str} but misses!"
-                if attack_roll_msg:
-                    msg += f" ({attack_roll_msg})"
-                cprint(msg)
-                return True
+            return False
+
+        # Roll the attack.
+        attack = self._roll_attack(actor, self.attack_roll, modifiers)
+
+        if not attack.rolls:
+            log_warning(
+                "Attack roll failed, no rolls returned.",
+                {"ability": self.name, "actor": actor.name},
+            )
+            return False
+
+        # Prepare the roll message.
+        attack_details = (
+            f"rolled ({attack.description}) {attack.value} vs AC {target.AC}"
+        )
+
+        # Determine if the attack hits, crits, or fumbles.
+        if (attack.value < target.AC) or attack.is_fumble():
+            msg = (
+                f"    ❌ {actor.colored_name} uses {self.colored_name} on "
+                f"{target.colored_name}, {attack_details}, but "
+            )
+            msg += f"{"fumbles" if attack.is_fumble() else "misses"}!"
+            cprint(msg)
+            return True
 
         # =====================================================================
         # 3. DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
         # =====================================================================
-        # If fumble, set damage to 0. If crit, double damage.
-        if is_fumble:
-            base_damage = 0
-            base_damage_details = ["Fumble: no damage"]
-        elif is_critical:
-            # Roll damage twice and sum for crit
-            dmg1, details1 = roll_damage_components_no_mind(actor, target, self.damage)
-            dmg2, details2 = roll_damage_components_no_mind(actor, target, self.damage)
-            base_damage = dmg1 + dmg2
-            base_damage_details = details1 + details2
-        else:
-            base_damage, base_damage_details = roll_damage_components_no_mind(
+
+        # =============================
+        # 3a. Roll the base damage
+        # =============================
+
+        # Roll the base damage.
+        damage, damage_details = roll_damage_components(
+            actor,
+            target,
+            self.damage,
+        )
+        # If the attack is a critical hit, roll damage another time.
+        if attack.is_critical():
+            crit_damage, crit_details = roll_damage_components(
                 actor, target, self.damage
             )
+            damage += crit_damage
+            damage_details += crit_details
 
         # =============================
-        # 3b. On-Hit Triggers & Bonus Damage from Effects (parity with BaseAttack)
+        # 3b. Get On-Hit Triggers
         # =============================
-        trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers = (
-            self._trigger_on_hit_effects(actor, target)
+
+        # Get any on-hit triggers from effects.
+        trigger = actor.trigger_on_hit_effects(target)
+        # Roll the damage from triggers.
+        trigger_damage, trigger_damage_details = roll_damage_components(
+            actor,
+            target,
+            trigger.damage_bonuses,
         )
-        for effect, mind_level in trigger_effects_with_levels:
-            if effect.can_apply(actor, target):
-                target.effects_module.add_effect(actor, effect, mind_level)
-
-        bonus_damage, bonus_damage_details = self._roll_bonus_damage(actor, target)
-        total_damage = (
-            base_damage + bonus_damage + sum(trigger_damage_bonuses)
-        )  # trigger_damage_bonuses is a list of ints
-        damage_details = base_damage_details + bonus_damage_details
+        # Sum up the damage from triggers.
+        damage += trigger_damage
+        damage_details += trigger_damage_details
 
         # =============================
-        # 4b. On-Hit Trigger Messaging (parity with BaseAttack)
+        # 3c. Add bonus damage.
         # =============================
-        for trigger in consumed_triggers:
-            trigger_msg = f"    ⚡ {actor_str}'s [bold yellow]{getattr(trigger, 'name', str(trigger))}[/] activates!"
-            cprint(trigger_msg)
+
+        # Get all damage modifiers from effects.
+        modifiers = actor.get_modifier(BonusType.DAMAGE)
+        if not all(isinstance(modifier, str) for modifier in modifiers):
+            log_warning(
+                "Modifiers for damage roll must be strings.",
+                {"ability": self.name, "modifiers": modifiers},
+            )
+            return False
+        # Roll the bonus damage.
+        bonus_damage, bonus_damage_details = roll_damage_components(
+            actor,
+            target,
+            modifiers,
+        )
+        # Sum up the base damage.
+        damage += bonus_damage
+        damage_details += bonus_damage_details
 
         # =====================================================================
-        # 5. EFFECT APPLICATION
+        # On-Hit Trigger Messaging
         # =====================================================================
-        is_dead = not target.is_alive()
+
+        for consumed in trigger.consumed_triggers:
+            cprint(f"    ⚡ {actor.colored_name}'s {consumed.colored_name} activates!")
+
+        # =====================================================================
+        # 4. EFFECT APPLICATION
+        # =====================================================================
+
+        # Apply the trigger effects and get bonus damage.
+        for effect in trigger.effects_to_apply:
+            self._common_apply_effect(actor, target, effect)
+
+        # Apply effect from the ability itself, if any.
         effect_applied = self._common_apply_effect(actor, target, self.effect)
 
         # =====================================================================
-        # 6. RESULT DISPLAY AND LOGGING
+        # 5. RESULT DISPLAY AND LOGGING
         # =====================================================================
-        msg = f"    🔥 {actor_str} uses [bold blue]{self.name}[/] on {target_str}"
-        if attack_roll_msg:
-            msg += f" ({attack_roll_msg})"
+
+        msg = (
+            f"    🔥 {actor.colored_name} "
+            f"uses {self.colored_name} on "
+            f"{target.colored_name} "
+        )
 
         if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" dealing {total_damage} damage"
-            if is_fumble:
-                msg += " (fumble!)"
-            elif is_critical:
+            msg += f" dealing {damage} damage"
+            if attack.is_critical():
                 msg += " (critical hit!)"
-            if is_dead:
-                msg += f" defeating {target_str}"
+            if not target.is_alive():
+                msg += f" defeating {target.colored_name}"
             elif self.effect:
                 if effect_applied:
                     msg += " and applying"
@@ -154,66 +225,32 @@ class AbilityOffensive(BaseAbility):
                 msg += f" [bold yellow]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += f"({attack_details}), "
             if damage_details:
-                msg += f" dealing {total_damage} damage → "
+                msg += f" dealing {damage} damage → "
                 msg += " + ".join(damage_details)
             else:
-                msg += f" dealing {total_damage} damage"
-            if is_fumble:
+                msg += f" dealing {damage} damage"
                 msg += " (fumble!)"
-            elif is_critical:
+            if attack.is_critical():
                 msg += " (critical hit!)"
             msg += ".\n"
 
-            if is_dead:
-                msg += f"        {target_str} is defeated."
+            if not target.is_alive():
+                msg += f"        {target.colored_name} is defeated."
             elif self.effect:
                 if effect_applied:
-                    msg += f"        {target_str} is affected by"
+                    msg += f"        {target.colored_name} is affected by"
                 else:
-                    msg += f"        {target_str} resists"
+                    msg += f"        {target.colored_name} resists"
                 msg += f" [bold yellow]{self.effect.name}[/]."
 
         cprint(msg)
 
-        # =====================================================================
-        # 7. RETURN
-        # =====================================================================
+        for consumed in trigger.consumed_triggers:
+            cprint(f"    ⚡ {actor.colored_name}'s {consumed.colored_name} activates!")
+
         return True
-
-    # =========================================================================
-    # BONUS DAMAGE AND TRIGGER METHODS (for full parity with BaseAttack)
-    # =========================================================================
-    def _roll_bonus_damage(self, actor: Any, target: Any) -> tuple[int, list[str]]:
-        """Roll any bonus damage from effects (parity with BaseAttack)."""
-        all_damage_modifiers = actor.effects_module.get_damage_modifiers()
-        return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
-
-    def _trigger_on_hit_effects(self, actor: Any, target: Any):
-        """Trigger on-hit effects and return (trigger_damage_bonuses, trigger_effects_with_levels, consumed_triggers)."""
-        # This mirrors BaseAttack's use of effects_module.trigger_on_hit_effects
-        return actor.effects_module.trigger_on_hit_effects(target)
-
-    def requires_attack_roll(self) -> bool:
-        """Return True if this ability requires an attack roll (i.e., attack_roll is set)."""
-        return bool(getattr(self, "attack_roll", ""))
-
-    def roll_to_hit(self, actor: Any, target: Any):
-        """Perform an attack roll using the same logic as BaseAttack."""
-        # Use _roll_attack_with_crit from BaseAction
-        attack_modifier = actor.effects_module.get_modifier(
-            getattr(BonusType, "ATTACK", "ATTACK")
-        )
-        attack_total, attack_roll_desc, d20_roll = self._roll_attack_with_crit(
-            actor,
-            self.attack_roll,
-            attack_modifier if isinstance(attack_modifier, list) else [attack_modifier],
-        )
-        is_critical = d20_roll == 20
-        is_fumble = d20_roll == 1
-        hit = (attack_total >= getattr(target, "AC", 0)) or is_critical
-        msg = f"rolled ({attack_roll_desc}) {attack_total} vs AC {getattr(target, 'AC', '?')}"
-        return hit, attack_total, is_critical, is_fumble, msg
 
     # ============================================================================
     # DAMAGE CALCULATION METHODS

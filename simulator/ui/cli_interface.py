@@ -12,7 +12,7 @@ from prompt_toolkit import ANSI, PromptSession
 from rich.table import Table
 
 # one session keeps history
-session = PromptSession(erase_when_done=True)
+session: PromptSession = PromptSession(erase_when_done=True)
 
 
 class PlayerInterface:
@@ -129,7 +129,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 target.name,
-                f"{target.hp:>3}/{target.HP_MAX:<3}",
+                f"{target.HP:>3}/{target.HP_MAX:<3}",
                 str(target.AC),
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -204,7 +204,7 @@ class PlayerInterface:
                 table.add_row(
                     str(i),
                     t.name,
-                    str(t.hp),
+                    str(t.HP),
                     str(t.AC),
                     "[green]✓[/]" if t in selected else "",
                 )
@@ -321,68 +321,68 @@ class PlayerInterface:
             if isinstance(answer, str) and answer.lower() == "q":
                 return "q"
 
-    def choose_mind(
-        self, actor: Character, spell: Spell, exit_entry: str | None = "Back"
+    def choose_rank(
+        self,
+        actor: Character,
+        spell: Spell,
+        exit_entry: str | None = "Back",
     ) -> int:
         """
-        Prompt the user to select the amount of MIND to spend on a spell.
-
-        Displays upcasting options if the spell supports it, showing damage/healing
-        ranges and target counts for each MIND level.
+        Prompt the user to select the rank at which to cast a spell.
 
         Args:
-            actor (Character): The character casting the spell.
-            spell (Spell): The spell being cast.
-            exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
+            actor (Character):
+                The character casting the spell.
+            spell (Spell):
+                The spell being cast.
+            exit_entry (str | None):
+                Text for exit option. Defaults to "Back".
 
         Returns:
-            int: The selected MIND level to spend, or -1 if user chose to go back.
+            int:
+                The selected rank's mind cost, or -1 if the user chose to exit.
 
         """
+        # Only one rank available, return it.
         if len(spell.mind_cost) == 1:
-            return spell.mind_cost[0]
-        # Get the variables for the prompt.
-        variables = actor.get_expression_variables()
+            return 0
+
         prompt = "\n"
         prompt = f"\n[bold]Upcasting [cyan]{spell.name}[/] is allowed[/]:\n"
-        for mind_level in spell.mind_cost:
+        for rank, mind_level in enumerate(spell.mind_cost, 0):
             # Set the mind level in the variables for evaluation.
-            variables["MIND"] = mind_level
+            variables = actor.get_expression_variables()
+            variables.append(VarInfo(name="RANK", value=rank + 1))
+            variables.append(VarInfo(name="MIND", value=mind_level))
 
             # Get the maximum number of targets if applicable.
             max_targets = evaluate_expression(spell.target_expr, variables)
 
-            prompt += f"    {mind_level} Mind → "
+            prompt += f"    Rank {rank} consumes {mind_level} mind → "
 
             # Format each spell type accordingly.
             if isinstance(spell, SpellHeal):
-                prompt += f"Heals {simplify_expression(spell.heal_roll, variables)}"
-                prompt += f" (~ {spell.get_min_heal(actor, mind_level):>2}-{spell.get_max_heal(actor, mind_level):<2})"
+                expr = simplify_expression(spell.heal_roll, variables)
+                min_heal = spell.get_min_heal(actor, rank)
+                max_heal = spell.get_max_heal(actor, rank)
+                prompt += f"Heals {expr} (~ {min_heal:>2}-{max_heal:<2})"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
             elif isinstance(spell, SpellOffensive):
-                prompt += "Deals "
-                prompt += "+ ".join(
-                    f"{simplify_expression(component.damage_roll, variables)}"
-                    f" {component.damage_type.emoji}"
-                    f" {component.damage_type.colored_name}"
-                    for component in spell.damage
-                )
-                prompt += f" (~ {spell.get_min_damage(actor, mind_level):>2}-{spell.get_max_damage(actor, mind_level):<2})"
+                expr = spell.get_damage_expr(actor, rank)
+                min_damage = spell.get_min_damage(actor, rank)
+                max_damage = spell.get_max_damage(actor, rank)
+                prompt += f"Deals {expr} (~ {min_damage:>2}-{max_damage:<2})"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
             elif isinstance(spell, SpellBuff | SpellDebuff):
-                # Get the modifier expressions for debuffs.
-                modifiers = spell.get_modifier_expressions(actor, mind_level)
-
+                modifiers = spell.get_modifier_expressions(actor, rank)
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
-
-                # Iterate over each modifier and bonus.
                 prompt += ", ".join(
                     f"{modifier} to {bonus.name.title()}"
                     for bonus, modifier in modifiers.items()
@@ -398,10 +398,10 @@ class PlayerInterface:
             if not answer:
                 continue
 
-            # If the user typed a number, return the corresponding mind cost.
-            mind_cost: int = self.get_digit_choice(answer)
-            if mind_cost in spell.mind_cost:
-                return mind_cost
+            # If the user typed a number, return the corresponding rank.
+            rank: int = self.get_digit_choice(answer)
+            if 0 < rank <= len(spell.mind_cost):
+                return rank
             # If the user typed 'q', return -1 to indicate going back.
             if isinstance(answer, str) and answer.lower() == "q":
                 return -1

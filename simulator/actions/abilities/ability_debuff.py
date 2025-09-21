@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
 from pydantic import model_validator
@@ -39,23 +40,33 @@ class AbilityDebuff(BaseAbility):
 
         """
         from character.main import Character
-        from effects.modifier_effect import ModifierEffect
-        from effects.incapacitating_effect import IncapacitatingEffect
 
-        # Validate effect.
-        assert isinstance(self.effect, ModifierEffect | IncapacitatingEffect)
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert isinstance(target, Character), "Target must be an object"
-
-        # Validate cooldown.
+        if not self.effect:
+            log_warning(
+                "AbilityBuff.execute called without a valid effect.",
+                {"ability": self.name},
+            )
+            return False
+        if not isinstance(actor, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid actor.",
+                {"ability": self.name, "actor": actor},
+            )
+            return False
+        if not isinstance(target, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid target.",
+                {"ability": self.name, "target": target},
+            )
+            return False
         if actor.is_on_cooldown(self):
-            print(
-                f"{actor.name} cannot use {self.name} yet, still on cooldown.",
-                {"actor": actor.name, "ability": self.name},
+            log_warning(
+                "AbilityBuff.execute called while actor is on cooldown.",
+                {"ability": self.name, "actor": actor.name},
             )
             return False
 
-        # Apply the buff effect
+        # Apply the buff effect.
         effect_applied = self._common_apply_effect(actor, target, self.effect)
 
         # Display the outcome.

@@ -1,16 +1,15 @@
 from typing import Any, Union
 
-from combat.damage import (
-    DamageComponent,
-    roll_and_describe,
-    roll_damage_components_no_mind,
-)
+from combat.damage import DamageComponent, roll_and_describe, roll_damage_components
 from core.constants import (
     ActionCategory,
     ActionType,
     is_oponent,
 )
 from core.utils import (
+    GameException,
+    RollBreakdown,
+    VarInfo,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     substitute_variables,
@@ -45,6 +44,10 @@ class BaseAction(BaseModel):
     description: str = Field(
         default="No description.",
         description="Description of the action",
+    )
+    target_expr: str = Field(
+        default="",
+        description="Expression defining number of targets.",
     )
     cooldown: int = Field(
         default=-1,
@@ -127,6 +130,26 @@ class BaseAction(BaseModel):
         """
         return self._cooldown > 0
 
+    def target_count(
+        self,
+        variables: list[VarInfo] = [],
+    ) -> int:
+        """
+        Calculate the number of targets this ability can affect.
+
+        Args:
+            actor (Any): The character using the ability.
+
+        Returns:
+            int: Number of targets (minimum 1, even for invalid expressions).
+
+        """
+        from core.utils import evaluate_expression
+
+        if self.target_expr:
+            return max(1, int(evaluate_expression(self.target_expr, variables)))
+        return 1
+
     def get_cooldown(self) -> int:
         """Get the cooldown period for this action.
 
@@ -135,22 +158,6 @@ class BaseAction(BaseModel):
 
         """
         return self._cooldown
-
-    def _validate_character(self, character: Any) -> bool:
-        """Validate that a character object has the required attributes.
-
-        Args:
-            character (Any): The character object to validate.
-
-        Returns:
-            bool: True if valid, False otherwise.
-
-        """
-        from character.main import Character
-
-        assert character is not None, "Character is required"
-        assert isinstance(character, Character), "Character must be an object"
-        return True
 
     def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
         """Get formatted display strings for actor and target.
@@ -176,101 +183,107 @@ class BaseAction(BaseModel):
         actor: Any,
         target: Any,
         effect: Effect | None,
-        mind_level: int = 0,
+        variables: list[VarInfo] = [],
     ) -> bool:
-        """Apply an effect to a target character.
+        """
+        Apply an effect to a target character.
 
         Args:
-            actor: The character applying the effect
-            target: The character receiving the effect
-            effect: The effect to apply, or None to do nothing
-            mind_level: The mind cost level for scaling effects
+            actor:
+                The character applying the effect
+            target:
+                The character receiving the effect
+            effect:
+                The effect to apply
+            variables:
+                List of variable info for effect scaling (not used in this base
+                method)
 
         Returns:
-            bool: True if effect was successfully applied, False otherwise
+            bool:
+                True if effect was successfully applied, False otherwise
 
         """
-        # Validate actor and target.
-        if not self._validate_character(actor):
-            return False
-        if not self._validate_character(target):
-            return False
-        # Validate effect is provided and is an instance of Effect.
-        if not effect or not isinstance(effect, Effect):
-            return False
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not isinstance(target, Character):
+            raise ValueError("Target must be a Character instance")
+        if not all(isinstance(var, VarInfo) for var in variables):
+            raise ValueError("All items in variables must be VarInfo instances")
+
         # Ensure both actor and target are alive.
         if not actor.is_alive() or not target.is_alive():
             return False
-        # Validate and correct mind_level.
-        mind_level = max(mind_level, 0)
-        # Try to apply the effect using the target's effects module.
-        if target.effects_module.add_effect(actor, effect, mind_level, self):
+        # If the effect is None, nothing to apply.
+        if effect is None:
+            return False
+
+        # Make sure effect is an Effect instance.
+        if not isinstance(effect, Effect):
+            raise ValueError("Effect must be an Effect instance or None")
+
+        # Check if the effect can be applied.
+        if not effect.can_apply(actor, target):
+            return False
+
+        # Apply the effect to the target.
+        if target.add_effect(actor, effect, variables):
             return True
+
         return False
 
     # ============================================================================
     # COMBAT SYSTEM METHODS
     # ============================================================================
 
-    def _roll_bonus_damage(self, actor: Any, target: Any) -> tuple[int, list[str]]:
-        """Roll any bonus damage from effects.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
-
-        Returns:
-            tuple[int, list[str]]: (bonus_damage, damage_descriptions)
-
-        """
-        all_damage_modifiers = actor.effects_module.get_damage_modifiers()
-        return roll_damage_components_no_mind(actor, target, all_damage_modifiers)
-
-    def _roll_attack_with_crit(
+    def _roll_attack(
         self,
         actor,
-        attack_bonus_expr: str,
-        bonus_list: list[str],
-    ) -> tuple[int, str, int]:
-        """Roll an attack with critical hit detection.
+        to_hit_expression: str,
+        bonus_list: list[str] | None,
+    ) -> RollBreakdown:
+        """
+        Roll a d20 attack with bonuses and return detailed breakdown.
 
         Args:
-            actor: The character making the attack
-            attack_bonus_expr: Base attack bonus expression
-            bonus_list: Additional bonus expressions to add to the roll
+            actor:
+                The character making the attack.
+            to_hit_expression:
+                The attack bonus expression (e.g., "STR + PROF").
+            bonus_list:
+                Additional bonus expressions to add to the roll.
 
         Returns:
-            Tuple[int, str, int]: (total_result, description, raw_d20_roll)
+            RollBreakdown:
+                Detailed breakdown of the roll result
 
         """
-        if not self._validate_character(actor):
-            return 1, "1D20: 1 (error)", 1
-        # Build attack expression
-        expr = "1D20"
-        if attack_bonus_expr:
-            expr += f"+{attack_bonus_expr}"
+        from character.main import Character
 
-        # Process bonus list
-        for bonus in bonus_list:
-            if bonus:  # Only add non-empty bonuses
+        if not isinstance(actor, Character):
+            raise GameException("Actor must be a Character instance", actor)
+
+        # Build attack expression.
+        expr = "1D20"
+        if to_hit_expression:
+            expr += f"+{to_hit_expression}"
+
+        # Process bonus list.
+        for bonus in bonus_list or []:
+            # Only add non-empty bonuses.
+            if bonus:
                 expr += f"+{bonus}"
 
-        # Get actor variables and ensure it's a dict
-        variables = actor.get_expression_variables()
-        if not isinstance(variables, dict):
-            print(
-                f"Actor expression variables must be dict, got: {type(variables).__name__}, using empty dict",
-            )
-            variables = {}
-
-        total, desc, rolls = roll_and_describe(expr, variables)
-        return total, desc, rolls[0] if rolls else 0
+        # Get actor variables and ensure it's a dict.
+        return roll_and_describe(expr, actor.get_expression_variables())
 
     def _resolve_attack_roll(
         self,
         actor: Any,
         target: Any,
-        attack_bonus_expr: str = "",
+        attack_bonus: str = "",
         bonus_list: list[str] | None = None,
         target_ac_attr: str = "AC",
         auto_hit_on_crit: bool = True,
@@ -282,7 +295,7 @@ class BaseAction(BaseModel):
         Args:
             actor (Any): The character making the attack.
             target (Any): The character being attacked.
-            attack_bonus_expr (str): Attack bonus expression (e.g., "STR + PROF").
+            attack_bonus (str): Attack bonus expression (e.g., "STR + PROF").
             bonus_list (list[str]): Additional bonus expressions.
             target_ac_attr (str): Attribute name for target's AC (default: "AC").
             auto_hit_on_crit (bool): If True, crit always hits.
@@ -302,9 +315,13 @@ class BaseAction(BaseModel):
         """
         if bonus_list is None:
             bonus_list = []
-        attack_total, attack_roll_desc, d20_roll = self._roll_attack_with_crit(
-            actor, attack_bonus_expr, bonus_list
+        attack = self._roll_attack(
+            actor,
+            attack_bonus,
+            bonus_list,
         )
+        assert attack.rolls, "Rolls should not be empty"
+        d20_roll = attack.rolls[0]
         is_critical = d20_roll == 20
         is_fumble = d20_roll == 1
         target_ac = getattr(target, target_ac_attr, 0)
@@ -314,14 +331,14 @@ class BaseAction(BaseModel):
         elif is_critical and auto_hit_on_crit:
             hit = True
         else:
-            hit = attack_total >= target_ac
-        msg = f"rolled ({attack_roll_desc}) {attack_total} vs AC {target_ac}"
+            hit = attack.value >= target_ac
+        msg = f"rolled ({attack.description}) {attack.value} vs AC {target_ac}"
         return {
             "hit": hit,
             "is_critical": is_critical,
             "is_fumble": is_fumble,
-            "attack_total": attack_total,
-            "attack_roll_desc": attack_roll_desc,
+            "attack_total": attack.value,
+            "attack_roll_desc": attack.description,
             "msg": msg,
             "d20_roll": d20_roll,
         }
@@ -334,33 +351,36 @@ class BaseAction(BaseModel):
         self,
         actor: Any,
         damage_components: list[DamageComponent],
-        extra_variables: dict[str, int] = {},
+        variables: list[VarInfo] = [],
     ) -> str:
-        """Returns the damage expression with variables substituted.
+        """
+        Returns the damage expression with variables substituted.
 
         Args:
-            actor: The character using the ability
-            damage_components: List of damage components to build expression from
-            extra_variables: Additional variables to include in the expression
+            actor:
+                The character using the ability
+            damage_components:
+                List of damage components to build expression from
+            variables:
+                Additional variables to include in the expression
 
         Returns:
-            str: Complete damage expression with variables replaced by values
+            str:
+                Complete damage expression with variables replaced by values
 
         """
-        # Validate actor.
-        if not self._validate_character(actor):
-            return "0"
-        # Validate inputs.
-        if not isinstance(damage_components, list) or not damage_components:
-            print("Damage components must be a non-empty list")
-            return "0"
-        if not isinstance(extra_variables, dict):
-            print("Extra variables must be a dictionary")
-            extra_variables = {}
-        # Get the base character variables.
-        variables = actor.get_expression_variables()
-        # Add the extra variables for this action.
-        variables.update(extra_variables)
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
+            raise ValueError("All damage_components must be DamageComponent instances")
+        if not all(isinstance(var, VarInfo) for var in variables):
+            raise ValueError("All variables must be VarInfo instances")
+
+        if not damage_components:
+            raise ValueError("damage_components list cannot be empty")
+
         # Build the full expression by substituting each component's damage roll.
         return " + ".join(
             substitute_variables(component.damage_roll, variables)
@@ -371,33 +391,36 @@ class BaseAction(BaseModel):
         self,
         actor: Any,
         damage_components: list[DamageComponent],
-        extra_variables: dict[str, int] = {},
+        variables: list[VarInfo] = [],
     ) -> int:
-        """Returns the minimum possible damage value for the ability.
+        """
+        Returns the minimum possible damage value for the ability.
 
         Args:
-            actor: The character using the ability
-            damage_components: List of damage components to calculate from
-            extra_variables: Additional variables to include in the calculation
+            actor:
+                The character using the ability
+            damage_components:
+                List of damage components to calculate from
+            variables:
+                Additional variables to include in the calculation
 
         Returns:
-            int: Minimum total damage across all damage components
+            int:
+                Minimum total damage across all damage components
 
         """
-        # Validate actor.
-        if not self._validate_character(actor):
-            return 0
-        # Validate inputs.
-        if not isinstance(damage_components, list) or not damage_components:
-            print("Damage components must be a non-empty list")
-            return 0
-        if not isinstance(extra_variables, dict):
-            print("Extra variables must be a dictionary")
-            extra_variables = {}
-        # Get the base character variables.
-        variables = actor.get_expression_variables()
-        # Add the extra variables for this action.
-        variables.update(extra_variables)
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
+            raise ValueError("All damage_components must be DamageComponent instances")
+        if not all(isinstance(var, VarInfo) for var in variables):
+            raise ValueError("All variables must be VarInfo instances")
+
+        if not damage_components:
+            raise ValueError("damage_components list cannot be empty")
+
         # Calculate the minimum damage by assuming all dice roll their minimum values.
         return sum(
             parse_expr_and_assume_min_roll(
@@ -410,33 +433,36 @@ class BaseAction(BaseModel):
         self,
         actor: Any,
         damage_components: list[DamageComponent],
-        extra_variables: dict[str, int] = {},
+        variables: list[VarInfo] = [],
     ) -> int:
-        """Returns the maximum possible damage value for the ability.
+        """
+        Returns the maximum possible damage value for the ability.
 
         Args:
-            actor: The character using the ability
-            damage_components: List of damage components to calculate from
-            extra_variables: Additional variables to include in the calculation
+            actor:
+                The character using the ability
+            damage_components:
+                List of damage components to calculate from
+            variables:
+                Additional variables to include in the calculation
 
         Returns:
-            int: Maximum total damage across all damage components
+            int:
+                Maximum total damage across all damage components
 
         """
-        # Validate actor.
-        if not self._validate_character(actor):
-            return 0
-        # Validate inputs.
-        if not isinstance(damage_components, list) or not damage_components:
-            print("Damage components must be a non-empty list")
-            return 0
-        if not isinstance(extra_variables, dict):
-            print("Extra variables must be a dictionary")
-            extra_variables = {}
-        # Get the base character variables.
-        variables = actor.get_expression_variables()
-        # Add the extra variables for this action.
-        variables.update(extra_variables)
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
+            raise ValueError("All damage_components must be DamageComponent instances")
+        if not all(isinstance(var, VarInfo) for var in variables):
+            raise ValueError("All variables must be VarInfo instances")
+
+        if not damage_components:
+            raise ValueError("damage_components list cannot be empty")
+
         # Calculate the maximum damage by assuming all dice roll their maximum values.
         return sum(
             parse_expr_and_assume_max_roll(
@@ -461,12 +487,12 @@ class BaseAction(BaseModel):
 
         """
         from core.constants import ActionCategory
+        from character.main import Character
 
-        # Validate actor and target.
-        if not self._validate_character(actor):
-            return False
-        if not self._validate_character(target):
-            return False
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not isinstance(target, Character):
+            raise ValueError("Target must be a Character instance")
 
         # Both must be alive to target.
         if not actor.is_alive() or not target.is_alive():
@@ -500,9 +526,9 @@ class BaseAction(BaseModel):
         # Healing actions target self and allies (not enemies, not at full health for healing)
         if self.category == ActionCategory.HEALING:
             if target == actor:
-                return target.hp < target.HP_MAX
+                return target.HP < target.HP_MAX
             if not is_oponent(actor.char_type, target.char_type):
-                return target.hp < target.HP_MAX
+                return target.HP < target.HP_MAX
             return False
 
         # Buff actions target self and allies.

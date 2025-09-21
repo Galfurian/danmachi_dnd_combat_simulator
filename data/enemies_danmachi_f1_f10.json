@@ -1,7 +1,7 @@
 [
     {
         "name": "Goblin",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -20,7 +20,7 @@
     },
     {
         "name": "Kobold",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -39,7 +39,7 @@
     },
     {
         "name": "Dungeon Worm",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -58,7 +58,7 @@
     },
     {
         "name": "War Shadow",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -77,7 +77,7 @@
     },
     {
         "name": "Killer Ant",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Insectoid": 1
@@ -96,7 +96,7 @@
     },
     {
         "name": "Poison Jelly",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Ooze": 1
@@ -119,7 +119,7 @@
     },
     {
         "name": "Orc",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Brute": 1
@@ -138,7 +138,7 @@
     },
     {
         "name": "Ligerfang",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -158,7 +158,7 @@
     },
     {
         "name": "Silverback",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Brute": 2
@@ -178,7 +178,7 @@
     },
     {
         "name": "Infant Dragon",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Dragonkin",
         "levels": {
             "Dragonkin": 2
@@ -207,7 +207,7 @@
     },
     {
         "name": "Needle Rabbit",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 1
@@ -226,7 +226,7 @@
     },
     {
         "name": "Frog Shooter",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 2
@@ -245,7 +245,7 @@
     },
     {
         "name": "Purple Moth",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 2
@@ -268,7 +268,7 @@
     },
     {
         "name": "Hard Armadillo",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 3
@@ -288,7 +288,7 @@
     },
     {
         "name": "Almiraj",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 3
@@ -307,7 +307,7 @@
     },
     {
         "name": "Hobgoblin",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 3
@@ -329,7 +329,7 @@
     },
     {
         "name": "Hellhound",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 4
@@ -354,7 +354,7 @@
     },
     {
         "name": "Minotaur Boss",
-        "type": "ENEMY",
+        "char_type": "ENEMY",
         "race": "Monster",
         "levels": {
             "Beast": 5

@@ -323,11 +323,11 @@ def print_character_sheet(char: Character) -> None:
 
     # Core stats
     cprint(
-        f"  HP: [green]{char.hp}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]"
+        f"  HP: [green]{char.HP}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]"
     )
 
     if char.MIND_MAX > 0:
-        cprint(f"  Mind: [blue]{char.mind}/{char.MIND_MAX}[/]")
+        cprint(f"  Mind: [blue]{char.MIND}/{char.MIND_MAX}[/]")
 
     if char.spellcasting_ability:
         # Convert full ability name to 3-letter abbreviation
@@ -388,9 +388,9 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [red]Vulnerabilities[/]: {', '.join(vlist)}")
 
     # Active Effects
-    if char.effects_module.active_effects:
+    if char._effects_module.active_effects:
         cprint("  [yellow]Active Effects[/]:")
-        for active_effect in char.effects_module.active_effects:
+        for active_effect in char._effects_module.active_effects:
             effect_info = (
                 f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
             )
@@ -406,14 +406,16 @@ def print_character_sheet(char: Character) -> None:
 
     # Cooldowns and uses
     active_cooldowns = {
-        name: turns for name, turns in char.cooldowns.items() if turns > 0
+        name: turns
+        for name, turns in char._actions_module.cooldowns.items()
+        if turns > 0
     }
     if active_cooldowns:
         cprint("  [orange1]Active Cooldowns[/]:")
         for action_name, turns in active_cooldowns.items():
             cprint(Padding(f"{action_name}: {turns} turns", (0, 4)))
 
-    active_uses = {name: uses for name, uses in char.uses.items() if uses > 0}
+    active_uses = {name: uses for name, uses in char._uses.items() if uses > 0}
     if active_uses:
         cprint("  [orange1]Used Abilities[/]:")
         for action_name, uses in active_uses.items():

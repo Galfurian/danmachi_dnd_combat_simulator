@@ -3,8 +3,16 @@
 from abc import abstractmethod
 from typing import Any
 
+from catchery import log_warning
+from combat.damage import DamageComponent, roll_damage_components
 from core.constants import BonusType
-from core.utils import evaluate_expression
+from core.utils import (
+    RollBreakdown,
+    VarInfo,
+    evaluate_expression,
+    roll_and_describe,
+    roll_dice_expression,
+)
 from pydantic import Field, model_validator
 
 from actions.base_action import BaseAction
@@ -28,15 +36,6 @@ class Spell(BaseAction):
     mind_cost: list[int] = Field(
         default_factory=list,
         description="List of mind costs for casting the spell at different levels.",
-    )
-
-    target_expr: str = Field(
-        default="",
-        description=(
-            "Expression defining the number of targets the spell can affect. "
-            "If empty, the spell targets a single entity. "
-            "Expressions can use variables like 'MIND' for the caster's spell level."
-        ),
     )
 
     requires_concentration: bool = Field(
@@ -67,24 +66,6 @@ class Spell(BaseAction):
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
-    def target_count(self, actor: Any, mind_level: int) -> int:
-        """Calculate the number of targets this spell can affect.
-
-        Args:
-            actor (Any): The character casting the spell (must have expression variables).
-            mind_level (int): The spell level being used for casting.
-
-        Returns:
-            int: Number of targets (minimum 1, even for invalid expressions).
-
-        """
-        if self.target_expr:
-            variables = actor.get_expression_variables()
-            variables["MIND"] = mind_level
-            # Evaluate the multi-target expression to get the number of targets.
-            return evaluate_expression(self.target_expr, variables)
-        return 1
-
     # ============================================================================
     # SPELL SYSTEM METHODS
     # ============================================================================
@@ -106,41 +87,41 @@ class Spell(BaseAction):
         raise NotImplementedError("Spells must use the cast_spell method.")
 
     @abstractmethod
-    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """Abstract method for casting spells with level-specific behavior.
+    def cast_spell(
+        self,
+        actor: Any,
+        target: Any,
+        rank: int,
+    ) -> bool:
+        """
+        Abstract method for casting spells with level-specific behavior.
 
         Args:
-            actor (Any): The character casting the spell (must have mind points).
-            target (Any): The character targeted by the spell.
-            mind_level (int): The spell level to cast at (1-9, affects cost and power).
+            actor (Any):
+                The character casting the spell (must have mind points).
+            target (Any):
+                The character targeted by the spell.
+            rank (int):
+                The rank at which the spell is being cast.
 
         Returns:
-            bool: True if spell was cast successfully, False on failure.
+            bool:
+                True if spell was cast successfully, False on failure.
 
         """
         from character.main import Character
 
-        assert actor is not None, "Actor is required"
         assert isinstance(actor, Character), "Actor must be an object"
-        assert target is not None, "Target is required"
         assert isinstance(target, Character), "Target must be an object"
+        assert rank >= 0, "Rank must be non-negative"
+        assert rank < len(self.mind_cost), "Rank exceeds available mind cost levels"
 
-        # Validate mind cost against the specified level.
-        if mind_level not in self.mind_cost:
-            print(
-                f"{actor.name} cannot cast {self.name} at invalid level {mind_level}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_level": mind_level,
-                    "valid_levels": self.mind_cost,
-                },
-            )
-            return False
+        # Get the mind cost for the specified rank.
+        mind_level = self.mind_cost[rank]
 
         # Check if actor has enough mind points to cast the spell.
-        if actor.mind < mind_level:
-            print(
+        if actor.MIND < mind_level:
+            log_warning(
                 f"{actor.name} does not have enough mind to cast {self.name}",
                 {
                     "actor": actor.name,
@@ -153,7 +134,7 @@ class Spell(BaseAction):
 
         # Check cooldown restrictions.
         if actor.is_on_cooldown(self):
-            print(
+            log_warning(
                 f"Cannot cast {self.name} - spell is on cooldown",
                 {"actor": actor.name, "spell": self.name},
             )
@@ -165,10 +146,36 @@ class Spell(BaseAction):
     # EFFECT ANALYSIS METHODS
     # ============================================================================
 
+    def spell_get_variables(self, actor: Any, rank: int) -> list[VarInfo]:
+        """
+        Get a list of variables used in spell expressions.
+
+        Args:
+            actor (Any): The character casting the spell.
+            rank (int): The rank at which the spell is being cast.
+
+        Returns:
+            list[VarInfo]: A list of VarInfo objects representing the variables.
+
+        """
+        from character.main import Character
+
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert rank >= 0, "Rank must be non-negative"
+        assert rank < len(self.mind_cost), "Rank exceeds available mind cost levels"
+
+        # Get the mind cost for the specified rank.
+        mind_level = self.mind_cost[rank]
+        # Prepare variables for substitution.
+        variables = actor.get_expression_variables()
+        variables.append(VarInfo(name="MIND", value=mind_level))
+        variables.append(VarInfo(name="RANK", value=rank + 1))
+        return variables
+
     def get_modifier_expressions(
         self,
         actor: Any,
-        mind_level: int = 1,
+        rank: int = 0,
     ) -> dict[BonusType, str]:
         """
         Get modifier expressions with variables substituted for display.
@@ -176,8 +183,8 @@ class Spell(BaseAction):
         Args:
             actor (Any):
                 The character casting the spell.
-            mind_level (int):
-                The spell level to use for MIND variable substitution.
+            rank (int):
+                The rank at which the spell is being cast.
 
         Returns:
             dict[BonusType, str]:
@@ -186,28 +193,182 @@ class Spell(BaseAction):
         """
         from effects.modifier_effect import ModifierEffect
         from combat.damage import DamageComponent
-        from core.utils import substitute_variables
 
         assert isinstance(self.effect, ModifierEffect)
-        assert mind_level >= 1
 
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
         expressions: dict[BonusType, str] = {}
 
         for modifier in self.effect.modifiers:
             bonus_type = modifier.bonus_type
             value = modifier.value
             if isinstance(value, DamageComponent):
-                expressions[bonus_type] = substitute_variables(
-                    value.damage_roll, variables
+                expressions[bonus_type] = self._spell_substitute_variables(
+                    value.damage_roll,
+                    actor,
+                    rank,
                 )
             elif isinstance(value, str):
-                expressions[bonus_type] = substitute_variables(value, variables)
+                expressions[bonus_type] = self._spell_substitute_variables(
+                    value,
+                    actor,
+                    rank,
+                )
             else:
                 expressions[bonus_type] = str(value)
 
         return expressions
+
+    def _spell_apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        rank: int,
+    ) -> bool:
+        """
+        Apply the spell's effect to the target.
+
+        Args:
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character targeted by the spell.
+            rank (int):
+                The rank at which the spell is being cast.
+
+        Returns:
+            bool:
+                True if effect was applied successfully, False on failure.
+        """
+        return self._common_apply_effect(
+            actor=actor,
+            target=target,
+            effect=self.effect,
+            variables=self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
+
+    def _spell_roll_damage_components(
+        self,
+        actor: Any,
+        target: Any,
+        rank: int,
+        components: list[DamageComponent],
+    ) -> tuple[int, list[str]]:
+        """
+        Roll and describe a list of damage components for spell calculations.
+
+        Args:
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character being attacked.
+            rank (int):
+                The rank at which the spell is being cast.
+            components (list[DamageComponent]):
+                The list of damage components to roll.
+
+        Returns:
+            tuple[int, str]:
+                A tuple containing the total damage and a detailed description string.
+        """
+        return roll_damage_components(
+            actor,
+            target,
+            components,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
+
+    def _spell_roll_and_describe(
+        self,
+        expression: str,
+        actor: Any,
+        rank: int,
+    ) -> RollBreakdown:
+        """
+        Evaluate, roll, and describe an expression for spell calculations.
+
+        Args:
+            expression (str):
+                The expression to evaluate.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The rank at which the spell is being cast.
+
+        Returns:
+            RollBreakdown:
+                The result and breakdown of the rolled expression.
+
+        """
+        return roll_and_describe(
+            self._spell_substitute_variables(
+                expression,
+                actor,
+                rank,
+            )
+        )
+
+    def _spell_roll_dice_expression(
+        self,
+        expression: str,
+        actor: Any,
+        rank: int,
+    ) -> int:
+        """
+        Evaluate and roll an expression for spell calculations.
+
+        Args:
+            expression (str):
+                The expression to evaluate.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The rank at which the spell is being cast.
+
+        Returns:
+            int:
+                The result of the rolled expression.
+        """
+        return roll_dice_expression(
+            self._spell_substitute_variables(
+                expression,
+                actor,
+                rank,
+            ),
+        )
+
+    def _spell_substitute_variables(
+        self,
+        expression: str,
+        actor: Any,
+        rank: int,
+    ) -> str:
+        """
+        Substitute variables in an expression for spell calculations.
+
+        Args:
+            expression (str): The expression to modify.
+            actor (Any): The character casting the spell.
+            rank (int): The rank at which the spell is being cast.
+
+        Returns:
+            str: The modified expression with substituted variables.
+        """
+        from core.utils import substitute_variables
+
+        # Evaluate and roll the expression.
+        return substitute_variables(
+            expression,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
 
 
 def deserialize_spell(data: dict[str, Any]) -> Spell | None:

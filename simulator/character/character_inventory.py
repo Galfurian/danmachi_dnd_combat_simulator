@@ -1,30 +1,25 @@
-"""Character Inventory Management Module - handles inventory-related functionality."""
+"""
+Character Inventory Management Module - handles inventory-related functionality.
+"""
 
-from logging import debug
-from typing import TYPE_CHECKING
+from typing import Any
 
+from catchery import log_info, log_warning
 from core.constants import ArmorSlot
 from items.armor import Armor
 from items.weapon import Weapon
-
-if TYPE_CHECKING:
-    from character.main import Character
+from pydantic import BaseModel, Field
 
 
-class CharacterInventory:
+class CharacterInventory(BaseModel):
     """
-    Manages character inventory including weapons, armor, and equipment validation.
+    Manages character inventory including weapons, armor, and equipment
+    validation.
     """
 
-    def __init__(self, character: "Character") -> None:
-        """
-        Initialize the inventory manager.
-
-        Args:
-            character (Character): The Character instance this inventory manager belongs to.
-
-        """
-        self._character = character
+    owner: Any = Field(
+        description="The Character instance this inventory manager belongs to."
+    )
 
     def get_occupied_hands(self) -> int:
         """
@@ -36,12 +31,11 @@ class CharacterInventory:
         """
         used_hands = sum(
             item.get_required_hands()
-            for item in self._character.equipped_weapons
+            for item in self.owner.equipped_weapons
             if item.requires_hands()
         )
         used_hands += sum(
-            armor.armor_slot == ArmorSlot.SHIELD
-            for armor in self._character.equipped_armor
+            armor.armor_slot == ArmorSlot.SHIELD for armor in self.owner.equipped_armor
         )
         return used_hands
 
@@ -53,7 +47,7 @@ class CharacterInventory:
             int: The number of free hands available.
 
         """
-        return self._character.total_hands - self.get_occupied_hands()
+        return self.owner.total_hands - self.get_occupied_hands()
 
     def can_equip_weapon(self, weapon: Weapon) -> bool:
         """
@@ -71,10 +65,10 @@ class CharacterInventory:
             return True
         # Check if the character has enough free hands to equip the weapon.
         if weapon.get_required_hands() > self.get_free_hands():
-            print(
-                f"{self._character.name} does not have enough free hands to equip {weapon.name}.",
+            log_warning(
+                f"{self.owner.name} does not have enough free hands to equip {weapon.name}.",
                 {
-                    "character": self._character.name,
+                    "character": self.owner.name,
                     "weapon": weapon.name,
                     "hands_required": weapon.get_required_hands(),
                     "free_hands": self.get_free_hands(),
@@ -95,13 +89,13 @@ class CharacterInventory:
 
         """
         if self.can_equip_weapon(weapon):
-            debug(f"Equipping weapon: {weapon.name} for {self._character.name}")
+            log_info(f"Equipping weapon: {weapon.name} for {self.owner.name}")
             # Add the weapon to the character's weapon list.
-            self._character.equipped_weapons.append(weapon)
+            self.owner.equipped_weapons.append(weapon)
             return True
-        print(
-            f"{self._character.name} cannot equip {weapon.name}",
-            {"character": self._character.name, "weapon": weapon.name},
+        log_warning(
+            f"{self.owner.name} cannot equip {weapon.name}",
+            {"character": self.owner.name, "weapon": weapon.name},
         )
         return False
 
@@ -116,14 +110,14 @@ class CharacterInventory:
             bool: True if the weapon was removed successfully, False otherwise.
 
         """
-        if weapon in self._character.equipped_weapons:
-            debug(f"Unequipping weapon: {weapon.name} from {self._character.name}")
+        if weapon in self.owner.equipped_weapons:
+            log_info(f"Unequipping weapon: {weapon.name} from {self.owner.name}")
             # Remove the weapon from the character's weapon list.
-            self._character.equipped_weapons.remove(weapon)
+            self.owner.equipped_weapons.remove(weapon)
             return True
-        print(
-            f"{self._character.name} does not have {weapon.name} equipped",
-            {"character": self._character.name, "weapon": weapon.name},
+        log_warning(
+            f"{self.owner.name} does not have {weapon.name} equipped",
+            {"character": self.owner.name, "weapon": weapon.name},
         )
         return False
 
@@ -141,10 +135,10 @@ class CharacterInventory:
         # If the armor is a shield, it can be equipped if the character has a free hand.
         if armor.armor_slot == ArmorSlot.SHIELD:
             if self.get_free_hands() <= 0:
-                print(
-                    f"{self._character.name} does not have a free hand to equip {armor.name}",
+                log_warning(
+                    f"{self.owner.name} does not have a free hand to equip {armor.name}",
                     {
-                        "character": self._character.name,
+                        "character": self.owner.name,
                         "armor": armor.name,
                         "free_hands": self.get_free_hands(),
                     },
@@ -152,12 +146,12 @@ class CharacterInventory:
                 return False
             return True
         # Otherwise, check if the armor slot is already occupied.
-        for equipped in self._character.equipped_armor:
+        for equipped in self.owner.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
-                print(
-                    f"{self._character.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
+                log_warning(
+                    f"{self.owner.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
                     {
-                        "character": self._character.name,
+                        "character": self.owner.name,
                         "armor": armor.name,
                         "slot": armor.armor_slot.name,
                         "equipped": equipped.name,
@@ -179,14 +173,14 @@ class CharacterInventory:
 
         """
         if self.can_equip_armor(armor):
-            debug(f"Equipping armor: {armor.name} for {self._character.name}")
+            log_info(f"Equipping armor: {armor.name} for {self.owner.name}")
             # Add the armor to the character's armor list.
-            self._character.equipped_armor.append(armor)
+            self.owner.equipped_armor.append(armor)
             return True
-        print(
-            f"{self._character.name} cannot equip {armor.name} because the armor slot is already occupied",
+        log_warning(
+            f"{self.owner.name} cannot equip {armor.name} because the armor slot is already occupied",
             {
-                "character": self._character.name,
+                "character": self.owner.name,
                 "armor": armor.name,
                 "slot": armor.armor_slot.name,
             },
@@ -204,13 +198,13 @@ class CharacterInventory:
             bool: True if the armor was removed successfully, False otherwise.
 
         """
-        if armor in self._character.equipped_armor:
-            debug(f"Unequipping armor: {armor.name} from {self._character.name}")
+        if armor in self.owner.equipped_armor:
+            log_info(f"Unequipping armor: {armor.name} from {self.owner.name}")
             # Remove the armor from the character's armor list.
-            self._character.equipped_armor.remove(armor)
+            self.owner.equipped_armor.remove(armor)
             return True
-        print(
-            f"{self._character.name} does not have {armor.name} equipped",
-            {"character": self._character.name, "armor": armor.name},
+        log_warning(
+            f"{self.owner.name} does not have {armor.name} equipped",
+            {"character": self.owner.name, "armor": armor.name},
         )
         return False

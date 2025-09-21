@@ -1,9 +1,9 @@
 from typing import Any, Literal
 
-from core.utils import cprint, roll_and_describe
+from core.utils import VarInfo, cprint, roll_and_describe
 from pydantic import Field, model_validator
 
-from .base_effect import Effect
+from .base_effect import ActiveEffect, Effect
 
 
 class HealingOverTimeEffect(Effect):
@@ -44,29 +44,32 @@ class HealingOverTimeEffect(Effect):
             raise ValueError("Heal per turn must be a string expression.")
         return self
 
-    def turn_update(self, actor: Any, target: Any, mind_level: int | None = 1) -> None:
+    def turn_update(self, effect: ActiveEffect) -> None:
         """
-        Apply healing over time to the target.
+        Update the healing over time effect for the current turn.
 
         Args:
-            actor (Any): The character who applied the HoT effect.
-            target (Any): The character receiving the healing.
-            mind_level (Optional[int]): The mind level for healing calculation. Defaults to 1.
+            effect (ActiveEffect):
+                The active effect instance containing actor, target, and
+                variables.
 
         """
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
         # Calculate the heal amount using the provided expression.
-        hot_value, hot_desc, _ = roll_and_describe(self.heal_per_turn, variables)
+        outcome = roll_and_describe(
+            self.heal_per_turn,
+            effect.variables,
+        )
         # Assert that the heal value is a positive integer.
-        assert (
-            isinstance(hot_value, int) and hot_value >= 0
-        ), f"HealingOverTimeEffect '{self.name}' must have a non-negative integer heal value, got {hot_value}."
+        if outcome.value < 0:
+            raise ValueError(
+                "Heal value must be non-negative for HealingOverTimeEffect"
+                f" '{self.name}', got {outcome.value}."
+            )
         # Apply the heal to the target.
-        hot_value = target.heal(hot_value)
+        hot_value = effect.target.heal(outcome.value)
         # If the heal value is positive, print the heal message.
         message = f"    {self.emoji} "
-        message += target.char_type.colorize(target.name)
-        message += f" heals for {hot_value} ([white]{hot_desc}[/]) hp from "
+        message += effect.target.char_type.colorize(effect.target.name)
+        message += f" heals for {hot_value} ([white]{outcome.description}[/]) hp from "
         message += self.colorize(self.name) + "."
         cprint(message)

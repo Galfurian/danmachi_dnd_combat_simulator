@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import (
     cprint,
@@ -45,52 +46,55 @@ class AbilityHeal(BaseAbility):
             bool: True if ability was executed successfully, False on system errors.
 
         """
-        # Validate actor and target.
-        if not self._validate_character(actor):
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid actor.",
+                {"ability": self.name, "actor": actor},
+            )
             return False
-        if not self._validate_character(target):
+        if not isinstance(target, Character):
+            log_warning(
+                "AbilityBuff.execute called without valid target.",
+                {"ability": self.name, "target": target},
+            )
             return False
-        # Validate cooldown.
         if actor.is_on_cooldown(self):
-            print(
-                f"{actor.name} cannot use {self.name} yet, still on cooldown.",
-                {"actor": actor.name, "ability": self.name},
+            log_warning(
+                "AbilityBuff.execute called while actor is on cooldown.",
+                {"ability": self.name, "actor": actor.name},
             )
             return False
 
-        # Get display strings for logging.
-        actor_str, target_str = self._get_display_strings(actor, target)
-
-        # Roll healing amount
+        # Get expression variables from actor.
         variables = actor.get_expression_variables()
-        healing_amount, healing_desc, _ = roll_and_describe(self.heal_roll, variables)
-
+        # Roll healing amount.
+        heal = roll_and_describe(self.heal_roll, variables)
         # Apply healing to target.
-        actual_healing = target.heal(healing_amount)
-
+        actual_healing = target.heal(heal.value)
         # Apply effects
         effect_applied = self._common_apply_effect(actor, target, self.effect)
 
-        # Display results.
-        msg = f"    💚 {actor_str} uses [bold green]{self.name}[/] on {target_str}"
-
+        # Display the outcome.
+        msg = f"    💚 {actor.colored_name} uses [bold green]{self.name}[/] on {target.colored_name}"
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" healing {actual_healing} HP"
             if self.effect and effect_applied:
                 msg += f" and applying [bold yellow]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
-            if actual_healing != healing_amount:
-                msg += f" healing {actual_healing} HP (rolled {healing_amount}, capped at max HP)"
+            if actual_healing != heal.value:
+                msg += f" healing {actual_healing} HP (rolled {heal.value}, capped at max HP)"
             else:
-                msg += f" healing {actual_healing} HP → {healing_desc}"
+                msg += f" healing {actual_healing} HP → {heal.description}"
             msg += ".\n"
 
             if self.effect:
                 if effect_applied:
-                    msg += f"        {target_str} is affected by"
+                    msg += f"        {target.colored_name} is affected by"
                 else:
-                    msg += f"        {target_str} resists"
+                    msg += f"        {target.colored_name} resists"
                 msg += f" [bold yellow]{self.effect.name}[/]."
 
         cprint(msg)

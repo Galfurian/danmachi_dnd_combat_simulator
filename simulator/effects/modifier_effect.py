@@ -1,5 +1,6 @@
 from typing import Any, Literal
 
+from catchery import log_warning
 from pydantic import Field, model_validator
 
 from .base_effect import Effect, Modifier
@@ -57,14 +58,27 @@ class ModifierEffect(Effect):
             bool: True if the effect can be applied, False otherwise.
 
         """
+        from character.main import Character
+
+        # Validate actor and target types.
+        if not isinstance(actor, Character):
+            log_warning(
+                "ModifierEffect.can_apply called without valid actor.",
+                {"effect": self.name, "actor": actor},
+            )
+            return False
+        if not isinstance(target, Character):
+            log_warning(
+                "ModifierEffect.can_apply called without valid target.",
+                {"effect": self.name, "target": target},
+            )
+            return False
+        # If the target is dead, cannot apply effects.
         if not target.is_alive():
             return False
         # Check if the target is already affected by the same modifiers.
-        for modifier in self.modifiers:
-            existing_modifiers = target.effects_module.get_modifier(modifier.bonus_type)
-            if not existing_modifiers:
-                continue
-            # Check if the target already has this exact modifier
-            if modifier in existing_modifiers:
-                return False
-        return True
+        return target.can_add_effect(
+            actor,
+            self,
+            actor.get_expression_variables(),
+        )

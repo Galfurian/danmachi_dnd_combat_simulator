@@ -3,9 +3,10 @@ from enum import Enum
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
+from core.utils import VarInfo
 from pydantic import BaseModel, Field, model_validator
 
-from .base_effect import Effect
+from .base_effect import ActiveEffect, Effect
 
 
 class TriggerType(Enum):
@@ -91,14 +92,14 @@ class TriggerCondition(BaseModel):
             if self.trigger_type == TriggerType.ON_LOW_HEALTH:
                 threshold = self.threshold or 0.25
                 hp_ratio = (
-                    character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
+                    character.HP / character.HP_MAX if character.HP_MAX > 0 else 0
                 )
                 return hp_ratio <= threshold
 
             if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
                 threshold = self.threshold or 0.75
                 hp_ratio = (
-                    character.hp / character.HP_MAX if character.HP_MAX > 0 else 0
+                    character.HP / character.HP_MAX if character.HP_MAX > 0 else 0
                 )
                 return hp_ratio >= threshold
 
@@ -291,7 +292,7 @@ class TriggerEffect(Effect):
         self,
         character: Any,
         event_data: dict[str, Any],
-    ) -> tuple[list[DamageComponent], list[tuple[Effect, int]]]:
+    ) -> tuple[list[DamageComponent], list[Effect]]:
         """
         Activate the trigger and return effects and damage bonuses.
 
@@ -307,30 +308,22 @@ class TriggerEffect(Effect):
         self.cooldown_remaining = self.cooldown_turns
         self.has_triggered_this_turn = True
 
-        # Get mind level from event data or default to 1
-        mind_level = event_data.get("mind_level", 1)
-
-        # Prepare effects with mind levels
-        trigger_effects_with_levels = [
-            (effect, mind_level) for effect in self.trigger_effects
-        ]
-
         assert self.damage_bonus is not None
+        assert self.trigger_effects is not None
 
-        return self.damage_bonus, trigger_effects_with_levels
+        return self.damage_bonus, self.trigger_effects
 
-    def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
+    def turn_update(
+        self,
+        effect: ActiveEffect,
+    ) -> None:
         """
         Update trigger state at the start/end of turns.
 
         Args:
-            actor (Any): The character who applied the effect.
-            target (Any): The character with the effect.
-            mind_level (int): The mind level (unused for triggers).
+            effect (ActiveEffect): The active effect instance.
 
         """
-        super().turn_update(actor, target, mind_level)
-
         # Reset per-turn flags
         self.has_triggered_this_turn = False
 
@@ -357,6 +350,22 @@ class TriggerEffect(Effect):
             status_parts.append(f"(cooldown: {self.cooldown_remaining} turns)")
 
         return " ".join(status_parts)
+
+
+class TriggerData(BaseModel):
+    """
+    Data structure to hold trigger activation results.
+    """
+
+    damage_bonuses: list[DamageComponent] = Field(
+        description="Damage bonuses to apply when triggered.",
+    )
+    effects_to_apply: list[Effect] = Field(
+        description="Effects to apply when triggered.",
+    )
+    consumed_triggers: list[TriggerEffect] = Field(
+        description="Triggers that were consumed upon activation.",
+    )
 
 
 # =============================================================================

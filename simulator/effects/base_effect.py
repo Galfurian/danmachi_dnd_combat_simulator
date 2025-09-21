@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
 from core.constants import BonusType
+from core.utils import VarInfo
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -50,41 +51,21 @@ class Effect(BaseModel):
         """Applies effect color formatting to a message."""
         return f"[{self.color}]{message}[/]"
 
-    def turn_update(self, actor: Any, target: Any, mind_level: int = 0) -> None:
+    def turn_update(
+        self,
+        effect: "ActiveEffect",
+    ) -> None:
         """Update the effect for the current turn.
 
         Args:
-            actor (Any): The character applying the effect.
-            target (Any): The character receiving the effect.
-            mind_level (int, optional): The mind level of the actor. Defaults to 0.
+            effect (ActiveEffect):
+                The active effect instance containing actor, target, and
+                variables.
 
         """
-        try:
-            if not actor:
-                print(
-                    f"Actor cannot be None for effect {self.name}",
-                )
-                return
-
-            if not target:
-                print(
-                    f"Target cannot be None for effect {self.name}",
-                )
-                return
-
-            if not isinstance(mind_level, int) or mind_level < 0:
-                print(
-                    f"Mind level must be non-negative integer for effect {self.name}, got: {mind_level}",
-                )
-                mind_level = max(
-                    0, int(mind_level) if isinstance(mind_level, (int, float)) else 0
-                )
-
-        except Exception as e:
-            print(
-                f"Error during turn_update validation for effect {self.name}: {e!s}",
-                e,
-            )
+        raise NotImplementedError(
+            f"turn_update not implemented for effect {self.name}",
+        )
 
     def is_permanent(self) -> bool:
         """Check if the effect is permanent (i.e., has no duration limit).
@@ -206,19 +187,42 @@ class Modifier(BaseModel):
         return f"Modifier({self.bonus_type.name}, {self.value})"
 
 
-def ensure_effect(
-    effect: Any,
-    name: str,
-    default: Effect | None = None,
-    context: dict[str, Any] | None = None,
-) -> Any:
-    if effect is not None and not isinstance(effect, Effect):
-        print(
-            f"{name} must be either Effect or None, got: {type(effect).__name__}, setting to {default}",
-            {
-                **(context or {}),
-                "effect_type": type(effect).__name__,
-            },
-        )
-        effect = default
-    return effect
+class ActiveEffect(BaseModel):
+    """
+    Represents an active effect applied to a character, including its source,
+    target, effect details, mind level, and duration.
+    """
+
+    source: Any = Field(
+        description="The source of the effect (the caster)",
+    )
+    target: Any = Field(
+        description="The target of the effect (the recipient)",
+    )
+    effect: Effect = Field(
+        description="The effect being applied",
+    )
+    duration: int | None = Field(
+        default=None,
+        description="Remaining duration in turns, None for indefinite effects",
+    )
+    variables: list[VarInfo] = Field(
+        default_factory=list,
+        description="List of variable info for dynamic calculations",
+    )
+
+    @model_validator(mode="after")
+    def check_fields(self) -> Any:
+        from character.main import Character
+
+        if not isinstance(self.source, Character):
+            raise ValueError("Source must be a Character instance.")
+        if not isinstance(self.target, Character):
+            raise ValueError("Target must be a Character instance.")
+        if not isinstance(self.effect, Effect):
+            raise ValueError("Effect must be an Effect instance.")
+        if self.duration is not None and self.duration < 0:
+            raise ValueError("Duration must be a non-negative integer or None.")
+        if not all(isinstance(var, VarInfo) for var in self.variables):
+            raise ValueError("All items in variables must be VarInfo instances.")
+        return self

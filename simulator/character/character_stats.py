@@ -1,24 +1,23 @@
-"""Character statistics and calculated properties module."""
+"""
+Character statistics and calculated properties module.
+"""
 
-
+from typing import Any
 from core.constants import BonusType
-from core.utils import get_stat_modifier
+from core.utils import VarInfo, get_stat_modifier
+from pydantic import BaseModel, Field
 
 
-class CharacterStats:
+class CharacterStats(BaseModel):
     """
-    Handles all stat calculations and derived properties for a Character, including ability modifiers, HP, AC, initiative, and utility stat expressions.
+    Handles all stat calculations and derived properties for a Character,
+    including ability modifiers, HP, AC, initiative, and utility stat
+    expressions.
     """
 
-    def __init__(self, character_ref) -> None:
-        """
-        Initialize with reference to parent Character object.
-
-        Args:
-            character_ref: The Character instance this stats module belongs to.
-
-        """
-        self._character = character_ref
+    owner: Any = Field(
+        description="Reference to the parent Character instance",
+    )
 
     # ============================================================================
     # ABILITY SCORE MODIFIERS (D&D 5e Standard)
@@ -33,7 +32,7 @@ class CharacterStats:
             int: The strength modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["strength"])
+        return get_stat_modifier(self.owner.stats["strength"])
 
     @property
     def DEX(self) -> int:
@@ -44,7 +43,7 @@ class CharacterStats:
             int: The dexterity modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["dexterity"])
+        return get_stat_modifier(self.owner.stats["dexterity"])
 
     @property
     def CON(self) -> int:
@@ -55,7 +54,7 @@ class CharacterStats:
             int: The constitution modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["constitution"])
+        return get_stat_modifier(self.owner.stats["constitution"])
 
     @property
     def INT(self) -> int:
@@ -66,7 +65,7 @@ class CharacterStats:
             int: The intelligence modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["intelligence"])
+        return get_stat_modifier(self.owner.stats["intelligence"])
 
     @property
     def WIS(self) -> int:
@@ -77,7 +76,7 @@ class CharacterStats:
             int: The wisdom modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["wisdom"])
+        return get_stat_modifier(self.owner.stats["wisdom"])
 
     @property
     def CHA(self) -> int:
@@ -88,7 +87,7 @@ class CharacterStats:
             int: The charisma modifier value.
 
         """
-        return get_stat_modifier(self._character.stats["charisma"])
+        return get_stat_modifier(self.owner.stats["charisma"])
 
     @property
     def SPELLCASTING(self) -> int:
@@ -99,9 +98,11 @@ class CharacterStats:
             int: The spellcasting ability modifier value.
 
         """
-        if (self._character.spellcasting_ability and
-            self._character.spellcasting_ability in self._character.stats):
-            return get_stat_modifier(self._character.stats[self._character.spellcasting_ability])
+        if (
+            self.owner.spellcasting_ability
+            and self.owner.spellcasting_ability in self.owner.stats
+        ):
+            return get_stat_modifier(self.owner.stats[self.owner.spellcasting_ability])
         return 0
 
     # ============================================================================
@@ -119,10 +120,12 @@ class CharacterStats:
         """
         hp_max: int = 0
         # Add the class levels' HP multipliers to the max HP.
-        for cls, lvl in self._character.levels.items():
+        for cls, lvl in self.owner.levels.items():
             hp_max += lvl * (cls.hp_mult + self.CON)
-        # Add the effect modifiers to the max HP.
-        hp_max += self._character.effects_module.get_modifier(BonusType.HP)
+        # Sum all the HP modifiers from effects.
+        modifiers = self.owner.get_modifier(BonusType.HP)
+        if isinstance(modifiers, list):
+            hp_max += sum(int(mod) for mod in modifiers)
         return hp_max
 
     @property
@@ -136,10 +139,12 @@ class CharacterStats:
         """
         mind_max: int = 0
         # Add the class levels' Mind multipliers to the max Mind.
-        for cls, lvl in self._character.levels.items():
+        for cls, lvl in self.owner.levels.items():
             mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
-        # Add the effect modifiers to the max Mind.
-        mind_max += self._character.effects_module.get_modifier(BonusType.MIND)
+        # Sum all the Mind modifiers from effects.
+        modifiers = self.owner.get_modifier(BonusType.MIND)
+        if isinstance(modifiers, list):
+            mind_max += sum(int(mod) for mod in modifiers)
         return mind_max
 
     @property
@@ -155,14 +160,17 @@ class CharacterStats:
         base_ac = 10 + self.DEX
 
         # If there is equipped armor, replace base AC.
-        if self._character.equipped_armor:
-            base_ac = sum(armor.get_ac(self.DEX) for armor in self._character.equipped_armor)
+        if self.owner.equipped_armor:
+            base_ac = sum(armor.get_ac(self.DEX) for armor in self.owner.equipped_armor)
 
-        # Add effect bonuses to AC.
-        effect_ac = self._character.effects_module.get_modifier(BonusType.AC)
+        # Sum all AC modifiers from active effects.
+        modifiers = self.owner.get_modifier(BonusType.AC)
+        effect_ac = 0
+        if isinstance(modifiers, list):
+            effect_ac += sum(int(mod) for mod in modifiers)
 
         # Determine final AC.
-        race_bonus = self._character.race.natural_ac if self._character.race else 0
+        race_bonus = self.owner.race.natural_ac if self.owner.race else 0
         return base_ac + race_bonus + effect_ac
 
     @property
@@ -176,8 +184,10 @@ class CharacterStats:
         """
         # Base initiative is DEX modifier.
         initiative = self.DEX
-        # Add any initiative bonuses from active effects.
-        initiative += self._character.effects_module.get_modifier(BonusType.INITIATIVE)
+        # Sum all initiative modifiers from active effects.
+        modifiers = self.owner.get_modifier(BonusType.INITIATIVE)
+        if isinstance(modifiers, list):
+            initiative += sum(int(mod) for mod in modifiers)
         return initiative
 
     @property
@@ -190,39 +200,35 @@ class CharacterStats:
 
         """
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
-        concentration_bonus = self._character.effects_module.get_modifier(BonusType.CONCENTRATION)
+
+        # Sum all concentration modifiers from active effects.
+        modifiers = self.owner.get_modifier(BonusType.CONCENTRATION)
+        bonus_value = 0
+        if isinstance(modifiers, list):
+            bonus_value = sum(int(mod) for mod in modifiers)
 
         # Handle different return types from get_modifier
-        if isinstance(concentration_bonus, list):
-            # Sum up all concentration bonuses if it's a list
-            bonus_value = sum(
-                bonus for bonus in concentration_bonus if isinstance(bonus, int)
-            )
-        elif isinstance(concentration_bonus, int):
-            bonus_value = concentration_bonus
-        else:
-            bonus_value = 0
-
         return max(1, base_limit + bonus_value)
 
     # ============================================================================
     # UTILITY METHODS
     # ============================================================================
 
-    def get_expression_variables(self) -> dict[str, int]:
+    def get_expression_variables(self) -> list[VarInfo]:
         """
-        Returns a dictionary of the character's modifiers for use in expressions.
+        Returns a list of the character's modifiers for use in expressions.
 
         Returns:
-            Dict[str, int]: A dictionary containing the character's modifiers.
+            List[VarInfo]:
+                A list containing the character's modifiers.
 
         """
-        return {
-            "SPELLCASTING": self.SPELLCASTING,
-            "STR": self.STR,
-            "DEX": self.DEX,
-            "CON": self.CON,
-            "INT": self.INT,
-            "WIS": self.WIS,
-            "CHA": self.CHA,
-        }
+        return [
+            VarInfo(name="SPELLCASTING", value=self.SPELLCASTING),
+            VarInfo(name="STR", value=self.STR),
+            VarInfo(name="DEX", value=self.DEX),
+            VarInfo(name="CON", value=self.CON),
+            VarInfo(name="INT", value=self.INT),
+            VarInfo(name="WIS", value=self.WIS),
+            VarInfo(name="CHA", value=self.CHA),
+        ]

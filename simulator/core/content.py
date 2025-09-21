@@ -181,7 +181,7 @@ class ContentRepository(metaclass=Singleton):
         """
         classes = {}
         for class_data in data:
-            character_class = CharacterClass.from_dict(class_data)
+            character_class = CharacterClass(**class_data)
             if character_class.name in classes:
                 raise ValueError(f"Duplicate class name: {character_class.name}")
             classes[character_class.name] = character_class
@@ -204,7 +204,7 @@ class ContentRepository(metaclass=Singleton):
         """
         races = {}
         for race_data in data:
-            character_race = CharacterRace.from_dict(race_data)
+            character_race = CharacterRace(**race_data)
             if character_race.name in races:
                 raise ValueError(f"Duplicate race name: {character_race.name}")
             races[character_race.name] = character_race
@@ -294,7 +294,10 @@ def _load_json_file(
 ) -> dict[str, Any]:
     """Helper to load and validate JSON files"""
     try:
-        cprint(f"  Loading {description} using {loader_func.__name__}...", style="bold green")
+        cprint(
+            f"  Loading {description} using {loader_func.__name__}...",
+            style="bold green",
+        )
         # Validate file path
         if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")

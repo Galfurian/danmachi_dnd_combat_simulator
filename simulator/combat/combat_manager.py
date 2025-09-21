@@ -12,6 +12,7 @@ from actions.abilities import (
 from actions.attacks import BaseAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
+from catchery import log_warning
 from character import Character
 from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
 from core.utils import cprint, crule
@@ -20,10 +21,8 @@ from ui.cli_interface import PlayerInterface
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_base_attack_action,
-    choose_best_buff_ability_action,
-    choose_best_buff_spell_action,
-    choose_best_debuff_ability_action,
-    choose_best_debuff_spell_action,
+    choose_best_buff_or_debuff_ability_action,
+    choose_best_buff_or_debuff_spell_action,
     choose_best_healing_ability_action,
     choose_best_healing_spell_action,
     choose_best_offensive_ability_action,
@@ -252,7 +251,7 @@ class CombatManager:
         # Get the list of all attacks available in the full attack.
         attacks = self.player.get_available_attacks()
         if not attacks:
-            print(
+            log_warning(
                 "No available attacks for the full attack action",
                 {"player": self.player.name, "context": "full_attack_selection"},
             )
@@ -261,7 +260,7 @@ class CombatManager:
         # Choose the attack type to use for all attacks in the sequence
         attack = self.ui.choose_action(attacks)
         if attack is None or not isinstance(attack, BaseAttack):
-            print(
+            log_warning(
                 "Invalid attack selected. Ending full attack",
                 {
                     "player": self.player.name,
@@ -274,7 +273,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, attack)
         if not valid_targets:
-            print(
+            log_warning(
                 f"No valid targets for {attack.name}",
                 {
                     "player": self.player.name,
@@ -331,8 +330,8 @@ class CombatManager:
 
         """
         while True:
-            # Ask for the spell and the mind level.
-            choice = self.ask_for_player_spell_and_mind(spells)
+            # Ask for the spell and the rank level.
+            choice = self.ask_for_player_spell_and_rank(spells)
             if choice is None:
                 break
             if isinstance(choice, str):
@@ -340,14 +339,16 @@ class CombatManager:
                     break
                 continue
             # Unpack the spell and mind level.
-            spell, mind_level = choice
+            spell, rank = choice
             while True:
+                # Get the maximum number of targets if applicable.
+                variables = spell.spell_get_variables(self.player, rank)
+                # Get the maximum number of targets if applicable.
+                max_targets = spell.target_count(variables)
                 # Get the targets for the spell.
-                targets = self.ask_for_player_targets(
-                    spell, spell.target_count(self.player, mind_level)
-                )
+                targets = self.ask_for_player_targets(spell, max_targets)
                 if not targets:
-                    print(
+                    log_warning(
                         f"No valid targets for {spell.name}",
                         {
                             "player": self.player.name,
@@ -364,9 +365,13 @@ class CombatManager:
                     continue
                 for target in targets:
                     # Perform the action on the target.
-                    spell.cast_spell(self.player, target, mind_level)
+                    spell.cast_spell(
+                        actor=self.player,
+                        target=target,
+                        rank=rank,
+                    )
                 # Remove the MIND cost from the player.
-                self.player.mind -= mind_level
+                self.player.subtract_mind(spell.mind_cost[rank])
                 # Mark the action type as used.
                 self.player.use_action_type(spell.action_type)
                 # Add the spell to the cooldowns if it has one.
@@ -374,16 +379,20 @@ class CombatManager:
                 return True
         return False
 
-    def ask_for_player_spell_and_mind(
-        self, spells: list[Spell]
+    def ask_for_player_spell_and_rank(
+        self,
+        spells: list[Spell],
     ) -> tuple[Spell, int] | str | None:
-        """Asks the player to choose a spell from their available spells.
+        """
+        Asks the player to choose a spell from their available spells.
 
         Args:
-            spells (list[Spell]): List of available spells for the player.
+            spells (list[Spell]):
+            List of available spells for the player.
 
         Returns:
-            Optional[tuple[Spell, int] | str]: The chosen spell and mind level, or None if no spell was selected.
+            Optional[tuple[Spell, int] | str]:
+                The chosen spell and rank level, or None if no spell was selected.
 
         """
         while True:
@@ -395,11 +404,11 @@ class CombatManager:
                 if spell == "q":
                     return spell
                 continue
-            # Ask for the [MIND] level to use for the spell.
-            mind = self.ui.choose_mind(self.player, spell)
-            if mind == -1:
+            # Ask for the rank level to use for the spell.
+            rank = self.ui.choose_rank(self.player, spell)
+            if rank == -1:
                 return "q"
-            return spell, mind
+            return spell, rank
         return None
 
     def ask_for_player_target(self, action: BaseAction) -> Character | str | None:
@@ -415,7 +424,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if not valid_targets:
-            print(
+            log_warning(
                 f"No valid targets for {action.name}",
                 {
                     "player": self.player.name,
@@ -443,7 +452,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(self.player, action)
         if len(valid_targets) == 0:
-            print(
+            log_warning(
                 f"No valid targets for {action.name}",
                 {
                     "player": self.player.name,
@@ -453,7 +462,7 @@ class CombatManager:
             )
             return None
         if max_targets <= 0:
-            print(
+            log_warning(
                 f"Invalid maximum number of targets: {max_targets}",
                 {
                     "player": self.player.name,
@@ -466,7 +475,7 @@ class CombatManager:
         if max_targets == 1 or len(valid_targets) == 1:
             target = self.ask_for_player_target(action)
             if target is None:
-                print(
+                log_warning(
                     f"No valid target for {action.name}",
                     {
                         "player": self.player.name,
@@ -492,7 +501,7 @@ class CombatManager:
         enemies = self.get_alive_opponents(npc)
 
         if not enemies:
-            print(
+            log_warning(
                 f"SKIP: {npc.name} has no enemies to attack",
                 {
                     "npc": npc.name,
@@ -505,128 +514,173 @@ class CombatManager:
         # Check for healing spells.
         spell_heals: list[SpellHeal] = get_actions_by_type(npc, SpellHeal)
         if spell_heals:
-            result = choose_best_healing_spell_action(npc, allies, spell_heals)
-            if result:
-                spell, mind_level, targets = result
+            candidate = choose_best_healing_spell_action(
+                source=npc,
+                allies=allies,
+                spells=spell_heals,
+            )
+            if candidate:
                 # Cast the healing spell on the targets.
-                for t in targets:
-                    spell.cast_spell(npc, t, mind_level)
+                for target in candidate.targets:
+                    candidate.spell.cast_spell(
+                        actor=npc,
+                        target=target,
+                        rank=candidate.rank,
+                    )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell)
+                npc.add_cooldown(candidate.spell)
                 # Mark the action type as used.
-                npc.use_action_type(spell.action_type)
+                npc.use_action_type(candidate.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.mind -= mind_level
+                npc.subtract_mind(candidate.mind_level)
 
         # Check for healing abilities.
-        healing_abilities: list[AbilityHeal] = get_actions_by_type(
-            npc, AbilityHeal
-        )
+        healing_abilities: list[AbilityHeal] = get_actions_by_type(npc, AbilityHeal)
         if healing_abilities:
-            result = choose_best_healing_ability_action(npc, allies, healing_abilities)
-            if result:
-                ability, targets = result
+            candidate = choose_best_healing_ability_action(
+                source=npc,
+                allies=allies,
+                abilities=healing_abilities,
+            )
+            if candidate:
                 # Use the healing ability on the targets.
-                for t in targets:
-                    ability.execute(npc, t)
+                for target in candidate.targets:
+                    candidate.ability.execute(
+                        actor=npc,
+                        target=target,
+                    )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(ability)
+                npc.add_cooldown(candidate.ability)
                 # Mark the action type as used.
-                npc.use_action_type(ability.action_type)
+                npc.use_action_type(candidate.ability.action_type)
 
         # Check for buff spells.
         spell_buffs: list[SpellBuff] = get_actions_by_type(npc, SpellBuff)
         if spell_buffs:
-            result = choose_best_buff_spell_action(npc, allies, spell_buffs)
-            if result:
-                spell, mind_level, targets = result
+            candidate = choose_best_buff_or_debuff_spell_action(
+                source=npc,
+                targets=allies,
+                spells=spell_buffs,
+            )
+            if candidate:
                 # Cast the buff spell on the targets.
-                for t in targets:
-                    spell.cast_spell(npc, t, mind_level)
+                for target in candidate.targets:
+                    candidate.spell.cast_spell(
+                        actor=npc,
+                        target=target,
+                        rank=candidate.rank,
+                    )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell)
+                npc.add_cooldown(candidate.spell)
                 # Mark the action type as used.
-                npc.use_action_type(spell.action_type)
+                npc.use_action_type(candidate.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.mind -= mind_level
+                npc.subtract_mind(candidate.mind_level)
 
         # Check for buff abilities.
         buff_abilities: list[AbilityBuff] = get_actions_by_type(npc, AbilityBuff)
         if buff_abilities:
-            result = choose_best_buff_ability_action(npc, allies, buff_abilities)
-            if result:
-                ability, targets = result
+            candidate = choose_best_buff_or_debuff_ability_action(
+                source=npc,
+                targets=allies,
+                abilities=buff_abilities,
+            )
+            if candidate:
                 # Use the buff ability on the targets.
-                for t in targets:
-                    ability.execute(npc, t)
+                for target in candidate.targets:
+                    candidate.ability.execute(
+                        actor=npc,
+                        target=target,
+                    )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(ability)
+                npc.add_cooldown(candidate.ability)
                 # Mark the action type as used.
-                npc.use_action_type(ability.action_type)
+                npc.use_action_type(candidate.ability.action_type)
 
         # Check for debuff spells.
         spell_debuffs: list[SpellDebuff] = get_actions_by_type(npc, SpellDebuff)
         if spell_debuffs:
-            result = choose_best_debuff_spell_action(npc, enemies, spell_debuffs)
-            if result:
-                spell, mind_level, targets = result
-                # Cast the debuff spell on the targets.
-                for t in targets:
-                    spell.cast_spell(npc, t, mind_level)
+            candidate = choose_best_buff_or_debuff_spell_action(
+                source=npc,
+                targets=allies,
+                spells=spell_buffs,
+            )
+            if candidate:
+                # Cast the buff spell on the targets.
+                for target in candidate.targets:
+                    candidate.spell.cast_spell(
+                        actor=npc,
+                        target=target,
+                        rank=candidate.rank,
+                    )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell)
+                npc.add_cooldown(candidate.spell)
                 # Mark the action type as used.
-                npc.use_action_type(spell.action_type)
+                npc.use_action_type(candidate.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.mind -= mind_level
+                npc.subtract_mind(candidate.mind_level)
 
         # Check for debuff abilities.
         debuff_abilities: list[AbilityDebuff] = get_actions_by_type(npc, AbilityDebuff)
         if debuff_abilities:
-            result = choose_best_debuff_ability_action(npc, enemies, debuff_abilities)
-            if result:
-                ability, targets = result
-                # Use the debuff ability on the targets.
-                for t in targets:
-                    ability.execute(npc, t)
+            candidate = choose_best_buff_or_debuff_ability_action(
+                source=npc,
+                targets=allies,
+                abilities=buff_abilities,
+            )
+            if candidate:
+                # Use the buff ability on the targets.
+                for target in candidate.targets:
+                    candidate.ability.execute(
+                        actor=npc,
+                        target=target,
+                    )
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(ability)
+                npc.add_cooldown(candidate.ability)
                 # Mark the action type as used.
-                npc.use_action_type(ability.action_type)
+                npc.use_action_type(candidate.ability.action_type)
 
         # Check for attack spells.
         spell_attacks: list[SpellOffensive] = get_actions_by_type(npc, SpellOffensive)
         if spell_attacks:
-            result = choose_best_attack_spell_action(npc, enemies, spell_attacks)
-            if result:
-                spell, mind_level, targets = result
+            candidate = choose_best_attack_spell_action(
+                source=npc,
+                enemies=enemies,
+                spells=spell_attacks,
+            )
+            if candidate:
                 # Cast the attack spell on the targets.
-                for target in targets:
-                    spell.cast_spell(npc, target, mind_level)
+                for target in candidate.targets:
+                    candidate.spell.cast_spell(
+                        actor=npc,
+                        target=target,
+                        rank=candidate.rank,
+                    )
                 # Add the spell to the cooldowns if it has one.
-                npc.add_cooldown(spell)
+                npc.add_cooldown(candidate.spell)
                 # Mark the action type as used.
-                npc.use_action_type(spell.action_type)
+                npc.use_action_type(candidate.spell.action_type)
                 # Remove the MIND cost from the NPC.
-                npc.mind -= mind_level
+                npc.subtract_mind(candidate.mind_level)
 
         # Check for offensive abilities.
         offensive_abilities: list[AbilityOffensive] = get_actions_by_type(
             npc, AbilityOffensive
         )
         if offensive_abilities:
-            result = choose_best_offensive_ability_action(
-                npc, enemies, offensive_abilities
+            candidate = choose_best_offensive_ability_action(
+                source=npc,
+                enemies=enemies,
+                abilities=offensive_abilities,
             )
-            if result:
-                ability, targets = result
+            if candidate:
                 # Use the offensive ability on the targets.
-                for target in targets:
-                    ability.execute(npc, target)
+                for target in candidate.targets:
+                    candidate.ability.execute(npc, target)
                 # Add the ability to the cooldowns if it has one.
-                npc.add_cooldown(ability)
+                npc.add_cooldown(candidate.ability)
                 # Mark the action type as used.
-                npc.use_action_type(ability.action_type)
+                npc.use_action_type(candidate.ability.action_type)
 
         # Check for base attacks.
         weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
@@ -702,7 +756,7 @@ class CombatManager:
         ]
         heals: list[Spell] = (
             [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
-            if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
+            if any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player))
             else []
         )
         # If the player has no spells, skip this phase.
@@ -720,7 +774,7 @@ class CombatManager:
         """Handles the post-combat phase where the player can heal friendly characters."""
         crule(":hourglass_done: Post-Combat Healing", style="green")
         # Stop now if there are no friendly character that needs healing.
-        if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+        if not any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             cprint("[yellow]No friendly characters to heal.[/]")
             return
         # Gather viable healing spells.
@@ -739,7 +793,7 @@ class CombatManager:
                         show_numbers=True, show_bars=True, show_ac=True
                     )
                 )
-            if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+            if not any(t.HP < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.

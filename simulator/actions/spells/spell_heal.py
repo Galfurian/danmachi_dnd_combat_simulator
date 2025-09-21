@@ -47,49 +47,53 @@ class SpellHeal(Spell):
     # HEALING SPELL METHODS
     # ============================================================================
 
-    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """Execute a healing spell with automatic success and beneficial effects.
+    def cast_spell(
+        self,
+        actor: Any,
+        target: Any,
+        rank: int,
+    ) -> bool:
+        """
+        Execute a healing spell with automatic success and beneficial effects.
 
         Args:
-            actor (Any): The character casting the spell.
-            target (Any): The character targeted by the spell.
-            mind_level (int): The spell level to cast at (affects cost and power).
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character targeted by the spell.
+            rank (int):
+                The spell level to cast at (affects cost and power).
 
         Returns:
-            bool: True if spell was cast successfully, False on failure.
+            bool:
+                True if spell was cast successfully, False on failure.
 
         """
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, mind_level) is False:
+        if super().cast_spell(actor, target, rank) is False:
             return False
-
-        # Handle concentration requirements
-        if self.requires_concentration:
-            actor.concentration_module.break_concentration()
 
         # Format character strings for output.
         actor_str, target_str = self._get_display_strings(actor, target)
 
         # Calculate healing with level scaling
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
-        heal_value, heal_desc, _ = roll_and_describe(self.heal_roll, variables)
+        outcome = self._spell_roll_and_describe(
+            self.heal_roll,
+            actor,
+            rank,
+        )
 
         # Apply healing to target (limited by max HP)
-        actual_healed = target.heal(heal_value)
+        actual_healed = target.heal(outcome.value)
 
         # Apply optional effect
-        effect_applied = False
-        if self.effect:
-            effect_applied = self._common_apply_effect(
-                actor, target, self.effect, mind_level
-            )
+        effect_applied = self._spell_apply_effect(actor, target, rank)
 
         # Display healing results
         msg = f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}"
         msg += f" healing for [bold green]{actual_healed}[/]"
         if GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" ({heal_desc})"
+            msg += f" ({outcome.description})"
         if effect_applied and self.effect:
             msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
         elif self.effect and not effect_applied:
@@ -103,60 +107,73 @@ class SpellHeal(Spell):
     # HEALING CALCULATION METHODS
     # ============================================================================
 
-    def get_heal_expr(self, actor: Any, mind_level: int = 1) -> str:
-        """Get healing expression with variables substituted for display.
+    def get_heal_expr(self, actor: Any, rank: int) -> str:
+        """
+        Get healing expression with variables substituted for display.
 
         Args:
-            actor (Any): The character casting the spell.
-            mind_level (int | None): The spell level to use for MIND variable substitution.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The spell level to use for MIND variable substitution.
 
         Returns:
-            str: Complete healing expression with variables substituted.
+            str:
+                Complete healing expression with variables substituted.
 
         """
-        if mind_level is None:
-            mind_level = 1
+        return simplify_expression(
+            self.heal_roll,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
 
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
-        return simplify_expression(self.heal_roll, variables)
-
-    def get_min_heal(self, actor: Any, mind_level: int = 1) -> int:
+    def get_min_heal(self, actor: Any, rank: int) -> int:
         """Calculate the minimum possible healing for the spell.
 
         Args:
-            actor (Any): The character casting the spell.
-            mind_level (int | None): The spell level to use for scaling calculations.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The spell level to use for scaling calculations.
 
         Returns:
-            int: Minimum possible healing amount.
+            int:
+                Minimum possible healing amount.
 
         """
-        if mind_level is None:
-            mind_level = 1
-
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
         return parse_expr_and_assume_min_roll(
-            substitute_variables(self.heal_roll, variables)
+            substitute_variables(
+                self.heal_roll,
+                self.spell_get_variables(
+                    actor,
+                    rank,
+                ),
+            )
         )
 
-    def get_max_heal(self, actor: Any, mind_level: int = 1) -> int:
+    def get_max_heal(self, actor: Any, rank: int) -> int:
         """Calculate the maximum possible healing for the spell.
 
         Args:
-            actor (Any): The character casting the spell.
-            mind_level (int | None): The spell level to use for scaling calculations.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The spell level to use for scaling calculations.
 
         Returns:
-            int: Maximum possible healing amount.
+            int:
+                Maximum possible healing amount.
 
         """
-        if mind_level is None:
-            mind_level = 1
-
-        variables = actor.get_expression_variables()
-        variables["MIND"] = mind_level
         return parse_expr_and_assume_max_roll(
-            substitute_variables(self.heal_roll, variables)
+            substitute_variables(
+                self.heal_roll,
+                self.spell_get_variables(
+                    actor,
+                    rank,
+                ),
+            )
         )

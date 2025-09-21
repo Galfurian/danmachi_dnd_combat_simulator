@@ -260,7 +260,7 @@
         "damage": [
             {
                 "damage_type": "LIGHTNING",
-                "damage_roll": "3D8 + ([MIND] - 2)D8"
+                "damage_roll": "3D8 + [RANK]D8"
             }
         ]
     },
@@ -333,7 +333,7 @@
         ],
         "damage": [
             {
-                "damage_roll": "([MIND] + 2)D4 + [MIND] + 2",
+                "damage_roll": "[MIND]D4 + [RANK]",
                 "damage_type": "FORCE"
             }
         ]
@@ -393,7 +393,7 @@
         ],
         "damage": [
             {
-                "damage_roll": "3D6 + ([MIND] - 1)D6",
+                "damage_roll": "3D6 + [RANK]D6",
                 "damage_type": "FIRE"
             }
         ]
@@ -415,7 +415,7 @@
         ],
         "damage": [
             {
-                "damage_roll": "2D8 + ([MIND] - 1)D8",
+                "damage_roll": "2D8 + [RANK]D8",
                 "damage_type": "THUNDER"
             }
         ]
@@ -459,7 +459,7 @@
         ],
         "damage": [
             {
-                "damage_roll": "8D6 + ([MIND] - 3)D6",
+                "damage_roll": "8D6 + [RANK]D6",
                 "damage_type": "FIRE"
             }
         ]
@@ -481,7 +481,7 @@
         ],
         "damage": [
             {
-                "damage_roll": "8D6 + ([MIND] - 3)D6",
+                "damage_roll": "8D6 + [RANK]D6",
                 "damage_type": "LIGHTNING"
             }
         ]
@@ -497,7 +497,7 @@
             3,
             4
         ],
-        "heal_roll": "2D8 + [SPELLCASTING] + ([MIND] - 2)D8",
+        "heal_roll": "2D8 + [SPELLCASTING] + [RANK]D8",
         "target_expr": "6",
         "target_restrictions": [
             "SELF",
@@ -515,7 +515,7 @@
             4,
             5
         ],
-        "heal_roll": "3D8 + [SPELLCASTING] + ([MIND] - 3)D8",
+        "heal_roll": "3D8 + [SPELLCASTING] + [RANK]D8",
         "target_expr": "6",
         "target_restrictions": [
             "SELF",
@@ -715,7 +715,7 @@
                 {
                     "bonus_type": "DAMAGE",
                     "value": {
-                        "damage_roll": "1D8 + [SPELLCASTING] + ([MIND] - 2)D8",
+                        "damage_roll": "1D8 + [SPELLCASTING] + [RANK]D8",
                         "damage_type": "FORCE"
                     }
                 }

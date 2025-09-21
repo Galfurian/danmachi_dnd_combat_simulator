@@ -38,44 +38,37 @@ class SpellBuff(Spell):
     # BUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
-        """Execute a buff spell with automatic success and beneficial effects.
+    def cast_spell(
+        self,
+        actor: Any,
+        target: Any,
+        rank: int,
+    ) -> bool:
+        """
+        Execute a buff spell with automatic success and beneficial effects.
 
         Args:
-            actor (Any): The character casting the spell.
-            target (Any): The character targeted by the spell.
-            mind_level (int): The spell level to cast at (affects cost and power).
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character targeted by the spell.
+            rank (int):
+                The rank or level of the spell being cast.
 
         Returns:
-            bool: True if spell was cast successfully, False on failure.
+            bool:
+                True if spell was cast successfully, False on failure.
 
         """
-        from character.main import Character
-        from effects.modifier_effect import ModifierEffect
-        from effects.trigger_effect import TriggerEffect
-
         # Validate effect.
-        assert isinstance(
-            self.effect, ModifierEffect | TriggerEffect
-        ), "Effect must be a ModifierEffect or TriggerEffect"
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert isinstance(target, Character), "Target must be an object"
+        assert self.effect is not None, "Effect must be defined"
 
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, mind_level) is False:
+        if super().cast_spell(actor, target, rank) is False:
             return False
 
-        # Handle concentration requirements
-        if self.requires_concentration:
-            actor.concentration_module.break_concentration()
-
         # Apply the beneficial effect
-        effect_applied = self._common_apply_effect(
-            actor,
-            target,
-            self.effect,
-            mind_level,
-        )
+        effect_applied = self._spell_apply_effect(actor, target, rank)
 
         # Display the outcome.
         msg = f"    🔮 {actor.colored_name} "

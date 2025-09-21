@@ -39,39 +39,41 @@ class SpellOffensive(Spell):
     # SPELL ATTACK METHODS
     # ============================================================================
 
-    def cast_spell(self, actor: Any, target: Any, mind_level: int) -> bool:
+    def cast_spell(self, actor: Any, target: Any, rank: int) -> bool:
         """Execute an offensive spell attack with complete combat resolution.
 
         Args:
-            actor (Any): The character casting the spell.
-            target (Any): The character being attacked.
-            mind_level (int): The spell level to cast at (affects cost and damage).
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character being attacked.
+            rank (int):
+                The rank at which the spell is being cast.
 
         Returns:
-            bool: True if spell was successfully cast (regardless of hit/miss).
+            bool:
+                True if spell was successfully cast (regardless of hit/miss).
 
         """
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, mind_level) is False:
+        if super().cast_spell(actor, target, rank) is False:
             return False
-
-        # Handle concentration requirements
-        if self.requires_concentration:
-            actor.concentration_module.break_concentration()
 
         # Format character strings for output.
         actor_str, target_str = self._get_display_strings(actor, target)
 
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
-        attack_modifier = actor.effects_module.get_modifier(BonusType.ATTACK)
+        attack_modifier = actor.get_modifier(BonusType.ATTACK)
 
         # Roll spell attack vs target AC
-        attack_total, attack_roll_desc, d20_roll = self._roll_attack_with_crit(
-            actor, spell_attack_bonus, attack_modifier
+        attack = self._roll_attack(
+            actor,
+            spell_attack_bonus,
+            attack_modifier,
         )
-
-        # Determine special outcomes
+        assert attack.rolls, "Attack roll must contain at least one die roll."
+        d20_roll = attack.rolls[0]
         is_crit = d20_roll == 20
         is_fumble = d20_roll == 1
 
@@ -80,34 +82,32 @@ class SpellOffensive(Spell):
         # Handle fumble (always misses)
         if is_fumble:
             if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack_roll_desc}) [magenta]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+                msg += f" rolled ({attack.description}) [magenta]{attack.value}[/] vs AC [yellow]{target.AC}[/]"
             msg += " and [magenta]fumble![/]"
             cprint(msg)
             return True
 
         # Handle miss (unless critical hit)
-        if attack_total < target.AC and not is_crit:
+        if attack.value < target.AC and not is_crit:
             if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack_roll_desc}) [red]{attack_total}[/] vs AC [yellow]{target.AC}[/]"
+                msg += f" rolled ({attack.description}) [red]{attack.value}[/] vs AC [yellow]{target.AC}[/]"
             msg += " and [red]miss![/]"
             cprint(msg)
             return True
 
         # Handle successful hit - calculate and apply damage
-        damage_components = [(component, mind_level) for component in self.damage]
-        total_damage, damage_details = roll_damage_components(
-            actor, target, damage_components
+        total_damage, damage_details = self._spell_roll_damage_components(
+            actor,
+            target,
+            rank,
+            self.damage,
         )
 
         # Check if target was defeated
         is_dead = not target.is_alive()
 
         # Apply optional effect on successful hit
-        effect_applied = False
-        if self.effect:
-            effect_applied = self._common_apply_effect(
-                actor, target, self.effect, mind_level
-            )
+        effect_applied = self._spell_apply_effect(actor, target, rank)
 
         # Display combat results with appropriate detail level
         if GLOBAL_VERBOSE_LEVEL == 0:
@@ -118,7 +118,7 @@ class SpellOffensive(Spell):
                 msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" rolled ({attack_roll_desc}) {attack_total} vs AC [yellow]{target.AC}[/] → "
+            msg += f" rolled ({attack.description}) {attack.value} vs AC [yellow]{target.AC}[/] → "
             msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target_str} → "
             msg += " + ".join(damage_details) + ".\n"
@@ -135,41 +135,67 @@ class SpellOffensive(Spell):
     # DAMAGE CALCULATION METHODS
     # ============================================================================
 
-    def get_damage_expr(self, actor: Any, mind_level: int = 1) -> str:
+    def get_damage_expr(self, actor: Any, rank: int) -> str:
         """Get damage expression with variables substituted for display.
 
         Args:
-            actor (Any): The character casting the spell.
-            mind_level (int): The spell level to use for MIND variable substitution.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The spell rank to use for variable substitution.
 
         Returns:
-            str: Complete damage expression with variables substituted.
+            str:
+                Complete damage expression with variables substituted.
 
         """
-        return super()._common_get_damage_expr(actor, self.damage, {"MIND": mind_level})
+        return super()._common_get_damage_expr(
+            actor,
+            self.damage,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
 
-    def get_min_damage(self, actor: Any, mind_level: int = 1) -> int:
+    def get_min_damage(self, actor: Any, rank: int) -> int:
         """Calculate the minimum possible damage for the spell.
 
         Args:
-            actor (Any): The character casting the spell.
-            mind_level (int): The spell level to use for scaling calculations.
+            actor (Any):
+                The character casting the spell.
+            rank (int):
+                The spell rank to use for scaling calculations.
 
         Returns:
             int: Minimum possible damage (sum of all components' minimums).
 
         """
-        return super()._common_get_min_damage(actor, self.damage, {"MIND": mind_level})
+        return super()._common_get_min_damage(
+            actor,
+            self.damage,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )
 
-    def get_max_damage(self, actor: Any, mind_level: int = 1) -> int:
+    def get_max_damage(self, actor: Any, rank: int) -> int:
         """Calculate the maximum possible damage for the spell.
 
         Args:
             actor (Any): The character casting the spell.
-            mind_level (int): The spell level to use for scaling calculations.
+            rank (int): The spell rank to use for scaling calculations.
 
         Returns:
             int: Maximum possible damage (sum of all components' maximums).
 
         """
-        return super()._common_get_max_damage(actor, self.damage, {"MIND": mind_level})
+        return super()._common_get_max_damage(
+            actor,
+            self.damage,
+            self.spell_get_variables(
+                actor,
+                rank,
+            ),
+        )

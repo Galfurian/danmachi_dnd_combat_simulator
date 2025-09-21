@@ -1,5 +1,5 @@
 {
-    "type": "PLAYER",
+    "char_type": "PLAYER",
     "name": "Zephyros",
     "race": "Aasimar",
     "levels": {
