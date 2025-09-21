@@ -122,28 +122,8 @@ class Spell(BaseAction):
         if actor.is_on_cooldown(self):
             return False
 
-        # Get the mind cost for the specified rank.
-        mind_level = self.mind_cost[rank]
-
         # Check if actor has enough mind points to cast the spell.
-        if actor.MIND < mind_level:
-            log_warning(
-                f"{actor.name} does not have enough mind to cast {self.name}",
-                {
-                    "actor": actor.name,
-                    "spell": self.name,
-                    "mind_level": mind_level,
-                    "valid_levels": self.mind_cost,
-                },
-            )
-            return False
-
-        # Check cooldown restrictions.
-        if actor.is_on_cooldown(self):
-            log_warning(
-                f"Cannot cast {self.name} - spell is on cooldown",
-                {"actor": actor.name, "spell": self.name},
-            )
+        if actor.MIND < self.mind_cost[rank]:
             return False
 
         return True
