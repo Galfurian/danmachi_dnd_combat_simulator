@@ -59,9 +59,6 @@ class SpellOffensive(Spell):
         if super().cast_spell(actor, target, rank) is False:
             return False
 
-        # Format character strings for output.
-        actor_str, target_str = self._get_display_strings(actor, target)
-
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
         attack_modifier = actor.get_modifier(BonusType.ATTACK)
@@ -77,7 +74,7 @@ class SpellOffensive(Spell):
         is_crit = d20_roll == 20
         is_fumble = d20_roll == 1
 
-        msg = f"    🎯 {actor_str} casts [bold]{self.name}[/] on {target_str}"
+        msg = f"    🎯 {actor.colored_name} casts [bold]{self.name}[/] on {target.colored_name}"
 
         # Handle fumble (always misses)
         if is_fumble:
@@ -113,19 +110,19 @@ class SpellOffensive(Spell):
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {total_damage} damage"
             if is_dead:
-                msg += f" defeating {target_str}"
+                msg += f" defeating {target.colored_name}"
             elif effect_applied and self.effect:
                 msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack.description}) {attack.value} vs AC [yellow]{target.AC}[/] → "
             msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
-            msg += f"        Dealing {total_damage} damage to {target_str} → "
+            msg += f"        Dealing {total_damage} damage to {target.colored_name} → "
             msg += " + ".join(damage_details) + ".\n"
             if is_dead:
-                msg += f"        {target_str} is defeated."
+                msg += f"        {target.colored_name} is defeated."
             elif effect_applied and self.effect:
-                msg += f"        {target_str} is affected by "
+                msg += f"        {target.colored_name} is affected by "
                 msg += f"[{self.effect.color}]{self.effect.name}[/]."
         cprint(msg)
 

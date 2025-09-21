@@ -70,11 +70,8 @@ class SpellHeal(Spell):
 
         """
         # Call the base class cast_spell to handle common checks.
-        if super().cast_spell(actor, target, rank) is False:
+        if not super().cast_spell(actor, target, rank):
             return False
-
-        # Format character strings for output.
-        actor_str, target_str = self._get_display_strings(actor, target)
 
         # Calculate healing with level scaling
         outcome = self._spell_roll_and_describe(
@@ -90,7 +87,7 @@ class SpellHeal(Spell):
         effect_applied = self._spell_apply_effect(actor, target, rank)
 
         # Display healing results
-        msg = f"    ✳️ {actor_str} casts [bold]{self.name}[/] on {target_str}"
+        msg = f"    ✳️ {actor.colored_name} casts [bold]{self.name}[/] on {target.colored_name}"
         msg += f" healing for [bold green]{actual_healed}[/]"
         if GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" ({outcome.description})"

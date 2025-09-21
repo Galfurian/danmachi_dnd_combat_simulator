@@ -157,21 +157,6 @@ class BaseAction(BaseModel):
         """
         return self.cooldown
 
-    def _get_display_strings(self, actor: Any, target: Any) -> tuple[str, str]:
-        """Get formatted display strings for actor and target.
-
-        Args:
-            actor: The character using the ability
-            target: The target character
-
-        Returns:
-            tuple[str, str]: (actor_display, target_display)
-
-        """
-        actor_str = actor.char_type.colorize(actor.name)
-        target_str = target.char_type.colorize(target.name)
-        return actor_str, target_str
-
     # ============================================================================
     # EFFECT SYSTEM METHODS
     # ============================================================================
