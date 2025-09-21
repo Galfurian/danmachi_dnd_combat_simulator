@@ -83,6 +83,7 @@
         "ability_type": "AbilityDebuff",
         "name": "Sleep Powder",
         "action_type": "STANDARD",
+        "cooldown": 6,
         "description": "A magical powder that induces sleep in the target.",
         "target_restrictions": [
             "ENEMY"

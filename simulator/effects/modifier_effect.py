@@ -3,7 +3,7 @@ from typing import Any, Literal
 from catchery import log_warning
 from pydantic import Field, model_validator
 
-from .base_effect import Effect, Modifier
+from .base_effect import ActiveEffect, Effect, Modifier
 
 
 class ModifierEffect(Effect):
@@ -82,3 +82,12 @@ class ModifierEffect(Effect):
             self,
             actor.get_expression_variables(),
         )
+
+    def turn_update(
+        self,
+        effect: ActiveEffect,
+    ) -> None:
+        """
+        Update the effect at the start of the target's turn.
+        """
+        pass

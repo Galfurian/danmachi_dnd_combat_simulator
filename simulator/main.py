@@ -13,7 +13,6 @@ The combat simulator supports:
 - Combat logging and reporting
 """
 
-import logging
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
@@ -23,13 +22,6 @@ from combat.combat_manager import CombatManager
 from core.content import ContentRepository
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
-
-# Sets up basic logging configuration.
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    handlers=[logging.StreamHandler()],
-)
 
 # Get the path to the data folder.
 data_dir = Path(__file__).with_suffix("").parent / "../data"

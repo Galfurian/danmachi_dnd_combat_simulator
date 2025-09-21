@@ -74,8 +74,8 @@ class CharacterEffects(BaseModel):
             source=source,
             target=self.owner,
             effect=effect,
+            duration=effect.duration,
             variables=variables,
-            duration=None,
         )
 
         if isinstance(effect, HealingOverTimeEffect | DamageOverTimeEffect):
@@ -326,6 +326,7 @@ class CharacterEffects(BaseModel):
                 source=source,
                 target=self.owner,
                 effect=effect,
+                duration=effect.duration,
                 variables=variables,
             )
             for modifier in effect.modifiers:
