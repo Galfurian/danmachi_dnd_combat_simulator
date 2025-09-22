@@ -86,12 +86,15 @@ class CharacterActions(BaseModel):
         for weapon in self.owner.natural_weapons:
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
+                    print(f"On cooldown: {attack.name}")
                     continue
                 if not self.has_action_type(attack.action_type):
+                    print(f"No action type: {attack.name}")
                     continue
-                # Only include NaturalAttack instances
-                if isinstance(attack, NaturalAttack):
-                    result.append(attack)
+                if not isinstance(attack, NaturalAttack):
+                    print(f"Not a NaturalAttack: {attack.name}, {type(attack)}")
+                    continue
+                result.append(attack)
         return result
 
     def get_available_weapon_attacks(self) -> list["WeaponAttack"]:

@@ -1,6 +1,6 @@
 [
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Fangs",
         "description": "A set of sharp fangs used for biting and tearing.",
         "attacks": [
@@ -20,7 +20,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Claws",
         "description": "A natural weapon used by many creatures, capable of slashing attacks.",
         "attacks": [
@@ -40,7 +40,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Worm Mouth",
         "description": "A large, gaping mouth used by worm-like creatures to engulf prey.",
         "attacks": [
@@ -60,7 +60,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Mandibles",
         "description": "A powerful biting weapon used by insectoid creatures.",
         "attacks": [
@@ -80,7 +80,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Acid gland",
         "description": "A specialized organ that produces corrosive acid.",
         "attacks": [
@@ -100,7 +100,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Leap",
         "description": "A powerful leap attack that can knock down opponents.",
         "attacks": [
@@ -120,7 +120,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Tail",
         "description": "A sweeping attack with the tail that can knock opponents off balance.",
         "attacks": [
@@ -141,7 +141,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Fist",
         "description": "A natural weapon used for punching and striking.",
         "attacks": [
@@ -161,7 +161,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Massive Fist",
         "description": "A large fist capable of delivering powerful strikes that can devastate opponents.",
         "attacks": [
@@ -181,7 +181,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Massive Claws",
         "description": "A set of large claws capable of delivering powerful slashing attacks.",
         "attacks": [
@@ -201,7 +201,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Massive Tail",
         "description": "A powerful tail capable of delivering devastating blows.",
         "attacks": [
@@ -222,7 +222,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Venomous Claws",
         "description": "Claws that have been enhanced with a potent venom, dealing increased damage and poisoning victims over time.",
         "attacks": [
@@ -252,7 +252,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Needle Spikes",
         "description": "Sharp needle-like spikes that protrude from the creature's body.",
         "attacks": [
@@ -272,7 +272,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Wing Dust",
         "description": "Fine powder released from moth wings that can cause drowsiness.",
         "attacks": [
@@ -292,7 +292,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Armored Claws",
         "description": "Heavily armored claws that deal crushing damage.",
         "attacks": [
@@ -312,7 +312,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Horn",
         "description": "A sharp horn used for charging attacks.",
         "attacks": [
@@ -332,7 +332,7 @@
         ]
     },
     {
-        "type": "NaturalWeapon",
+        "weapon_type": "NATURAL",
         "name": "Flame Bite",
         "description": "A bite attack infused with fire damage.",
         "attacks": [

@@ -245,9 +245,13 @@ class ContentRepository(metaclass=Singleton):
             ValueError: If duplicate weapon names are found.
 
         """
+        from items.weapon import deserialize_weapon
+
         weapons: dict[str, Weapon] = {}
         for weapon_data in data:
-            weapons[weapon_data["name"]] = Weapon(**weapon_data)
+            weapon = deserialize_weapon(weapon_data)
+            if weapon:
+                weapons[weapon.name] = weapon
         return weapons
 
     def _load_actions(self, data: list[dict]) -> dict[str, BaseAction]:

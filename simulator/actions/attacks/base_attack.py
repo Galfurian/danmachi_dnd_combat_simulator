@@ -314,11 +314,13 @@ def deserialize_attack(data: dict[str, Any]) -> BaseAttack | None:
     from actions.attacks.natural_attack import NaturalAttack
     from actions.attacks.weapon_attack import WeaponAttack
 
-    weapon_type = data.get("weapon_type", None)
+    ability_type = data.get("ability_type", None)
 
-    if weapon_type == "WeaponAttack":
+    if ability_type == "WeaponAttack":
+        cprint("Deserializing WeaponAttack: {data}", style="yellow")
         return WeaponAttack(**data)
-    if weapon_type == "NaturalAttack":
+    if ability_type == "NaturalAttack":
+        cprint("Deserializing NaturalAttack: {data}", style="green")
         return NaturalAttack(**data)
 
     return None
