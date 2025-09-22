@@ -266,34 +266,6 @@
     },
     {
         "ability_type": "SpellOffensive",
-        "name": "Poison Spit",
-        "action_type": "STANDARD",
-        "description": "A ranged attack that spits poison at the target, dealing damage and applying a poison effect.",
-        "level": 1,
-        "mind_cost": [
-            1,
-            2,
-            3
-        ],
-        "damage": [
-            {
-                "damage_roll": "[MIND]D6",
-                "damage_type": "POISON"
-            }
-        ],
-        "effect": {
-            "name": "Poisoned",
-            "effect_type": "DamageOverTimeEffect",
-            "description": "Deals poison damage over time.",
-            "duration": 3,
-            "damage": {
-                "damage_roll": "[MIND]D4",
-                "damage_type": "POISON"
-            }
-        }
-    },
-    {
-        "ability_type": "SpellOffensive",
         "name": "Magic Missile",
         "action_type": "STANDARD",
         "description": "A missile of magical energy darts forth from your fingertip and strikes its target, dealing force damage.",

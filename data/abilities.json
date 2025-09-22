@@ -98,5 +98,27 @@
             "save_dc": 13,
             "save_stat": "CON"
         }
+    },
+    {
+        "ability_type": "AbilityOffensive",
+        "name": "Poison Spit",
+        "action_type": "STANDARD",
+        "description": "A ranged attack that spits poison at the target, dealing damage and applying a poison effect.",
+        "damage": [
+            {
+                "damage_roll": "1D6",
+                "damage_type": "POISON"
+            }
+        ],
+        "effect": {
+            "name": "Poisoned",
+            "effect_type": "DamageOverTimeEffect",
+            "description": "Deals poison damage over time.",
+            "duration": 3,
+            "damage": {
+                "damage_roll": "1D6",
+                "damage_type": "POISON"
+            }
+        }
     }
 ]

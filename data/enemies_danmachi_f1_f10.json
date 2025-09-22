@@ -109,11 +109,10 @@
             "wisdom": 8,
             "charisma": 1
         },
-        "spellcasting_ability": "wisdom",
         "natural_weapons": [
             "Acid gland"
         ],
-        "spells": [
+        "actions": [
             "Poison Spit"
         ]
     },
@@ -194,7 +193,6 @@
         "resistances": [
             "FIRE"
         ],
-        "spellcasting_ability": "intelligence",
         "natural_weapons": [
             "Massive Claws",
             "Massive Claws",
@@ -258,7 +256,6 @@
             "wisdom": 14,
             "charisma": 8
         },
-        "spellcasting_ability": "wisdom",
         "natural_weapons": [
             "Wing Dust"
         ],
