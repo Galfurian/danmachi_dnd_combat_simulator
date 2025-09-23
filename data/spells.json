@@ -1,8 +1,8 @@
 [
     {
-        "ability_type": "SpellHeal",
+        "action_type": "SpellHeal",
         "name": "Cure Wounds",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A basic healing spell that restores a small amount of health.",
         "level": 1,
         "mind_cost": [
@@ -17,9 +17,9 @@
         ]
     },
     {
-        "ability_type": "SpellHeal",
+        "action_type": "SpellHeal",
         "name": "Healing Word",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "A quick healing spell that can be cast as a bonus action.",
         "level": 1,
         "mind_cost": [
@@ -34,9 +34,9 @@
         ]
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Bless",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A spell that blesses allies, enhancing their attacks.",
         "level": 1,
         "mind_cost": [
@@ -64,9 +64,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Shield of Faith",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "A protective spell that increases the target's armor class.",
         "level": 1,
         "mind_cost": [
@@ -91,9 +91,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Divine Favor",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "A spell that grants divine power to enhance attacks.",
         "level": 1,
         "mind_cost": [
@@ -120,9 +120,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Divine Smite",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "A powerful smite that deals extra radiant damage on a successful hit.",
         "level": 1,
         "mind_cost": [
@@ -152,9 +152,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Searing Smite",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "Your next weapon attack deals extra fire damage and ignites the target.",
         "level": 1,
         "mind_cost": [
@@ -196,9 +196,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Wrathful Smite",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "Your next weapon attack deals extra psychic damage and fills the target with dread.",
         "level": 1,
         "mind_cost": [
@@ -243,8 +243,8 @@
     },
     {
         "name": "Shatter",
-        "ability_type": "SpellOffensive",
-        "action_type": "STANDARD",
+        "action_type": "SpellOffensive",
+        "action_class": "STANDARD",
         "description": "A powerful spell that creates a loud, thunderous noise that damages enemies in a wide area.",
         "level": 2,
         "cooldown": 2,
@@ -265,9 +265,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Magic Missile",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A missile of magical energy darts forth from your fingertip and strikes its target, dealing force damage.",
         "level": 1,
         "mind_cost": [
@@ -286,9 +286,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Fire Bolt",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You hurl a mote of fire at a creature or object within range.",
         "level": 0,
         "mind_cost": [
@@ -305,9 +305,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Eldritch Blast",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A beam of crackling energy streaks toward a creature within range.",
         "level": 0,
         "mind_cost": [
@@ -324,9 +324,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Burning Hands",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A thin sheet of flames shoots forth from your outstretched fingertips.",
         "level": 1,
         "mind_cost": [
@@ -346,9 +346,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Thunderwave",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A wave of thunderous force sweeps out from you.",
         "level": 1,
         "mind_cost": [
@@ -368,9 +368,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Scorching Ray",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You create three rays of fire and hurl them at targets within range.",
         "level": 2,
         "mind_cost": [
@@ -390,9 +390,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Fireball",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame.",
         "level": 3,
         "mind_cost": [
@@ -412,9 +412,9 @@
         ]
     },
     {
-        "ability_type": "SpellOffensive",
+        "action_type": "SpellOffensive",
         "name": "Lightning Bolt",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A stroke of lightning forming a line 100 feet long and 5 feet wide blasts out from you in a direction you choose.",
         "level": 3,
         "mind_cost": [
@@ -434,9 +434,9 @@
         ]
     },
     {
-        "ability_type": "SpellHeal",
+        "action_type": "SpellHeal",
         "name": "Prayer of Healing",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "Up to six creatures of your choice that you can see within range each regain hit points.",
         "level": 2,
         "mind_cost": [
@@ -452,9 +452,9 @@
         ]
     },
     {
-        "ability_type": "SpellHeal",
+        "action_type": "SpellHeal",
         "name": "Mass Cure Wounds",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A wave of healing energy washes out from a point of your choice within range.",
         "level": 3,
         "mind_cost": [
@@ -470,9 +470,9 @@
         ]
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Mage Armor",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You touch a willing creature who isn't wearing armor, and a protective magical force surrounds it.",
         "level": 1,
         "mind_cost": [
@@ -496,9 +496,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Heroism",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A willing creature you touch is imbued with bravery.",
         "level": 1,
         "mind_cost": [
@@ -525,9 +525,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Barkskin",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You touch a willing creature. Until the spell ends, the target's skin has a rough, bark-like appearance, and the target's AC can't be less than 16.",
         "level": 2,
         "mind_cost": [
@@ -552,9 +552,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Haste",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "Choose a willing creature that you can see within range. Until the spell ends, the target's speed is doubled.",
         "level": 3,
         "mind_cost": [
@@ -583,9 +583,9 @@
         }
     },
     {
-        "ability_type": "SpellDebuff",
+        "action_type": "SpellDebuff",
         "name": "Hold Person",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration.",
         "level": 2,
         "mind_cost": [
@@ -609,9 +609,9 @@
         }
     },
     {
-        "ability_type": "SpellDebuff",
+        "action_type": "SpellDebuff",
         "name": "Slow",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You alter time around up to six creatures of your choice in a 40-foot cube within range.",
         "level": 3,
         "mind_cost": [
@@ -640,9 +640,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Spiritual Weapon",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again.",
         "level": 2,
         "mind_cost": [
@@ -670,9 +670,9 @@
         }
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Hunter's Mark",
-        "action_type": "BONUS",
+        "action_class": "BONUS",
         "description": "You choose a creature you can see within range and mystically mark it as your quarry.",
         "level": 1,
         "mind_cost": [
@@ -701,9 +701,9 @@
         }
     },
     {
-        "ability_type": "SpellHeal",
+        "action_type": "SpellHeal",
         "name": "Lesser Restoration",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "You touch a creature and can end either one disease or one condition afflicting it.",
         "level": 2,
         "mind_cost": [
@@ -716,9 +716,9 @@
         ]
     },
     {
-        "ability_type": "SpellBuff",
+        "action_type": "SpellBuff",
         "name": "Invisibility",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A creature you touch becomes invisible until the spell ends.",
         "level": 2,
         "mind_cost": [

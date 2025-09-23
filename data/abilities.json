@@ -1,8 +1,8 @@
 [
     {
-        "ability_type": "AbilityOffensive",
+        "action_type": "AbilityOffensive",
         "name": "Fire Breath",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "Unleash a fiery breath attack that scorches enemies in front of you.",
         "cooldown": 3,
         "maximum_uses": 2,
@@ -25,9 +25,9 @@
         }
     },
     {
-        "ability_type": "AbilityOffensive",
+        "action_type": "AbilityOffensive",
         "name": "Wing Buffet",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "Use your wings to create a powerful gust of wind that knocks back enemies.",
         "cooldown": 3,
         "target_expr": "2",
@@ -39,9 +39,9 @@
         ]
     },
     {
-        "ability_type": "AbilityOffensive",
+        "action_type": "AbilityOffensive",
         "name": "Flame Breath",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A smaller flame breath attack used by hellhounds and similar creatures.",
         "cooldown": 2,
         "maximum_uses": -1,
@@ -64,9 +64,9 @@
         }
     },
     {
-        "ability_type": "AbilityOffensive",
+        "action_type": "AbilityOffensive",
         "name": "Radiant Smite",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A burst of radiant energy strikes your foe.",
         "cooldown": 0,
         "maximum_uses": -1,
@@ -80,9 +80,9 @@
         "attack_roll": "1D20 + SPELLCASTING + proficiency"
     },
     {
-        "ability_type": "AbilityDebuff",
+        "action_type": "AbilityDebuff",
         "name": "Sleep Powder",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "cooldown": 6,
         "description": "A magical powder that induces sleep in the target.",
         "target_restrictions": [
@@ -100,9 +100,9 @@
         }
     },
     {
-        "ability_type": "AbilityOffensive",
+        "action_type": "AbilityOffensive",
         "name": "Poison Spit",
-        "action_type": "STANDARD",
+        "action_class": "STANDARD",
         "description": "A ranged attack that spits poison at the target, dealing damage and applying a poison effect.",
         "damage": [
             {

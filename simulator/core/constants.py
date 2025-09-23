@@ -64,8 +64,8 @@ class BonusType(NiceEnum):
     CONCENTRATION = "CONCENTRATION"
 
 
-class ActionType(NiceEnum):
-    """Defines the type of action that can be performed."""
+class ActionClass(NiceEnum):
+    """Defines the class of action that can be performed."""
 
     NONE = "NONE"
     STANDARD = "STANDARD"
@@ -75,12 +75,12 @@ class ActionType(NiceEnum):
 
     @property
     def color(self) -> str:
-        """Returns the color string associated with this action type."""
+        """Returns the color string associated with this action class."""
         return {
-            ActionType.STANDARD: "bold yellow",
-            ActionType.BONUS: "bold green",
-            ActionType.FREE: "bold cyan",
-            ActionType.REACTION: "bold red",
+            ActionClass.STANDARD: "bold yellow",
+            ActionClass.BONUS: "bold green",
+            ActionClass.FREE: "bold cyan",
+            ActionClass.REACTION: "bold red",
         }.get(self, "dim white")
 
     @property
@@ -88,7 +88,7 @@ class ActionType(NiceEnum):
         return self.colorize(self.display_name)
 
     def colorize(self, message: str) -> str:
-        """Applies action type color formatting to a message."""
+        """Applies action class color formatting to a message."""
         return f"[{self.color}]{message}[/]"
 
 

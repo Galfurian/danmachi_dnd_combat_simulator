@@ -8,7 +8,7 @@ turn-based mechanics, character actions, spells, and effects.
 The combat simulator supports:
 - Loading characters, enemies, and player data from JSON files
 - Managing combat turns and initiative
-- Handling various action types (attacks, spells, abilities)
+- Handling various action classes (attacks, spells, abilities)
 - Character effects and status conditions
 - Combat logging and reporting
 """

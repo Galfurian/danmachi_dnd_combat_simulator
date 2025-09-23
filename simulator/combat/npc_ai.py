@@ -745,19 +745,19 @@ def get_all_combat_actions(source: Character) -> list[BaseAction]:
     )
 
 
-def get_actions_by_type(source: Character, action_type: type) -> list[Any]:
+def get_actions_by_type(source: Character, action_class: type) -> list[Any]:
     """
     Generic function to get actions of a specific type.
 
     Args:
         source (Character): The character to get actions for.
-        action_type (type): The type of action to filter for.
+        action_class (type): The class of action to filter for.
 
     Returns:
         list[Any]: List of actions of the specified type.
 
     """
-    return [a for a in get_all_combat_actions(source) if isinstance(a, action_type)]
+    return [a for a in get_all_combat_actions(source) if isinstance(a, action_class)]
 
 
 def choose_best_weapon_for_situation(

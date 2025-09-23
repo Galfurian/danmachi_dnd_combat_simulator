@@ -3,7 +3,7 @@ from typing import Any, Union
 from combat.damage import DamageComponent, roll_and_describe, roll_damage_components
 from core.constants import (
     ActionCategory,
-    ActionType,
+    ActionClass,
     is_oponent,
 )
 from core.utils import (
@@ -35,8 +35,8 @@ class BaseAction(BaseModel):
     name: str = Field(
         description="Name of the action",
     )
-    action_type: ActionType = Field(
-        description="Type of the action (e.g., ACTION, BONUS_ACTION)",
+    action_class: ActionClass = Field(
+        description="Class of action (e.g., ACTION, BONUS_ACTION)",
     )
     category: ActionCategory = Field(
         description="Category of the action (e.g., OFFENSIVE, HEALING)",

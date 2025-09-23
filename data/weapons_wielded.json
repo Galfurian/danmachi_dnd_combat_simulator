@@ -6,9 +6,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Thrust",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -18,9 +18,9 @@
                 ]
             },
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Slash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -38,9 +38,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Thrust",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR] + 1",
                 "damage": [
                     {
@@ -50,9 +50,9 @@
                 ]
             },
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Slash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -70,9 +70,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Thrust",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -82,9 +82,9 @@
                 ]
             },
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Slash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -102,9 +102,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Thrust",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -114,9 +114,9 @@
                 ]
             },
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Slash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX] + 1",
                 "damage": [
                     {
@@ -134,9 +134,9 @@
         "hands_required": 2,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Cleave",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -154,9 +154,9 @@
         "hands_required": 2,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Smash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -174,9 +174,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Stab",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[DEX]",
                 "damage": [
                     {
@@ -194,9 +194,9 @@
         "hands_required": 2,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Chop",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -214,9 +214,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Pierce",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -234,9 +234,9 @@
         "hands_required": 1,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Smash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -254,9 +254,9 @@
         "hands_required": 2,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Crush",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {
@@ -274,9 +274,9 @@
         "hands_required": 2,
         "attacks": [
             {
-                "ability_type": "WeaponAttack",
+                "action_type": "WeaponAttack",
                 "name": "Slash",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "attack_roll": "[STR]",
                 "damage": [
                     {

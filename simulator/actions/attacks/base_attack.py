@@ -308,18 +308,18 @@ def deserialize_attack(data: dict[str, Any]) -> BaseAttack | None:
 
     Raises:
         ValueError:
-            If the action type is unknown or missing.
+            If the action class is unknown or missing.
 
     """
     from actions.attacks.natural_attack import NaturalAttack
     from actions.attacks.weapon_attack import WeaponAttack
 
-    ability_type = data.get("ability_type", None)
+    action_type = data.get("action_type", None)
 
-    if ability_type == "WeaponAttack":
+    if action_type == "WeaponAttack":
         cprint("Deserializing WeaponAttack: {data}", style="yellow")
         return WeaponAttack(**data)
-    if ability_type == "NaturalAttack":
+    if action_type == "NaturalAttack":
         cprint("Deserializing NaturalAttack: {data}", style="green")
         return NaturalAttack(**data)
 

@@ -6,7 +6,7 @@ from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell
 from catchery import log_error
-from core.constants import ActionType, BonusType, CharacterType, DamageType
+from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.utils import VarInfo, cprint
 from effects.base_effect import Effect
 from effects.incapacitating_effect import IncapacitatingEffect
@@ -326,13 +326,13 @@ class Character(BaseModel):
         """Resets the turn flags for the character."""
         return self._actions_module.reset_turn_flags()
 
-    def use_action_type(self, action_type: ActionType) -> None:
-        """Marks an action type as used for the current turn."""
-        return self._actions_module.use_action_type(action_type)
+    def use_action_class(self, action_class: ActionClass) -> None:
+        """Marks an action class as used for the current turn."""
+        return self._actions_module.use_action_class(action_class)
 
-    def has_action_type(self, action_type: ActionType) -> bool:
-        """Checks if the character can use a specific action type this turn."""
-        return self._actions_module.has_action_type(action_type)
+    def has_action_class(self, action_class: ActionClass) -> bool:
+        """Checks if the character can use a specific action class this turn."""
+        return self._actions_module.has_action_class(action_class)
 
     def is_incapacitated(self) -> bool:
         """Check if the character is incapacitated and cannot take actions."""

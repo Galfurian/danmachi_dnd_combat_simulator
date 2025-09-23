@@ -66,15 +66,15 @@ def deserialize_ability(data: dict[str, Any]) -> BaseAbility | None:
     from actions.abilities.ability_heal import AbilityHeal
     from actions.abilities.ability_offensive import AbilityOffensive
 
-    ability_type = data.get("ability_type", None)
+    action_type = data.get("action_type", None)
 
-    if ability_type == "AbilityBuff":
+    if action_type == "AbilityBuff":
         return AbilityBuff(**data)
-    if ability_type == "AbilityDebuff":
+    if action_type == "AbilityDebuff":
         return AbilityDebuff(**data)
-    if ability_type == "AbilityHeal":
+    if action_type == "AbilityHeal":
         return AbilityHeal(**data)
-    if ability_type == "AbilityOffensive":
+    if action_type == "AbilityOffensive":
         return AbilityOffensive(**data)
 
     return None

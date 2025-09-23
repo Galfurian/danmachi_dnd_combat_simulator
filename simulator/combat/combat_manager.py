@@ -14,7 +14,7 @@ from actions.base_action import BaseAction
 from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from catchery import log_warning, log_debug
 from character import Character
-from core.constants import ActionCategory, ActionType, CharacterType, is_oponent
+from core.constants import ActionCategory, ActionClass, CharacterType, is_oponent
 from core.utils import cprint, crule
 from ui.cli_interface import PlayerInterface
 
@@ -34,7 +34,7 @@ from combat.npc_ai import (
 
 FULL_ATTACK = BaseAction(
     name="Full Attack",
-    action_type=ActionType.STANDARD,
+    action_class=ActionClass.STANDARD,
     category=ActionCategory.OFFENSIVE,
     description="Perform a full attack with all available attacks.",
 )
@@ -228,7 +228,7 @@ class CombatManager:
         while not self.player.turn_done():
             # Gather available actions and attacks.
             actions = []
-            if self.player.has_action_type(ActionType.STANDARD):
+            if self.player.has_action_class(ActionClass.STANDARD):
                 actions.append(FULL_ATTACK)
             actions.extend(self.player.get_available_actions())
             spells = self.player.get_available_spells()
@@ -316,8 +316,8 @@ class CombatManager:
             if attack_num == 0:
                 self.player.add_cooldown(attack)
 
-        # Mark the action type as used.
-        self.player.use_action_type(ActionType.STANDARD)
+        # Mark the action class as used.
+        self.player.use_action_class(ActionClass.STANDARD)
 
     def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
         """Handles the player's choice to cast a spell.
@@ -372,8 +372,8 @@ class CombatManager:
                     )
                 # Remove the MIND cost from the player.
                 self.player.use_mind(spell.mind_cost[rank])
-                # Mark the action type as used.
-                self.player.use_action_type(spell.action_type)
+                # Mark the action class as used.
+                self.player.use_action_class(spell.action_class)
                 # Add the spell to the cooldowns if it has one.
                 self.player.add_cooldown(spell)
                 return True
@@ -522,12 +522,12 @@ class CombatManager:
         self._execute_npc_full_attack(npc, enemies)
         self._execute_npc_full_natural_attack(npc, enemies)
 
-        # Just check if the NPC still has all action types available but did
+        # Just check if the NPC still has all action classes available but did
         # nothing.
         if (
-            npc.has_action_type(ActionType.BONUS)
-            and npc.has_action_type(ActionType.FREE)
-            and npc.has_action_type(ActionType.STANDARD)
+            npc.has_action_class(ActionClass.BONUS)
+            and npc.has_action_class(ActionClass.FREE)
+            and npc.has_action_class(ActionClass.STANDARD)
         ):
             log_warning(
                 f"SKIP: {npc.name} could not find any action to perform",
@@ -570,8 +570,8 @@ class CombatManager:
                 )
             # Add the spell to the cooldowns if it has one.
             npc.add_cooldown(candidate_spell.spell)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_spell.spell.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -590,8 +590,8 @@ class CombatManager:
                 )
             # Add the ability to the cooldowns if it has one.
             npc.add_cooldown(candidate_ability.ability)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_ability.ability.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_buff(
         self,
@@ -624,8 +624,8 @@ class CombatManager:
                 )
             # Add the spell to the cooldowns if it has one.
             npc.add_cooldown(candidate_spell.spell)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_spell.spell.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -644,8 +644,8 @@ class CombatManager:
                 )
             # Add the ability to the cooldowns if it has one.
             npc.add_cooldown(candidate_ability.ability)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_ability.ability.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_debuff(
         self,
@@ -678,8 +678,8 @@ class CombatManager:
                 )
             # Add the spell to the cooldowns if it has one.
             npc.add_cooldown(candidate_spell.spell)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_spell.spell.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -698,8 +698,8 @@ class CombatManager:
                 )
             # Add the ability to the cooldowns if it has one.
             npc.add_cooldown(candidate_ability.ability)
-            # Mark the action type as used.
-            npc.use_action_type(candidate_ability.ability.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_spell_attack(
         self,
@@ -732,8 +732,8 @@ class CombatManager:
                 )
             # Add the spell to the cooldowns if it has one.
             npc.add_cooldown(candidate.spell)
-            # Mark the action type as used.
-            npc.use_action_type(candidate.spell.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate.mind_level)
 
@@ -764,8 +764,8 @@ class CombatManager:
                 candidate.ability.execute(npc, target)
             # Add the ability to the cooldowns if it has one.
             npc.add_cooldown(candidate.ability)
-            # Mark the action type as used.
-            npc.use_action_type(candidate.ability.action_type)
+            # Mark the action class as used.
+            npc.use_action_class(candidate.ability.action_class)
 
     def _execute_npc_full_attack(
         self,
@@ -800,10 +800,10 @@ class CombatManager:
                 attack.execute(npc, target)
                 attacks_made = True
 
-        # Add cooldown and mark action type only once after all attacks.
+        # Add cooldown and mark action class only once after all attacks.
         if attacks_made:
             npc.add_cooldown(attack)
-            npc.use_action_type(attack.action_type)
+            npc.use_action_class(attack.action_class)
 
     def _execute_npc_full_natural_attack(
         self,
@@ -833,9 +833,9 @@ class CombatManager:
             # If we have a valid target, perform the attack.
             if target:
                 attack.execute(npc, target)
-                # Add cooldown and mark action type for the natural attack.
+                # Add cooldown and mark action class for the natural attack.
                 npc.add_cooldown(attack)
-                npc.use_action_type(attack.action_type)
+                npc.use_action_class(attack.action_class)
 
     def _get_legal_targets(
         self, character: Character, ability: BaseAction

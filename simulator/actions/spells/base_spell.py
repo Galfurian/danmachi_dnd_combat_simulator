@@ -372,15 +372,15 @@ def deserialize_spell(data: dict[str, Any]) -> Spell | None:
     from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_offensive import SpellOffensive
 
-    ability_type = data.get("ability_type", None)
+    action_type = data.get("action_type", None)
 
-    if ability_type == "SpellOffensive":
+    if action_type == "SpellOffensive":
         return SpellOffensive(**data)
-    if ability_type == "SpellHeal":
+    if action_type == "SpellHeal":
         return SpellHeal(**data)
-    if ability_type == "SpellBuff":
+    if action_type == "SpellBuff":
         return SpellBuff(**data)
-    if ability_type == "SpellDebuff":
+    if action_type == "SpellDebuff":
         return SpellDebuff(**data)
 
     return None

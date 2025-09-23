@@ -8,7 +8,7 @@ from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell
 from catchery import log_warning
-from core.constants import ActionType
+from core.constants import ActionClass
 from pydantic import BaseModel, Field
 
 
@@ -42,35 +42,35 @@ class CharacterActions(BaseModel):
         self.turn_flags["standard_action_used"] = False
         self.turn_flags["bonus_action_used"] = False
 
-    def use_action_type(self, action_type: ActionType) -> None:
-        """Mark an action type as used for the current turn.
+    def use_action_class(self, action_class: ActionClass) -> None:
+        """Mark an action class as used for the current turn.
 
         Args:
-            action_type (ActionType): The type of action to mark as used.
+            action_class (ActionClass): The class of action to mark as used.
 
         """
-        if action_type == ActionType.STANDARD:
+        if action_class == ActionClass.STANDARD:
             self.turn_flags["standard_action_used"] = True
-        elif action_type == ActionType.BONUS:
+        elif action_class == ActionClass.BONUS:
             self.turn_flags["bonus_action_used"] = True
 
-    def has_action_type(self, action_type: ActionType) -> bool:
-        """Check if the character can use a specific action type this turn.
+    def has_action_class(self, action_class: ActionClass) -> bool:
+        """Check if the character can use a specific action class this turn.
 
         Args:
-            action_type (ActionType): The type of action to check availability for.
+            action_class (ActionClass): The class of action to check availability for.
 
         Returns:
-            bool: True if the action type is available, False otherwise.
+            bool: True if the action class is available, False otherwise.
 
         """
         # Check if incapacitated first
         if self.owner.is_incapacitated():
             return False
 
-        if action_type == ActionType.STANDARD:
+        if action_class == ActionClass.STANDARD:
             return not self.turn_flags["standard_action_used"]
-        if action_type == ActionType.BONUS:
+        if action_class == ActionClass.BONUS:
             return not self.turn_flags["bonus_action_used"]
         return True
 
@@ -88,8 +88,8 @@ class CharacterActions(BaseModel):
                 if self.is_on_cooldown(attack):
                     print(f"On cooldown: {attack.name}")
                     continue
-                if not self.has_action_type(attack.action_type):
-                    print(f"No action type: {attack.name}")
+                if not self.has_action_class(attack.action_class):
+                    print(f"No action class: {attack.name}")
                     continue
                 if not isinstance(attack, NaturalAttack):
                     print(f"Not a NaturalAttack: {attack.name}, {type(attack)}")
@@ -110,7 +110,7 @@ class CharacterActions(BaseModel):
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue
-                if not self.has_action_type(attack.action_type):
+                if not self.has_action_class(attack.action_class):
                     continue
                 # Only include WeaponAttack instances
                 if isinstance(attack, WeaponAttack):
@@ -138,8 +138,8 @@ class CharacterActions(BaseModel):
         """
         available_actions: list[BaseAction] = []
         for action in self.owner.actions.values():
-            if not self.is_on_cooldown(action) and self.has_action_type(
-                action.action_type
+            if not self.is_on_cooldown(action) and self.has_action_class(
+                action.action_class
             ):
                 available_actions.append(action)
         return available_actions
@@ -153,8 +153,8 @@ class CharacterActions(BaseModel):
         """
         available_spells: list[Spell] = []
         for spell in self.owner.spells.values():
-            if not self.is_on_cooldown(spell) and self.has_action_type(
-                spell.action_type
+            if not self.is_on_cooldown(spell) and self.has_action_class(
+                spell.action_class
             ):
                 # Check if the character has enough mind points to cast the spell.
                 if self.owner.mind >= (spell.mind_cost[0] if spell.mind_cost else 0):
@@ -173,7 +173,7 @@ class CharacterActions(BaseModel):
         )
         # Check if the character has any bonus actions available.
         has_bonus_actions: bool = any(
-            action.action_type == ActionType.BONUS for action in available_actions
+            action.action_class == ActionClass.BONUS for action in available_actions
         )
         if has_bonus_actions and not self.turn_flags["bonus_action_used"]:
             return False

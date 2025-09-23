@@ -204,7 +204,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
     """
     sheet: str = f"{spell.category.colorize(spell.name)}, "
     sheet += f"lvl {spell.level}, "
-    sheet += f"{spell.action_type.colored_name}, "
+    sheet += f"{spell.action_class.colored_name}, "
     sheet += f"mind {spell.mind_cost}, "
     if spell.has_limited_uses():
         sheet += f"max uses: {spell.get_maximum_uses()}, "
@@ -242,7 +242,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
 
     """
     sheet: str = f"{ability.category.colorize(ability.name)}, "
-    sheet += f"{ability.action_type.colored_name}, "
+    sheet += f"{ability.action_class.colored_name}, "
 
     if ability.has_cooldown():
         sheet += f"cooldown: {ability.get_cooldown()}, "
@@ -293,7 +293,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
     else:
         # Generic action display
         sheet: str = f"{action.category.colorize(action.name)}[/], "
-        sheet += f"{action.action_type.colored_name}, "
+        sheet += f"{action.action_class.colored_name}, "
         sheet += f"[italic]{action.description}[/]"
         cprint(Padding(sheet, (0, padding)))
 
@@ -472,7 +472,7 @@ def print_content_repository_summary() -> None:
         cprint(f"\n[green]Actions & Abilities ({len(repo.actions)})[/green]:")
         for name, action in repo.actions.items():
             action_info = f"{action.category.colorize(name)} "
-            action_info += f"({action.action_type.colored_name})"
+            action_info += f"({action.action_class.colored_name})"
             cprint(Padding(action_info, (0, 2)))
 
     # Spells
@@ -589,21 +589,21 @@ def print_damage_types_reference() -> None:
         cprint(f"{damage_type.emoji} {damage_type.display_name}")
 
 
-def print_action_types_reference() -> None:
+def print_action_classes_reference() -> None:
     """
-    Print a reference of all action types and categories with colors.
+    Print a reference of all action classes and categories with colors.
 
-    Displays all available action types and categories with their visual styling.
+    Displays all available action classes and categories with their visual styling.
     """
-    from core.constants import ActionCategory, ActionType
+    from core.constants import ActionCategory, ActionClass
 
     cprint("\n[bold cyan]⚡ Action System Reference[/bold cyan]")
     cprint("=" * 40)
 
-    cprint("\n[green]Action Types:[/green]")
-    for action_type in ActionType:
-        if action_type != ActionType.NONE:
-            cprint(f"  {action_type.colored_name}")
+    cprint("\n[green]action classes:[/green]")
+    for action_class in ActionClass:
+        if action_class != ActionClass.NONE:
+            cprint(f"  {action_class.colored_name}")
 
     cprint("\n[green]Action Categories:[/green]")
     for category in ActionCategory:

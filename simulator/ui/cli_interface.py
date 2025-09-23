@@ -59,7 +59,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 action.name,
-                f"{action.action_type.colored_name}",
+                f"{action.action_class.colored_name}",
                 f"{action.category.colored_name}",
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -284,7 +284,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 spell.name,
-                f"{spell.action_type.colored_name}",
+                f"{spell.action_class.colored_name}",
                 f"{spell.category.colored_name}",
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -411,7 +411,7 @@ class PlayerInterface:
         """
         Sort actions by their type, category, and name for consistent display.
 
-        Prioritizes action types (Standard, Bonus, Free) then categories
+        Prioritizes action classes (Standard, Bonus, Free) then categories
         (Offensive, Healing, Buff, Debuff, Utility, Debug), then alphabetically by name.
 
         Args:
@@ -429,9 +429,9 @@ class PlayerInterface:
         ), "All actions must be instances of BaseAction."
         # Optional: define sort priority if you want custom order
         type_priority = {
-            ActionType.STANDARD: 0,
-            ActionType.BONUS: 1,
-            ActionType.FREE: 2,
+            ActionClass.STANDARD: 0,
+            ActionClass.BONUS: 1,
+            ActionClass.FREE: 2,
         }
         category_priority = {
             ActionCategory.OFFENSIVE: 0,
@@ -441,10 +441,10 @@ class PlayerInterface:
             ActionCategory.UTILITY: 4,
             ActionCategory.DEBUG: 5,
         }
-        # Sort actions by ActionType (then by name for stability)
+        # Sort actions by ActionClass (then by name for stability)
         actions.sort(
             key=lambda action: (
-                type_priority.get(action.action_type, 99),
+                type_priority.get(action.action_class, 99),
                 category_priority.get(action.category, 99),
                 action.name.lower(),
             )

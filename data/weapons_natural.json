@@ -5,9 +5,9 @@
         "description": "A set of sharp fangs used for biting and tearing.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Bite",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -25,9 +25,9 @@
         "description": "A natural weapon used by many creatures, capable of slashing attacks.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Claw",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A sharp claw attack that can slash through armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -45,9 +45,9 @@
         "description": "A large, gaping mouth used by worm-like creatures to engulf prey.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Bite",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A vicious bite attack that can tear through flesh.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -65,9 +65,9 @@
         "description": "A powerful biting weapon used by insectoid creatures.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Crush",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A crushing mandible attack that can break bones.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -85,9 +85,9 @@
         "description": "A specialized organ that produces corrosive acid.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Acid spit",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A glob of acid that splashes on impact.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -105,9 +105,9 @@
         "description": "A powerful leap attack that can knock down opponents.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Pounce",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A leaping attack that can knock down foes.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -125,9 +125,9 @@
         "description": "A sweeping attack with the tail that can knock opponents off balance.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Tail swipe",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
                 "cooldown": 1,
@@ -146,9 +146,9 @@
         "description": "A natural weapon used for punching and striking.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Punch",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A quick punch that can stun opponents.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -166,9 +166,9 @@
         "description": "A large fist capable of delivering powerful strikes that can devastate opponents.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Punch",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A devastating punch that can crush bones and break armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -186,9 +186,9 @@
         "description": "A set of large claws capable of delivering powerful slashing attacks.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Claw",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A powerful claw attack that can slash through armor.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -206,9 +206,9 @@
         "description": "A powerful tail capable of delivering devastating blows.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Tail swipe",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A powerful tail attack that can sweep opponents off their feet.",
                 "attack_roll": "[STR]",
                 "cooldown": 2,
@@ -227,9 +227,9 @@
         "description": "Claws that have been enhanced with a potent venom, dealing increased damage and poisoning victims over time.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Claw",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A venomous claw attack that slashes and applies a lingering poison effect.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -257,9 +257,9 @@
         "description": "Sharp needle-like spikes that protrude from the creature's body.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Needle Shot",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "Shoots sharp needles at the target.",
                 "attack_roll": "[DEX]",
                 "damage": [
@@ -277,9 +277,9 @@
         "description": "Fine powder released from moth wings that can cause drowsiness.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Dust Cloud",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "Releases a cloud of sleep-inducing dust.",
                 "attack_roll": "[WIS]",
                 "damage": [
@@ -297,9 +297,9 @@
         "description": "Heavily armored claws that deal crushing damage.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Armored Strike",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A powerful strike with armored claws.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -317,9 +317,9 @@
         "description": "A sharp horn used for charging attacks.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Horn Charge",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A powerful charging attack with the horn.",
                 "attack_roll": "[STR]",
                 "damage": [
@@ -337,9 +337,9 @@
         "description": "A bite attack infused with fire damage.",
         "attacks": [
             {
-                "ability_type": "NaturalAttack",
+                "action_type": "NaturalAttack",
                 "name": "Fire Bite",
-                "action_type": "STANDARD",
+                "action_class": "STANDARD",
                 "description": "A bite attack that burns the target.",
                 "attack_roll": "[STR]",
                 "damage": [
