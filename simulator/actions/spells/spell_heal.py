@@ -86,17 +86,19 @@ class SpellHeal(Spell):
         actual_healed = target.heal(outcome.value)
 
         # Apply optional effect
-        effect_applied = self._spell_apply_effect(actor, target, rank)
+        effect_applied = self._spell_apply_effects(actor, target, rank)
 
         # Display healing results
         msg = f"    ✳️ {actor.colored_name} casts [bold]{self.name}[/] on {target.colored_name}"
         msg += f" healing for [bold green]{actual_healed}[/]"
         if GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" ({outcome.description})"
-        if effect_applied and self.effect:
-            msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
-        elif self.effect and not effect_applied:
-            msg += f" but failing to apply [{self.effect.color}]{self.effect.name}[/]"
+        if effect_applied and self.effects:
+            effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
+            msg += f" and applying {', '.join(effect_names)}"
+        elif self.effects and not effect_applied:
+            effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
+            msg += f" but failing to apply {', '.join(effect_names)}"
         msg += "."
         cprint(msg)
 

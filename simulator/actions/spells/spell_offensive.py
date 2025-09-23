@@ -106,15 +106,16 @@ class SpellOffensive(Spell):
         is_dead = not target.is_alive()
 
         # Apply optional effect on successful hit
-        effect_applied = self._spell_apply_effect(actor, target, rank)
+        effect_applied = self._spell_apply_effects(actor, target, rank)
 
         # Display combat results with appropriate detail level
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {total_damage} damage"
             if is_dead:
                 msg += f" defeating {target.colored_name}"
-            elif effect_applied and self.effect:
-                msg += f" and applying [{self.effect.color}]{self.effect.name}[/]"
+            elif effect_applied and self.effects:
+                effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
+                msg += f" and applying {', '.join(effect_names)}"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack.description}) {attack.value} vs AC [yellow]{target.AC}[/] → "
@@ -123,9 +124,10 @@ class SpellOffensive(Spell):
             msg += " + ".join(damage_details) + ".\n"
             if is_dead:
                 msg += f"        {target.colored_name} is defeated."
-            elif effect_applied and self.effect:
+            elif effect_applied and self.effects:
                 msg += f"        {target.colored_name} is affected by "
-                msg += f"[{self.effect.color}]{self.effect.name}[/]."
+                effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
+                msg += f"{', '.join(effect_names)}."
         cprint(msg)
 
         return True

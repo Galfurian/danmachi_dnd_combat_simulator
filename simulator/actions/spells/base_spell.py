@@ -180,11 +180,19 @@ class Spell(BaseAction):
         from effects.modifier_effect import ModifierEffect
         from combat.damage import DamageComponent
 
-        assert isinstance(self.effect, ModifierEffect)
+        # Find the first ModifierEffect in the effects list
+        modifier_effect = None
+        for effect in self.effects:
+            if isinstance(effect, ModifierEffect):
+                modifier_effect = effect
+                break
+        
+        if modifier_effect is None:
+            raise ValueError("Spell must have at least one ModifierEffect")
 
         expressions: dict[BonusType, str] = {}
 
-        for modifier in self.effect.modifiers:
+        for modifier in modifier_effect.modifiers:
             bonus_type = modifier.bonus_type
             value = modifier.value
             if isinstance(value, DamageComponent):
@@ -204,14 +212,14 @@ class Spell(BaseAction):
 
         return expressions
 
-    def _spell_apply_effect(
+    def _spell_apply_effects(
         self,
         actor: Any,
         target: Any,
         rank: int,
     ) -> bool:
         """
-        Apply the spell's effect to the target.
+        Apply the spell's effects to the target.
 
         Args:
             actor (Any):
@@ -223,12 +231,12 @@ class Spell(BaseAction):
 
         Returns:
             bool:
-                True if effect was applied successfully, False on failure.
+                True if effects were applied successfully, False on failure.
         """
-        return self._common_apply_effect(
+        return self._common_apply_effects(
             actor=actor,
             target=target,
-            effect=self.effect,
+            effects=self.effects,
             variables=self.spell_get_variables(
                 actor,
                 rank,

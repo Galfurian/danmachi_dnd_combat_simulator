@@ -188,10 +188,10 @@ class AbilityOffensive(BaseAbility):
 
         # Apply the trigger effects and get bonus damage.
         for effect in trigger.effects_to_apply:
-            self._common_apply_effect(actor, target, effect)
+            self._common_apply_effects(actor, target, [effect])
 
         # Apply effect from the ability itself, if any.
-        effect_applied = self._common_apply_effect(actor, target, self.effect)
+        effect_applied = self._common_apply_effects(actor, target, self.effects)
 
         # =====================================================================
         # 5. RESULT DISPLAY AND LOGGING
@@ -209,12 +209,13 @@ class AbilityOffensive(BaseAbility):
                 msg += " (critical hit!)"
             if not target.is_alive():
                 msg += f" defeating {target.colored_name}"
-            elif self.effect:
+            elif self.effects:
                 if effect_applied:
                     msg += " and applying"
                 else:
                     msg += " and failing to apply"
-                msg += f" [bold yellow]{self.effect.name}[/]"
+                effect_names = [f"[bold yellow]{effect.name}[/]" for effect in self.effects]
+                msg += f" {', '.join(effect_names)}"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f"({attack_details}), "
@@ -230,12 +231,13 @@ class AbilityOffensive(BaseAbility):
 
             if not target.is_alive():
                 msg += f"        {target.colored_name} is defeated."
-            elif self.effect:
+            elif self.effects:
                 if effect_applied:
                     msg += f"        {target.colored_name} is affected by"
                 else:
                     msg += f"        {target.colored_name} resists"
-                msg += f" [bold yellow]{self.effect.name}[/]."
+                effect_names = [f"[bold yellow]{effect.name}[/]" for effect in self.effects]
+                msg += f" {', '.join(effect_names)}."
 
         cprint(msg)
 

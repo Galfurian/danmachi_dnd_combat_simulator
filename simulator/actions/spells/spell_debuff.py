@@ -28,12 +28,16 @@ class SpellDebuff(Spell):
         from effects.modifier_effect import ModifierEffect
         from effects.incapacitating_effect import IncapacitatingEffect
 
-        if not isinstance(self.effect, ModifierEffect | IncapacitatingEffect):
-            print(self.effect)
-            print(type(self.effect))
-            raise ValueError(
-                "effect must be a valid ModifierEffect or IncapacitatingEffect instance"
-            )
+        if not self.effects:
+            raise ValueError("SpellDebuff must have at least one effect.")
+        
+        for effect in self.effects:
+            if not isinstance(effect, ModifierEffect | IncapacitatingEffect):
+                print(effect)
+                print(type(effect))
+                raise ValueError(
+                    "All effects must be ModifierEffect or IncapacitatingEffect instances"
+                )
         return self
 
     # ============================================================================
@@ -66,25 +70,27 @@ class SpellDebuff(Spell):
         # Call the base class cast_spell to handle common checks.
         if not super().cast_spell(actor, target, rank):
             return False
-        # Validate that the effect is set.
-        if not self.effect:
-            raise ValueError("The effect field must be set.")
+        # Validate that the effects are set.
+        if not self.effects:
+            raise ValueError("The effects field must be set.")
 
         # Apply the detrimental effect
-        effect_applied = self._spell_apply_effect(actor, target, rank)
+        effect_applied = self._spell_apply_effects(actor, target, rank)
 
         # Display the outcome.
         msg = f"    🔮 {actor.colored_name} "
         msg += f"casts [bold blue]{self.name}[/] "
         msg += f"on {target.colored_name}"
         if effect_applied:
-            msg += f" applying {self.effect.colored_name}"
+            effect_names = [effect.colored_name for effect in self.effects]
+            msg += f" applying {', '.join(effect_names)}"
         else:
-            msg += f" but fails to apply {self.effect.colored_name}"
+            effect_names = [effect.colored_name for effect in self.effects]
+            msg += f" but fails to apply {', '.join(effect_names)}"
         msg += "."
-        if GLOBAL_VERBOSE_LEVEL >= 1:
-            if effect_applied:
-                msg += f"\n        Effect: {self.effect.description}"
+        if GLOBAL_VERBOSE_LEVEL >= 1 and effect_applied:
+            for effect in self.effects:
+                msg += f"\n        Effect: {effect.description}"
         cprint(msg)
 
         return True

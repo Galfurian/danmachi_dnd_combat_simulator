@@ -70,15 +70,9 @@ class BaseAction(BaseModel):
         default_factory=list,
         description="Restrictions on valid targets",
     )
-    effect: Union[
-        DamageOverTimeEffect,
-        ModifierEffect,
-        IncapacitatingEffect,
-        TriggerEffect,
-        None,
-    ] = Field(
-        default=None,
-        description="An optional beneficial effect that this ability applies.",
+    effects: list[ValidActionEffect] = Field(
+        default_factory=list,
+        description="List of effects that this ability applies.",
     )
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -168,30 +162,29 @@ class BaseAction(BaseModel):
     # EFFECT SYSTEM METHODS
     # ============================================================================
 
-    def _common_apply_effect(
+    def _common_apply_effects(
         self,
         actor: Any,
         target: Any,
-        effect: Effect | None,
+        effects: list[ValidActionEffect],
         variables: list[VarInfo] = [],
     ) -> bool:
         """
-        Apply an effect to a target character.
+        Apply a list of effects to a target character.
 
         Args:
             actor:
-                The character applying the effect
+                The character applying the effects
             target:
-                The character receiving the effect
-            effect:
-                The effect to apply
+                The character receiving the effects
+            effects:
+                List of effects to apply
             variables:
-                List of variable info for effect scaling (not used in this base
-                method)
+                List of variable info for effect scaling
 
         Returns:
             bool:
-                True if effect was successfully applied, False otherwise
+                True if all effects were successfully applied, False otherwise
 
         """
         from character.main import Character
@@ -206,23 +199,28 @@ class BaseAction(BaseModel):
         # Ensure both actor and target are alive.
         if not actor.is_alive() or not target.is_alive():
             return False
-        # If the effect is None, nothing to apply.
-        if effect is None:
+
+        # If no effects, nothing to apply.
+        if not effects:
             return False
 
-        # Make sure effect is an Effect instance.
-        if not isinstance(effect, Effect):
-            raise ValueError("Effect must be an Effect instance or None")
+        # Apply each effect
+        all_applied = True
+        for effect in effects:
+            # Make sure effect is an Effect instance.
+            if not isinstance(effect, Effect):
+                raise ValueError("All effects must be Effect instances")
 
-        # Check if the effect can be applied.
-        if not effect.can_apply(actor, target):
-            return False
+            # Check if the effect can be applied.
+            if not effect.can_apply(actor, target):
+                all_applied = False
+                continue
 
-        # Apply the effect to the target.
-        if target.add_effect(actor, effect, variables):
-            return True
+            # Apply the effect to the target.
+            if not target.add_effect(actor, effect, variables):
+                all_applied = False
 
-        return False
+        return all_applied
 
     # ============================================================================
     # COMBAT SYSTEM METHODS
