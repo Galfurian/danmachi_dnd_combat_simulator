@@ -1,4 +1,5 @@
 from actions.abilities import *
+from actions.attacks.base_attack import BaseAttack
 from actions.base_action import BaseAction
 from actions.spells import *
 from character import *

@@ -1,6 +1,6 @@
 """Healing spell implementation."""
 
-from typing import Any
+from typing import Any, Literal
 
 from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
@@ -26,6 +26,8 @@ class SpellHeal(Spell):
     attributes for healing expressions and optional beneficial effects, as well as
     methods for calculating and applying healing during combat.
     """
+
+    action_type: Literal["SpellHeal"] = "SpellHeal"
 
     category: ActionCategory = ActionCategory.HEALING
 

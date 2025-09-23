@@ -1,6 +1,6 @@
 """Buff abilities that provide beneficial effects to allies."""
 
-from typing import Any
+from typing import Any, Literal
 
 from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
@@ -15,6 +15,8 @@ class AbilityDebuff(BaseAbility):
     Represents a debuff ability that provides detrimental effects to targets in combat.
     Inherits from BaseAbility and applies an Effect to enemies.
     """
+
+    action_type: Literal["AbilityDebuff"] = "AbilityDebuff"
 
     category: ActionCategory = ActionCategory.DEBUFF
 

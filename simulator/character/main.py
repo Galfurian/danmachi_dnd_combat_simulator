@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeAlias, Union
 
 from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
@@ -9,8 +9,10 @@ from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.utils import VarInfo, cprint
 from effects.base_effect import Effect
+from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
-from effects.trigger_effect import TriggerData
+from effects.modifier_effect import ModifierEffect
+from effects.trigger_effect import TriggerData, TriggerEffect
 from items.armor import Armor
 from items.weapon import Weapon
 
@@ -22,6 +24,12 @@ from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
+
+ValidPassiveEffect: TypeAlias = Union[
+    DamageOverTimeEffect,
+    ModifierEffect,
+    IncapacitatingEffect,
+]
 
 
 class Character(BaseModel):
@@ -68,6 +76,10 @@ class Character(BaseModel):
     number_of_attacks: int = Field(
         default=1,
         description="Number of attacks per turn",
+    )
+    passive_effects: list[ValidPassiveEffect] = Field(
+        default_factory=list,
+        description="List of passive effects always active on the character",
     )
 
     # === Dynamic properties ===
@@ -308,11 +320,6 @@ class Character(BaseModel):
     def get_expression_variables(self) -> list[VarInfo]:
         """Returns a dictionary of the character's modifiers."""
         return self._stats_module.get_expression_variables()
-
-    @property
-    def passive_effects(self) -> list[Effect]:
-        """Get the list of passive effects from the effect manager."""
-        return self._effects_module.passive_effects
 
     def add_passive_effect(self, effect: Effect) -> bool:
         """Add a passive effect that is always active (like boss phase triggers)."""

@@ -1,5 +1,4 @@
-
-
+from typing import Literal
 from .base_attack import BaseAttack
 
 
@@ -10,3 +9,4 @@ class NaturalAttack(BaseAttack):
     require weapons and are intrinsic to the creature's anatomy.
     """
 
+    action_type: Literal["NaturalAttack"] = "NaturalAttack"

@@ -81,9 +81,16 @@ class CharacterActions(BaseModel):
             List[NaturalAttack]: A list of natural weapon attacks.
 
         """
+        from items.weapon import NaturalWeapon
+
         result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
         for weapon in self.owner.natural_weapons:
+
+            assert isinstance(
+                weapon, NaturalWeapon
+            ), f"Expected NaturalWeapon, got {type(weapon)}"
+
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     print(f"On cooldown: {attack.name}")
@@ -104,9 +111,16 @@ class CharacterActions(BaseModel):
             List[WeaponAttack]: A list of weapon attacks.
 
         """
+        from items.weapon import WieldedWeapon
+
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
         for weapon in self.owner.equipped_weapons:
+
+            assert isinstance(
+                weapon, WieldedWeapon
+            ), f"Expected WieldedWeapon, got {type(weapon)}"
+
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
                     continue

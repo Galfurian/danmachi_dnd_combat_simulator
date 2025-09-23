@@ -1,6 +1,6 @@
 """Offensive abilities that deal damage to enemies."""
 
-from typing import Any
+from typing import Any, Literal
 
 from catchery import log_warning
 from combat.damage import DamageComponent, roll_damage_components
@@ -14,6 +14,8 @@ from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityOffensive(BaseAbility):
+
+    action_type: Literal["AbilityOffensive"] = "AbilityOffensive"
 
     category: ActionCategory = ActionCategory.OFFENSIVE
 

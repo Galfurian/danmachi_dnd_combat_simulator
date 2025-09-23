@@ -1,12 +1,21 @@
 from collections.abc import Callable
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias, Union
 
 from combat.damage import DamageComponent
 from core.utils import VarInfo
 from pydantic import BaseModel, Field, model_validator
 
 from .base_effect import ActiveEffect, Effect
+from .damage_over_time_effect import DamageOverTimeEffect
+from .modifier_effect import ModifierEffect
+from .incapacitating_effect import IncapacitatingEffect
+
+ValidTriggerEffect: TypeAlias = Union[
+    DamageOverTimeEffect,
+    ModifierEffect,
+    IncapacitatingEffect,
+]
 
 
 class TriggerType(Enum):
@@ -155,10 +164,11 @@ class TriggerEffect(Effect):
     trigger_condition: TriggerCondition = Field(
         description="Condition that activates the trigger.",
     )
-    trigger_effects: list[Effect] | None = Field(
-        default_factory=list, description="Effects to apply when triggered."
+    trigger_effects: list[ValidTriggerEffect] = Field(
+        default_factory=list,
+        description="Effects to apply when triggered.",
     )
-    damage_bonus: list[DamageComponent] | None = Field(
+    damage_bonus: list[DamageComponent] = Field(
         default_factory=list,
         description="Additional damage components applied when triggered.",
     )
@@ -175,6 +185,18 @@ class TriggerEffect(Effect):
         None,
         description="Maximum number of times trigger can activate (None for unlimited).",
     )
+    triggers_used: int = Field(
+        default=0,
+        description="Number of times the effect has been triggered",
+    )
+    cooldown_remaining: int = Field(
+        default=0,
+        description="Remaining cooldown in turns before the effect can trigger again",
+    )
+    has_triggered_this_turn: bool = Field(
+        default=False,
+        description="Whether the effect has triggered this turn",
+    )
 
     @property
     def color(self) -> str:
@@ -185,15 +207,6 @@ class TriggerEffect(Effect):
     def emoji(self) -> str:
         """Returns the emoji for trigger effects."""
         return "⚡"
-
-    # @model_validator(mode="after")
-    # def initialize_runtime_state(self) -> "TriggerEffect":
-    #    """Initialize runtime state for this trigger effect instance."""
-    #    # Initialize runtime state as instance variables
-    #    self.triggers_used = 0
-    #    self.cooldown_remaining = 0
-    #    self.has_triggered_this_turn = False
-    #    return self
 
     @model_validator(mode="after")
     def check_trigger_condition(self) -> Any:
@@ -208,6 +221,9 @@ class TriggerEffect(Effect):
     @model_validator(mode="after")
     def check_trigger_effects(self) -> Any:
         for effect in self.trigger_effects or []:
+            print(
+                f"The effect {self.name} has trigger effects {effect.__class__.__name__}"
+            )
             if not isinstance(effect, Effect):
                 raise ValueError(
                     f"Each trigger effect must be an Effect instance, got {type(effect)}"
@@ -292,7 +308,7 @@ class TriggerEffect(Effect):
         self,
         character: Any,
         event_data: dict[str, Any],
-    ) -> tuple[list[DamageComponent], list[Effect]]:
+    ) -> tuple[list[DamageComponent], list[ValidTriggerEffect]]:
         """
         Activate the trigger and return effects and damage bonuses.
 
@@ -360,7 +376,7 @@ class TriggerData(BaseModel):
     damage_bonuses: list[DamageComponent] = Field(
         description="Damage bonuses to apply when triggered.",
     )
-    effects_to_apply: list[Effect] = Field(
+    effects_to_apply: list[ValidTriggerEffect] = Field(
         description="Effects to apply when triggered.",
     )
     consumed_triggers: list[TriggerEffect] = Field(
@@ -376,8 +392,8 @@ class TriggerData(BaseModel):
 def create_on_hit_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
-    damage_bonus: list[DamageComponent] | None = None,
+    trigger_effects: list[ValidTriggerEffect],
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
@@ -389,7 +405,7 @@ def create_on_hit_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         consumes_on_trigger (bool): Whether consumed after triggering. Defaults to True.
@@ -421,8 +437,8 @@ def create_low_health_trigger(
     name: str,
     description: str,
     hp_threshold: float,
-    trigger_effects: list[Effect],
-    damage_bonus: list[DamageComponent] | None = None,
+    trigger_effects: list[ValidTriggerEffect],
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
@@ -435,7 +451,7 @@ def create_low_health_trigger(
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
         hp_threshold (float): HP percentage threshold (0.25 for 25%).
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         consumes_on_trigger (bool): Whether consumed after triggering. Defaults to True.
@@ -466,9 +482,9 @@ def create_low_health_trigger(
 def create_spell_cast_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
+    trigger_effects: list[ValidTriggerEffect],
     spell_category: Any | None = None,
-    damage_bonus: list[DamageComponent] | None = None,
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     cooldown: int = 0,
     max_uses: int = -1,
@@ -479,7 +495,7 @@ def create_spell_cast_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         spell_category (Optional[Any]): Specific spell category to trigger on.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
@@ -510,9 +526,9 @@ def create_spell_cast_trigger(
 def create_damage_taken_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
+    trigger_effects: list[ValidTriggerEffect],
     damage_type: Any | None = None,
-    damage_bonus: list[DamageComponent] | None = None,
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     cooldown: int = 1,
     max_uses: int = -1,
@@ -523,7 +539,7 @@ def create_damage_taken_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_type (Optional[Any]): Specific damage type to trigger on.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
@@ -554,7 +570,7 @@ def create_damage_taken_trigger(
 def create_turn_based_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
+    trigger_effects: list[ValidTriggerEffect],
     trigger_on_start: bool = True,
     duration: int | None = None,
     max_uses: int = -1,
@@ -565,7 +581,7 @@ def create_turn_based_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         trigger_on_start (bool): True for turn start, False for turn end. Defaults to True.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         max_uses (int): Maximum activations (-1 for unlimited). Defaults to -1.
@@ -586,7 +602,7 @@ def create_turn_based_trigger(
         duration=duration,
         trigger_condition=trigger_condition,
         trigger_effects=trigger_effects,
-        damage_bonus=None,
+        damage_bonus=[],
         consumes_on_trigger=False,
         cooldown_turns=0,
         max_triggers=max_uses,
@@ -596,8 +612,8 @@ def create_turn_based_trigger(
 def create_critical_hit_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
-    damage_bonus: list[DamageComponent] | None = None,
+    trigger_effects: list[ValidTriggerEffect],
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
@@ -608,7 +624,7 @@ def create_critical_hit_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         consumes_on_trigger (bool): Whether consumed after triggering. Defaults to True.
@@ -638,8 +654,8 @@ def create_critical_hit_trigger(
 def create_kill_trigger(
     name: str,
     description: str,
-    trigger_effects: list[Effect],
-    damage_bonus: list[DamageComponent] | None = None,
+    trigger_effects: list[ValidTriggerEffect],
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     cooldown: int = 0,
     max_uses: int = -1,
@@ -650,7 +666,7 @@ def create_kill_trigger(
     Args:
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         cooldown (int): Turns before trigger can activate again. Defaults to 0.
@@ -681,8 +697,8 @@ def create_custom_trigger(
     name: str,
     description: str,
     custom_condition: Callable[[Any, dict], bool],
-    trigger_effects: list[Effect],
-    damage_bonus: list[DamageComponent] | None = None,
+    trigger_effects: list[ValidTriggerEffect],
+    damage_bonus: list[DamageComponent] = [],
     duration: int | None = None,
     consumes_on_trigger: bool = True,
     cooldown: int = 0,
@@ -695,7 +711,7 @@ def create_custom_trigger(
         name (str): Name of the trigger effect.
         description (str): Description of what the trigger does.
         custom_condition (Callable): Function that evaluates trigger condition.
-        trigger_effects (list[Effect]): Effects to apply when triggered.
+        trigger_effects (list[ValidTriggerEffect]): Effects to apply when triggered.
         damage_bonus (list[DamageComponent], optional): Additional damage when triggered.
         duration (int): Duration in turns (0 for permanent). Defaults to 0.
         consumes_on_trigger (bool): Whether consumed after triggering. Defaults to True.

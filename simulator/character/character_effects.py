@@ -1,7 +1,7 @@
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Union
 
 from catchery import log_critical
 from combat.damage import DamageComponent
@@ -32,10 +32,6 @@ class CharacterEffects(BaseModel):
     active_modifiers: dict[BonusType, ActiveEffect] = Field(
         default_factory=dict,
         description="Mapping of active modifier effects by BonusType",
-    )
-    passive_effects: list[Effect] = Field(
-        default_factory=list,
-        description="List of passive effects always active on the character",
     )
 
     # === Effect Management ===
@@ -196,8 +192,8 @@ class CharacterEffects(BaseModel):
                 present.
 
         """
-        if effect not in self.passive_effects:
-            self.passive_effects.append(effect)
+        if effect not in self.owner.passive_effects:
+            self.owner.passive_effects.append(effect)
             return True
         return False
 
@@ -212,8 +208,8 @@ class CharacterEffects(BaseModel):
             bool: True if the passive effect was removed, False otherwise.
 
         """
-        if effect in self.passive_effects:
-            self.passive_effects.remove(effect)
+        if effect in self.owner.passive_effects:
+            self.owner.passive_effects.remove(effect)
             return True
         return False
 
@@ -228,7 +224,7 @@ class CharacterEffects(BaseModel):
         """
         activation_messages = []
 
-        for effect in self.passive_effects:
+        for effect in self.owner.passive_effects:
             if not isinstance(effect, TriggerEffect):
                 continue
             # Check for low health triggers using the new TriggerEffect system.

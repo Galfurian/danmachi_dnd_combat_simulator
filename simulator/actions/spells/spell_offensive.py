@@ -1,6 +1,6 @@
 """Offensive spell attack implementation."""
 
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import (
@@ -21,6 +21,8 @@ class SpellOffensive(Spell):
     magical energy. It includes attributes for damage components, optional
     effects, and methods for calculating and applying damage during combat.
     """
+
+    action_type: Literal["SpellOffensive"] = "SpellOffensive"
 
     category: ActionCategory = ActionCategory.OFFENSIVE
 

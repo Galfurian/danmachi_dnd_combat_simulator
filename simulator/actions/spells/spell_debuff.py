@@ -1,6 +1,6 @@
 """Detrimental spell debuff implementation."""
 
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
@@ -17,6 +17,8 @@ class SpellDebuff(Spell):
     to enemies. It includes attributes for required effects and methods for
     applying those effects during combat.
     """
+
+    action_type: Literal["SpellDebuff"] = "SpellDebuff"
 
     category: ActionCategory = ActionCategory.DEBUFF
 

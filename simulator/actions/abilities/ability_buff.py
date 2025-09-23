@@ -1,6 +1,6 @@
 """Buff abilities that provide beneficial effects to allies."""
 
-from typing import Any
+from typing import Any, Literal
 
 from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
@@ -16,6 +16,8 @@ class AbilityBuff(BaseAbility):
     Inherits from BaseAbility and applies an Effect to allies or self.
     """
 
+    action_type: Literal["AbilityBuff"] = "AbilityBuff"
+    
     category: ActionCategory = ActionCategory.BUFF
 
     @model_validator(mode="after")

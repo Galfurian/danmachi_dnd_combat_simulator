@@ -212,44 +212,6 @@ class ArmorSlot(NiceEnum):
     COMBAT_STYLE = "COMBAT_STYLE"
 
 
-class WeaponType(NiceEnum):
-    """Enumeration of weapon types."""
-
-    NATURAL = "NATURAL"
-    WIELDED = "WIELDED"
-
-    @property
-    def emoji(self) -> str:
-        """Returns the emoji associated with this weapon type."""
-        return {
-            WeaponType.NATURAL: "🐾",
-            WeaponType.WIELDED: "🗡️",
-        }.get(self, "❔")
-
-    @property
-    def color(self) -> str:
-        """Returns the color string associated with this weapon type."""
-        return {
-            WeaponType.NATURAL: "bold green",
-            WeaponType.WIELDED: "bold blue",
-        }.get(self, "dim white")
-
-    @property
-    def colored_name(self) -> str:
-        """
-        Returns the colorized display name of the weapon type.
-
-        Returns:
-            str:
-                The display name of the weapon type with color formatting.
-        """
-        return self.colorize(self.display_name)
-
-    def colorize(self, message: str) -> str:
-        """Applies weapon type color formatting to a message."""
-        return f"[{self.color}]{message}[/]"
-
-
 class ArmorType(NiceEnum):
     """Defines the type of armor that can be equipped."""
 

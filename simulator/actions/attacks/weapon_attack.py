@@ -1,5 +1,6 @@
 
 
+from typing import Literal
 from .base_attack import BaseAttack
 
 
@@ -10,3 +11,5 @@ class WeaponAttack(BaseAttack):
     other equipment. It includes attributes for handling weapon-specific
     properties like the number of hands required to wield the weapon.
     """
+
+    action_type: Literal["WeaponAttack"] = "WeaponAttack"

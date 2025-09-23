@@ -1,10 +1,7 @@
-from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
-from actions.attacks import BaseAttack
 from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
-from core.constants import WeaponType
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -20,9 +17,6 @@ class Weapon(BaseModel):
     name: str = Field(
         description="The name of the weapon.",
     )
-    weapon_type: WeaponType = Field(
-        description="The type of the weapon.",
-    )
     description: str = Field(
         description="A description of the weapon.",
     )
@@ -35,20 +29,14 @@ class Weapon(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_fields(self) -> "Weapon":
-        if self.hands_required < 0:
-            raise ValueError("hands_required cannot be negative.")
-        # Validate that the attacks are of the correct type.
-        for attack in self.attacks:
-            if self.weapon_type == WeaponType.NATURAL:
-                if not all(isinstance(a, NaturalAttack) for a in self.attacks):
-                    print(self)
-                    raise ValueError("All attacks must be of type NaturalAttack.")
-            else:
-                if not all(isinstance(a, WeaponAttack) for a in self.attacks):
-                    print(self)
-                    raise ValueError("All attacks must be of type WeaponAttack.")
-        # Rename the attacks to match the weapon name.
+    def rename_attacks(self) -> "Weapon":
+        """
+        Automatically prefix attack names with the weapon name for clarity.
+
+        Returns:
+            Weapon:
+                The weapon instance with renamed attacks.
+        """
         for attack in self.attacks:
             attack.name = f"{self.name} - {attack.name}"
         return self
@@ -77,33 +65,32 @@ class Weapon(BaseModel):
 
 
 class NaturalWeapon(Weapon):
-    weapon_type: WeaponType = Field(
-        default=WeaponType.NATURAL,
-        description="The type of the weapon.",
-    )
+
+    weapon_type: Literal["NaturalWeapon"] = "NaturalWeapon"
+
+    @model_validator(mode="after")
+    def validate_fields(self) -> "NaturalWeapon":
+        if self.hands_required != 0:
+            raise ValueError("Natural weapons cannot require hands.")
+
+        if not all(isinstance(a, NaturalAttack) for a in self.attacks):
+            print(self)
+            raise ValueError("All attacks must be of type NaturalAttack.")
+
+        return self
 
 
 class WieldedWeapon(Weapon):
-    weapon_type: WeaponType = Field(
-        default=WeaponType.WIELDED,
-        description="The type of the weapon.",
-    )
 
+    weapon_type: Literal["WieldedWeapon"] = "WieldedWeapon"
 
-def deserialize_weapon(data: dict[str, Any]) -> Weapon | None:
-    """
-    Deserialize a weapon from a dictionary.
+    @model_validator(mode="after")
+    def validate_fields(self) -> "WieldedWeapon":
+        if self.hands_required <= 0:
+            raise ValueError("Wielded weapons must require at least one hand.")
 
-    Args:
-        data (dict): The dictionary containing weapon data.
+        if not all(isinstance(a, WeaponAttack) for a in self.attacks):
+            print(self)
+            raise ValueError("All attacks must be of type WeaponAttack.")
 
-    Returns:
-        Weapon | None: The deserialized weapon or None if deserialization fails.
-    """
-
-    weapon_type = data.get("weapon_type", None)
-    if weapon_type == "NATURAL":
-        return NaturalWeapon(**data)
-    if weapon_type == "WIELDED":
-        return WieldedWeapon(**data)
-    return None
+        return self

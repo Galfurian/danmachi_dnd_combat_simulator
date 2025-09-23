@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, TypeAlias, Union
 
 from combat.damage import DamageComponent, roll_and_describe, roll_damage_components
 from core.constants import (
@@ -21,6 +21,13 @@ from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
+
+ValidActionEffect: TypeAlias = Union[
+    DamageOverTimeEffect,
+    ModifierEffect,
+    IncapacitatingEffect,
+    TriggerEffect,
+]
 
 
 class BaseAction(BaseModel):

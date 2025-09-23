@@ -1,6 +1,6 @@
 """Healing abilities that restore hit points to allies."""
 
-from typing import Any
+from typing import Any, Literal
 
 from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
@@ -19,6 +19,8 @@ from actions.abilities.base_ability import BaseAbility
 class AbilityHeal(BaseAbility):
     """Represents abilities that restore hit points to targets during combat."""
 
+    action_type: Literal["AbilityHeal"] = "AbilityHeal"
+    
     category: ActionCategory = ActionCategory.HEALING
 
     heal_roll: str = Field(

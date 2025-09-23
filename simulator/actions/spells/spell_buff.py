@@ -1,6 +1,6 @@
 """Beneficial spell buff implementation."""
 
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
@@ -18,6 +18,8 @@ class SpellBuff(Spell):
     those effects during combat.
     """
 
+    action_type: Literal["SpellBuff"] = "SpellBuff"
+    
     category: ActionCategory = ActionCategory.BUFF
 
     @model_validator(mode="after")
