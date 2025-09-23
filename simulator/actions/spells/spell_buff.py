@@ -19,7 +19,7 @@ class SpellBuff(Spell):
     """
 
     action_type: Literal["SpellBuff"] = "SpellBuff"
-    
+
     category: ActionCategory = ActionCategory.BUFF
 
     @model_validator(mode="after")
@@ -30,7 +30,7 @@ class SpellBuff(Spell):
 
         if not self.effects:
             raise ValueError("SpellBuff must have at least one effect.")
-        
+
         for effect in self.effects:
             if not isinstance(effect, ModifierEffect | TriggerEffect):
                 print(effect)
@@ -73,23 +73,35 @@ class SpellBuff(Spell):
         if not self.effects:
             raise ValueError("The effects field must be set.")
 
-        # Apply the beneficial effects
-        effect_applied = self._spell_apply_effects(actor, target, rank)
+        # Apply the buffs.
+        effects_applied, effects_not_applied = self._spell_apply_effects(
+            actor=actor,
+            target=target,
+            rank=rank,
+        )
 
         # Display the outcome.
         msg = f"    🔮 {actor.colored_name} "
         msg += f"casts [bold blue]{self.name}[/] "
         msg += f"on {target.colored_name}"
-        if effect_applied:
-            effect_names = [effect.colored_name for effect in self.effects]
-            msg += f" granting {', '.join(effect_names)}"
-        else:
-            effect_names = [effect.colored_name for effect in self.effects]
-            msg += f" but fails to grant {', '.join(effect_names)}"
-        msg += "."
-        if GLOBAL_VERBOSE_LEVEL >= 1 and effect_applied:
-            for effect in self.effects:
-                msg += f"\n        Effect: {effect.description}"
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
+            msg += "."
+        if GLOBAL_VERBOSE_LEVEL >= 1:
+            msg += "."
+            if effects_applied or effects_not_applied:
+                msg += "\n"
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
         cprint(msg)
 
         return True

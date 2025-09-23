@@ -15,7 +15,7 @@ from core.utils import (
 )
 from pydantic import Field, model_validator
 
-from actions.base_action import BaseAction
+from actions.base_action import BaseAction, ValidActionEffect
 
 
 class Spell(BaseAction):
@@ -52,6 +52,13 @@ class Spell(BaseAction):
             if not isinstance(cost, int) or cost < 1:
                 raise ValueError("Each mind cost must be a positive integer")
         return self
+
+    @property
+    def colored_name(self) -> str:
+        """
+        Returns the colored name of the attack for display purposes.
+        """
+        return f"[bold magenta]{self.name}[/]"
 
     # ============================================================================
     # TARGETING SYSTEM METHODS
@@ -186,7 +193,7 @@ class Spell(BaseAction):
             if isinstance(effect, ModifierEffect):
                 modifier_effect = effect
                 break
-        
+
         if modifier_effect is None:
             raise ValueError("Spell must have at least one ModifierEffect")
 
@@ -217,7 +224,7 @@ class Spell(BaseAction):
         actor: Any,
         target: Any,
         rank: int,
-    ) -> bool:
+    ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
         """
         Apply the spell's effects to the target.
 
@@ -230,8 +237,10 @@ class Spell(BaseAction):
                 The rank at which the spell is being cast.
 
         Returns:
-            bool:
-                True if effects were applied successfully, False on failure.
+            tuple[list[ValidActionEffect], list[ValidActionEffect]]:
+                A tuple containing two lists:
+                - First list: effects that were successfully applied.
+                - Second list: effects that were not applied (e.g., resisted).
         """
         return self._common_apply_effects(
             actor=actor,

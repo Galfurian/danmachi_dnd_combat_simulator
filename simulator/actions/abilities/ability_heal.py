@@ -20,7 +20,7 @@ class AbilityHeal(BaseAbility):
     """Represents abilities that restore hit points to targets during combat."""
 
     action_type: Literal["AbilityHeal"] = "AbilityHeal"
-    
+
     category: ActionCategory = ActionCategory.HEALING
 
     heal_roll: str = Field(
@@ -65,29 +65,41 @@ class AbilityHeal(BaseAbility):
         heal = roll_and_describe(self.heal_roll, variables)
         # Apply healing to target.
         actual_healing = target.heal(heal.value)
-        # Apply effects
-        effect_applied = self._common_apply_effect(actor, target, self.effect)
+        # Apply the effects.
+        effects_applied, effects_not_applied = self._common_apply_effects(
+            actor,
+            target,
+            self.effects,
+        )
 
         # Display the outcome.
-        msg = f"    💚 {actor.colored_name} uses [bold green]{self.name}[/] on {target.colored_name}"
+        msg = f"    ✨ {actor.colored_name} "
+        msg += f"uses {self.colored_name} "
+        msg += f"on {target.colored_name}"
+
         if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" healing {actual_healing} HP"
-            if self.effect and effect_applied:
-                msg += f" and applying [bold yellow]{self.effect.name}[/]"
+            msg += f" healing {actual_healing} 💚"
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             if actual_healing != heal.value:
-                msg += f" healing {actual_healing} HP (rolled {heal.value}, capped at max HP)"
+                msg += f" healing {actual_healing} 💚 (rolled {heal.value}, capped at max 💚)"
             else:
-                msg += f" healing {actual_healing} HP → {heal.description}"
+                msg += f" healing {actual_healing} 💚 → {heal.description}"
             msg += ".\n"
 
-            if self.effect:
-                if effect_applied:
-                    msg += f"        {target.colored_name} is affected by"
-                else:
-                    msg += f"        {target.colored_name} resists"
-                msg += f" [bold yellow]{self.effect.name}[/]."
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
 
         cprint(msg)
 

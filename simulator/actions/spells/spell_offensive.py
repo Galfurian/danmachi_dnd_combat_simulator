@@ -105,29 +105,38 @@ class SpellOffensive(Spell):
         # Check if target was defeated
         is_dead = not target.is_alive()
 
-        # Apply optional effect on successful hit
-        effect_applied = self._spell_apply_effects(actor, target, rank)
+        # Apply the buffs.
+        effects_applied, effects_not_applied = self._spell_apply_effects(
+            actor=actor,
+            target=target,
+            rank=rank,
+        )
 
         # Display combat results with appropriate detail level
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {total_damage} damage"
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             if is_dead:
                 msg += f" defeating {target.colored_name}"
-            elif effect_applied and self.effects:
-                effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
-                msg += f" and applying {', '.join(effect_names)}"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f" rolled ({attack.description}) {attack.value} vs AC [yellow]{target.AC}[/] → "
             msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target.colored_name} → "
             msg += " + ".join(damage_details) + ".\n"
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
             if is_dead:
                 msg += f"        {target.colored_name} is defeated."
-            elif effect_applied and self.effects:
-                msg += f"        {target.colored_name} is affected by "
-                effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
-                msg += f"{', '.join(effect_names)}."
         cprint(msg)
 
         return True

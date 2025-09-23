@@ -13,16 +13,18 @@
                 "damage_type": "FIRE"
             }
         ],
-        "effect": {
-            "name": "Burning",
-            "effect_type": "DamageOverTimeEffect",
-            "description": "The target catches fire and burns.",
-            "duration": 2,
-            "damage": {
-                "damage_roll": "1D4",
-                "damage_type": "FIRE"
+        "effects": [
+            {
+                "name": "Burning",
+                "effect_type": "DamageOverTimeEffect",
+                "description": "The target catches fire and burns.",
+                "duration": 2,
+                "damage": {
+                    "damage_roll": "1D4",
+                    "damage_type": "FIRE"
+                }
             }
-        }
+        ]
     },
     {
         "action_type": "AbilityOffensive",
@@ -52,16 +54,18 @@
                 "damage_type": "FIRE"
             }
         ],
-        "effect": {
-            "name": "Burning",
-            "effect_type": "DamageOverTimeEffect",
-            "description": "The target catches fire and burns.",
-            "duration": 2,
-            "damage": {
-                "damage_roll": "1D4",
-                "damage_type": "FIRE"
+        "effects": [
+            {
+                "name": "Burning",
+                "effect_type": "DamageOverTimeEffect",
+                "description": "The target catches fire and burns.",
+                "duration": 2,
+                "damage": {
+                    "damage_roll": "1D4",
+                    "damage_type": "FIRE"
+                }
             }
-        }
+        ]
     },
     {
         "action_type": "AbilityOffensive",
@@ -88,16 +92,18 @@
         "target_restrictions": [
             "ENEMY"
         ],
-        "effect": {
-            "name": "Sleeping",
-            "effect_type": "IncapacitatingEffect",
-            "description": "The target falls asleep and cannot take actions.",
-            "duration": 3,
-            "incapacitation_type": "sleep",
-            "save_ends": true,
-            "save_dc": 13,
-            "save_stat": "CON"
-        }
+        "effects": [
+            {
+                "name": "Sleeping",
+                "effect_type": "IncapacitatingEffect",
+                "description": "The target falls asleep and cannot take actions.",
+                "duration": 3,
+                "incapacitation_type": "sleep",
+                "save_ends": true,
+                "save_dc": 13,
+                "save_stat": "CON"
+            }
+        ]
     },
     {
         "action_type": "AbilityOffensive",
@@ -110,15 +116,17 @@
                 "damage_type": "POISON"
             }
         ],
-        "effect": {
-            "name": "Poisoned",
-            "effect_type": "DamageOverTimeEffect",
-            "description": "Deals poison damage over time.",
-            "duration": 3,
-            "damage": {
-                "damage_roll": "1D6",
-                "damage_type": "POISON"
+        "effects": [
+            {
+                "name": "Poisoned",
+                "effect_type": "DamageOverTimeEffect",
+                "description": "Deals poison damage over time.",
+                "duration": 3,
+                "damage": {
+                    "damage_roll": "1D6",
+                    "damage_type": "POISON"
+                }
             }
-        }
+        ]
     }
 ]

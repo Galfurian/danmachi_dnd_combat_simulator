@@ -76,30 +76,49 @@ class SpellHeal(Spell):
             return False
 
         # Calculate healing with level scaling
-        outcome = self._spell_roll_and_describe(
+        heal = self._spell_roll_and_describe(
             self.heal_roll,
             actor,
             rank,
         )
 
         # Apply healing to target (limited by max HP)
-        actual_healed = target.heal(outcome.value)
+        actual_healing = target.heal(heal.value)
 
-        # Apply optional effect
-        effect_applied = self._spell_apply_effects(actor, target, rank)
+        # Apply the buffs.
+        effects_applied, effects_not_applied = self._spell_apply_effects(
+            actor=actor,
+            target=target,
+            rank=rank,
+        )
 
-        # Display healing results
-        msg = f"    ✳️ {actor.colored_name} casts [bold]{self.name}[/] on {target.colored_name}"
-        msg += f" healing for [bold green]{actual_healed}[/]"
-        if GLOBAL_VERBOSE_LEVEL >= 1:
-            msg += f" ({outcome.description})"
-        if effect_applied and self.effects:
-            effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
-            msg += f" and applying {', '.join(effect_names)}"
-        elif self.effects and not effect_applied:
-            effect_names = [f"[{effect.color}]{effect.name}[/]" for effect in self.effects]
-            msg += f" but failing to apply {', '.join(effect_names)}"
-        msg += "."
+        # Display the heal.
+        msg = f"    🔮 {actor.colored_name} "
+        msg += f"casts {self.colored_name} "
+        msg += f"on {target.colored_name}"
+
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            msg += f" healing {actual_healing} 💚"
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
+            msg += "."
+        elif GLOBAL_VERBOSE_LEVEL >= 1:
+            if actual_healing != heal.value:
+                msg += f" healing {actual_healing} 💚 (rolled {heal.value}, capped at max 💚)"
+            else:
+                msg += f" healing {actual_healing} 💚 → {heal.description}"
+            msg += ".\n"
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
         cprint(msg)
 
         return True

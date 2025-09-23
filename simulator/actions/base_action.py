@@ -168,7 +168,7 @@ class BaseAction(BaseModel):
         target: Any,
         effects: list[ValidActionEffect],
         variables: list[VarInfo] = [],
-    ) -> bool:
+    ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
         """
         Apply a list of effects to a target character.
 
@@ -183,8 +183,10 @@ class BaseAction(BaseModel):
                 List of variable info for effect scaling
 
         Returns:
-            bool:
-                True if all effects were successfully applied, False otherwise
+            tuple[list[ValidActionEffect], list[ValidActionEffect]]:
+                A tuple containing two lists:
+                - First list: Effects that were successfully applied.
+                - Second list: Effects that failed to apply.
 
         """
         from character.main import Character
@@ -198,29 +200,48 @@ class BaseAction(BaseModel):
 
         # Ensure both actor and target are alive.
         if not actor.is_alive() or not target.is_alive():
-            return False
+            return ([], effects)
 
         # If no effects, nothing to apply.
         if not effects:
-            return False
+            return ([], [])
 
         # Apply each effect
-        all_applied = True
+        successful_effects = []
+        failed_effects = []
         for effect in effects:
             # Make sure effect is an Effect instance.
             if not isinstance(effect, Effect):
                 raise ValueError("All effects must be Effect instances")
-
             # Check if the effect can be applied.
             if not effect.can_apply(actor, target):
-                all_applied = False
-                continue
-
+                failed_effects.append(effect)
             # Apply the effect to the target.
-            if not target.add_effect(actor, effect, variables):
-                all_applied = False
+            elif not target.add_effect(actor, effect, variables):
+                failed_effects.append(effect)
+            else:
+                successful_effects.append(effect)
 
-        return all_applied
+        return successful_effects, failed_effects
+
+    def _effect_list_string(self, effects: list[ValidActionEffect]) -> str:
+        """
+        Build a comma-separated string of effect names.
+
+        Args:
+            effects (list[ValidActionEffect]):
+                List of effects to include in the string.
+
+        Returns:
+            str:
+                Comma-separated string of effect names.
+        """
+        if not effects:
+            return "no effects"
+        if len(effects) == 1:
+            return effects[0].colored_name
+        names = [f"{effect.colored_name}" for effect in effects]
+        return f"{', '.join(names[:-1])} and {names[-1]}"
 
     # ============================================================================
     # COMBAT SYSTEM METHODS

@@ -8,7 +8,7 @@ from actions.abilities import (
 )
 from actions.abilities.base_ability import BaseAbility
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
-from actions.base_action import BaseAction
+from actions.base_action import BaseAction, ValidActionEffect
 from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from actions.spells.base_spell import Spell
 from character import Character
@@ -94,74 +94,40 @@ def _hp_ratio(character: Character, missing: bool = False) -> float:
     return 1.0 - ratio if missing else ratio
 
 
-def _can_apply_effect(
+def _can_apply_any_effect(
     source: Character,
     target: Character,
-    effect: Any,
+    effects: list[ValidActionEffect],
     variables: list[VarInfo] = [],
 ) -> bool:
     """
-    Helper function to determine if a given effect is useful on a target.
+    Checks if any effect can be applied to the target.
 
     Args:
         source (Character):
             The character applying the effect.
         target (Character):
             The character receiving the effect.
-        effect (Any):
-            The effect being applied.
+        effects (list[ValidActionEffect]):
+            List of effects to evaluate.
         variables (list[VarInfo]):
             List of variables to use for evaluating usefulness.
 
     Returns:
         bool:
-            True if the effect is useful on the target, False otherwise.
+            True if at least one effect can be applied, False otherwise.
 
     """
-    if effect is None:
+    if not effects:
         return False
-    return target.can_add_effect(
-        source=source,
-        effect=effect,
-        variables=variables,
-    )
-
-
-def _filter_can_add_effect(
-    source: Character,
-    targets: list[Character],
-    effect: Any,
-    variables: list[VarInfo] = [],
-) -> list[Character]:
-    """
-    Filters targets that can have the effect applied.
-
-    Args:
-        source (Character):
-            The character applying the effect.
-        targets (list[Character]):
-            List of potential targets.
-        effect (Any):
-            The effect being applied.
-        variables (list[VarInfo]):
-            List of variables to use for evaluating usefulness.
-
-    Returns:
-        list[Character]:
-            List of targets that can have the effect applied.
-
-    """
-    if effect is None:
-        return []
-    return [
-        target
-        for target in targets
-        if target.can_add_effect(
+    return any(
+        target.can_add_effect(
             source=source,
             effect=effect,
             variables=variables,
         )
-    ]
+        for effect in effects
+    )
 
 
 # =============================================================================
@@ -208,10 +174,10 @@ def _sort_targets_by_usefulness_and_hp_offensive(
         targets,
         key=lambda target: (
             _hp_ratio(target),
-            _can_apply_effect(
+            _can_apply_any_effect(
                 source,
                 target,
-                action.effect,
+                action.effects,
                 variables,
             ),
         ),
@@ -259,10 +225,10 @@ def _sort_targets_by_usefulness_and_hp_healing(
         targets,
         key=lambda target: (
             _hp_ratio(target, missing=True),
-            _can_apply_effect(
+            _can_apply_any_effect(
                 source,
                 target,
-                action.effect,
+                action.effects,
                 variables,
             ),
         ),
@@ -306,10 +272,10 @@ def _sort_targets_by_usefulness_and_buff(
     # 1. Targets that can benefit from the effect (primary).
     sorted_targets = sorted(
         targets,
-        key=lambda target: _can_apply_effect(
+        key=lambda target: _can_apply_any_effect(
             source,
             target,
-            action.effect,
+            action.effects,
             variables,
         ),
     )
@@ -807,9 +773,10 @@ def choose_best_weapon_for_situation(
 
             # Effect score
             effect_score = 0
-            if weapon.effect and target.can_add_effect(
+            if _can_apply_any_effect(
                 source=source,
-                effect=weapon.effect,
+                target=target,
+                effects=weapon.effects,
             ):
                 effect_score = 10
 

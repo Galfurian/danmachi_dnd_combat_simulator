@@ -186,36 +186,34 @@ class AbilityOffensive(BaseAbility):
         # 4. EFFECT APPLICATION
         # =====================================================================
 
-        # Apply the trigger effects and get bonus damage.
-        for effect in trigger.effects_to_apply:
-            self._common_apply_effects(actor, target, [effect])
+        # Build a full list of effects to apply (triggers + ability effects).
+        full_effects = trigger.effects_to_apply + self.effects
 
-        # Apply effect from the ability itself, if any.
-        effect_applied = self._common_apply_effects(actor, target, self.effects)
+        # Apply the effects.
+        effects_applied, effects_not_applied = self._common_apply_effects(
+            actor,
+            target,
+            full_effects,
+        )
 
         # =====================================================================
         # 5. RESULT DISPLAY AND LOGGING
         # =====================================================================
 
-        msg = (
-            f"    🔥 {actor.colored_name} "
-            f"uses {self.colored_name} on "
-            f"{target.colored_name} "
-        )
+        msg = f"    🔥 {actor.colored_name} "
+        msg += f"uses {self.colored_name} "
+        msg += f"on {target.colored_name}"
 
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {damage} damage"
             if attack.is_critical():
                 msg += " (critical hit!)"
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             if not target.is_alive():
                 msg += f" defeating {target.colored_name}"
-            elif self.effects:
-                if effect_applied:
-                    msg += " and applying"
-                else:
-                    msg += " and failing to apply"
-                effect_names = [f"[bold yellow]{effect.name}[/]" for effect in self.effects]
-                msg += f" {', '.join(effect_names)}"
             msg += "."
         elif GLOBAL_VERBOSE_LEVEL >= 1:
             msg += f"({attack_details}), "
@@ -228,16 +226,16 @@ class AbilityOffensive(BaseAbility):
             if attack.is_critical():
                 msg += " (critical hit!)"
             msg += ".\n"
-
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
             if not target.is_alive():
                 msg += f"        {target.colored_name} is defeated."
-            elif self.effects:
-                if effect_applied:
-                    msg += f"        {target.colored_name} is affected by"
-                else:
-                    msg += f"        {target.colored_name} resists"
-                effect_names = [f"[bold yellow]{effect.name}[/]" for effect in self.effects]
-                msg += f" {', '.join(effect_names)}."
 
         cprint(msg)
 

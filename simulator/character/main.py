@@ -29,6 +29,7 @@ ValidPassiveEffect: TypeAlias = Union[
     DamageOverTimeEffect,
     ModifierEffect,
     IncapacitatingEffect,
+    TriggerEffect,
 ]
 
 

@@ -44,11 +44,7 @@ def modifier_to_string(modifier: Modifier) -> str:
 
     """
     if isinstance(modifier.value, DamageComponent):
-        return (
-            f"{modifier.value.damage_type.colorize(modifier.value.damage_roll)}"
-            f"{modifier.value.damage_type.colored_name} "
-            f"to {modifier.bonus_type.name.lower()}"
-        )
+        return damage_to_string(modifier.value)
     if isinstance(modifier.value, str):
         return f"[blue]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
     return f"[green]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
@@ -164,8 +160,10 @@ def print_base_attack_sheet(attack: BaseAttack, padding: int = 2) -> None:
     sheet += (
         f"damage: {', '.join([damage_to_string(damage) for damage in attack.damage])}"
     )
-    if attack.effect:
-        print_effect_sheet(attack.effect, padding + 2)
+    if attack.effects:
+        cprint(Padding("Applies:", (0, padding)))
+        for effect in attack.effects:
+            print_effect_sheet(effect, padding + 2)
     cprint(Padding(sheet, (0, padding)))
 
 
@@ -225,12 +223,11 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
         cprint(Padding(sheet, (0, padding)))
 
     # Handle spell effects
-    if hasattr(spell, "effect"):
-        spell_effect = getattr(spell, "effect", None)
-        if spell_effect:
-            cprint(Padding("Applies:", (0, padding)))
-            padding += 2
-            print_effect_sheet(spell_effect, padding)
+    if spell.effects:
+        cprint(Padding("Applies:", (0, padding)))
+        padding += 2
+        for effect in spell.effects:
+            print_effect_sheet(effect, padding)
 
 
 def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
@@ -270,10 +267,10 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         cprint(Padding(sheet, (0, padding)))
 
     # Handle ability effects
-    if hasattr(ability, "effect") and ability.effect:
+    if ability.effects:
         cprint(Padding("Applies:", (0, padding)))
-        padding += 2
-        print_effect_sheet(ability.effect, padding)
+        for effect in ability.effects:
+            print_effect_sheet(effect, padding + 2)
 
 
 def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
@@ -299,10 +296,10 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         cprint(Padding(sheet, (0, padding)))
 
         # Handle generic action effects if they exist
-        if hasattr(action, "effect"):
-            action_effect = getattr(action, "effect", None)
-            if action_effect:
-                print_effect_sheet(action_effect, padding + 2)
+        if action.effects:
+            cprint(Padding("Applies:", (0, padding)))
+            for effect in action.effects:
+                print_effect_sheet(effect, padding + 2)
 
 
 def print_character_sheet(char: Character) -> None:

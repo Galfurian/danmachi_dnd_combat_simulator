@@ -20,6 +20,13 @@ class BaseAbility(BaseAction, ABC):
     to implement specific behavior through abstract methods.
     """
 
+    @property
+    def colored_name(self) -> str:
+        """
+        Returns the colored name of the attack for display purposes.
+        """
+        return f"[bold yellow]{self.name}[/]"
+    
     # ============================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)
     # ============================================================================

@@ -2,7 +2,6 @@
 
 from typing import Any, Literal
 
-from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
 from pydantic import model_validator
@@ -17,7 +16,7 @@ class AbilityBuff(BaseAbility):
     """
 
     action_type: Literal["AbilityBuff"] = "AbilityBuff"
-    
+
     category: ActionCategory = ActionCategory.BUFF
 
     @model_validator(mode="after")
@@ -25,8 +24,12 @@ class AbilityBuff(BaseAbility):
         """Ensure that the effect field is properly set."""
         from effects.base_effect import Effect
 
-        if not isinstance(self.effect, Effect):
-            raise ValueError("AbilityBuff must have a valid effect assigned.")
+        if not self.effects:
+            raise ValueError("AbilityBuff must have an effect defined.")
+
+        if not all(isinstance(effect, Effect) for effect in self.effects):
+            raise ValueError("All effects must be Effect instances.")
+
         return self
 
     def execute(self, actor: Any, target: Any) -> bool:
@@ -43,7 +46,7 @@ class AbilityBuff(BaseAbility):
         """
         from character.main import Character
 
-        if not self.effect:
+        if not self.effects:
             raise ValueError("The effect field must be set.")
         if not isinstance(actor, Character):
             raise ValueError("The actor must be a Character instance.")
@@ -55,36 +58,34 @@ class AbilityBuff(BaseAbility):
             return False
 
         # Apply the buff effect.
-        effect_applied = self._common_apply_effect(actor, target, self.effect)
+        effects_applied, effects_not_applied = self._common_apply_effects(
+            actor,
+            target,
+            self.effects,
+        )
 
         # Display the outcome.
         msg = f"    ✨ {actor.colored_name} "
-        msg += f"uses [bold blue]{self.name}[/] "
+        msg += f"uses {self.colored_name} "
         msg += f"on {target.colored_name}"
-        if effect_applied:
-            msg += f" granting {self.effect.colored_name}"
-        else:
-            msg += f" but fails to grant {self.effect.colored_name}"
-        msg += "."
+        if GLOBAL_VERBOSE_LEVEL == 0:
+            if effects_applied:
+                msg += f" applying {self._effect_list_string(effects_applied)}"
+            if effects_not_applied:
+                msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
+            msg += "."
         if GLOBAL_VERBOSE_LEVEL >= 1:
-            if effect_applied:
-                msg += f"\n        Effect: {self.effect.description}"
+            msg += "."
+            if effects_applied or effects_not_applied:
+                msg += "\n"
+            if effects_applied:
+                msg += f"        {target.colored_name} gains "
+                msg += self._effect_list_string(effects_applied)
+                msg += ".\n"
+            if effects_not_applied:
+                msg += f"        {target.colored_name} doesn't gain "
+                msg += self._effect_list_string(effects_not_applied)
+                msg += ".\n"
         cprint(msg)
 
         return True
-
-    # ============================================================================
-    # UTILITY METHODS
-    # ============================================================================
-
-    def get_effect_description(self) -> str:
-        """
-        Get a description of the effect this ability provides.
-
-        Returns:
-            str: Description of the buff effect.
-
-        """
-        if self.effect and hasattr(self.effect, "description"):
-            return self.effect.description
-        return f"Applies {self.effect.name}" if self.effect else "No effect"

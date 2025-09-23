@@ -238,16 +238,18 @@
                         "damage_type": "SLASHING"
                     }
                 ],
-                "effect": {
-                    "name": "Poison",
-                    "effect_type": "DamageOverTimeEffect",
-                    "description": "A venomous toxin that causes ongoing damage over time.",
-                    "duration": 3,
-                    "damage": {
-                        "damage_roll": "1D4",
-                        "damage_type": "POISON"
+                "effects": [
+                    {
+                        "name": "Poison",
+                        "effect_type": "DamageOverTimeEffect",
+                        "description": "A venomous toxin that causes ongoing damage over time.",
+                        "duration": 3,
+                        "damage": {
+                            "damage_roll": "1D4",
+                            "damage_type": "POISON"
+                        }
                     }
-                }
+                ]
             }
         ]
     },
@@ -352,16 +354,18 @@
                         "damage_type": "FIRE"
                     }
                 ],
-                "effect": {
-                    "name": "Burning",
-                    "effect_type": "DamageOverTimeEffect",
-                    "description": "The target is on fire and takes damage each turn.",
-                    "duration": 3,
-                    "damage": {
-                        "damage_roll": "1D4",
-                        "damage_type": "FIRE"
+                "effects": [
+                    {
+                        "name": "Burning",
+                        "effect_type": "DamageOverTimeEffect",
+                        "description": "The target is on fire and takes damage each turn.",
+                        "duration": 3,
+                        "damage": {
+                            "damage_roll": "1D4",
+                            "damage_type": "FIRE"
+                        }
                     }
-                }
+                ]
             }
         ]
     }

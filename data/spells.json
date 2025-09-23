@@ -50,18 +50,20 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Bless",
-            "effect_type": "ModifierEffect",
-            "description": "Adds a dice to the attack rolls.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "ATTACK",
-                    "value": "1D4"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Bless",
+                "effect_type": "ModifierEffect",
+                "description": "Adds a dice to the attack rolls.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "ATTACK",
+                        "value": "1D4"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -77,18 +79,20 @@
             "ALLY"
         ],
         "requires_concentration": true,
-        "effect": {
-            "name": "Shield of Faith",
-            "effect_type": "ModifierEffect",
-            "description": "Increases the target's armor class.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "2"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Shield of Faith",
+                "effect_type": "ModifierEffect",
+                "description": "Increases the target's armor class.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "2"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -103,21 +107,23 @@
         "target_restrictions": [
             "SELF"
         ],
-        "effect": {
-            "name": "Divine Favor",
-            "effect_type": "ModifierEffect",
-            "description": "Adds radiant damage to successful attacks.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "DAMAGE",
-                    "value": {
-                        "damage_roll": "1D6",
-                        "damage_type": "RADIANT"
+        "effects": [
+            {
+                "name": "Divine Favor",
+                "effect_type": "ModifierEffect",
+                "description": "Adds radiant damage to successful attacks.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "DAMAGE",
+                        "value": {
+                            "damage_roll": "1D6",
+                            "damage_type": "RADIANT"
+                        }
                     }
-                }
-            ]
-        }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -133,23 +139,25 @@
         "target_restrictions": [
             "SELF"
         ],
-        "effect": {
-            "name": "Divine Smite",
-            "effect_type": "TriggerEffect",
-            "description": "Next weapon attack deals extra radiant damage.",
-            "trigger_condition": {
-                "trigger_type": "on_hit",
-                "description": "when hitting with an attack"
-            },
-            "trigger_effects": [],
-            "damage_bonus": [
-                {
-                    "damage_roll": "1D8 + [MIND]D8",
-                    "damage_type": "RADIANT"
-                }
-            ],
-            "consumes_on_trigger": true
-        }
+        "effects": [
+            {
+                "name": "Divine Smite",
+                "effect_type": "TriggerEffect",
+                "description": "Next weapon attack deals extra radiant damage.",
+                "trigger_condition": {
+                    "trigger_type": "on_hit",
+                    "description": "when hitting with an attack"
+                },
+                "trigger_effects": [],
+                "damage_bonus": [
+                    {
+                        "damage_roll": "1D8 + [MIND]D8",
+                        "damage_type": "RADIANT"
+                    }
+                ],
+                "consumes_on_trigger": true
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -165,35 +173,37 @@
         "target_restrictions": [
             "SELF"
         ],
-        "effect": {
-            "name": "Searing Smite",
-            "effect_type": "TriggerEffect",
-            "description": "Next weapon attack deals extra fire damage and applies burning.",
-            "duration": 10,
-            "trigger_condition": {
-                "trigger_type": "on_hit",
-                "description": "when hitting with an attack"
-            },
-            "trigger_effects": [
-                {
-                    "name": "Burning",
-                    "description": "Deals fire damage over time.",
-                    "duration": 3,
-                    "damage": {
+        "effects": [
+            {
+                "name": "Searing Smite",
+                "effect_type": "TriggerEffect",
+                "description": "Next weapon attack deals extra fire damage and applies burning.",
+                "duration": 10,
+                "trigger_condition": {
+                    "trigger_type": "on_hit",
+                    "description": "when hitting with an attack"
+                },
+                "trigger_effects": [
+                    {
+                        "name": "Burning",
+                        "description": "Deals fire damage over time.",
+                        "duration": 3,
+                        "damage": {
+                            "damage_roll": "[MIND]D6",
+                            "damage_type": "FIRE"
+                        },
+                        "effect_type": "DamageOverTimeEffect"
+                    }
+                ],
+                "damage_bonus": [
+                    {
                         "damage_roll": "[MIND]D6",
                         "damage_type": "FIRE"
-                    },
-                    "effect_type": "DamageOverTimeEffect"
-                }
-            ],
-            "damage_bonus": [
-                {
-                    "damage_roll": "[MIND]D6",
-                    "damage_type": "FIRE"
-                }
-            ],
-            "consumes_on_trigger": true
-        }
+                    }
+                ],
+                "consumes_on_trigger": true
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -209,37 +219,39 @@
         "target_restrictions": [
             "SELF"
         ],
-        "effect": {
-            "name": "Wrathful Smite",
-            "effect_type": "TriggerEffect",
-            "description": "Next weapon attack deals extra psychic damage and applies fear.",
-            "duration": 10,
-            "trigger_condition": {
-                "trigger_type": "on_hit",
-                "description": "when hitting with an attack"
-            },
-            "trigger_effects": [
-                {
-                    "name": "Frightened",
-                    "description": "Filled with dread and terror.",
-                    "duration": 3,
-                    "modifiers": [
-                        {
-                            "bonus_type": "ATTACK",
-                            "value": "-2"
-                        }
-                    ],
-                    "effect_type": "ModifierEffect"
-                }
-            ],
-            "damage_bonus": [
-                {
-                    "damage_roll": "[MIND]D6",
-                    "damage_type": "PSYCHIC"
-                }
-            ],
-            "consumes_on_trigger": true
-        }
+        "effects": [
+            {
+                "name": "Wrathful Smite",
+                "effect_type": "TriggerEffect",
+                "description": "Next weapon attack deals extra psychic damage and applies fear.",
+                "duration": 10,
+                "trigger_condition": {
+                    "trigger_type": "on_hit",
+                    "description": "when hitting with an attack"
+                },
+                "trigger_effects": [
+                    {
+                        "name": "Frightened",
+                        "description": "Filled with dread and terror.",
+                        "duration": 3,
+                        "modifiers": [
+                            {
+                                "bonus_type": "ATTACK",
+                                "value": "-2"
+                            }
+                        ],
+                        "effect_type": "ModifierEffect"
+                    }
+                ],
+                "damage_bonus": [
+                    {
+                        "damage_roll": "[MIND]D6",
+                        "damage_type": "PSYCHIC"
+                    }
+                ],
+                "consumes_on_trigger": true
+            }
+        ]
     },
     {
         "name": "Shatter",
@@ -482,18 +494,20 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Mage Armor",
-            "effect_type": "ModifierEffect",
-            "description": "Base AC becomes 13 + Dex modifier.",
-            "duration": 80,
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "3"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Mage Armor",
+                "effect_type": "ModifierEffect",
+                "description": "Base AC becomes 13 + Dex modifier.",
+                "duration": 80,
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "3"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -511,18 +525,20 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Heroism",
-            "effect_type": "ModifierEffect",
-            "description": "Gain temporary hit points and immunity to being frightened.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "HP",
-                    "value": "[SPELLCASTING]"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Heroism",
+                "effect_type": "ModifierEffect",
+                "description": "Gain temporary hit points and immunity to being frightened.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "HP",
+                        "value": "[SPELLCASTING]"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -538,18 +554,20 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Barkskin",
-            "effect_type": "ModifierEffect",
-            "description": "AC cannot be less than 16.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "4"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Barkskin",
+                "effect_type": "ModifierEffect",
+                "description": "AC cannot be less than 16.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "4"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -565,22 +583,24 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Haste",
-            "effect_type": "ModifierEffect",
-            "description": "Doubled speed, +2 AC, advantage on Dexterity saving throws, and an additional action.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "2"
-                },
-                {
-                    "bonus_type": "ATTACK",
-                    "value": "2"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Haste",
+                "effect_type": "ModifierEffect",
+                "description": "Doubled speed, +2 AC, advantage on Dexterity saving throws, and an additional action.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "2"
+                    },
+                    {
+                        "bonus_type": "ATTACK",
+                        "value": "2"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellDebuff",
@@ -597,16 +617,18 @@
         "target_restrictions": [
             "ENEMY"
         ],
-        "effect": {
-            "name": "Paralyzed",
-            "description": "The target is paralyzed and cannot move or act.",
-            "duration": 10,
-            "incapacitation_type": "paralysis",
-            "save_ends": true,
-            "save_dc": 13,
-            "save_stat": "WIS",
-            "effect_type": "IncapacitatingEffect"
-        }
+        "effects": [
+            {
+                "name": "Paralyzed",
+                "description": "The target is paralyzed and cannot move or act.",
+                "duration": 10,
+                "incapacitation_type": "paralysis",
+                "save_ends": true,
+                "save_dc": 13,
+                "save_stat": "WIS",
+                "effect_type": "IncapacitatingEffect"
+            }
+        ]
     },
     {
         "action_type": "SpellDebuff",
@@ -622,22 +644,24 @@
         "target_restrictions": [
             "ENEMY"
         ],
-        "effect": {
-            "name": "Slowed",
-            "description": "Speed halved, -2 penalty to AC and Dexterity saving throws.",
-            "duration": 10,
-            "effect_type": "ModifierEffect",
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "-2"
-                },
-                {
-                    "bonus_type": "ATTACK",
-                    "value": "-2"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Slowed",
+                "description": "Speed halved, -2 penalty to AC and Dexterity saving throws.",
+                "duration": 10,
+                "effect_type": "ModifierEffect",
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "-2"
+                    },
+                    {
+                        "bonus_type": "ATTACK",
+                        "value": "-2"
+                    }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -653,21 +677,23 @@
         "target_restrictions": [
             "SELF"
         ],
-        "effect": {
-            "name": "Spiritual Weapon",
-            "effect_type": "ModifierEffect",
-            "description": "Creates a spectral weapon that can attack as a bonus action.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "DAMAGE",
-                    "value": {
-                        "damage_roll": "1D8 + [SPELLCASTING] + [RANK]D8",
-                        "damage_type": "FORCE"
+        "effects": [
+            {
+                "name": "Spiritual Weapon",
+                "effect_type": "ModifierEffect",
+                "description": "Creates a spectral weapon that can attack as a bonus action.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "DAMAGE",
+                        "value": {
+                            "damage_roll": "1D8 + [SPELLCASTING] + [RANK]D8",
+                            "damage_type": "FORCE"
+                        }
                     }
-                }
-            ]
-        }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellBuff",
@@ -684,21 +710,23 @@
         "target_restrictions": [
             "ENEMY"
         ],
-        "effect": {
-            "name": "Hunter's Mark",
-            "effect_type": "ModifierEffect",
-            "description": "Marked target takes extra damage from your attacks.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "DAMAGE",
-                    "value": {
-                        "damage_roll": "1D6",
-                        "damage_type": "PIERCING"
+        "effects": [
+            {
+                "name": "Hunter's Mark",
+                "effect_type": "ModifierEffect",
+                "description": "Marked target takes extra damage from your attacks.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "DAMAGE",
+                        "value": {
+                            "damage_roll": "1D6",
+                            "damage_type": "PIERCING"
+                        }
                     }
-                }
-            ]
-        }
+                ]
+            }
+        ]
     },
     {
         "action_type": "SpellHeal",
@@ -731,21 +759,23 @@
             "SELF",
             "ALLY"
         ],
-        "effect": {
-            "name": "Invisible",
-            "effect_type": "ModifierEffect",
-            "description": "The target is invisible and has advantage on stealth.",
-            "duration": 10,
-            "modifiers": [
-                {
-                    "bonus_type": "AC",
-                    "value": "2"
-                },
-                {
-                    "bonus_type": "ATTACK",
-                    "value": "5"
-                }
-            ]
-        }
+        "effects": [
+            {
+                "name": "Invisible",
+                "effect_type": "ModifierEffect",
+                "description": "The target is invisible and has advantage on stealth.",
+                "duration": 10,
+                "modifiers": [
+                    {
+                        "bonus_type": "AC",
+                        "value": "2"
+                    },
+                    {
+                        "bonus_type": "ATTACK",
+                        "value": "5"
+                    }
+                ]
+            }
+        ]
     }
 ]
