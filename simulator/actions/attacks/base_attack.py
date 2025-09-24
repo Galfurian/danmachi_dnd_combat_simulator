@@ -150,7 +150,7 @@ class BaseAttack(BaseAction):
         # =============================
 
         # Get any on-hit triggers from effects.
-        trigger = actor.trigger_on_hit_effects(target)
+        trigger = self._trigger_on_hit(actor=actor, target=target)
         # Roll the damage from triggers.
         trigger_damage, trigger_damage_details = roll_damage_components(
             actor,
@@ -243,7 +243,9 @@ class BaseAttack(BaseAction):
         cprint(msg)
 
         for consumed in trigger.consumed_triggers:
-            cprint(f"    ⚡ {actor.colored_name}'s {consumed.colored_name} activates!")
+            cprint(
+                f"    ⚡ {actor.colored_name}'s {consumed.trigger.colored_name} activates!"
+            )
 
         return True
 

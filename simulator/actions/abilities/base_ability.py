@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from character.character_effects import TriggerResult
 from core.utils import (
     evaluate_expression,
 )
@@ -26,10 +27,10 @@ class BaseAbility(BaseAction, ABC):
         Returns the colored name of the attack for display purposes.
         """
         return f"[bold yellow]{self.name}[/]"
-    
-    # ============================================================================
+
+    # =========================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)
-    # ============================================================================
+    # =========================================================================
 
     def is_single_target(self) -> bool:
         """Check if the ability targets a single entity.
@@ -40,9 +41,9 @@ class BaseAbility(BaseAction, ABC):
         """
         return not self.target_expr or self.target_expr.strip() == ""
 
-    # ============================================================================
+    # =========================================================================
     # ABSTRACT METHODS (MUST BE IMPLEMENTED BY SUBCLASSES)
-    # ============================================================================
+    # =========================================================================
 
     @abstractmethod
     def execute(self, actor: Any, target: Any) -> bool:

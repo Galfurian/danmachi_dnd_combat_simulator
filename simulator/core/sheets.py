@@ -5,6 +5,7 @@ from actions.spells import *
 from character import *
 from combat.damage import DamageComponent
 from effects import *
+from effects.base_effect import ActiveEffect
 from items.armor import *
 from items.weapon import *
 from rich.padding import Padding
@@ -114,10 +115,6 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
 
     # Handle TriggerEffect effects
     if isinstance(effect, TriggerEffect):
-        # Show trigger condition
-        trigger_info = effect.get_status_text()
-        cprint(Padding(trigger_info, (0, padding + 2)))
-
         # Show what it triggers
         if effect.trigger_effects:
             cprint(Padding("Triggers:", (0, padding + 2)))

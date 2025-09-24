@@ -142,7 +142,7 @@ class AbilityOffensive(BaseAbility):
         # =============================
 
         # Get any on-hit triggers from effects.
-        trigger = actor.trigger_on_hit_effects(target)
+        trigger = self._trigger_on_hit(actor=actor, target=target)
         # Roll the damage from triggers.
         trigger_damage, trigger_damage_details = roll_damage_components(
             actor,
@@ -174,13 +174,6 @@ class AbilityOffensive(BaseAbility):
         # Sum up the base damage.
         damage += bonus_damage
         damage_details += bonus_damage_details
-
-        # =====================================================================
-        # On-Hit Trigger Messaging
-        # =====================================================================
-
-        for consumed in trigger.consumed_triggers:
-            cprint(f"    ⚡ {actor.colored_name}'s {consumed.colored_name} activates!")
 
         # =====================================================================
         # 4. EFFECT APPLICATION
@@ -240,7 +233,9 @@ class AbilityOffensive(BaseAbility):
         cprint(msg)
 
         for consumed in trigger.consumed_triggers:
-            cprint(f"    ⚡ {actor.colored_name}'s {consumed.colored_name} activates!")
+            cprint(
+                f"    ⚡ {actor.colored_name}'s {consumed.trigger.colored_name} activates!"
+            )
 
         return True
 

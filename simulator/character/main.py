@@ -12,14 +12,14 @@ from effects.base_effect import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import TriggerData, TriggerEffect
+from effects.trigger_effect import TriggerEffect, TriggerEvent
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
 from character.character_actions import CharacterActions
 from character.character_class import CharacterClass
 from character.character_display import CharacterDisplay
-from character.character_effects import CharacterEffects
+from character.character_effects import CharacterEffects, TriggerResult
 from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
@@ -338,6 +338,12 @@ class Character(BaseModel):
         """Remove a passive effect."""
         return self._effects_module.remove_passive_effect(effect)
 
+    def check_triggers(self, event: TriggerEvent) -> TriggerResult:
+        """
+        Checks all active trigger effects against the given event.
+        """
+        return self._effects_module.check_triggers(event)
+
     def reset_available_actions(self) -> None:
         """Resets the classes of available actions for the character."""
         return self._actions_module.reset_available_actions()
@@ -396,25 +402,25 @@ class Character(BaseModel):
         """
         return self._actions_module.turn_done()
 
-    def check_passive_triggers(self) -> list[str]:
-        """Checks all passive effects for trigger conditions and activates them.
-
-        Returns:
-            list[str]: Messages for effects that were triggered this check
-
+    def take_damage(
+        self,
+        amount: int,
+        damage_type: DamageType,
+    ) -> tuple[int, int, int]:
         """
-        return self._effects_module.check_passive_triggers()
-
-    def take_damage(self, amount: int, damage_type: DamageType) -> tuple[int, int, int]:
-        """Applies damage to the character, factoring in resistances and vulnerabilities.
+        Applies damage to the character, factoring in resistances and vulnerabilities.
 
         Args:
-            amount: The raw base damage
-            damage_type: The type of damage being dealt
+            amount:
+                The raw base damage
+            damage_type:
+                The type of damage being dealt
 
         Returns:
-            Tuple[int, int, int]: (base_damage, adjusted_damage, damage_taken)
-
+            tuple[int, int, int]:
+                - The base damage before adjustments
+                - The adjusted damage after resistances/vulnerabilities
+                - The actual damage taken after applying to HP
         """
         base = amount
         adjusted = base
@@ -433,12 +439,6 @@ class Character(BaseModel):
             wake_up_messages = self._effects_module.handle_damage_taken(actual)
             if wake_up_messages:
                 for msg in wake_up_messages:
-                    cprint(f"    {msg}")
-        # Check for passive triggers after taking damage (e.g., OnLowHealthTrigger)
-        if self.passive_effects and self.is_alive():
-            activation_messages = self.check_passive_triggers()
-            if activation_messages:
-                for msg in activation_messages:
                     cprint(f"    {msg}")
 
         return base, adjusted, actual
@@ -779,23 +779,6 @@ class Character(BaseModel):
 
         """
         return self._effects_module.get_modifier(bonus_type)
-
-    def trigger_on_hit_effects(
-        self,
-        target: "Character",
-    ) -> TriggerData:
-        """
-        Triggers any on-hit effects when this character hits a target.
-
-        Args:
-            target (Character):
-                The character that was hit.
-
-        Returns:
-            TriggerData:
-                Data about the triggered effects.
-        """
-        return self._effects_module.trigger_on_hit_effects(target)
 
     def __hash__(self) -> int:
         """

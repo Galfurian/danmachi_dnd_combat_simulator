@@ -1,5 +1,6 @@
 from typing import Any, TypeAlias, Union
 
+from character.character_effects import TriggerResult
 from combat.damage import DamageComponent, roll_and_describe, roll_damage_components
 from core.constants import (
     ActionCategory,
@@ -157,6 +158,85 @@ class BaseAction(BaseModel):
 
         """
         return self.cooldown
+
+    # ============================================================================
+    # TARGETING SYSTEM METHODS
+    # ============================================================================
+
+    def is_valid_target(self, actor: Any, target: Any) -> bool:
+        """Check if the target is valid for this action.
+
+        Args:
+            actor (Any): The character performing the action.
+            target (Any): The potential target character.
+
+        Returns:
+            bool: True if the target is valid for this action, False otherwise.
+
+        """
+        from core.constants import ActionCategory
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("Actor must be a Character instance")
+        if not isinstance(target, Character):
+            raise ValueError("Target must be a Character instance")
+
+        # Both must be alive to target.
+        if not actor.is_alive() or not target.is_alive():
+            return False
+
+        def _is_relationship_valid(actor: Any, target: Any, is_ally: bool) -> bool:
+            """Helper to check if actor and target have the correct relationship."""
+            are_opponents = is_oponent(actor.char_type, target.char_type)
+            if is_ally:
+                return not are_opponents
+            return are_opponents
+
+        # Check each restriction - return True on first match (OR logic).
+        for restriction in self.target_restrictions:
+            if restriction == "SELF" and actor == target:
+                return True
+            if restriction == "ALLY" and _is_relationship_valid(actor, target, True):
+                return True
+            if restriction == "ENEMY" and _is_relationship_valid(actor, target, False):
+                return True
+            if restriction == "ANY":
+                return True
+
+        # Otherwise, fall back to category-based default targeting.
+
+        # Offensive actions target enemies (not self, must be opponents).
+        if self.category == ActionCategory.OFFENSIVE:
+            # Offensive actions target enemies (not self, must be opponents)
+            return target != actor and is_oponent(actor.char_type, target.char_type)
+
+        # Healing actions target self and allies (not enemies, not at full health for healing)
+        if self.category == ActionCategory.HEALING:
+            if target == actor:
+                return target.hp < target.HP_MAX
+            if not is_oponent(actor.char_type, target.char_type):
+                return target.hp < target.HP_MAX
+            return False
+
+        # Buff actions target self and allies.
+        if self.category == ActionCategory.BUFF:
+            return target == actor or not is_oponent(actor.char_type, target.char_type)
+
+        # Debuff actions target enemies.
+        if self.category == ActionCategory.DEBUFF:
+            return target != actor and is_oponent(actor.char_type, target.char_type)
+
+        # Utility actions can target anyone.
+        if self.category == ActionCategory.UTILITY:
+            return True
+
+        # Debug actions can target anyone.
+        if self.category == ActionCategory.DEBUG:
+            return True
+
+        # Unknown category - default to no targeting.
+        return False
 
     # ============================================================================
     # EFFECT SYSTEM METHODS
@@ -480,81 +560,19 @@ class BaseAction(BaseModel):
             for component in damage_components
         )
 
-    # ============================================================================
-    # TARGETING SYSTEM METHODS
-    # ============================================================================
+    # =========================================================================
+    # TRIGGER HELPERS
+    # =========================================================================
 
-    def is_valid_target(self, actor: Any, target: Any) -> bool:
-        """Check if the target is valid for this action.
-
-        Args:
-            actor (Any): The character performing the action.
-            target (Any): The potential target character.
-
-        Returns:
-            bool: True if the target is valid for this action, False otherwise.
-
-        """
-        from core.constants import ActionCategory
+    def _trigger_on_hit(self, actor: Any, target: Any) -> TriggerResult:
+        from effects.trigger_effect import HitTriggerEvent
         from character.main import Character
 
         if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not isinstance(target, Character):
-            raise ValueError("Target must be a Character instance")
-
-        # Both must be alive to target.
-        if not actor.is_alive() or not target.is_alive():
-            return False
-
-        def _is_relationship_valid(actor: Any, target: Any, is_ally: bool) -> bool:
-            """Helper to check if actor and target have the correct relationship."""
-            are_opponents = is_oponent(actor.char_type, target.char_type)
-            if is_ally:
-                return not are_opponents
-            return are_opponents
-
-        # Check each restriction - return True on first match (OR logic).
-        for restriction in self.target_restrictions:
-            if restriction == "SELF" and actor == target:
-                return True
-            if restriction == "ALLY" and _is_relationship_valid(actor, target, True):
-                return True
-            if restriction == "ENEMY" and _is_relationship_valid(actor, target, False):
-                return True
-            if restriction == "ANY":
-                return True
-
-        # Otherwise, fall back to category-based default targeting.
-
-        # Offensive actions target enemies (not self, must be opponents).
-        if self.category == ActionCategory.OFFENSIVE:
-            # Offensive actions target enemies (not self, must be opponents)
-            return target != actor and is_oponent(actor.char_type, target.char_type)
-
-        # Healing actions target self and allies (not enemies, not at full health for healing)
-        if self.category == ActionCategory.HEALING:
-            if target == actor:
-                return target.hp < target.HP_MAX
-            if not is_oponent(actor.char_type, target.char_type):
-                return target.hp < target.HP_MAX
-            return False
-
-        # Buff actions target self and allies.
-        if self.category == ActionCategory.BUFF:
-            return target == actor or not is_oponent(actor.char_type, target.char_type)
-
-        # Debuff actions target enemies.
-        if self.category == ActionCategory.DEBUFF:
-            return target != actor and is_oponent(actor.char_type, target.char_type)
-
-        # Utility actions can target anyone.
-        if self.category == ActionCategory.UTILITY:
-            return True
-
-        # Debug actions can target anyone.
-        if self.category == ActionCategory.DEBUG:
-            return True
-
-        # Unknown category - default to no targeting.
-        return False
+            raise ValueError("Actor must be an instance of Character.")
+        return actor.check_triggers(
+            HitTriggerEvent(
+                actor=actor,
+                target=target,
+            )
+        )
