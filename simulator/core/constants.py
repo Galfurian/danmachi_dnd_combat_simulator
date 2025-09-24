@@ -4,7 +4,7 @@ from enum import Enum
 # 0 - Minimal (e.g., only final results)
 # 1 - Moderate (e.g., show dice rolls)
 # 2 - Full detail (e.g., intermediate computations, effects applied, bonuses, etc.)
-GLOBAL_VERBOSE_LEVEL = 2
+GLOBAL_VERBOSE_LEVEL = 0
 
 
 class NiceEnum(Enum):

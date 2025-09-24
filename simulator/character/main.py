@@ -14,7 +14,7 @@ from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerData, TriggerEffect
 from items.armor import Armor
-from items.weapon import Weapon
+from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
 from character.character_actions import CharacterActions
 from character.character_class import CharacterClass
@@ -84,11 +84,11 @@ class Character(BaseModel):
     )
 
     # === Dynamic properties ===
-    equipped_weapons: list[Weapon] = Field(
+    equipped_weapons: list[WieldedWeapon] = Field(
         default_factory=list,
         description="List of currently equipped weapons",
     )
-    natural_weapons: list[Weapon] = Field(
+    natural_weapons: list[NaturalWeapon] = Field(
         default_factory=list,
         description="List of natural weapons, if any",
     )
@@ -147,16 +147,24 @@ class Character(BaseModel):
         real_weapons = []
         for weapon_name in data.get("equipped_weapons", []):
             weapon = repo.get_weapon(weapon_name)
-            if weapon:
-                real_weapons.append(weapon)
+            if not weapon:
+                raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
+            if not isinstance(weapon, WieldedWeapon):
+                raise ValueError(f"Weapon '{weapon_name}' is not a WieldedWeapon.")
+            real_weapons.append(weapon)
         data["equipped_weapons"] = real_weapons
 
         # Replace natural weapons with actual instances.
         real_natural_weapons = []
         for weapon_name in data.get("natural_weapons", []):
             weapon = repo.get_weapon(weapon_name)
-            if weapon:
-                real_natural_weapons.append(weapon)
+            if not weapon:
+                raise ValueError(
+                    f"Natural weapon '{weapon_name}' not found in repository."
+                )
+            if not isinstance(weapon, NaturalWeapon):
+                raise ValueError(f"Weapon '{weapon_name}' is not a NaturalWeapon.")
+            real_natural_weapons.append(weapon)
         data["natural_weapons"] = real_natural_weapons
 
         # Replace equipped armor with actual instances.

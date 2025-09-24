@@ -1,7 +1,7 @@
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 from actions.base_action import BaseAction
 from actions.spells import (
@@ -14,7 +14,8 @@ from actions.spells.base_spell import Spell
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from items.armor import Armor
-from items.weapon import Weapon
+from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
+from pydantic import parse_obj_as
 
 from core.utils import Singleton, cprint
 
@@ -102,7 +103,6 @@ class ContentRepository(metaclass=Singleton):
         self,
         collection_name: str,
         item_name: str,
-        expected_type: type | None = None,
     ) -> Any | None:
         """Generic helper to get an item from any collection with optional type checking.
 
@@ -119,50 +119,47 @@ class ContentRepository(metaclass=Singleton):
         if not collection:
             return None
 
-        entry = collection.get(item_name)
-        if entry and (expected_type is None or isinstance(entry, expected_type)):
-            return entry
-        return None
+        return collection.get(item_name)
 
     def get_character_class(self, name: str) -> CharacterClass | None:
         """Get a character class by name, or None if not found."""
-        return self._get_from_collection("classes", name, CharacterClass)
+        return self._get_from_collection("classes", name)
 
     def get_character_race(self, name: str) -> CharacterRace | None:
         """Get a character race by name, or None if not found."""
-        return self._get_from_collection("races", name, CharacterRace)
+        return self._get_from_collection("races", name)
 
-    def get_weapon(self, name: str) -> Weapon | None:
+    def get_weapon(self, name: str) -> WieldedWeapon | NaturalWeapon | None:
         """Get a weapon by name, or None if not found."""
-        return self._get_from_collection("weapons", name, Weapon)
+        return self._get_from_collection("weapons", name)
 
     def get_armor(self, name: str) -> Armor | None:
         """Get an armor by name, or None if not found."""
-        return self._get_from_collection("armors", name, Armor)
+        return self._get_from_collection("armors", name)
 
     def get_action(self, name: str) -> BaseAction | None:
         """Get an action by name, or None if not found."""
-        return self._get_from_collection("actions", name, BaseAction)
+        return self._get_from_collection("actions", name)
 
     def get_spell(self, name: str) -> BaseAction | None:
         """Get a spell by name, or None if not found."""
-        return self._get_from_collection("spells", name, BaseAction)
+        return self._get_from_collection("spells", name)
 
     def get_spell_attack(self, name: str) -> SpellOffensive | None:
         """Get a spell attack by name, or None if not found."""
-        return self._get_from_collection("spells", name, SpellOffensive)
+        return self._get_from_collection("spells", name)
 
     def get_spell_heal(self, name: str) -> SpellHeal | None:
         """Get a spell heal by name, or None if not found."""
-        return self._get_from_collection("spells", name, SpellHeal)
+        return self._get_from_collection("spells", name)
 
     def get_spell_buff(self, name: str) -> SpellBuff | None:
         """Get a spell buff by name, or None if not found."""
-        return self._get_from_collection("spells", name, SpellBuff)
+        return self._get_from_collection("spells", name)
 
     def get_spell_debuff(self, name: str) -> SpellDebuff | None:
         """Get a spell debuff by name, or None if not found."""
-        return self._get_from_collection("spells", name, SpellDebuff)
+        return self._get_from_collection("spells", name)
 
     @staticmethod
     def _load_character_classes(data: list[dict]) -> dict[str, CharacterClass]:
@@ -245,13 +242,20 @@ class ContentRepository(metaclass=Singleton):
             ValueError: If duplicate weapon names are found.
 
         """
-        from items.weapon import Weapon, WieldedWeapon, NaturalWeapon
+        from items.weapon import NaturalWeapon, WieldedWeapon
 
         weapons: dict[str, Weapon] = {}
         for weapon_data in data:
-            weapon: Weapon = Weapon(**weapon_data)
-            if weapon:
-                weapons[weapon.name] = weapon
+            weapon_type = weapon_data.get("weapon_type")
+            if weapon_type == "NaturalWeapon":
+                weapon = NaturalWeapon(**weapon_data)
+            elif weapon_type == "WieldedWeapon":
+                weapon = WieldedWeapon(**weapon_data)
+            else:
+                raise ValueError(f"Unknown weapon type: {weapon_type}")
+            if weapon.name in weapons:
+                raise ValueError(f"Duplicate weapon name: {weapon.name}")
+            weapons[weapon.name] = weapon
         return weapons
 
     def _load_actions(self, data: list[dict]) -> dict[str, BaseAction]:

@@ -131,7 +131,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "natural_weapons": [
+        "equipped_weapons": [
             "Greatclub"
         ]
     },

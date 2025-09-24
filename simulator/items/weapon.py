@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Annotated, Any, Literal, Union
 
 from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
@@ -94,3 +94,9 @@ class WieldedWeapon(Weapon):
             raise ValueError("All attacks must be of type WeaponAttack.")
 
         return self
+
+
+WeaponUnion = Annotated[
+    Union[NaturalWeapon, WieldedWeapon],
+    Field(discriminator="weapon_type"),
+]
