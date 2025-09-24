@@ -1,7 +1,7 @@
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from actions.base_action import BaseAction
 from actions.spells import (
@@ -11,11 +11,11 @@ from actions.spells import (
     SpellOffensive,
 )
 from actions.spells.base_spell import Spell
+from catchery import log_warning
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from items.armor import Armor
-from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
-from pydantic import parse_obj_as
+from items.weapon import Weapon
 
 from core.utils import Singleton, cprint
 
@@ -23,10 +23,6 @@ from core.utils import Singleton, cprint
 class ContentRepository(metaclass=Singleton):
     """
     One-stop registry for every game-asset that needs fast by-name access.
-    Usage:
-        repo = ContentRepository()
-        magic_missile = repo.spells["Magic Missile"]
-        longsword = repo.attacks["Longsword"]
     """
 
     # Character-related attributes.
@@ -44,7 +40,8 @@ class ContentRepository(metaclass=Singleton):
         Initialize the ContentRepository.
 
         Args:
-            data_dir (Optional[Path]): The directory containing data files to load.
+            data_dir (Path | None):
+                The directory containing data files to load.
 
         """
         if data_dir:
@@ -56,7 +53,13 @@ class ContentRepository(metaclass=Singleton):
             )
 
     def reload(self, root: Path) -> None:
-        """(Re)load all JSON/YAML assets from disk—handy for hot-reloading."""
+        """
+        (Re)load all JSON/YAML assets from disk—handy for hot-reloading.
+
+        Args:
+            root (Path):
+                The directory containing data files to load.
+        """
         # Load all content using the helper
         self.classes = _load_json_file(
             root / "character_classes.json",
@@ -103,63 +106,92 @@ class ContentRepository(metaclass=Singleton):
         self,
         collection_name: str,
         item_name: str,
+        expected_type: type | None = None,
     ) -> Any | None:
-        """Generic helper to get an item from any collection with optional type checking.
+        """
+        Generic helper to get an item from any collection with optional type checking.
 
         Args:
-            collection_name (str): Name of the collection attribute (e.g., 'weapons', 'spells')
-            item_name (str): Name of the item to retrieve
-            expected_type (type, optional): Expected type for isinstance check
+            collection_name (str):
+                Name of the collection attribute (e.g., 'weapons', 'spells')
+            item_name (str):
+                Name of the item to retrieve
+            expected_type (type, optional):
+                Expected type for isinstance check
 
         Returns:
-            Any | None: The item if found and type matches, None otherwise
+            Any | None:
+                The item if found and type matches, None otherwise
 
         """
         collection = getattr(self, collection_name, None)
+        # Check if collection exists.
         if not collection:
+            log_warning(
+                f"Collection '{collection_name}' not found in ContentRepository.",
+                {
+                    "collection_name": collection_name,
+                    "item_name": item_name,
+                    "expected_type": expected_type,
+                },
+            )
             return None
-
-        return collection.get(item_name)
+        # Get the entry.
+        entry = collection.get(item_name)
+        # Check type if specified.
+        if entry and expected_type and not isinstance(entry, expected_type):
+            log_warning(
+                f"Item '{item_name}' in collection '{collection_name}' "
+                f"is not of expected type '{expected_type.__name__}'.",
+                {
+                    "collection_name": collection_name,
+                    "item_name": item_name,
+                    "expected_type": expected_type,
+                    "actual_type": type(entry).__name__,
+                },
+            )
+            return None
+        return entry
 
     def get_character_class(self, name: str) -> CharacterClass | None:
         """Get a character class by name, or None if not found."""
-        return self._get_from_collection("classes", name)
+        return self._get_from_collection("classes", name, CharacterClass)
 
     def get_character_race(self, name: str) -> CharacterRace | None:
         """Get a character race by name, or None if not found."""
-        return self._get_from_collection("races", name)
+        return self._get_from_collection("races", name, CharacterRace)
 
-    def get_weapon(self, name: str) -> WieldedWeapon | NaturalWeapon | None:
+    def get_weapon(self, name: str) -> Weapon | None:
         """Get a weapon by name, or None if not found."""
-        return self._get_from_collection("weapons", name)
+        return self._get_from_collection("weapons", name, Weapon)
 
     def get_armor(self, name: str) -> Armor | None:
         """Get an armor by name, or None if not found."""
-        return self._get_from_collection("armors", name)
+        return self._get_from_collection("armors", name, Armor)
 
     def get_action(self, name: str) -> BaseAction | None:
         """Get an action by name, or None if not found."""
-        return self._get_from_collection("actions", name)
+        return self._get_from_collection("actions", name, BaseAction)
 
     def get_spell(self, name: str) -> BaseAction | None:
         """Get a spell by name, or None if not found."""
-        return self._get_from_collection("spells", name)
+        return self._get_from_collection("spells", name, BaseAction)
 
     def get_spell_attack(self, name: str) -> SpellOffensive | None:
         """Get a spell attack by name, or None if not found."""
-        return self._get_from_collection("spells", name)
+        return self._get_from_collection("spells", name, SpellOffensive)
 
     def get_spell_heal(self, name: str) -> SpellHeal | None:
         """Get a spell heal by name, or None if not found."""
-        return self._get_from_collection("spells", name)
+        return self._get_from_collection("spells", name, SpellHeal)
 
     def get_spell_buff(self, name: str) -> SpellBuff | None:
         """Get a spell buff by name, or None if not found."""
-        return self._get_from_collection("spells", name)
+        return self._get_from_collection("spells", name, SpellBuff)
 
     def get_spell_debuff(self, name: str) -> SpellDebuff | None:
         """Get a spell debuff by name, or None if not found."""
-        return self._get_from_collection("spells", name)
+        return self._get_from_collection("spells", name, SpellDebuff)
 
     @staticmethod
     def _load_character_classes(data: list[dict]) -> dict[str, CharacterClass]:
@@ -242,17 +274,11 @@ class ContentRepository(metaclass=Singleton):
             ValueError: If duplicate weapon names are found.
 
         """
-        from items.weapon import NaturalWeapon, WieldedWeapon
+        from items.weapon import deserialize_weapon
 
         weapons: dict[str, Weapon] = {}
         for weapon_data in data:
-            weapon_type = weapon_data.get("weapon_type")
-            if weapon_type == "NaturalWeapon":
-                weapon = NaturalWeapon(**weapon_data)
-            elif weapon_type == "WieldedWeapon":
-                weapon = WieldedWeapon(**weapon_data)
-            else:
-                raise ValueError(f"Unknown weapon type: {weapon_type}")
+            weapon = deserialize_weapon(weapon_data)
             if weapon.name in weapons:
                 raise ValueError(f"Duplicate weapon name: {weapon.name}")
             weapons[weapon.name] = weapon

@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal, Union
+from typing import Any, Literal
 
 from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
@@ -37,8 +37,8 @@ class Weapon(BaseModel):
             Weapon:
                 The weapon instance with renamed attacks.
         """
-        for attack in self.attacks:
-            attack.name = f"{self.name} - {attack.name}"
+        #for attack in self.attacks:
+        #    attack.name = f"{self.name} - {attack.name}"
         return self
 
     # ===========================================================================
@@ -96,7 +96,27 @@ class WieldedWeapon(Weapon):
         return self
 
 
-WeaponUnion = Annotated[
-    Union[NaturalWeapon, WieldedWeapon],
-    Field(discriminator="weapon_type"),
-]
+def deserialize_weapon(data: dict[str, Any]) -> Weapon:
+    """
+    Deserialize a weapon from a dictionary.
+
+    Args:
+        data (dict[str, Any]):
+            The dictionary containing weapon data.
+
+    Raises:
+        ValueError:
+            If the weapon type is unknown or if required fields are missing.
+
+    Returns:
+        Weapon:
+            The deserialized weapon instance.
+    """
+
+    weapon_type = data.get("weapon_type")
+    if weapon_type == "NaturalWeapon":
+        return NaturalWeapon(**data)
+    if weapon_type == "WieldedWeapon":
+        return WieldedWeapon(**data)
+
+    raise ValueError(f"Unknown weapon type: {weapon_type}")

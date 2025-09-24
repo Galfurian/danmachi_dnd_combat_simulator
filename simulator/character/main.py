@@ -338,9 +338,9 @@ class Character(BaseModel):
         """Remove a passive effect."""
         return self._effects_module.remove_passive_effect(effect)
 
-    def reset_turn_flags(self) -> None:
-        """Resets the turn flags for the character."""
-        return self._actions_module.reset_turn_flags()
+    def reset_available_actions(self) -> None:
+        """Resets the classes of available actions for the character."""
+        return self._actions_module.reset_available_actions()
 
     def use_action_class(self, action_class: ActionClass) -> None:
         """Marks an action class as used for the current turn."""

@@ -221,9 +221,6 @@ class TriggerEffect(Effect):
     @model_validator(mode="after")
     def check_trigger_effects(self) -> Any:
         for effect in self.trigger_effects or []:
-            print(
-                f"The effect {self.name} has trigger effects {effect.__class__.__name__}"
-            )
             if not isinstance(effect, Effect):
                 raise ValueError(
                     f"Each trigger effect must be an Effect instance, got {type(effect)}"

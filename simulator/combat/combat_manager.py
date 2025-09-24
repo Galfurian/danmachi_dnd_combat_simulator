@@ -188,7 +188,7 @@ class CombatManager:
         """
         if participant.is_alive():
             # Reset the participant's turn flags to allow for new actions.
-            participant.reset_turn_flags()
+            participant.reset_available_actions()
 
             # Print the participant's status line with appropriate display mode
             if participant == self.player:

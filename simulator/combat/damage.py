@@ -58,12 +58,21 @@ def roll_damage_component(
         damage_component (DamageComponent):
             The damage component being applied.
         variables (list[VarInfo]):
-            Optional variables for damage roll expressions.
+            Optional variables for damage roll expressions. If nothing is
+            provided, the actors variables will be used.
 
     Returns:
         Tuple[int, str]: The damage dealt and a description string.
 
     """
+    from character.main import Character
+
+    assert isinstance(actor, Character), "Actor must be an object"
+    assert isinstance(target, Character), "Target must be an object"
+
+    # Use actor's variables if none are provided.
+    variables = variables or actor.get_expression_variables()
+
     damage = roll_and_describe(
         damage_component.damage_roll,
         variables,
@@ -74,7 +83,7 @@ def roll_damage_component(
         damage_component.damage_type,
     )
     # Create a damage string for display.
-    dmg_str = f"{damage_component.damage_type.colorize(taken)} "
+    dmg_str = f"{damage_component.damage_type.colorize(str(taken))} "
     dmg_str += f"{damage_component.damage_type.emoji} "
     dmg_str += f"{damage_component.damage_type.colored_name} "
     # If the base damage differs from the adjusted damage (due to resistances),
@@ -93,7 +102,8 @@ def roll_damage_components(
     variables: list[VarInfo] = [],
 ) -> tuple[int, list[str]]:
     """
-    Rolls damage for multiple components and returns the total damage and details.
+    Rolls damage for multiple components and returns the total damage and
+    details.
 
     Args:
         actor (Any):
@@ -103,12 +113,21 @@ def roll_damage_components(
         damage (list[DamageComponent]):
             The damage components being applied.
         variables (list[VarInfo]):
-            Optional variables for damage roll expressions.
+            Optional variables for damage roll expressions. If nothing is
+            provided, the actors variables will be used.
 
     Returns:
         tuple[int, list[str]]:
             The total damage dealt and a list of damage detail strings.
     """
+    from character.main import Character
+
+    assert isinstance(actor, Character), "Actor must be an object"
+    assert isinstance(target, Character), "Target must be an object"
+
+    # Use actor's variables if none are provided.
+    variables = variables or actor.get_expression_variables()
+
     total_damage = 0
     damage_details: list[str] = []
     for damage_component in damage_components:

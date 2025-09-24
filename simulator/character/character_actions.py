@@ -21,10 +21,10 @@ class CharacterActions(BaseModel):
     owner: Any = Field(
         description="The Character instance this action manager belongs to."
     )
-    turn_flags: dict[str, bool] = Field(
+    available_actions: dict[ActionClass, bool] = Field(
         default={
-            "standard_action_used": False,
-            "bonus_action_used": False,
+            ActionClass.STANDARD: True,
+            ActionClass.BONUS: True,
         },
         description="Flags to track used actions during the turn.",
     )
@@ -37,10 +37,14 @@ class CharacterActions(BaseModel):
         description="Tracks limited uses for actions, mapping action names to remaining uses.",
     )
 
-    def reset_turn_flags(self) -> None:
-        """Reset the turn flags for the character."""
-        self.turn_flags["standard_action_used"] = False
-        self.turn_flags["bonus_action_used"] = False
+    def reset_available_actions(self) -> None:
+        """
+        Reset the used action classes for the character.
+        """
+        self.available_actions = {
+            ActionClass.STANDARD: True,
+            ActionClass.BONUS: True,
+        }
 
     def use_action_class(self, action_class: ActionClass) -> None:
         """Mark an action class as used for the current turn.
@@ -49,10 +53,10 @@ class CharacterActions(BaseModel):
             action_class (ActionClass): The class of action to mark as used.
 
         """
-        if action_class == ActionClass.STANDARD:
-            self.turn_flags["standard_action_used"] = True
-        elif action_class == ActionClass.BONUS:
-            self.turn_flags["bonus_action_used"] = True
+        if action_class is ActionClass.NONE:
+            return
+        if action_class in self.available_actions:
+            self.available_actions[action_class] = False
 
     def has_action_class(self, action_class: ActionClass) -> bool:
         """Check if the character can use a specific action class this turn.
@@ -67,12 +71,9 @@ class CharacterActions(BaseModel):
         # Check if incapacitated first
         if self.owner.is_incapacitated():
             return False
-
-        if action_class == ActionClass.STANDARD:
-            return not self.turn_flags["standard_action_used"]
-        if action_class == ActionClass.BONUS:
-            return not self.turn_flags["bonus_action_used"]
-        return True
+        # Free and Reaction actions are always available if not incapacitated,
+        # for the rest it will properly check the availability.
+        return self.available_actions.get(action_class, True)
 
     def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
         """Return a list of natural weapon attacks available to the character.
@@ -93,13 +94,10 @@ class CharacterActions(BaseModel):
 
             for attack in weapon.attacks:
                 if self.is_on_cooldown(attack):
-                    print(f"On cooldown: {attack.name}")
                     continue
                 if not self.has_action_class(attack.action_class):
-                    print(f"No action class: {attack.name}")
                     continue
                 if not isinstance(attack, NaturalAttack):
-                    print(f"Not a NaturalAttack: {attack.name}, {type(attack)}")
                     continue
                 result.append(attack)
         return result
@@ -152,10 +150,11 @@ class CharacterActions(BaseModel):
         """
         available_actions: list[BaseAction] = []
         for action in self.owner.actions.values():
-            if not self.is_on_cooldown(action) and self.has_action_class(
-                action.action_class
-            ):
-                available_actions.append(action)
+            if self.is_on_cooldown(action):
+                continue
+            if not self.has_action_class(action.action_class):
+                continue
+            available_actions.append(action)
         return available_actions
 
     def get_available_spells(self) -> list[Spell]:
@@ -167,12 +166,13 @@ class CharacterActions(BaseModel):
         """
         available_spells: list[Spell] = []
         for spell in self.owner.spells.values():
-            if not self.is_on_cooldown(spell) and self.has_action_class(
-                spell.action_class
-            ):
-                # Check if the character has enough mind points to cast the spell.
-                if self.owner.mind >= (spell.mind_cost[0] if spell.mind_cost else 0):
-                    available_spells.append(spell)
+            if self.is_on_cooldown(spell):
+                continue
+            if not self.has_action_class(spell.action_class):
+                continue
+            if self.owner.mind < (spell.mind_cost[0] if spell.mind_cost else 0):
+                continue
+            available_spells.append(spell)
         return available_spells
 
     def turn_done(self) -> bool:
@@ -185,13 +185,19 @@ class CharacterActions(BaseModel):
         available_actions: list[BaseAction] = (
             self.get_available_actions() + self.get_available_spells()
         )
-        # Check if the character has any bonus actions available.
+        # Check if there are any FREE actions available.
+        has_free_actions: bool = any(
+            action.action_class == ActionClass.FREE for action in available_actions
+        )
         has_bonus_actions: bool = any(
             action.action_class == ActionClass.BONUS for action in available_actions
         )
-        if has_bonus_actions and not self.turn_flags["bonus_action_used"]:
-            return False
-        return self.turn_flags["standard_action_used"]
+        has_standard_actions: bool = any(
+            action.action_class == ActionClass.STANDARD for action in available_actions
+        )
+        if not has_standard_actions and not has_bonus_actions:
+            return True
+        return False
 
     def add_cooldown(self, action: BaseAction) -> None:
         """Add a cooldown to an action.
@@ -330,5 +336,5 @@ class CharacterActions(BaseModel):
                 self.cooldowns[action_name] -= 1
             if self.cooldowns[action_name] == 0:
                 del self.cooldowns[action_name]
-        # Reset turn flags.
-        self.reset_turn_flags()
+        # Reset available actions.
+        self.reset_available_actions()
