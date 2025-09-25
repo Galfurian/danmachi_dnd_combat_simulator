@@ -92,26 +92,3 @@ class IncapacitatingEffect(Effect):
 
         # Then check if damage meets the threshold
         return damage_amount >= self.damage_threshold
-
-    def can_apply(self, actor: Any, target: Any) -> bool:
-        """Incapacitating effects can be applied to any living target."""
-        return target.is_alive()
-
-    def turn_update(
-        self,
-        effect: ActiveEffect,
-    ) -> None:
-        """
-        Update the effect at the start of the target's turn.
-
-        Decrease the duration and remove the effect if it has expired.
-
-        Args:
-            effect (ActiveEffect): The active effect instance to update.
-
-        """
-        if not effect.duration:
-            raise ValueError("Effect duration is not set.")
-        if effect.duration <= 0:
-            raise ValueError("Effect duration is already zero or negative.")
-        effect.duration -= 1

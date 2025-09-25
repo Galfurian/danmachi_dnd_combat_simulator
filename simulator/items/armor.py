@@ -7,7 +7,7 @@ from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 ValidArmorEffect: TypeAlias = Union[
     DamageOverTimeEffect,

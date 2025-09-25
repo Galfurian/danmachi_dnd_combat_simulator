@@ -11,7 +11,7 @@ from core.constants import (
     BonusType,
 )
 from core.utils import cprint, debug
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.base_action import BaseAction
 

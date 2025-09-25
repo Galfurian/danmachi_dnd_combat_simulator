@@ -1,9 +1,80 @@
 from typing import Any, Literal
 
-from catchery import log_warning
-from pydantic import Field, model_validator
+from core.constants import BonusType
+from pydantic import BaseModel, Field
 
-from .base_effect import ActiveEffect, Effect, Modifier
+from .base_effect import Effect
+
+
+class Modifier(BaseModel):
+    """
+    Handles different types of modifiers that can be applied to characters.
+
+    Modifiers represent bonuses or penalties to various character attributes
+    such as HP, AC, damage, or other stats.
+    """
+
+    bonus_type: BonusType = Field(
+        description="The type of bonus the modifier applies.",
+    )
+    value: Any = Field(
+        description=(
+            "The value of the modifier. Can be an integer, string expression, or DamageComponent."
+        ),
+    )
+
+    def model_post_init(self, _) -> None:
+        from combat.damage import DamageComponent
+
+        if self.bonus_type == BonusType.DAMAGE:
+            self.value = DamageComponent(**self.value)
+        elif self.bonus_type == BonusType.ATTACK:
+            assert isinstance(
+                self.value, str
+            ), f"Modifier value for '{self.bonus_type}' must be a string expression."
+        elif self.bonus_type in [
+            BonusType.HP,
+            BonusType.MIND,
+            BonusType.AC,
+            BonusType.INITIATIVE,
+        ]:
+            # Should be either an integer or a string expression
+            if not isinstance(self.value, (int, str)):
+                raise ValueError(
+                    f"Modifier value for '{self.bonus_type}' must be an integer or string expression."
+                )
+        else:
+            raise ValueError(f"Unknown bonus type: {self.bonus_type}")
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Check if two modifiers are equal.
+
+        Args:
+            other (object): The other object to compare with.
+
+        Returns:
+            bool: True if the modifiers are equal, False otherwise.
+
+        """
+        if not isinstance(other, Modifier):
+            return False
+        return self.bonus_type == other.bonus_type and self.value == other.value
+
+    def __hash__(self) -> int:
+        """Make the modifier hashable for use in sets and dictionaries."""
+        from combat.damage import DamageComponent
+
+        if isinstance(self.value, DamageComponent):
+            # For DamageComponent, use its string representation for hashing
+            return hash(
+                (self.bonus_type, self.value.damage_roll, self.value.damage_type)
+            )
+        return hash((self.bonus_type, self.value))
+
+    def __repr__(self) -> str:
+        """String representation of the modifier."""
+        return f"Modifier({self.bonus_type.name}, {self.value})"
 
 
 class ModifierEffect(Effect):
@@ -43,49 +114,3 @@ class ModifierEffect(Effect):
         for modifier in self.modifiers:
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
-
-    def can_apply(self, actor: Any, target: Any) -> bool:
-        """
-        Check if the modifier effect can be applied to the target.
-
-        Args:
-            actor (Any): The character applying the effect.
-            target (Any): The character receiving the effect.
-
-        Returns:
-            bool: True if the effect can be applied, False otherwise.
-
-        """
-        from character.main import Character
-
-        # Validate actor and target types.
-        if not isinstance(actor, Character):
-            log_warning(
-                "ModifierEffect.can_apply called without valid actor.",
-                {"effect": self.name, "actor": actor},
-            )
-            return False
-        if not isinstance(target, Character):
-            log_warning(
-                "ModifierEffect.can_apply called without valid target.",
-                {"effect": self.name, "target": target},
-            )
-            return False
-        # If the target is dead, cannot apply effects.
-        if not target.is_alive():
-            return False
-        # Check if the target is already affected by the same modifiers.
-        return target.can_add_effect(
-            actor,
-            self,
-            actor.get_expression_variables(),
-        )
-
-    def turn_update(
-        self,
-        effect: ActiveEffect,
-    ) -> None:
-        """
-        Update the effect at the start of the target's turn.
-        """
-        pass

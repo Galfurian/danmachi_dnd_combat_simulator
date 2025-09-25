@@ -8,7 +8,7 @@ from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
 from effects.base_effect import Effect
 from effects.trigger_effect import TriggerEffect
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.abilities.base_ability import BaseAbility
 

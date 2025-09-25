@@ -13,7 +13,7 @@ from core.utils import (
     roll_and_describe,
     roll_dice_expression,
 )
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.base_action import BaseAction, ValidActionEffect
 

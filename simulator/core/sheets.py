@@ -1,36 +1,24 @@
-from actions.abilities import *
-from actions.attacks.base_attack import BaseAttack
-from actions.base_action import BaseAction
-from actions.spells import *
-from character import *
-from combat.damage import DamageComponent
-from effects import *
-from effects.base_effect import ActiveEffect
-from items.armor import *
-from items.weapon import *
+"""
+Module for printing character sheets and other game elements in a formatted way.
+"""
+
 from rich.padding import Padding
 
-from core.constants import *
+from actions.attacks.base_attack import BaseAttack
+from combat.damage import DamageComponent
 from core.content import ContentRepository
-from core.utils import *
-
-
-def damage_to_string(damage: DamageComponent) -> str:
-    """
-    Converts a DamageComponent to a formatted string with color coding.
-
-    Args:
-        damage (DamageComponent): The damage component to format.
-
-    Returns:
-        str: Formatted string with damage roll and type in appropriate colors.
-
-    """
-    return (
-        f"{damage.damage_type.colorize(damage.damage_roll)} "
-        f"{damage.damage_type.emoji} "
-        f"{damage.damage_type.colored_name}"
-    )
+from core.utils import cprint, crule
+from effects.base_effect import Effect
+from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.healing_over_time_effect import HealingOverTimeEffect
+from effects.trigger_effect import TriggerEffect
+from items.armor import Armor
+from items.weapon import Weapon
+from actions.base_action import BaseAction
+from actions.abilities import BaseAbility, AbilityBuff, AbilityHeal, AbilityOffensive
+from actions.spells import Spell, SpellHeal, SpellOffensive
+from character.main import Character
+from effects.modifier_effect import Modifier, ModifierEffect
 
 
 def modifier_to_string(modifier: Modifier) -> str:
@@ -45,7 +33,7 @@ def modifier_to_string(modifier: Modifier) -> str:
 
     """
     if isinstance(modifier.value, DamageComponent):
-        return damage_to_string(modifier.value)
+        return str(modifier.value)
     if isinstance(modifier.value, str):
         return f"[blue]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
     return f"[green]{modifier.value}[/] to {modifier.bonus_type.name.lower()}"
@@ -80,9 +68,7 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
 
         # Show damage bonus if present
         if effect.damage_bonus:
-            damage_strings = [
-                damage_to_string(damage) for damage in effect.damage_bonus
-            ]
+            damage_strings = [str(damage) for damage in effect.damage_bonus]
             details.append(f"adds {', '.join(damage_strings)} on trigger")
 
         # Show trigger effects if present
@@ -123,9 +109,7 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
 
         # Show damage bonuses
         if effect.damage_bonus:
-            damage_str = ", ".join(
-                [damage_to_string(damage) for damage in effect.damage_bonus]
-            )
+            damage_str = ", ".join([str(damage) for damage in effect.damage_bonus])
             cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
 
         # Show what it triggers
@@ -136,9 +120,7 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
 
         # Show damage bonuses
         if effect.damage_bonus:
-            damage_str = ", ".join(
-                [damage_to_string(damage) for damage in effect.damage_bonus]
-            )
+            damage_str = ", ".join([str(damage) for damage in effect.damage_bonus])
             cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
 
     # Generic passive effect - just show description
@@ -154,9 +136,7 @@ def print_base_attack_sheet(attack: BaseAttack, padding: int = 2) -> None:
     """Prints the details of a base attack in a formatted way."""
     sheet = f"[green]{attack.name}[/], "
     sheet += f"roll: [blue]1D20+{attack.attack_roll}[/], "
-    sheet += (
-        f"damage: {', '.join([damage_to_string(damage) for damage in attack.damage])}"
-    )
+    sheet += f"damage: {', '.join([str(damage) for damage in attack.damage])}"
     if attack.effects:
         cprint(Padding("Applies:", (0, padding)))
         for effect in attack.effects:
@@ -213,9 +193,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
 
     # Handle specific spell types
     if isinstance(spell, SpellOffensive):
-        sheet = (
-            f"Deals {', '.join([damage_to_string(damage) for damage in spell.damage])}"
-        )
+        sheet = f"Deals {', '.join([str(damage) for damage in spell.damage])}"
         cprint(Padding(sheet, (0, padding)))
     elif isinstance(spell, SpellHeal):
         sheet = f"Heals [green]{spell.heal_roll}[/] HP"
@@ -256,7 +234,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     # Handle specific ability types
     if isinstance(ability, AbilityOffensive):
         if ability.damage:
-            sheet = f"Deals {', '.join([damage_to_string(damage) for damage in ability.damage])}"
+            sheet = f"Deals {', '.join([str(damage) for damage in ability.damage])}"
             cprint(Padding(sheet, (0, padding)))
     elif isinstance(ability, AbilityHeal):
         sheet = f"Heals [green]{ability.heal_roll}[/] HP"
@@ -393,6 +371,15 @@ def print_character_sheet(char: Character) -> None:
             )
             if active_effect.duration and active_effect.duration > 0:
                 effect_info += f" ({active_effect.duration} turns remaining)"
+            cprint(Padding(effect_info, (0, 4)))
+
+    # Trigger Effects
+    if char._effects_module.active_triggers:
+        cprint("  [yellow]Trigger Effects[/]:")
+        for trigger_effect in char._effects_module.active_triggers:
+            effect_info = (
+                f"[{trigger_effect.effect.color}]{trigger_effect.effect.name}[/]"
+            )
             cprint(Padding(effect_info, (0, 4)))
 
     # Passive Effects (if any)

@@ -2,7 +2,7 @@ from typing import Any
 
 from core.constants import DamageType
 from core.utils import VarInfo, roll_and_describe
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class DamageComponent(BaseModel):
@@ -30,12 +30,26 @@ class DamageComponent(BaseModel):
         self.damage_roll = self.damage_roll.replace(" +", "+").replace("+ ", "+")
         self.damage_roll = self.damage_roll.replace(" -", "-").replace("- ", "-")
 
-    def __str__(self) -> str:
+    def color_roll(self, taken: Any) -> str:
+        """
+        Colors the damage taken based on the damage type.
+
+        Args:
+            taken (int):
+                The amount of damage taken.
+
+        Returns:
+            str:
+                The colored damage string.
+        """
         return (
-            f"{self.damage_type.colorize(self.damage_roll)} "
+            f"{self.damage_type.colorize(str(taken))} "
             f"{self.damage_type.emoji} "
             f"{self.damage_type.colored_name}"
         )
+
+    def __str__(self) -> str:
+        return self.color_roll(f"({self.damage_roll})")
 
 
 def roll_damage_component(

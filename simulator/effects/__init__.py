@@ -7,7 +7,7 @@ modify character behavior and combat mechanics.
 """
 
 # Import base classes
-from .base_effect import Effect, Modifier
+from .base_effect import Effect
 
 # Import damage effects
 from .damage_over_time_effect import DamageOverTimeEffect
@@ -19,7 +19,7 @@ from .healing_over_time_effect import HealingOverTimeEffect
 from .incapacitating_effect import IncapacitatingEffect
 
 # Import modifier-based effects
-from .modifier_effect import ModifierEffect
+from .modifier_effect import Modifier, ModifierEffect
 
 # Import trigger effects and related classes
 from .trigger_effect import (

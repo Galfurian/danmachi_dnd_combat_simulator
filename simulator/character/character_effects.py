@@ -1,9 +1,8 @@
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
 from collections.abc import Iterator
-from typing import Any, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
-from catchery import log_critical
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.utils import VarInfo, cprint, get_max_roll
@@ -13,7 +12,6 @@ from effects.healing_over_time_effect import HealingOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import (
-    HitTriggerEvent,
     TriggerEvent,
     TriggerEffect,
     ValidTriggerEffect,
@@ -626,7 +624,8 @@ class CharacterEffects(BaseModel):
         """
         updated = []
         for ae in self.active_effects:
-            ae.effect.turn_update(ae)
+
+            ae.turn_update()
 
             # Only decrement duration if it's not None (indefinite effects)
             if ae.duration is not None:

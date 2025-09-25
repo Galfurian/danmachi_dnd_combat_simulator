@@ -14,7 +14,7 @@ from core.utils import (
     simplify_expression,
     substitute_variables,
 )
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.spells.base_spell import Spell
 

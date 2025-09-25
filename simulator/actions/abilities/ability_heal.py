@@ -11,7 +11,7 @@ from core.utils import (
     roll_and_describe,
     substitute_variables,
 )
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.abilities.base_ability import BaseAbility
 

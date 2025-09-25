@@ -2,7 +2,7 @@ from typing import Any, Literal
 
 from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class Weapon(BaseModel):

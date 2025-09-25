@@ -1,12 +1,21 @@
 from typing import Any, TYPE_CHECKING
 
 from combat.damage import DamageComponent
-from core.constants import BonusType
-from core.utils import VarInfo
-from pydantic import BaseModel, Field, model_validator
+from core.utils import VarInfo, cprint, roll_and_describe
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from effects.trigger_effect import TriggerEvent, TriggerEffect, ValidTriggerEffect
+    from character.main import Character
+    from effects.damage_over_time_effect import DamageOverTimeEffect
+    from effects.healing_over_time_effect import HealingOverTimeEffect
+    from effects.incapacitating_effect import IncapacitatingEffect
+    from effects.modifier_effect import ModifierEffect
+    from effects.trigger_effect import (
+        TriggerEvent,
+        TriggerType,
+        TriggerEffect,
+        ValidTriggerEffect,
+    )
 
 
 class Effect(BaseModel):
@@ -55,22 +64,6 @@ class Effect(BaseModel):
         """Applies effect color formatting to a message."""
         return f"[{self.color}]{message}[/]"
 
-    def turn_update(
-        self,
-        effect: "ActiveEffect",
-    ) -> None:
-        """Update the effect for the current turn.
-
-        Args:
-            effect (ActiveEffect):
-                The active effect instance containing actor, target, and
-                variables.
-
-        """
-        raise NotImplementedError(
-            f"turn_update not implemented for effect {self.name}",
-        )
-
     def is_permanent(self) -> bool:
         """Check if the effect is permanent (i.e., has no duration limit).
 
@@ -80,109 +73,39 @@ class Effect(BaseModel):
         """
         return self.duration is None or self.duration <= 0
 
-    def can_apply(self, actor: Any, target: Any) -> bool:
-        """Check if the effect can be applied to the target.
+    def can_apply(
+        self,
+        actor: "Character",
+        target: "Character",
+    ) -> bool:
+        """
+        Check if the effect can be applied to the target.
 
         Args:
-            actor (Any): The character applying the effect.
-            target (Any): The character receiving the effect.
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
 
         Returns:
-            bool: True if the effect can be applied, False otherwise.
+            bool:
+                True if the effect can be applied, False otherwise.
 
         """
-        try:
-            if not actor:
-                print(
-                    f"Actor cannot be None when checking if effect {self.name} can be applied",
-                )
-                return False
-
-            if not target:
-                print(
-                    f"Target cannot be None when checking if effect {self.name} can be applied",
-                )
-                return False
-
-            return False  # Base implementation
-
-        except Exception as e:
-            print(
-                f"Error checking if effect {self.name} can be applied: {e!s}",
-                e,
+        if actor.is_dead():
+            cprint(f"    [bold red]{actor.name} is dead and cannot apply effects![/]")
+            return False
+        if target.is_dead():
+            cprint(
+                f"    [bold red]{target.name} is dead and cannot receive effects![/]"
             )
             return False
-
-
-class Modifier(BaseModel):
-    """
-    Handles different types of modifiers that can be applied to characters.
-
-    Modifiers represent bonuses or penalties to various character attributes
-    such as HP, AC, damage, or other stats.
-    """
-
-    bonus_type: BonusType = Field(
-        description="The type of bonus the modifier applies.",
-    )
-    value: Any = Field(
-        description=(
-            "The value of the modifier. Can be an integer, string expression, or DamageComponent."
-        ),
-    )
-
-    def model_post_init(self, _) -> None:
-        from combat.damage import DamageComponent
-
-        if self.bonus_type == BonusType.DAMAGE:
-            self.value = DamageComponent(**self.value)
-        elif self.bonus_type == BonusType.ATTACK:
-            assert isinstance(
-                self.value, str
-            ), f"Modifier value for '{self.bonus_type}' must be a string expression."
-        elif self.bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ]:
-            # Should be either an integer or a string expression
-            if not isinstance(self.value, (int, str)):
-                raise ValueError(
-                    f"Modifier value for '{self.bonus_type}' must be an integer or string expression."
-                )
-        else:
-            raise ValueError(f"Unknown bonus type: {self.bonus_type}")
-
-    def __eq__(self, other: object) -> bool:
-        """
-        Check if two modifiers are equal.
-
-        Args:
-            other (object): The other object to compare with.
-
-        Returns:
-            bool: True if the modifiers are equal, False otherwise.
-
-        """
-        if not isinstance(other, Modifier):
-            return False
-        return self.bonus_type == other.bonus_type and self.value == other.value
-
-    def __hash__(self) -> int:
-        """Make the modifier hashable for use in sets and dictionaries."""
-        from combat.damage import DamageComponent
-
-        if isinstance(self.value, DamageComponent):
-            # For DamageComponent, use its string representation for hashing
-            return hash(
-                (self.bonus_type, self.value.damage_roll, self.value.damage_type)
-            )
-        return hash((self.bonus_type, self.value))
-
-    def __repr__(self) -> str:
-        """String representation of the modifier."""
-        return f"Modifier({self.bonus_type.name}, {self.value})"
+        # Check if the target is already affected by the same modifiers.
+        return target.can_add_effect(
+            actor,
+            self,
+            actor.get_expression_variables(),
+        )
 
 
 class ActiveEffect(BaseModel):
@@ -191,10 +114,10 @@ class ActiveEffect(BaseModel):
     target, effect details, mind level, and duration.
     """
 
-    source: Any = Field(
+    source: "Character" = Field(
         description="The source of the effect (the caster)",
     )
-    target: Any = Field(
+    target: "Character" = Field(
         description="The target of the effect (the recipient)",
     )
     effect: Effect = Field(
@@ -209,13 +132,86 @@ class ActiveEffect(BaseModel):
         description="List of variable info for dynamic calculations",
     )
 
-    def model_post_init(self, _) -> None:
-        from character.main import Character
+    def turn_update(self) -> None:
+        """
+        Update the effect for the current turn by calling the effect's
+        turn_update method.
 
-        if not isinstance(self.source, Character):
-            raise ValueError("Source must be a Character instance.")
-        if not isinstance(self.target, Character):
-            raise ValueError("Target must be a Character instance.")
+        """
+
+        if isinstance(self.effect, DamageOverTimeEffect):
+            # Calculate the damage amount using the provided expression.
+            outcome = roll_and_describe(
+                self.effect.damage.damage_roll,
+                self.variables,
+            )
+            if outcome.value < 0:
+                raise ValueError(
+                    "Damage value must be non-negative for DamageOverTimeEffect"
+                    f" '{self.effect.name}', got {outcome.value}."
+                )
+            # Apply the damage to the target.
+            base, adjusted, taken = self.target.take_damage(
+                outcome.value, self.effect.damage.damage_type
+            )
+            # If the damage value is positive, print the damage message.
+            dot_str = f"    {self.effect.emoji} "
+            dot_str += self.target.colored_name + " takes "
+            # Create a damage string for display.
+            dot_str += f"{self.effect.damage.color_roll(taken)} "
+            # If the base damage differs from the adjusted damage (due to resistances),
+            # include the original and adjusted values in the damage string.
+            if base != adjusted:
+                dot_str += f"[dim](reduced: {base} → {adjusted})[/] "
+            # Append the rolled damage expression to the damage string.
+            dot_str += f"({outcome.description})"
+            # Print the damage string.
+            cprint(dot_str)
+            # If the target is defeated, print a message.
+            if not self.target.is_alive():
+                cprint(f"    [bold red]{self.target.name} has been defeated![/]")
+
+        elif isinstance(self.effect, HealingOverTimeEffect):
+
+            # Calculate the heal amount using the provided expression.
+            outcome = roll_and_describe(
+                self.effect.heal_per_turn,
+                self.variables,
+            )
+            # Assert that the heal value is a positive integer.
+            if outcome.value < 0:
+                raise ValueError(
+                    "Heal value must be non-negative for HealingOverTimeEffect"
+                    f" '{self.effect.name}', got {outcome.value}."
+                )
+            # Apply the heal to the target.
+            hot_value = self.target.heal(outcome.value)
+            # If the heal value is positive, print the heal message.
+            message = f"    {self.effect.emoji} "
+            message += self.target.char_type.colorize(self.target.name)
+            message += (
+                f" heals for {hot_value} ([white]{outcome.description}[/]) hp from "
+            )
+            message += self.effect.colored_name + "."
+            cprint(message)
+
+        elif isinstance(self.effect, IncapacitatingEffect):
+
+            if not self.duration:
+                raise ValueError("Effect duration is not set.")
+            if self.duration <= 0:
+                raise ValueError("Effect duration is already zero or negative.")
+            self.duration -= 1
+
+        elif isinstance(self.effect, ModifierEffect):
+
+            pass
+
+        elif isinstance(self.effect, TriggerEffect):
+
+            raise ValueError("This should not be called.")
+
+    def model_post_init(self, _) -> None:
         if not isinstance(self.effect, Effect):
             raise ValueError("Effect must be an Effect instance.")
         if self.duration is not None and self.duration < 0:
@@ -262,18 +258,17 @@ class ActiveTrigger(ActiveEffect):
 
     def check_trigger(self, event: "TriggerEvent") -> bool:
         """
-        Check if the trigger condition is met and the effect can be activated.
+        Check if the trigger condition is met for the given event.
 
         Args:
-            character (Any):
-                The character to check the trigger condition against.
-            event_data (dict[str, Any]):
-                Context data about the triggering event.
+            event (TriggerEvent):
+                The event to check against the trigger condition.
 
         Returns:
             bool:
-                True if the trigger condition is met and the effect can be
-                activated, False otherwise.
+                True if the trigger condition is met and the trigger can
+                activate, False otherwise.
+
         """
         # Check if we have exceeded max triggers.
         if self.exceeded_max_triggers():
@@ -361,7 +356,6 @@ class ActiveTrigger(ActiveEffect):
             bool:
                 True if the trigger is turn-based, False otherwise.
         """
-        from effects.trigger_effect import TriggerType
 
         if not self.trigger.trigger_condition.trigger_type:
             return False
@@ -392,8 +386,6 @@ class ActiveTrigger(ActiveEffect):
             bool:
                 True if the trigger has activated this turn, False otherwise.
         """
-        from effects.trigger_effect import TriggerType
-
         return self.is_turn_based_trigger() and self.has_triggered_this_turn
 
     def increment_triggers_used(self) -> None:

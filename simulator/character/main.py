@@ -23,7 +23,7 @@ from character.character_effects import CharacterEffects, TriggerResult
 from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 ValidPassiveEffect: TypeAlias = Union[
     DamageOverTimeEffect,
@@ -789,6 +789,10 @@ class Character(BaseModel):
 
     def __eq__(self, other: object) -> bool:
         return self.name == getattr(other, "name", None)
+
+
+# Rebuild CharacterEffects to resolve forward references
+CharacterEffects.model_rebuild()
 
 
 def load_character(file_path: Path) -> Character | None:

@@ -1,9 +1,8 @@
-from collections.abc import Callable
 from enum import Enum
 from typing import Any, Literal, TypeAlias, Union
 
 from combat.damage import DamageComponent
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from .base_effect import Effect
 from .damage_over_time_effect import DamageOverTimeEffect
@@ -396,31 +395,6 @@ class TriggerEffect(Effect):
             raise ValueError("Cooldown turns must be non-negative.")
         if self.max_triggers is not None and self.max_triggers < 0:
             raise ValueError("Max triggers must be None (unlimited) or non-negative.")
-
-    def can_apply(self, actor: Any, target: Any) -> bool:
-        """TriggerEffect effects can be applied to any living target."""
-        return target.is_alive()
-
-    def turn_update(
-        self,
-        effect: Any,
-    ) -> None:
-        """
-        Update trigger state at the start/end of turns.
-
-        Args:
-            effect (ActiveEffect): The active effect instance.
-
-        """
-        from effects.base_effect import ActiveTrigger
-
-        if not isinstance(effect, ActiveTrigger):
-            raise ValueError("Effect must be an instance of ActiveTrigger.")
-
-        # First, clear the triggered this turn flag.
-        effect.clear_triggered_this_turn()
-        # Decrement the cooldown counter if applicable.
-        effect.decrement_cooldown()
 
     def is_type(self, trigger_type: TriggerType) -> bool:
         """Check if this trigger activates on the specified trigger type."""

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from logging import debug
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.rule import Rule
 from catchery import log_warning

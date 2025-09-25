@@ -9,7 +9,7 @@ from core.constants import (
     BonusType,
 )
 from core.utils import cprint
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from actions.spells.base_spell import Spell
 
