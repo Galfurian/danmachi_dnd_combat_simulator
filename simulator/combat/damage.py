@@ -20,8 +20,7 @@ class DamageComponent(BaseModel):
         description="The type of damage (e.g., PHYSICAL, FIRE)",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "DamageComponent":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.damage_roll:
             raise ValueError("damage_roll must be a non-empty string")
@@ -30,7 +29,6 @@ class DamageComponent(BaseModel):
         # Remove space before and after '+' in damage_roll.
         self.damage_roll = self.damage_roll.replace(" +", "+").replace("+ ", "+")
         self.damage_roll = self.damage_roll.replace(" -", "-").replace("- ", "-")
-        return self
 
     def __str__(self) -> str:
         return (

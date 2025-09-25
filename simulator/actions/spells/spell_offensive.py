@@ -30,12 +30,10 @@ class SpellOffensive(Spell):
         description="List of damage components for this ability",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "SpellOffensive":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.damage or not isinstance(self.damage, list):
             raise ValueError("damage must be a non-empty list of DamageComponent")
-        return self
 
     # ============================================================================
     # SPELL ATTACK METHODS

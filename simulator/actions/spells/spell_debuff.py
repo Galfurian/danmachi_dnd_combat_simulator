@@ -22,8 +22,7 @@ class SpellDebuff(Spell):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "SpellDebuff":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         from effects.modifier_effect import ModifierEffect
         from effects.incapacitating_effect import IncapacitatingEffect
@@ -38,7 +37,6 @@ class SpellDebuff(Spell):
                 raise ValueError(
                     "All effects must be ModifierEffect or IncapacitatingEffect instances"
                 )
-        return self
 
     # ============================================================================
     # DEBUFF SPELL METHODS

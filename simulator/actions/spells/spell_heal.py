@@ -35,15 +35,13 @@ class SpellHeal(Spell):
         description="The expression used to calculate healing amount.",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "SpellHeal":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.heal_roll or not isinstance(self.heal_roll, str):
             raise ValueError("heal_roll must be a non-empty string")
         # Remove spaces before and after '+' and '-'.
         self.heal_roll = self.heal_roll.replace(" +", "+").replace("+ ", "+")
         self.heal_roll = self.heal_roll.replace(" -", "-").replace("- ", "-")
-        return self
 
     # ============================================================================
     # HEALING SPELL METHODS

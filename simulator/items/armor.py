@@ -1,6 +1,6 @@
 # armor.py
 
-from typing import Any, Union
+from typing import Any, TypeAlias, Union
 
 from core.constants import ArmorSlot, ArmorType
 from effects.damage_over_time_effect import DamageOverTimeEffect
@@ -8,6 +8,13 @@ from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field, model_validator
+
+ValidArmorEffect: TypeAlias = Union[
+    DamageOverTimeEffect,
+    ModifierEffect,
+    IncapacitatingEffect,
+    TriggerEffect,
+]
 
 
 class Armor(BaseModel):
@@ -43,19 +50,12 @@ class Armor(BaseModel):
         ),
         ge=0,
     )
-    effect: Union[
-        DamageOverTimeEffect,
-        ModifierEffect,
-        IncapacitatingEffect,
-        TriggerEffect,
-        None,
-    ] = Field(
-        default=None,
+    effects: list[ValidArmorEffect] = Field(
+        default_factory=list,
         description="An optional special effect granted by this armor piece.",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "Armor":
+    def model_post_init(self, _) -> None:
         """
         Validate the armor's properties.
 
@@ -74,7 +74,6 @@ class Armor(BaseModel):
         assert (
             self.max_dex_bonus >= 0
         ), "Max Dexterity bonus must be a non-negative integer."
-        return self
 
     def get_ac(self, dex_mod: int = 0) -> int:
         """
@@ -98,3 +97,23 @@ class Armor(BaseModel):
         if self.armor_slot == ArmorSlot.SHIELD:
             return self.ac
         return 0
+
+    def apply_effects(self, wearer: Any) -> None:
+        """
+        Applies all effects of the armor to the wearer.
+
+        Args:
+            wearer (Any):
+                The entity to which the armor effects will be applied.
+
+        """
+        from character.main import Character
+
+        if not isinstance(wearer, Character):
+            raise ValueError("Wearer must be a Character instance.")
+
+        variables = wearer.get_expression_variables()
+
+        for effect in self.effects:
+            if wearer.can_add_effect(wearer, effect):
+                wearer.add_effect(wearer, effect)

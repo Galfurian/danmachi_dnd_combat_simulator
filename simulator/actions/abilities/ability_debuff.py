@@ -19,18 +19,15 @@ class AbilityDebuff(BaseAbility):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "AbilityDebuff":
+    def model_post_init(self, _) -> None:
         """Ensure that the effect field is properly set."""
         from effects.base_effect import Effect
 
         if not self.effects:
-            raise ValueError("AbilityBuff must have an effect defined.")
+            raise ValueError("AbilityDebuff must have an effect defined.")
 
         if not all(isinstance(effect, Effect) for effect in self.effects):
             raise ValueError("All effects must be Effect instances.")
-
-        return self
 
     def execute(self, actor: Any, target: Any) -> bool:
         """

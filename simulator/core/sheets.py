@@ -62,7 +62,7 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """
     sheet: str = f"[blue]{effect.name}[/], "
     if effect.description:
-        sheet += f"[italic]{effect.description}[/], "
+        sheet += f'[italic]"{effect.description}"[/], '
     if effect.duration:
         sheet += f"{effect.duration} turns, "
     if isinstance(effect, ModifierEffect):
@@ -95,7 +95,7 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         if details:
             sheet += ", ".join(details)
         else:
-            sheet += effect.trigger_condition.description
+            sheet += f'[italic]"{effect.trigger_condition.description}"[/]'
 
     cprint(Padding(sheet, (0, padding)))
 
@@ -110,7 +110,7 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
     """Prints the details of a passive effect in a formatted way."""
     sheet: str = f"[{effect.color}]{effect.name}[/]"
     if effect.description:
-        sheet += f" - [italic]{effect.description}[/]"
+        sheet += f' - [italic]"{effect.description}"[/]'
     cprint(Padding(sheet, (0, padding)))
 
     # Handle TriggerEffect effects
@@ -169,7 +169,7 @@ def print_weapon_sheet(weapon: Weapon, padding: int = 2) -> None:
     sheet: str = f"[blue]{weapon.name}[/], "
     if weapon.requires_hands():
         sheet += f"{weapon.get_required_hands()} hands, "
-    sheet += f"[italic]{weapon.description}[/]"
+    sheet += f'[italic]"{weapon.description}"[/]'
     cprint(Padding(sheet, (0, padding)))
     for attack in weapon.attacks:
         print_base_attack_sheet(attack, padding + 2)
@@ -183,10 +183,12 @@ def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
     sheet += f"AC: {armor.ac}, "
     if armor.max_dex_bonus:
         sheet += f"Max Dex Bonus: {armor.max_dex_bonus}, "
-    sheet += f"[italic]{armor.description}[/]"
+    sheet += f'[italic]"{armor.description}"[/]'
     cprint(Padding(sheet, (0, padding)))
-    if armor.effect:
-        print_effect_sheet(armor.effect, padding + 2)
+    if armor.effects:
+        cprint(Padding("Applies:", (0, padding)))
+        for effect in armor.effects:
+            print_effect_sheet(effect, padding + 2)
 
 
 def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
@@ -206,7 +208,7 @@ def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
         sheet += f"max uses: {spell.get_maximum_uses()}, "
     cprint(Padding(sheet, (0, padding)))
     padding += 2
-    sheet = f"[italic]{spell.description}[/]"
+    sheet = f'[italic]"{spell.description}"[/]'
     cprint(Padding(sheet, (0, padding)))
 
     # Handle specific spell types
@@ -248,7 +250,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
     padding += 2
 
     # Description
-    sheet = f"[italic]{ability.description}[/]"
+    sheet = f'[italic]"{ability.description}"[/]'
     cprint(Padding(sheet, (0, padding)))
 
     # Handle specific ability types
@@ -289,7 +291,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         # Generic action display
         sheet: str = f"{action.category.colorize(action.name)}[/], "
         sheet += f"{action.action_class.colored_name}, "
-        sheet += f"[italic]{action.description}[/]"
+        sheet += f'[italic]"{action.description}"[/]'
         cprint(Padding(sheet, (0, padding)))
 
         # Handle generic action effects if they exist

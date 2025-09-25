@@ -22,8 +22,7 @@ class SpellBuff(Spell):
 
     category: ActionCategory = ActionCategory.BUFF
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "SpellBuff":
+    def model_post_init(self, _) -> None:
         """Ensure that the effects field is properly set."""
         from effects.modifier_effect import ModifierEffect
         from effects.trigger_effect import TriggerEffect
@@ -38,7 +37,6 @@ class SpellBuff(Spell):
                 raise ValueError(
                     f"SpellBuff effects must be ModifierEffect or TriggerEffect instances."
                 )
-        return self
 
     # ============================================================================
     # BUFF SPELL METHODS

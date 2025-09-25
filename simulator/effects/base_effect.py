@@ -131,21 +131,16 @@ class Modifier(BaseModel):
         ),
     )
 
-    @model_validator(mode="after")
-    def check_bonus_type(self) -> Any:
+    def model_post_init(self, _) -> None:
         from combat.damage import DamageComponent
 
         if self.bonus_type == BonusType.DAMAGE:
             self.value = DamageComponent(**self.value)
-            return self
-
-        if self.bonus_type == BonusType.ATTACK:
+        elif self.bonus_type == BonusType.ATTACK:
             assert isinstance(
                 self.value, str
             ), f"Modifier value for '{self.bonus_type}' must be a string expression."
-            return self
-
-        if self.bonus_type in [
+        elif self.bonus_type in [
             BonusType.HP,
             BonusType.MIND,
             BonusType.AC,
@@ -156,9 +151,8 @@ class Modifier(BaseModel):
                 raise ValueError(
                     f"Modifier value for '{self.bonus_type}' must be an integer or string expression."
                 )
-            return self
-
-        raise ValueError(f"Unknown bonus type: {self.bonus_type}")
+        else:
+            raise ValueError(f"Unknown bonus type: {self.bonus_type}")
 
     def __eq__(self, other: object) -> bool:
         """
@@ -215,8 +209,7 @@ class ActiveEffect(BaseModel):
         description="List of variable info for dynamic calculations",
     )
 
-    @model_validator(mode="after")
-    def check_fields(self) -> Any:
+    def model_post_init(self, _) -> None:
         from character.main import Character
 
         if not isinstance(self.source, Character):
@@ -229,7 +222,7 @@ class ActiveEffect(BaseModel):
             raise ValueError("Duration must be a non-negative integer or None.")
         if not all(isinstance(var, VarInfo) for var in self.variables):
             raise ValueError("All items in variables must be VarInfo instances.")
-        return self
+
 
 class ActiveTrigger(ActiveEffect):
     """

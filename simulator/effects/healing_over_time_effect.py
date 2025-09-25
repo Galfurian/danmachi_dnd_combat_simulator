@@ -30,19 +30,13 @@ class HealingOverTimeEffect(Effect):
         """Returns the emoji for healing over time effects."""
         return "💚"
 
-    @model_validator(mode="after")
-    def check_duration(self) -> Any:
+    def model_post_init(self, _) -> None:
         if self.duration is None or self.duration <= 0:
             raise ValueError(
                 "Duration must be a positive integer for HealingOverTimeEffect."
             )
-        return self
-
-    @model_validator(mode="after")
-    def check_heal_per_turn(self) -> Any:
         if not isinstance(self.heal_per_turn, str):
             raise ValueError("Heal per turn must be a string expression.")
-        return self
 
     def turn_update(self, effect: ActiveEffect) -> None:
         """

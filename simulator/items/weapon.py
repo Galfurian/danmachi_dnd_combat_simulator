@@ -28,8 +28,7 @@ class Weapon(BaseModel):
         description="Number of hands required to wield this weapon.",
     )
 
-    @model_validator(mode="after")
-    def rename_attacks(self) -> "Weapon":
+    def model_post_init(self, _) -> None:
         """
         Automatically prefix attack names with the weapon name for clarity.
 
@@ -37,9 +36,9 @@ class Weapon(BaseModel):
             Weapon:
                 The weapon instance with renamed attacks.
         """
-        #for attack in self.attacks:
+        # for attack in self.attacks:
         #    attack.name = f"{self.name} - {attack.name}"
-        return self
+        pass
 
     # ===========================================================================
     # GENERIC METHODS
@@ -68,8 +67,7 @@ class NaturalWeapon(Weapon):
 
     weapon_type: Literal["NaturalWeapon"] = "NaturalWeapon"
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "NaturalWeapon":
+    def model_post_init(self, _) -> None:
         if self.hands_required != 0:
             raise ValueError("Natural weapons cannot require hands.")
 
@@ -77,23 +75,18 @@ class NaturalWeapon(Weapon):
             print(self)
             raise ValueError("All attacks must be of type NaturalAttack.")
 
-        return self
-
 
 class WieldedWeapon(Weapon):
 
     weapon_type: Literal["WieldedWeapon"] = "WieldedWeapon"
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "WieldedWeapon":
+    def model_post_init(self, _) -> None:
         if self.hands_required <= 0:
             raise ValueError("Wielded weapons must require at least one hand.")
 
         if not all(isinstance(a, WeaponAttack) for a in self.attacks):
             print(self)
             raise ValueError("All attacks must be of type WeaponAttack.")
-
-        return self
 
 
 def deserialize_weapon(data: dict[str, Any]) -> Weapon:

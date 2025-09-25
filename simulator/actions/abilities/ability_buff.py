@@ -19,8 +19,7 @@ class AbilityBuff(BaseAbility):
 
     category: ActionCategory = ActionCategory.BUFF
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "AbilityBuff":
+    def model_post_init(self, _) -> None:
         """Ensure that the effect field is properly set."""
         from effects.base_effect import Effect
 
@@ -29,8 +28,6 @@ class AbilityBuff(BaseAbility):
 
         if not all(isinstance(effect, Effect) for effect in self.effects):
             raise ValueError("All effects must be Effect instances.")
-
-        return self
 
     def execute(self, actor: Any, target: Any) -> bool:
         """

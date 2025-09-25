@@ -43,15 +43,13 @@ class Spell(BaseAction):
         description="Whether the spell requires concentration to maintain.",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "Spell":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.mind_cost or not isinstance(self.mind_cost, list):
             raise ValueError("mind_cost must be a non-empty list of integers")
         for cost in self.mind_cost:
             if not isinstance(cost, int) or cost < 1:
                 raise ValueError("Each mind cost must be a positive integer")
-        return self
 
     @property
     def colored_name(self) -> str:

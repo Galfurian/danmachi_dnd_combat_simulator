@@ -745,14 +745,12 @@
     },
     {
         "action_type": "SpellBuff",
-        "name": "Invisibility",
+        "name": "Blurr",
         "action_class": "STANDARD",
-        "description": "A creature you touch becomes invisible until the spell ends.",
+        "description": "Your body becomes blurred, shifting and wavering to all who can see you.",
         "level": 2,
         "mind_cost": [
-            2,
-            3,
-            4
+            2
         ],
         "requires_concentration": true,
         "target_restrictions": [
@@ -761,18 +759,14 @@
         ],
         "effects": [
             {
-                "name": "Invisible",
+                "name": "Blurr",
                 "effect_type": "ModifierEffect",
-                "description": "The target is invisible and has advantage on stealth.",
-                "duration": 10,
+                "description": "The target becomes blurred, making it harder to hit.",
+                "duration": 2,
                 "modifiers": [
                     {
                         "bonus_type": "AC",
                         "value": "2"
-                    },
-                    {
-                        "bonus_type": "ATTACK",
-                        "value": "5"
                     }
                 ]
             }

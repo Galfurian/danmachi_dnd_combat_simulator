@@ -34,8 +34,7 @@ class BaseAttack(BaseAction):
         description="List of damage components for the attack",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "BaseAttack":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.attack_roll:
             raise ValueError("attack_roll must be a non-empty string")
@@ -44,7 +43,6 @@ class BaseAttack(BaseAction):
         # Remove spaces before and after '+' and '-'.
         self.attack_roll = self.attack_roll.replace(" +", "+").replace("+ ", "+")
         self.attack_roll = self.attack_roll.replace(" -", "-").replace("- ", "-")
-        return self
 
     @property
     def colored_name(self) -> str:

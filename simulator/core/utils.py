@@ -93,8 +93,7 @@ class VarInfo(BaseModel):
     name: str = Field(description="Variable name")
     value: int = Field(description="Variable value")
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "VarInfo":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.name or not isinstance(self.name, str):
             raise ValueError("name must be a non-empty string")
@@ -102,7 +101,6 @@ class VarInfo(BaseModel):
             raise ValueError("value must be an integer")
         # Normalize name to uppercase.
         self.name = self.name.upper().strip()
-        return self
 
     def replace_in_expr(self, expr: str) -> str:
         """

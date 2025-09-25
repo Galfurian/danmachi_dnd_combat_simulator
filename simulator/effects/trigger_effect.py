@@ -368,27 +368,18 @@ class TriggerEffect(Effect):
         """Returns the emoji for trigger effects."""
         return "⚡"
 
-    @model_validator(mode="after")
-    def check_trigger_condition(self) -> Any:
+    def model_post_init(self, _) -> None:
         if not isinstance(self.trigger_condition, TriggerCondition):
             raise ValueError("Trigger condition must be a TriggerCondition instance.")
         if not self.trigger_condition.description:
             self.trigger_condition.description = (
                 self.trigger_condition._generate_description()
             )
-        return self
-
-    @model_validator(mode="after")
-    def check_trigger_effects(self) -> Any:
         for effect in self.trigger_effects or []:
             if not isinstance(effect, Effect):
                 raise ValueError(
                     f"Each trigger effect must be an Effect instance, got {type(effect)}"
                 )
-        return self
-
-    @model_validator(mode="after")
-    def check_damage_bonus(self) -> Any:
         if self.damage_bonus is None:
             self.damage_bonus = []
         elif not isinstance(self.damage_bonus, list):
@@ -401,19 +392,10 @@ class TriggerEffect(Effect):
                     raise ValueError(
                         f"Each damage bonus must be a DamageComponent instance, got {type(dmg)}"
                     )
-        return self
-
-    @model_validator(mode="after")
-    def check_cooldown_turns(self) -> Any:
         if self.cooldown_turns < 0:
             raise ValueError("Cooldown turns must be non-negative.")
-        return self
-
-    @model_validator(mode="after")
-    def check_max_triggers(self) -> Any:
         if self.max_triggers is not None and self.max_triggers < 0:
             raise ValueError("Max triggers must be None (unlimited) or non-negative.")
-        return self
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """TriggerEffect effects can be applied to any living target."""

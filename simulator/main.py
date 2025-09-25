@@ -56,11 +56,21 @@ cprint("Loading player character...", style="bold green")
 player = load_character(data_dir / "player.json")
 assert player is not None, "Player character could not be loaded."
 
-crule("Data Initialized", style="bold green", characters="=")
+crule("Enemies", style="bold green", characters="=")
 
 for enemy_name, enemy in enemies.items():
     crule(f"Enemy: {enemy_name}", style="bold red", characters="-")
     print_character_sheet(enemy)
+
+crule("Character", style="bold green", characters="=")
+
+for char_name, char in characters.items():
+    crule(f"Character: {char_name}", style="bold blue", characters="-")
+    print_character_sheet(char)
+
+crule("Player", style="bold green", characters="=")
+
+print_character_sheet(player)
 
 # =============================================================================
 

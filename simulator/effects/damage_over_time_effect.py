@@ -31,19 +31,13 @@ class DamageOverTimeEffect(Effect):
         """Returns the emoji for damage over time effects."""
         return "❣️"
 
-    @model_validator(mode="after")
-    def check_duration(self) -> Any:
+    def model_post_init(self, _) -> None:
         if self.duration is None or self.duration <= 0:
             raise ValueError(
                 "Duration must be a positive integer for DamageOverTimeEffect."
             )
-        return self
-
-    @model_validator(mode="after")
-    def check_damage(self) -> Any:
         if not isinstance(self.damage, DamageComponent):
             raise ValueError("Damage must be of type DamageComponent.")
-        return self
 
     def turn_update(
         self,

@@ -173,6 +173,8 @@ class CharacterInventory(BaseModel):
         if self.can_equip_armor(armor):
             # Add the armor to the character's armor list.
             self.owner.equipped_armor.append(armor)
+            # Apply armor effects to the character.
+            armor.apply_effects(self.owner)
             return True
         log_warning(
             f"{self.owner.name} cannot equip {armor.name} because the armor slot is already occupied",

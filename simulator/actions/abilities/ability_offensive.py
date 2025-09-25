@@ -27,15 +27,13 @@ class AbilityOffensive(BaseAbility):
         description="List of damage components for this ability",
     )
 
-    @model_validator(mode="after")
-    def validate_fields(self) -> "AbilityOffensive":
+    def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
         if not self.damage or not isinstance(self.damage, list):
             raise ValueError("damage must be a non-empty list of DamageComponent")
         # Remove spaces before and after '+' and '-'.
         self.attack_roll = self.attack_roll.replace(" +", "+").replace("+ ", "+")
         self.attack_roll = self.attack_roll.replace(" -", "-").replace("- ", "-")
-        return self
 
     @property
     def colored_name(self) -> str:

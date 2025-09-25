@@ -23,7 +23,7 @@ from character.character_effects import CharacterEffects, TriggerResult
 from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 ValidPassiveEffect: TypeAlias = Union[
     DamageOverTimeEffect,
@@ -193,8 +193,7 @@ class Character(BaseModel):
 
         return data
 
-    @model_validator(mode="after")
-    def setup_character(self) -> "Character":
+    def model_post_init(self, _) -> None:
         """
         Post-initialization to set up dynamic properties and modules.
         """
@@ -236,8 +235,6 @@ class Character(BaseModel):
                     spell = repo.get_spell(action_name)
                     if spell:
                         self.learn_spell(spell)
-
-        return self
 
     # ============================================================================
     # DELEGATED STAT PROPERTIES
@@ -431,7 +428,7 @@ class Character(BaseModel):
         adjusted = max(adjusted, 0)
 
         # Apply the damage and get the actual damage taken.
-        actual = self._stats_module.adjust_hp(amount)
+        actual = abs(self._stats_module.adjust_hp(-adjusted))
 
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.

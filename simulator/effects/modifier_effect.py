@@ -30,8 +30,7 @@ class ModifierEffect(Effect):
         """Returns the emoji for modifier effects."""
         return "🛡️"
 
-    @model_validator(mode="after")
-    def check_modifiers(self) -> "ModifierEffect":
+    def model_post_init(self, _) -> None:
         """
         Ensure that the modifiers list is not empty.
 
@@ -44,7 +43,6 @@ class ModifierEffect(Effect):
         for modifier in self.modifiers:
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
-        return self
 
     def can_apply(self, actor: Any, target: Any) -> bool:
         """
