@@ -1,4 +1,3 @@
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -32,5 +31,6 @@ class CharacterRace(BaseModel):
         Returns:
             int:
                 The hash value of the character class.
+
         """
         return hash(self.name)

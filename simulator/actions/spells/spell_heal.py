@@ -10,7 +10,6 @@ from core.utils import (
     cprint,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
-    roll_and_describe,
     simplify_expression,
     substitute_variables,
 )

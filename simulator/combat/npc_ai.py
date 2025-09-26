@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from actions.abilities import (
     AbilityBuff,
@@ -14,7 +14,6 @@ from actions.spells.base_spell import Spell
 from character import Character
 from core.utils import VarInfo
 from pydantic import BaseModel, Field
-
 
 # =============================================================================
 # Support Functions
@@ -537,6 +536,7 @@ def _get_best_ability_attack(
         AbilitySelection | None:
             The best ability the source can use, or None if no valid targets
             are found.
+
     """
     variables = source.get_expression_variables()
 
@@ -583,6 +583,7 @@ def _get_best_ability_heal(
         AbilitySelection | None:
             The best ability the source can use, or None if no valid targets
             are found.
+
     """
     variables = source.get_expression_variables()
 
@@ -629,6 +630,7 @@ def _get_best_ability_buff_or_debuff(
         AbilitySelection | None:
             The best ability the source can use, or None if no valid targets
             are found.
+
     """
     variables = source.get_expression_variables()
 
@@ -1034,6 +1036,7 @@ def choose_best_offensive_ability_action(
         AbilitySelection | None:
             The best ability the source can use, or None if no viable ability is
             found.
+
     """
     best_ability: AbilitySelection | None = None
 
@@ -1073,6 +1076,7 @@ def choose_best_healing_ability_action(
         AbilitySelection | None:
             The best ability the source can use, or None if no viable ability is
             found.
+
     """
     best_ability: AbilitySelection | None = None
 
@@ -1112,6 +1116,7 @@ def choose_best_buff_or_debuff_ability_action(
         AbilitySelection | None:
             The best ability the source can use, or None if no viable ability is
             found.
+
     """
     best_ability: AbilitySelection | None = None
 

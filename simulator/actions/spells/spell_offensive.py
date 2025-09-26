@@ -2,7 +2,7 @@
 
 from typing import Any, Literal
 
-from combat.damage import DamageComponent, roll_damage_components
+from combat.damage import DamageComponent
 from core.constants import (
     GLOBAL_VERBOSE_LEVEL,
     ActionCategory,

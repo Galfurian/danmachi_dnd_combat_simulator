@@ -41,6 +41,7 @@ class DamageComponent(BaseModel):
         Returns:
             str:
                 The colored damage string.
+
         """
         return (
             f"{self.damage_type.colorize(str(taken))} "
@@ -131,6 +132,7 @@ def roll_damage_components(
     Returns:
         tuple[int, list[str]]:
             The total damage dealt and a list of damage detail strings.
+
     """
     from character.main import Character
 

@@ -12,7 +12,7 @@ from actions.abilities import (
 from actions.attacks import BaseAttack, WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
-from catchery import log_warning, log_debug
+from catchery import log_warning
 from character import Character
 from core.constants import ActionCategory, ActionClass, CharacterType, is_oponent
 from core.utils import cprint, crule
@@ -20,7 +20,6 @@ from ui.cli_interface import PlayerInterface
 
 from combat.npc_ai import (
     choose_best_attack_spell_action,
-    choose_best_base_attack_action,
     choose_best_buff_or_debuff_ability_action,
     choose_best_buff_or_debuff_spell_action,
     choose_best_healing_ability_action,
@@ -552,8 +551,8 @@ class CombatManager:
                 The NPC whose healing is being executed.
             allies (list[Character]):
                 List of friendly characters.
-        """
 
+        """
         # Check for healing spells.
         candidate_spell = choose_best_healing_spell_action(
             source=npc,
@@ -606,8 +605,8 @@ class CombatManager:
                 The NPC whose buff is being executed.
             allies (list[Character]):
                 List of friendly characters.
-        """
 
+        """
         # Check for buff spells.
         candidate_spell = choose_best_buff_or_debuff_spell_action(
             source=npc,
@@ -660,8 +659,8 @@ class CombatManager:
                 The NPC whose debuff is being executed.
             enemies (list[Character]):
                 List of enemy characters.
-        """
 
+        """
         # Check for debuff spells.
         candidate_spell = choose_best_buff_or_debuff_spell_action(
             source=npc,

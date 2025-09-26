@@ -5,7 +5,6 @@ from actions.attacks import *
 from actions.base_action import *
 from actions.spells import *
 from character import *
-from combat.damage import DamageComponent
 from core.constants import *
 from core.utils import *
 from prompt_toolkit import ANSI, PromptSession

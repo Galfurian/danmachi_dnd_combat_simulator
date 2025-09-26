@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import Field
 
@@ -92,3 +92,35 @@ class IncapacitatingEffect(Effect):
 
         # Then check if damage meets the threshold
         return damage_amount >= self.damage_threshold
+
+
+class ActiveIncapacitatingEffect(ActiveEffect):
+
+    @property
+    def incapacitating_effect(self) -> IncapacitatingEffect:
+        """
+        Get the effect as an IncapacitatingEffect (narrowed type for clarity).
+
+        Raises:
+            TypeError:
+                If the effect is not an IncapacitatingEffect.
+
+        Returns:
+            IncapacitatingEffect:
+                The effect cast as an IncapacitatingEffect.
+
+        """
+        if not isinstance(self.effect, IncapacitatingEffect):
+            raise TypeError(f"Expected IncapacitatingEffect, got {type(self.effect)}")
+        return self.effect
+
+    def turn_update(self) -> None:
+        """
+        Update the effect for the current turn by calling the effect's
+        turn_update method.
+        """
+        if not self.duration:
+            raise ValueError("Effect duration is not set.")
+        if self.duration <= 0:
+            raise ValueError("Effect duration is already zero or negative.")
+        self.duration -= 1

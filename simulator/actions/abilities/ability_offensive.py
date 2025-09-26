@@ -6,8 +6,6 @@ from catchery import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
-from effects.base_effect import Effect
-from effects.trigger_effect import TriggerEffect
 from pydantic import Field
 
 from actions.abilities.base_ability import BaseAbility
@@ -232,7 +230,7 @@ class AbilityOffensive(BaseAbility):
 
         for consumed in trigger.consumed_triggers:
             cprint(
-                f"    ⚡ {actor.colored_name}'s {consumed.trigger.colored_name} activates!"
+                f"    ⚡ {actor.colored_name}'s {consumed.trigger_effect.colored_name} activates!"
             )
 
         return True

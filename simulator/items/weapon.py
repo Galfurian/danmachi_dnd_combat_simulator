@@ -35,10 +35,10 @@ class Weapon(BaseModel):
         Returns:
             Weapon:
                 The weapon instance with renamed attacks.
+
         """
         # for attack in self.attacks:
         #    attack.name = f"{self.name} - {attack.name}"
-        pass
 
     # ===========================================================================
     # GENERIC METHODS
@@ -104,8 +104,8 @@ def deserialize_weapon(data: dict[str, Any]) -> Weapon:
     Returns:
         Weapon:
             The deserialized weapon instance.
-    """
 
+    """
     weapon_type = data.get("weapon_type")
     if weapon_type == "NaturalWeapon":
         return NaturalWeapon(**data)

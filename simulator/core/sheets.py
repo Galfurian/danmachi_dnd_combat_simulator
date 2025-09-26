@@ -2,23 +2,23 @@
 Module for printing character sheets and other game elements in a formatted way.
 """
 
-from rich.padding import Padding
-
+from actions.abilities import AbilityBuff, AbilityHeal, AbilityOffensive, BaseAbility
 from actions.attacks.base_attack import BaseAttack
+from actions.base_action import BaseAction
+from actions.spells import Spell, SpellHeal, SpellOffensive
+from character.main import Character
 from combat.damage import DamageComponent
-from core.content import ContentRepository
-from core.utils import cprint, crule
 from effects.base_effect import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.healing_over_time_effect import HealingOverTimeEffect
+from effects.modifier_effect import Modifier, ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from items.armor import Armor
 from items.weapon import Weapon
-from actions.base_action import BaseAction
-from actions.abilities import BaseAbility, AbilityBuff, AbilityHeal, AbilityOffensive
-from actions.spells import Spell, SpellHeal, SpellOffensive
-from character.main import Character
-from effects.modifier_effect import Modifier, ModifierEffect
+from rich.padding import Padding
+
+from core.content import ContentRepository
+from core.utils import cprint, crule
 
 
 def modifier_to_string(modifier: Modifier) -> str:
@@ -374,9 +374,9 @@ def print_character_sheet(char: Character) -> None:
             cprint(Padding(effect_info, (0, 4)))
 
     # Trigger Effects
-    if char._effects_module.active_triggers:
+    if char._effects_module.trigger_effects:
         cprint("  [yellow]Trigger Effects[/]:")
-        for trigger_effect in char._effects_module.active_triggers:
+        for trigger_effect in char._effects_module.trigger_effects:
             effect_info = (
                 f"[{trigger_effect.effect.color}]{trigger_effect.effect.name}[/]"
             )

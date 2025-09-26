@@ -2,7 +2,6 @@
 
 from typing import Any, Literal
 
-from catchery import log_warning
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import (
     cprint,

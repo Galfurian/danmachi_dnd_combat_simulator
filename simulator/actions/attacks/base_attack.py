@@ -10,7 +10,7 @@ from core.constants import (
     ActionCategory,
     BonusType,
 )
-from core.utils import cprint, debug
+from core.utils import cprint
 from pydantic import Field
 
 from actions.base_action import BaseAction
@@ -242,7 +242,7 @@ class BaseAttack(BaseAction):
 
         for consumed in trigger.consumed_triggers:
             cprint(
-                f"    ⚡ {actor.colored_name}'s {consumed.trigger.colored_name} activates!"
+                f"    ⚡ {actor.colored_name}'s {consumed.trigger_effect.colored_name} activates!"
             )
 
         return True
@@ -316,7 +316,7 @@ def deserialize_attack(data: dict[str, Any]) -> BaseAttack | None:
     from actions.attacks.natural_attack import NaturalAttack
     from actions.attacks.weapon_attack import WeaponAttack
 
-    action_type = data.get("action_type", None)
+    action_type = data.get("action_type")
 
     if action_type == "WeaponAttack":
         cprint("Deserializing WeaponAttack: {data}", style="yellow")

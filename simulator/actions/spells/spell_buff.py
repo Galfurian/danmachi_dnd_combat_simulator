@@ -2,10 +2,8 @@
 
 from typing import Any, Literal
 
-from combat.damage import DamageComponent
-from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
-from core.utils import cprint, substitute_variables
-from pydantic import model_validator
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
+from core.utils import cprint
 
 from actions.spells.base_spell import Spell
 
@@ -35,7 +33,7 @@ class SpellBuff(Spell):
                 print(effect)
                 print(type(effect))
                 raise ValueError(
-                    f"SpellBuff effects must be ModifierEffect or TriggerEffect instances."
+                    "SpellBuff effects must be ModifierEffect or TriggerEffect instances."
                 )
 
     # ============================================================================

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, TypeAlias, Union
+from typing import Any, TypeAlias
 
 from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
@@ -15,6 +15,7 @@ from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect, TriggerEvent
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from character.character_actions import CharacterActions
 from character.character_class import CharacterClass
@@ -23,14 +24,8 @@ from character.character_effects import CharacterEffects, TriggerResult
 from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
-ValidPassiveEffect: TypeAlias = Union[
-    DamageOverTimeEffect,
-    ModifierEffect,
-    IncapacitatingEffect,
-    TriggerEffect,
-]
+ValidPassiveEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 
 
 class Character(BaseModel):
@@ -126,6 +121,7 @@ class Character(BaseModel):
         Returns:
             dict[str, Any]:
                 The modified data with real instances.
+
         """
         from core.content import ContentRepository
 
@@ -418,6 +414,7 @@ class Character(BaseModel):
                 - The base damage before adjustments
                 - The adjusted damage after resistances/vulnerabilities
                 - The actual damage taken after applying to HP
+
         """
         base = amount
         adjusted = base
@@ -734,6 +731,7 @@ class Character(BaseModel):
         Returns:
             bool:
                 True if the effect can be added, False otherwise.
+
         """
         return self._effects_module.can_add_effect(source, effect, variables)
 
@@ -784,15 +782,12 @@ class Character(BaseModel):
         Returns:
             int:
                 The hash of the character's name.
+
         """
         return hash(self.name)
 
     def __eq__(self, other: object) -> bool:
         return self.name == getattr(other, "name", None)
-
-
-# Rebuild CharacterEffects to resolve forward references
-CharacterEffects.model_rebuild()
 
 
 def load_character(file_path: Path) -> Character | None:
@@ -834,7 +829,6 @@ def load_characters(file_path: Path) -> dict[str, Character]:
         dict[str, Character]: A dictionary mapping character names to Character instances.
 
     """
-
     characters: dict[str, Character] = {}
     try:
         with open(file_path) as f:

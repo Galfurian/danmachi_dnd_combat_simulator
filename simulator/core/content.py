@@ -59,6 +59,7 @@ class ContentRepository(metaclass=Singleton):
         Args:
             root (Path):
                 The directory containing data files to load.
+
         """
         # Load all content using the helper
         self.classes = _load_json_file(

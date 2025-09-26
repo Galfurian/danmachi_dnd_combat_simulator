@@ -1,19 +1,15 @@
 from enum import Enum
-from typing import Any, Literal, TypeAlias, Union
+from typing import Any, Literal, TypeAlias
 
 from combat.damage import DamageComponent
 from pydantic import BaseModel, Field
 
-from .base_effect import Effect
+from .base_effect import ActiveEffect, Effect
 from .damage_over_time_effect import DamageOverTimeEffect
-from .modifier_effect import ModifierEffect
 from .incapacitating_effect import IncapacitatingEffect
+from .modifier_effect import ModifierEffect
 
-ValidTriggerEffect: TypeAlias = Union[
-    DamageOverTimeEffect,
-    ModifierEffect,
-    IncapacitatingEffect,
-]
+ValidTriggerEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
 
 
 class TriggerType(Enum):
@@ -260,8 +256,6 @@ class TriggerCondition(BaseModel):
                 True if the condition is met, False otherwise.
 
         """
-        from character.main import Character
-
         if self.trigger_type != event.trigger_type:
             raise ValueError("Event type does not match trigger condition type.")
 
@@ -313,11 +307,13 @@ class TriggerCondition(BaseModel):
         Returns:
             float:
                 The HP ratio (0.0 to 1.0).
+
         """
         from character.main import Character
 
         if not isinstance(event.actor, Character):
             raise ValueError("Actor must be a Character instance to get HP ratio.")
+
         return event.actor.hp / event.actor.HP_MAX if event.actor.HP_MAX > 0 else 0
 
 
@@ -399,3 +395,196 @@ class TriggerEffect(Effect):
     def is_type(self, trigger_type: TriggerType) -> bool:
         """Check if this trigger activates on the specified trigger type."""
         return self.trigger_condition.trigger_type == trigger_type
+
+
+class ActiveTriggerEffect(ActiveEffect):
+    """
+    Represents an active trigger effect with additional state for tracking
+    trigger usage, cooldowns, and activation status.
+    """
+
+    triggers_used: int = Field(
+        default=0,
+        description="Number of times the trigger has been activated",
+    )
+    cooldown_remaining: int = Field(
+        default=0,
+        description="Remaining cooldown turns before trigger can activate again",
+    )
+    has_triggered_this_turn: bool = Field(
+        default=False,
+        description="Whether the trigger has activated this turn",
+    )
+
+    @property
+    def trigger_effect(self) -> "TriggerEffect":
+        """
+        Get the effect as a TriggerEffect (narrowed type for clarity).
+
+        Raises:
+            TypeError:
+                If the effect is not a TriggerEffect.
+
+        Returns:
+            TriggerEffect:
+                The effect cast as a TriggerEffect.
+
+        """
+        if not isinstance(self.effect, TriggerEffect):
+            raise TypeError(f"Expected TriggerEffect, got {type(self.effect)}")
+        return self.effect
+
+    def check_trigger(self, event: "TriggerEvent") -> bool:
+        """
+        Check if the trigger condition is met for the given event.
+
+        Args:
+            event (TriggerEvent):
+                The event to check against the trigger condition.
+
+        Returns:
+            bool:
+                True if the trigger condition is met and the trigger can
+                activate, False otherwise.
+
+        """
+        # Check if we have exceeded max triggers.
+        if self.exceeded_max_triggers():
+            return False
+        # Check if we're on cooldown.
+        if self.is_in_cooldown():
+            return False
+        # If we've already triggered this turn.
+        if self.already_triggered_this_turn():
+            return False
+        # Finally check the trigger condition itself.
+        return self.trigger_effect.trigger_condition.is_met(event)
+
+    def activate_trigger(
+        self,
+    ) -> tuple[list[DamageComponent], list["ValidTriggerEffect"]]:
+        """
+        Activate the trigger and return effects and damage bonuses.
+
+        Returns:
+            tuple[list[DamageComponent], list[ValidTriggerEffect]]:
+                Damage bonuses and effects with mind levels.
+
+        """
+        if not self.trigger_effect.damage_bonus:
+            raise ValueError("TriggerEffect must have a damage_bonus defined.")
+        if not self.trigger_effect.trigger_effects:
+            raise ValueError("TriggerEffect must have trigger_effects defined.")
+
+        # Increment triggers used.
+        self.increment_triggers_used()
+        # Mark as triggered this turn if applicable.
+        self.mark_as_triggered_this_turn()
+        # Start the cooldown if applicable.
+        self.start_cooldown()
+
+        return self.trigger_effect.damage_bonus, self.trigger_effect.trigger_effects
+
+    def is_cooldown_defined(self) -> bool:
+        """
+        Check if the trigger has a defined cooldown.
+
+        Returns:
+            bool:
+                True if the trigger has a defined cooldown, False otherwise.
+
+        """
+        if self.trigger_effect.cooldown_turns is None:
+            return False
+        return self.trigger_effect.cooldown_turns > 0
+
+    def is_in_cooldown(self) -> bool:
+        """
+        Check if the trigger is currently on cooldown.
+
+        Returns:
+            bool:
+                True if the trigger is on cooldown, False otherwise.
+
+        """
+        if self.is_cooldown_defined():
+            return self.cooldown_remaining > 0
+        return False
+
+    def start_cooldown(self) -> None:
+        """
+        Start the cooldown of the trigger by setting it to the defined cooldown
+        turns.
+        """
+        if self.is_cooldown_defined():
+            self.cooldown_remaining = self.trigger_effect.cooldown_turns
+
+    def decrement_cooldown(self) -> None:
+        """
+        Decrement the cooldown counter by one turn if it's greater than zero.
+        """
+        if self.is_cooldown_defined() and self.cooldown_remaining > 0:
+            self.cooldown_remaining -= 1
+
+    def is_turn_based_trigger(self) -> bool:
+        """
+        Check if the trigger is turn-based (i.e., activates on turn start or
+        end).
+
+        Returns:
+            bool:
+                True if the trigger is turn-based, False otherwise.
+
+        """
+        if not self.trigger_effect.trigger_condition.trigger_type:
+            return False
+        return self.trigger_effect.trigger_condition.trigger_type in [
+            TriggerType.ON_TURN_START,
+            TriggerType.ON_TURN_END,
+        ]
+
+    def mark_as_triggered_this_turn(self) -> None:
+        """
+        Mark the trigger as having activated this turn.
+        """
+        if self.is_turn_based_trigger():
+            self.has_triggered_this_turn = True
+
+    def clear_triggered_this_turn(self) -> None:
+        """
+        Clear the flag indicating the trigger has activated this turn.
+        """
+        if self.is_turn_based_trigger():
+            self.has_triggered_this_turn = False
+
+    def already_triggered_this_turn(self) -> bool:
+        """
+        Check if the trigger has already activated this turn.
+
+        Returns:
+            bool:
+                True if the trigger has activated this turn, False otherwise.
+
+        """
+        return self.is_turn_based_trigger() and self.has_triggered_this_turn
+
+    def increment_triggers_used(self) -> None:
+        """
+        Increment the count of how many times the trigger has been activated.
+        """
+        if self.trigger_effect.max_triggers is not None:
+            self.triggers_used += 1
+
+    def exceeded_max_triggers(self) -> bool:
+        """
+        Check if the trigger has exceeded its maximum allowed activations.
+
+        Returns:
+            bool:
+                True if the maximum number of triggers has been reached, False
+                otherwise.
+
+        """
+        if self.trigger_effect.max_triggers is None:
+            return False
+        return self.triggers_used >= self.trigger_effect.max_triggers

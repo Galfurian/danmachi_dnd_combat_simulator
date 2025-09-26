@@ -3,13 +3,11 @@
 from abc import abstractmethod
 from typing import Any
 
-from catchery import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import BonusType
 from core.utils import (
     RollBreakdown,
     VarInfo,
-    evaluate_expression,
     roll_and_describe,
     roll_dice_expression,
 )
@@ -182,8 +180,8 @@ class Spell(BaseAction):
                 Dictionary mapping bonus types to their expressions.
 
         """
-        from effects.modifier_effect import ModifierEffect
         from combat.damage import DamageComponent
+        from effects.modifier_effect import ModifierEffect
 
         # Find the first ModifierEffect in the effects list
         modifier_effect = None
@@ -239,6 +237,7 @@ class Spell(BaseAction):
                 A tuple containing two lists:
                 - First list: effects that were successfully applied.
                 - Second list: effects that were not applied (e.g., resisted).
+
         """
         return self._common_apply_effects(
             actor=actor,
@@ -273,6 +272,7 @@ class Spell(BaseAction):
         Returns:
             tuple[int, str]:
                 A tuple containing the total damage and a detailed description string.
+
         """
         return roll_damage_components(
             actor,
@@ -334,6 +334,7 @@ class Spell(BaseAction):
         Returns:
             int:
                 The result of the rolled expression.
+
         """
         return roll_dice_expression(
             self._spell_substitute_variables(
@@ -359,6 +360,7 @@ class Spell(BaseAction):
 
         Returns:
             str: The modified expression with substituted variables.
+
         """
         from core.utils import substitute_variables
 
@@ -387,7 +389,7 @@ def deserialize_spell(data: dict[str, Any]) -> Spell | None:
     from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_offensive import SpellOffensive
 
-    action_type = data.get("action_type", None)
+    action_type = data.get("action_type")
 
     if action_type == "SpellOffensive":
         return SpellOffensive(**data)

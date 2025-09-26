@@ -3,12 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from character.character_effects import TriggerResult
-from core.utils import (
-    evaluate_expression,
-)
-from pydantic import Field
-
 from actions.base_action import BaseAction
 
 
@@ -74,7 +68,7 @@ def deserialize_ability(data: dict[str, Any]) -> BaseAbility | None:
     from actions.abilities.ability_heal import AbilityHeal
     from actions.abilities.ability_offensive import AbilityOffensive
 
-    action_type = data.get("action_type", None)
+    action_type = data.get("action_type")
 
     if action_type == "AbilityBuff":
         return AbilityBuff(**data)

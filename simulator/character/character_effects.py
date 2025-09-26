@@ -1,28 +1,34 @@
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
 from collections.abc import Iterator
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
+from catchery import log_error
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.utils import VarInfo, cprint, get_max_roll
-from effects.base_effect import ActiveTrigger, Effect, ActiveEffect
-from effects.damage_over_time_effect import DamageOverTimeEffect
-from effects.healing_over_time_effect import HealingOverTimeEffect
-from effects.incapacitating_effect import IncapacitatingEffect
-from effects.modifier_effect import ModifierEffect
+from effects.base_effect import ActiveEffect, Effect
+from effects.damage_over_time_effect import (
+    ActiveDamageOverTimeEffect,
+    DamageOverTimeEffect,
+)
+from effects.healing_over_time_effect import (
+    ActiveHealingOverTimeEffect,
+    HealingOverTimeEffect,
+)
+from effects.incapacitating_effect import (
+    ActiveIncapacitatingEffect,
+    IncapacitatingEffect,
+)
+from effects.modifier_effect import ActiveModifierEffect, ModifierEffect
 from effects.trigger_effect import (
-    TriggerEvent,
+    ActiveTriggerEffect,
     TriggerEffect,
-    ValidTriggerEffect,
+    TriggerEvent,
     TriggerType,
+    ValidTriggerEffect,
 )
 from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from character.main import Character
-else:
-    Character = Any  # type: ignore
 
 
 class TriggerResult(BaseModel):
@@ -36,7 +42,7 @@ class TriggerResult(BaseModel):
     effects_to_apply: list[ValidTriggerEffect] = Field(
         description="Effects to apply when triggered.",
     )
-    consumed_triggers: list[ActiveTrigger] = Field(
+    consumed_triggers: list[ActiveTriggerEffect] = Field(
         description="Triggers that were consumed upon activation.",
     )
 
@@ -47,16 +53,12 @@ class CharacterEffects(BaseModel):
     including application, removal, and effect updates.
     """
 
-    owner: "Character" = Field(
+    owner: Any = Field(
         description="The character that owns this effects module",
     )
     active_effects: list[ActiveEffect] = Field(
         default_factory=list,
         description="List of currently active effects on the character",
-    )
-    active_triggers: list[ActiveTrigger] = Field(
-        default_factory=list,
-        description="List of currently active trigger effects on the character",
     )
     passive_effects: list[ActiveEffect] = Field(
         default_factory=list,
@@ -71,7 +73,7 @@ class CharacterEffects(BaseModel):
 
     def add_effect(
         self,
-        source: "Character",
+        source: Any,
         effect: Effect,
         variables: list[VarInfo] = [],
     ) -> bool:
@@ -97,47 +99,27 @@ class CharacterEffects(BaseModel):
             return self._add_healing_over_time_effect(source, effect, variables)
         if isinstance(effect, DamageOverTimeEffect):
             return self._add_damage_over_time_effect(source, effect, variables)
+        if isinstance(effect, IncapacitatingEffect):
+            return self._add_incapacitating_effect(source, effect, variables)
+        if isinstance(effect, ModifierEffect):
+            return self._add_modifier_effect(source, effect, variables)
         if isinstance(effect, TriggerEffect):
             return self._add_trigger_effect(source, effect, variables)
 
-        new_effect = ActiveEffect(
-            source=source,
-            target=self.owner,
-            effect=effect,
-            duration=effect.duration,
-            variables=variables,
+        log_error(
+            f"Effect type {type(effect)} not recognized for adding to character.",
+            {
+                "source": source.name if hasattr(source, "name") else str(source),
+                "effect": effect.name,
+                "variables": variables,
+            },
         )
 
-        if isinstance(effect, ModifierEffect):
-            for modifier in effect.modifiers:
-                bonus_type = modifier.bonus_type
-                existing = self.active_modifiers.get(bonus_type)
-                if existing:
-                    if self._get_modifier_strength(
-                        new_effect, bonus_type
-                    ) <= self._get_modifier_strength(existing, bonus_type):
-                        return False
-                    self.remove_effect(existing)
-                self.active_modifiers[bonus_type] = new_effect
-
-        # Handle incapacitating effects
-        if isinstance(effect, IncapacitatingEffect):
-            # Remove any existing incapacitating effects of the same type
-            existing_incap = [
-                ae
-                for ae in self.active_effects
-                if isinstance(ae.effect, IncapacitatingEffect)
-                and ae.effect.incapacitation_type == effect.incapacitation_type
-            ]
-            for existing in existing_incap:
-                self.remove_effect(existing)
-
-        self.active_effects.append(new_effect)
-        return True
+        return False
 
     def _add_healing_over_time_effect(
         self,
-        source: "Character",
+        source: Any,
         effect: HealingOverTimeEffect,
         variables: list[VarInfo] = [],
     ) -> bool:
@@ -165,7 +147,7 @@ class CharacterEffects(BaseModel):
             return False
 
         self.active_effects.append(
-            ActiveEffect(
+            ActiveHealingOverTimeEffect(
                 source=source,
                 target=self.owner,
                 effect=effect,
@@ -177,7 +159,7 @@ class CharacterEffects(BaseModel):
 
     def _add_damage_over_time_effect(
         self,
-        source: "Character",
+        source: Any,
         effect: DamageOverTimeEffect,
         variables: list[VarInfo] = [],
     ) -> bool:
@@ -205,7 +187,7 @@ class CharacterEffects(BaseModel):
             return False
 
         self.active_effects.append(
-            ActiveEffect(
+            ActiveDamageOverTimeEffect(
                 source=source,
                 target=self.owner,
                 effect=effect,
@@ -215,9 +197,115 @@ class CharacterEffects(BaseModel):
         )
         return True
 
+    def _add_incapacitating_effect(
+        self,
+        source: Any,
+        effect: IncapacitatingEffect,
+        variables: list[VarInfo] = [],
+    ) -> bool:
+        """
+        Add a new incapacitating effect to the character.
+
+        Args:
+            source (Any):
+                The source of the effect (e.g., the caster).
+            effect (IncapacitatingEffect):
+                The incapacitating effect to add.
+            variables (list[VarInfo]):
+                The variables associated with the effect.
+
+        Returns:
+            bool:
+                True if the incapacitating effect was added successfully, False otherwise.
+
+        """
+        assert all(isinstance(v, VarInfo) for v in variables)
+
+        # Basic validation.
+        if self.has_effect(effect):
+            return False
+
+        existing_incap = [
+            ae
+            for ae in self.incapacitating_effects
+            if ae.incapacitating_effect.incapacitation_type
+            == effect.incapacitation_type
+        ]
+
+        for existing in existing_incap:
+            self.remove_effect(existing)
+            cprint(f"    ⚠️  {effect.name} replaces {existing.effect.name}.")
+
+        self.active_effects.append(
+            ActiveIncapacitatingEffect(
+                source=source,
+                target=self.owner,
+                effect=effect,
+                duration=effect.duration,
+                variables=variables,
+            )
+        )
+        return True
+
+    def _add_modifier_effect(
+        self,
+        source: Any,
+        effect: ModifierEffect,
+        variables: list[VarInfo] = [],
+    ) -> bool:
+        """
+        Add a new modifier effect to the character.
+
+        Args:
+            source (Any):
+                The source of the effect (e.g., the caster).
+            effect (ModifierEffect):
+                The modifier effect to add.
+            variables (list[VarInfo]):
+                The variables associated with the effect.
+
+        Returns:
+            bool:
+                True if the modifier effect was added successfully, False otherwise.
+
+        """
+        assert all(isinstance(v, VarInfo) for v in variables)
+
+        # Basic validation.
+        if self.has_effect(effect):
+            cprint(f"    ⚠️  {effect.name} not applied; already active.")
+            return False
+
+        new_effect = ActiveModifierEffect(
+            source=source,
+            target=self.owner,
+            effect=effect,
+            duration=effect.duration,
+            variables=variables,
+        )
+
+        for modifier in effect.modifiers:
+            bonus_type = modifier.bonus_type
+            existing = self.active_modifiers.get(bonus_type)
+            if existing:
+                new_strength = self._get_modifier_strength(new_effect, bonus_type)
+                existing_strength = self._get_modifier_strength(existing, bonus_type)
+                if new_strength <= existing_strength:
+                    cprint(
+                        f"    ⚠️  {effect.name} not applied; existing "
+                        f"{existing.effect.name} is stronger."
+                    )
+                    continue
+                cprint(f"    ⚠️  {effect.name} replaces {existing.effect.name}.")
+                self.remove_effect(existing)
+            self.active_modifiers[bonus_type] = new_effect
+
+        self.active_effects.append(new_effect)
+        return True
+
     def _add_trigger_effect(
         self,
-        source: "Character",
+        source: Any,
         effect: TriggerEffect,
         variables: list[VarInfo] = [],
     ) -> bool:
@@ -247,17 +335,17 @@ class CharacterEffects(BaseModel):
         if effect.is_type(TriggerType.ON_HIT):
             existing_triggers = [
                 ae
-                for ae in self.active_triggers
-                if ae.trigger.is_type(TriggerType.ON_HIT)
+                for ae in self.trigger_effects
+                if ae.trigger_effect.is_type(TriggerType.ON_HIT)
             ]
             # Remove any existing OnHit trigger effects first.
             for existing_trigger in existing_triggers:
-                self.active_triggers.remove(existing_trigger)
+                self.active_effects.remove(existing_trigger)
                 cprint(f"    ⚠️  {effect.name} replaces {existing_trigger.effect.name}.")
 
         # Actually add the trigger effect now.
-        self.active_triggers.append(
-            ActiveTrigger(
+        self.active_effects.append(
+            ActiveTriggerEffect(
                 source=source,
                 target=self.owner,
                 effect=effect,
@@ -307,7 +395,7 @@ class CharacterEffects(BaseModel):
 
         return messages
 
-    def remove_effect(self, effect: "ActiveEffect") -> bool:
+    def remove_effect(self, effect: ActiveEffect) -> bool:
         """
         Remove an active effect from the character.
 
@@ -346,10 +434,6 @@ class CharacterEffects(BaseModel):
 
         """
         from effects.base_effect import ActiveEffect
-        from character.main import Character
-
-        if not isinstance(self.owner, Character):
-            raise ValueError("Owner must be a Character instance.")
 
         # If the effect is already present, do not add it again.
         if effect in [ae.effect for ae in self.passive_effects]:
@@ -406,8 +490,8 @@ class CharacterEffects(BaseModel):
             TriggerResult:
                 The result of trigger checks, including damage bonuses, effects
                 to apply, and consumed triggers.
-        """
 
+        """
         # Prepare the object to return.
         result = TriggerResult(
             damage_bonuses=[],
@@ -416,11 +500,11 @@ class CharacterEffects(BaseModel):
         )
 
         # Keep track of the effects to remove.
-        triggers_to_remove: list[ActiveTrigger] = []
+        triggers_to_remove: list[ActiveTriggerEffect] = []
 
-        for effect in self.active_triggers:
+        for effect in self.trigger_effects:
             if not isinstance(effect, TriggerEffect):
-                raise ValueError("ActiveTrigger must contain a TriggerEffect.")
+                raise ValueError("ActiveTriggerEffect must contain a TriggerEffect.")
             # Check if the trigger should activate
             if effect.check_trigger(event):
                 # Activate the trigger and get results
@@ -432,12 +516,13 @@ class CharacterEffects(BaseModel):
                 for triggered_effect in trigger_effects:
                     result.effects_to_apply.append(triggered_effect)
                 # Mark for removal if it consumes on trigger
-                if effect.trigger.consumes_on_trigger:
+                if effect.trigger_effect.consumes_on_trigger:
                     triggers_to_remove.append(effect)
                     result.consumed_triggers.append(effect)
+
         # Remove consumed effects
         for effect in triggers_to_remove:
-            self.active_triggers.remove(effect)
+            self.active_effects.remove(effect)
         return result
 
     # === Regular Effect Management ===
@@ -496,11 +581,6 @@ class CharacterEffects(BaseModel):
                 True if the effect can be added, False otherwise.
 
         """
-        from character.main import Character
-
-        if not isinstance(self.owner, Character):
-            raise ValueError("Owner must be a Character instance.")
-
         if isinstance(effect, HealingOverTimeEffect):
             return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
 
@@ -715,3 +795,73 @@ class CharacterEffects(BaseModel):
 
         """
         yield from self.active_effects
+
+    @property
+    def damage_over_time_effects(self) -> Iterator[ActiveDamageOverTimeEffect]:
+        """
+        Get all active damage over time effects.
+
+        Returns:
+            Iterator[ActiveDamageOverTimeEffect]:
+                An iterator over active damage over time effects.
+
+        """
+        for ae in self.active_effects:
+            if isinstance(ae, ActiveDamageOverTimeEffect):
+                yield ae
+
+    @property
+    def healing_over_time_effects(self) -> Iterator[ActiveHealingOverTimeEffect]:
+        """
+        Get all active healing over time effects.
+
+        Returns:
+            Iterator[ActiveHealingOverTimeEffect]:
+                An iterator over active healing over time effects.
+
+        """
+        for ae in self.active_effects:
+            if isinstance(ae, ActiveHealingOverTimeEffect):
+                yield ae
+
+    @property
+    def incapacitating_effects(self) -> Iterator[ActiveIncapacitatingEffect]:
+        """
+        Get all active incapacitating effects.
+
+        Returns:
+            Iterator[ActiveIncapacitatingEffect]:
+                An iterator over active incapacitating effects.
+
+        """
+        for ae in self.active_effects:
+            if isinstance(ae, ActiveIncapacitatingEffect):
+                yield ae
+
+    @property
+    def modifier_effects(self) -> Iterator[ActiveModifierEffect]:
+        """
+        Get all active modifier effects.
+
+        Returns:
+            Iterator[ActiveModifierEffect]:
+                An iterator over active modifier effects.
+
+        """
+        for ae in self.active_effects:
+            if isinstance(ae, ActiveModifierEffect):
+                yield ae
+
+    @property
+    def trigger_effects(self) -> Iterator[ActiveTriggerEffect]:
+        """
+        Get all active trigger effects.
+
+        Returns:
+            Iterator[ActiveTriggerEffect]:
+                An iterator over active trigger effects.
+
+        """
+        for ae in self.active_effects:
+            if isinstance(ae, ActiveTriggerEffect):
+                yield ae

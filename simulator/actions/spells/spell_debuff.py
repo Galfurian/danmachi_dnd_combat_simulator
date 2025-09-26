@@ -2,10 +2,8 @@
 
 from typing import Any, Literal
 
-from combat.damage import DamageComponent
-from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
-from core.utils import cprint, substitute_variables
-from pydantic import model_validator
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
+from core.utils import cprint
 
 from actions.spells.base_spell import Spell
 
@@ -24,8 +22,8 @@ class SpellDebuff(Spell):
 
     def model_post_init(self, _) -> None:
         """Validates fields after model initialization."""
-        from effects.modifier_effect import ModifierEffect
         from effects.incapacitating_effect import IncapacitatingEffect
+        from effects.modifier_effect import ModifierEffect
 
         if not self.effects:
             raise ValueError("SpellDebuff must have at least one effect.")

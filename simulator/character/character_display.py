@@ -1,15 +1,9 @@
 """Character Display Module - handles character display, formatting, and UI functionality."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from core.constants import (
-    CharacterType,
-)
 from core.utils import make_bar
 from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from .main import Character
 
 
 class CharacterDisplay(BaseModel):

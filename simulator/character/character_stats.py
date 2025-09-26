@@ -3,6 +3,7 @@ Character statistics and calculated properties module.
 """
 
 from typing import Any
+
 from core.constants import BonusType
 from core.utils import VarInfo, get_stat_modifier
 from pydantic import BaseModel, Field

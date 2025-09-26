@@ -5,10 +5,10 @@ from collections.abc import Callable
 from logging import debug
 from typing import Any
 
+from catchery import log_warning
 from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.rule import Rule
-from catchery import log_warning
 
 DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 
@@ -59,7 +59,6 @@ def ccapture(content: Any) -> str:
 class GameException(Exception):
     """Custom exception for game errors."""
 
-    pass
 
 
 # ---- Singleton Metaclass ----
@@ -138,6 +137,7 @@ class RollBreakdown(BaseModel):
 
         Returns:
             int: The total roll value.
+
         """
         return self.value
 

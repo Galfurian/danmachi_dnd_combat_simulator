@@ -3,7 +3,7 @@ from typing import Any, Literal
 from core.constants import BonusType
 from pydantic import BaseModel, Field
 
-from .base_effect import Effect
+from .base_effect import ActiveEffect, Effect
 
 
 class Modifier(BaseModel):
@@ -114,3 +114,33 @@ class ModifierEffect(Effect):
         for modifier in self.modifiers:
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
+
+
+class ActiveModifierEffect(ActiveEffect):
+    """
+    Represents an active instance of a ModifierEffect applied to a character.
+    """
+
+    @property
+    def modifier_effect(self) -> ModifierEffect:
+        """
+        Get the effect as a ModifierEffect (narrowed type for clarity).
+
+        Raises:
+            TypeError:
+                If the effect is not a ModifierEffect.
+
+        Returns:
+            ModifierEffect:
+                The effect cast as a ModifierEffect.
+
+        """
+        if not isinstance(self.effect, ModifierEffect):
+            raise TypeError(f"Expected ModifierEffect, got {type(self.effect)}")
+        return self.effect
+
+    def turn_update(self) -> None:
+        """
+        Update the effect for the current turn by calling the effect's
+        turn_update method.
+        """

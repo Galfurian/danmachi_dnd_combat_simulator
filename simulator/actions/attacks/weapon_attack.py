@@ -1,6 +1,7 @@
 
 
 from typing import Literal
+
 from .base_attack import BaseAttack
 
 

@@ -1,7 +1,7 @@
-from typing import Any, TypeAlias, Union
+from typing import Any, TypeAlias
 
 from character.character_effects import TriggerResult
-from combat.damage import DamageComponent, roll_and_describe, roll_damage_components
+from combat.damage import DamageComponent, roll_and_describe
 from core.constants import (
     ActionCategory,
     ActionClass,
@@ -17,18 +17,12 @@ from core.utils import (
 )
 from effects import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
-from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
-ValidActionEffect: TypeAlias = Union[
-    DamageOverTimeEffect,
-    ModifierEffect,
-    IncapacitatingEffect,
-    TriggerEffect,
-]
+ValidActionEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 
 
 class BaseAction(BaseModel):
@@ -174,8 +168,8 @@ class BaseAction(BaseModel):
             bool: True if the target is valid for this action, False otherwise.
 
         """
-        from core.constants import ActionCategory
         from character.main import Character
+        from core.constants import ActionCategory
 
         if not isinstance(actor, Character):
             raise ValueError("Actor must be a Character instance")
@@ -294,10 +288,7 @@ class BaseAction(BaseModel):
             if not isinstance(effect, Effect):
                 raise ValueError("All effects must be Effect instances")
             # Check if the effect can be applied.
-            if not effect.can_apply(actor, target):
-                failed_effects.append(effect)
-            # Apply the effect to the target.
-            elif not target.add_effect(actor, effect, variables):
+            if not effect.can_apply(actor, target) or not target.add_effect(actor, effect, variables):
                 failed_effects.append(effect)
             else:
                 successful_effects.append(effect)
@@ -315,6 +306,7 @@ class BaseAction(BaseModel):
         Returns:
             str:
                 Comma-separated string of effect names.
+
         """
         if not effects:
             return "no effects"
@@ -565,8 +557,8 @@ class BaseAction(BaseModel):
     # =========================================================================
 
     def _trigger_on_hit(self, actor: Any, target: Any) -> TriggerResult:
-        from effects.trigger_effect import HitTriggerEvent
         from character.main import Character
+        from effects.trigger_effect import HitTriggerEvent
 
         if not isinstance(actor, Character):
             raise ValueError("Actor must be an instance of Character.")

@@ -1,6 +1,6 @@
 # armor.py
 
-from typing import Any, TypeAlias, Union
+from typing import Any, TypeAlias
 
 from core.constants import ArmorSlot, ArmorType
 from effects.damage_over_time_effect import DamageOverTimeEffect
@@ -9,12 +9,7 @@ from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
-ValidArmorEffect: TypeAlias = Union[
-    DamageOverTimeEffect,
-    ModifierEffect,
-    IncapacitatingEffect,
-    TriggerEffect,
-]
+ValidArmorEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 
 
 class Armor(BaseModel):
