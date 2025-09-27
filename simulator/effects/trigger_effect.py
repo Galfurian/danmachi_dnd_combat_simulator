@@ -9,7 +9,9 @@ from .damage_over_time_effect import DamageOverTimeEffect
 from .incapacitating_effect import IncapacitatingEffect
 from .modifier_effect import ModifierEffect
 
-ValidTriggerEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
+ValidTriggerEffect: TypeAlias = (
+    DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
+)
 
 
 class TriggerType(Enum):
@@ -232,15 +234,41 @@ class TriggerCondition(BaseModel):
     )
 
     def _generate_description(self) -> str:
-        """Generate a human-readable description of the trigger condition."""
+        """
+        Generate a human-readable description of the trigger condition.
+
+        Returns:
+            str:
+                The generated description.
+        """
+        if self.trigger_type == TriggerType.ON_HIT:
+            return "when hitting with an attack"
+        if self.trigger_type == TriggerType.ON_MISS:
+            return "when missing with an attack"
+        if self.trigger_type == TriggerType.ON_CRITICAL_HIT:
+            return "when scoring a critical hit"
+        if self.trigger_type == TriggerType.ON_DAMAGE_TAKEN:
+            if self.damage_type:
+                return f"when taking {self.damage_type.name.lower()} damage"
+            return "when taking damage"
         if self.trigger_type == TriggerType.ON_LOW_HEALTH:
             return f"when HP drops below {(self.threshold or 0.25) * 100:.0f}%"
         if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
             return f"when HP rises above {(self.threshold or 0.75) * 100:.0f}%"
-        if self.trigger_type == TriggerType.ON_DAMAGE_TAKEN and self.damage_type:
-            return f"when taking {self.damage_type.name.lower()} damage"
-        if self.trigger_type == TriggerType.ON_SPELL_CAST and self.spell_category:
-            return f"when casting {self.spell_category.name.lower()} spells"
+        if self.trigger_type == TriggerType.ON_TURN_START:
+            return "at the start of your turn"
+        if self.trigger_type == TriggerType.ON_TURN_END:
+            return "at the end of your turn"
+        if self.trigger_type == TriggerType.ON_DEATH:
+            return "upon death"
+        if self.trigger_type == TriggerType.ON_KILL:
+            return "upon killing an enemy"
+        if self.trigger_type == TriggerType.ON_HEAL:
+            return "when healed"
+        if self.trigger_type == TriggerType.ON_SPELL_CAST:
+            if self.spell_category:
+                return f"when casting {self.spell_category.name.lower()} spells"
+            return "when casting any spell"
         return self.trigger_type.value.replace("_", " ")
 
     def is_met(self, event: TriggerEvent) -> bool:
