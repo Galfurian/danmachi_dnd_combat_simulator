@@ -4,9 +4,10 @@ Character Action Management Module - handles action-related functionality.
 
 from typing import Any
 
-from actions.attacks import NaturalAttack, WeaponAttack
+from actions.attacks.natural_attack import NaturalAttack
+from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
-from actions.spells import Spell
+from actions.spells.base_spell import BaseSpell
 from catchery import log_warning
 from core.constants import ActionClass
 from pydantic import BaseModel, Field
@@ -157,14 +158,14 @@ class CharacterActions(BaseModel):
             available_actions.append(action)
         return available_actions
 
-    def get_available_spells(self) -> list[Spell]:
+    def get_available_spells(self) -> list[BaseSpell]:
         """Return a list of spells that the character can use this turn.
 
         Returns:
-            List[Spell]: A list of available spells.
+            List[BaseSpell]: A list of available spells.
 
         """
-        available_spells: list[Spell] = []
+        available_spells: list[BaseSpell] = []
         for spell in self.owner.spells.values():
             if self.is_on_cooldown(spell):
                 continue
@@ -303,23 +304,23 @@ class CharacterActions(BaseModel):
         if action.name.lower() in self.owner.actions:
             del self.owner.actions[action.name.lower()]
 
-    def learn_spell(self, spell: Spell) -> None:
+    def learn_spell(self, spell: BaseSpell) -> None:
         """
-        Add a Spell object to the character's known spells.
+        Add a BaseSpell object to the character's known spells.
 
         Args:
-            spell (Spell): The spell to learn.
+            spell (BaseSpell): The spell to learn.
 
         """
         if spell.name.lower() not in self.owner.spells:
             self.owner.spells[spell.name.lower()] = spell
 
-    def unlearn_spell(self, spell: Spell) -> None:
+    def unlearn_spell(self, spell: BaseSpell) -> None:
         """
-        Remove a Spell object from the character's known spells.
+        Remove a BaseSpell object from the character's known spells.
 
         Args:
-            spell (Spell): The spell to unlearn.
+            spell (BaseSpell): The spell to unlearn.
 
         """
         if spell.name.lower() in self.owner.spells:

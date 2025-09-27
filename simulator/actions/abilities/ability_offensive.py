@@ -2,7 +2,6 @@
 
 from typing import Any, Literal
 
-from actions.base_action import ValidActionEffect
 from catchery import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
@@ -12,6 +11,7 @@ from effects.event_system import HitEvent
 from pydantic import Field
 
 from actions.abilities.base_ability import BaseAbility
+from actions.base_action import ValidActionEffect
 
 
 class AbilityOffensive(BaseAbility):

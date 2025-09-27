@@ -1,34 +1,44 @@
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
-from character.character_effects import TriggerResult
-from combat.damage import DamageComponent, roll_and_describe
+from combat.damage import (
+    DamageComponent,
+)
 from core.constants import (
     ActionCategory,
     ActionClass,
     is_oponent,
 )
-from core.utils import (
-    GameException,
+from core.dice_parser import (
     RollBreakdown,
     VarInfo,
+    evaluate_expression,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
+    roll_and_describe,
     substitute_variables,
 )
-from effects import Effect
-from effects.damage_over_time_effect import DamageOverTimeEffect
-from effects.healing_over_time_effect import HealingOverTimeEffect
-from effects.incapacitating_effect import IncapacitatingEffect
-from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
+if TYPE_CHECKING:
+    from effects.damage_over_time_effect import (
+        DamageOverTimeEffect,
+    )
+    from effects.healing_over_time_effect import (
+        HealingOverTimeEffect,
+    )
+    from effects.incapacitating_effect import (
+        IncapacitatingEffect,
+    )
+    from effects.modifier_effect import (
+        ModifierEffect,
+    )
+    from effects.trigger_effect import (
+        TriggerEffect,
+    )
+
+
 ValidActionEffect: TypeAlias = (
-    DamageOverTimeEffect
-    | HealingOverTimeEffect
-    | ModifierEffect
-    | IncapacitatingEffect
-    | TriggerEffect
+    "DamageOverTimeEffect | HealingOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect"
 )
 
 
@@ -132,8 +142,6 @@ class BaseAction(BaseModel):
                 Number of targets (minimum 1, even for invalid expressions).
 
         """
-        from core.utils import evaluate_expression
-
         if self.target_expr:
             return max(1, int(evaluate_expression(self.target_expr, variables)))
         return 1
@@ -176,7 +184,6 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
-        from core.constants import ActionCategory
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"
@@ -269,6 +276,7 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
+        from effects.base_effect import Effect
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"

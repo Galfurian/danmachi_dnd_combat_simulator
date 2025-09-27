@@ -6,7 +6,8 @@ from typing import Any
 from catchery import log_error
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
-from core.utils import VarInfo, cprint, get_max_roll
+from core.dice_parser import VarInfo, get_max_roll
+from core.utils import cprint
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
@@ -24,11 +25,13 @@ from effects.incapacitating_effect import (
 from effects.modifier_effect import ActiveModifierEffect, ModifierEffect
 from effects.trigger_effect import (
     ActiveTriggerEffect,
+    CombatEvent,
+    DamageTakenEvent,
+    EventType,
     TriggerEffect,
     ValidTriggerEffect,
 )
 from pydantic import BaseModel, Field
-from effects.trigger_effect import CombatEvent, EventType, DamageTakenEvent
 
 
 class TriggerResult(BaseModel):

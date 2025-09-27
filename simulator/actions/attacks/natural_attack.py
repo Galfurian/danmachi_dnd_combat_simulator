@@ -1,3 +1,7 @@
+"""
+Module defining the NaturalAttack class for natural or innate attacks.
+"""
+
 from typing import Literal
 
 from .base_attack import BaseAttack

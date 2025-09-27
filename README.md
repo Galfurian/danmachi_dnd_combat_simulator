@@ -100,7 +100,7 @@ python main.py
 The **DnD Combat Simulator** provides:
 
 - Tactical combat encounter against intelligent NPCs.
-- Spell casting, attack mechanics, and effect handling.
+- BaseSpell casting, attack mechanics, and effect handling.
 - Clear, interactive command-line interface (CLI).
 
 ---

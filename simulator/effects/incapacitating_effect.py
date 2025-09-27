@@ -1,9 +1,9 @@
 from typing import Literal
 
-from effects.event_system import DamageTakenEvent
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
+from .event_system import DamageTakenEvent
 
 
 class IncapacitatingEffect(Effect):
@@ -127,6 +127,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             EventResponse | None:
                 The response to the damage taken event. If the effect does not
                 respond to damage, return None.
+
         """
         from character.main import Character
 

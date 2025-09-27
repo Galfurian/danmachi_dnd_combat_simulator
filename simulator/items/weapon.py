@@ -1,8 +1,10 @@
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from actions.attacks.natural_attack import NaturalAttack
-from actions.attacks.weapon_attack import WeaponAttack
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from actions.attacks.natural_attack import NaturalAttack
+    from actions.attacks.weapon_attack import WeaponAttack
 
 
 class Weapon(BaseModel):
@@ -20,7 +22,7 @@ class Weapon(BaseModel):
     description: str = Field(
         description="A description of the weapon.",
     )
-    attacks: list[WeaponAttack | NaturalAttack] = Field(
+    attacks: list["WeaponAttack | NaturalAttack"] = Field(
         description="List of attacks this weapon can perform.",
     )
     hands_required: int = Field(
@@ -71,7 +73,7 @@ class NaturalWeapon(Weapon):
         if self.hands_required != 0:
             raise ValueError("Natural weapons cannot require hands.")
 
-        if not all(isinstance(a, NaturalAttack) for a in self.attacks):
+        if not all(isinstance(a, "NaturalAttack") for a in self.attacks):
             print(self)
             raise ValueError("All attacks must be of type NaturalAttack.")
 
@@ -84,7 +86,7 @@ class WieldedWeapon(Weapon):
         if self.hands_required <= 0:
             raise ValueError("Wielded weapons must require at least one hand.")
 
-        if not all(isinstance(a, WeaponAttack) for a in self.attacks):
+        if not all(isinstance(a, "WeaponAttack") for a in self.attacks):
             print(self)
             raise ValueError("All attacks must be of type WeaponAttack.")
 

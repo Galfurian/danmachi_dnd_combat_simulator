@@ -3,13 +3,13 @@
 from typing import Any, Literal
 
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
-from core.utils import (
-    cprint,
+from core.dice_parser import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     roll_and_describe,
     substitute_variables,
 )
+from core.utils import cprint
 from pydantic import Field
 
 from actions.abilities.base_ability import BaseAbility

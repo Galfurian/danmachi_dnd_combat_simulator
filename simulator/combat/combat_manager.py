@@ -3,18 +3,23 @@ import random
 from collections import deque
 from logging import debug
 
-from actions.abilities import (
-    AbilityBuff,
-    AbilityDebuff,
-    AbilityHeal,
-    AbilityOffensive,
+from actions.attacks.base_attack import (
+    BaseAttack,
 )
-from actions.attacks import BaseAttack, WeaponAttack
-from actions.base_action import BaseAction
-from actions.spells import Spell, SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
+from actions.base_action import (
+    BaseAction,
+)
+from actions.spells.base_spell import (
+    BaseSpell,
+)
 from catchery import log_warning
-from character import Character
-from core.constants import ActionCategory, ActionClass, CharacterType, is_oponent
+from character.main import Character
+from core.constants import (
+    ActionCategory,
+    ActionClass,
+    CharacterType,
+    is_oponent,
+)
 from core.utils import cprint, crule
 from ui.cli_interface import PlayerInterface
 
@@ -235,16 +240,16 @@ class CombatManager:
             # Main action selection menu.
             submenus = []
             if spells:
-                submenus.append("Cast a Spell")
+                submenus.append("Cast a BaseSpell")
 
             # Player selects an action or submenu option.
             choice = self.ui.choose_action(actions, submenus, "Skip")
             if choice is None or (isinstance(choice, str) and choice == "q"):
                 break
-            # If the action is a Spell, we need to handle it differently.
+            # If the action is a BaseSpell, we need to handle it differently.
             if choice == FULL_ATTACK:
                 self.ask_for_player_full_attack()
-            elif choice == "Cast a Spell":
+            elif choice == "Cast a BaseSpell":
                 self.ask_for_player_spell_cast(spells)
 
     def ask_for_player_full_attack(self) -> None:
@@ -318,11 +323,11 @@ class CombatManager:
         # Mark the action class as used.
         self.player.use_action_class(ActionClass.STANDARD)
 
-    def ask_for_player_spell_cast(self, spells: list[Spell]) -> bool:
+    def ask_for_player_spell_cast(self, spells: list[BaseSpell]) -> bool:
         """Handles the player's choice to cast a spell.
 
         Args:
-            spells (list[Spell]): List of available spells for the player.
+            spells (list[BaseSpell]): List of available spells for the player.
 
         Returns:
             bool: True if a spell was successfully cast, False otherwise.
@@ -380,17 +385,17 @@ class CombatManager:
 
     def ask_for_player_spell_and_rank(
         self,
-        spells: list[Spell],
-    ) -> tuple[Spell, int] | str | None:
+        spells: list[BaseSpell],
+    ) -> tuple[BaseSpell, int] | str | None:
         """
         Asks the player to choose a spell from their available spells.
 
         Args:
-            spells (list[Spell]):
+            spells (list[BaseSpell]):
             List of available spells for the player.
 
         Returns:
-            Optional[tuple[Spell, int] | str]:
+            Optional[tuple[BaseSpell, int] | str]:
                 The chosen spell and rank level, or None if no spell was selected.
 
         """
@@ -516,8 +521,7 @@ class CombatManager:
         self._execute_npc_healing(npc, allies)
         self._execute_npc_buff(npc, allies)
         self._execute_npc_debuff(npc, enemies)
-        self._execute_npc_spell_attack(npc, enemies)
-        self._execute_npc_ability_attack(npc, enemies)
+        self._execute_npc_offensive(npc, enemies)
         self._execute_npc_full_attack(npc, enemies)
         self._execute_npc_full_natural_attack(npc, enemies)
 
@@ -553,6 +557,13 @@ class CombatManager:
                 List of friendly characters.
 
         """
+        from actions.abilities.ability_heal import (
+            AbilityHeal,
+        )
+        from actions.spells.spell_heal import (
+            SpellHeal,
+        )
+
         # Check for healing spells.
         candidate_spell = choose_best_healing_spell_action(
             source=npc,
@@ -607,6 +618,13 @@ class CombatManager:
                 List of friendly characters.
 
         """
+        from actions.abilities.ability_buff import (
+            AbilityBuff,
+        )
+        from actions.spells.spell_buff import (
+            SpellBuff,
+        )
+
         # Check for buff spells.
         candidate_spell = choose_best_buff_or_debuff_spell_action(
             source=npc,
@@ -661,6 +679,13 @@ class CombatManager:
                 List of enemy characters.
 
         """
+        from actions.abilities.ability_debuff import (
+            AbilityDebuff,
+        )
+        from actions.spells.spell_debuff import (
+            SpellDebuff,
+        )
+
         # Check for debuff spells.
         candidate_spell = choose_best_buff_or_debuff_spell_action(
             source=npc,
@@ -700,7 +725,7 @@ class CombatManager:
             # Mark the action class as used.
             npc.use_action_class(candidate_ability.ability.action_class)
 
-    def _execute_npc_spell_attack(
+    def _execute_npc_offensive(
         self,
         npc: Character,
         enemies: list[Character],
@@ -715,56 +740,48 @@ class CombatManager:
                 List of enemy characters.
 
         """
+        from actions.abilities.ability_offensive import (
+            AbilityOffensive,
+        )
+        from actions.spells.spell_offensive import (
+            SpellOffensive,
+        )
+
         # Check for attack spells.
-        candidate = choose_best_attack_spell_action(
+        candidate_spell = choose_best_attack_spell_action(
             source=npc,
             enemies=enemies,
             spells=get_actions_by_type(npc, SpellOffensive),
         )
-        if candidate:
+        if candidate_spell:
             # Cast the attack spell on the targets.
-            for target in candidate.targets:
-                candidate.spell.cast_spell(
+            for target in candidate_spell.targets:
+                candidate_spell.spell.cast_spell(
                     actor=npc,
                     target=target,
-                    rank=candidate.rank,
+                    rank=candidate_spell.rank,
                 )
             # Add the spell to the cooldowns if it has one.
-            npc.add_cooldown(candidate.spell)
+            npc.add_cooldown(candidate_spell.spell)
             # Mark the action class as used.
-            npc.use_action_class(candidate.spell.action_class)
+            npc.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
-            npc.use_mind(candidate.mind_level)
+            npc.use_mind(candidate_spell.mind_level)
 
-    def _execute_npc_ability_attack(
-        self,
-        npc: Character,
-        enemies: list[Character],
-    ) -> None:
-        """
-        Executes the best offensive ability for the NPC if available.
-
-        Args:
-            npc (Character):
-                The NPC whose ability attack is being executed.
-            enemies (list[Character]):
-                List of enemy characters.
-
-        """
         # Check for attack abilities.
-        candidate = choose_best_offensive_ability_action(
+        candidate_ability = choose_best_offensive_ability_action(
             source=npc,
             enemies=enemies,
             abilities=get_actions_by_type(npc, AbilityOffensive),
         )
-        if candidate:
+        if candidate_ability:
             # Use the offensive ability on the targets.
-            for target in candidate.targets:
-                candidate.ability.execute(npc, target)
+            for target in candidate_ability.targets:
+                candidate_ability.ability.execute(npc, target)
             # Add the ability to the cooldowns if it has one.
-            npc.add_cooldown(candidate.ability)
+            npc.add_cooldown(candidate_ability.ability)
             # Mark the action class as used.
-            npc.use_action_class(candidate.ability.action_class)
+            npc.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_full_attack(
         self,
@@ -781,6 +798,10 @@ class CombatManager:
                 List of enemy characters.
 
         """
+        from actions.attacks.weapon_attack import (
+            WeaponAttack,
+        )
+
         weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
         if not weapon_attacks:
             return
@@ -819,7 +840,9 @@ class CombatManager:
                 List of enemy characters.
 
         """
-        from actions.attacks.natural_attack import NaturalAttack
+        from actions.attacks.natural_attack import (
+            NaturalAttack,
+        )
 
         natural_attacks: list[NaturalAttack] = get_natural_attacks(npc)
         if not natural_attacks:
@@ -856,13 +879,22 @@ class CombatManager:
         ]
 
     def pre_combat_phase(self) -> None:
-        """Handles the pre-combat phase where the player can prepare for combat."""
+        """
+        Handles the pre-combat phase where the player can prepare for combat.
+        """
+        from actions.spells.spell_buff import (
+            SpellBuff,
+        )
+        from actions.spells.spell_heal import (
+            SpellHeal,
+        )
+
         crule(":hourglass_done: Pre-Combat Phase", style="blue")
         # Gather viable healing spells.
-        buffs: list[Spell] = [
+        buffs: list[BaseSpell] = [
             s for s in self.player.spells.values() if isinstance(s, SpellBuff)
         ]
-        heals: list[Spell] = (
+        heals: list[BaseSpell] = (
             [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
             if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
             else []
@@ -879,14 +911,21 @@ class CombatManager:
                 break
 
     def post_combat_phase(self) -> None:
-        """Handles the post-combat phase where the player can heal friendly characters."""
+        """
+        Handles the post-combat phase where the player can heal friendly
+        characters.
+        """
+        from actions.spells.spell_heal import (
+            SpellHeal,
+        )
+
         crule(":hourglass_done: Post-Combat Healing", style="green")
         # Stop now if there are no friendly character that needs healing.
         if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             cprint("[yellow]No friendly characters to heal.[/]")
             return
         # Gather viable healing spells.
-        heals: list[Spell] = [
+        heals: list[BaseSpell] = [
             s for s in self.player.spells.values() if isinstance(s, SpellHeal)
         ]
         if not heals:

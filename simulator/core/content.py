@@ -4,13 +4,11 @@ from pathlib import Path
 from typing import Any
 
 from actions.base_action import BaseAction
-from actions.spells import (
-    SpellBuff,
-    SpellDebuff,
-    SpellHeal,
-    SpellOffensive,
-)
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
+from actions.spells.spell_buff import SpellBuff
+from actions.spells.spell_debuff import SpellDebuff
+from actions.spells.spell_heal import SpellHeal
+from actions.spells.spell_offensive import SpellOffensive
 from catchery import log_warning
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
@@ -32,7 +30,7 @@ class ContentRepository(metaclass=Singleton):
     weapons: dict[str, Weapon]
     armors: dict[str, Armor]
     # Action-related attributes.
-    spells: dict[str, Spell]
+    spells: dict[str, BaseSpell]
     actions: dict[str, BaseAction]
 
     def __init__(self, data_dir: Path | None = None) -> None:

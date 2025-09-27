@@ -254,19 +254,19 @@ class PlayerInterface:
 
     def choose_spell(
         self,
-        spells: list[Spell],
+        spells: list[BaseSpell],
         submenus: list[str] = [],
         exit_entry: str | None = "Back",
-    ) -> Spell | str | None:
+    ) -> BaseSpell | str | None:
         """Choose a spell from a list of available spells.
 
         Args:
-            spells (list[Spell]): The list of available spells to choose from.
+            spells (list[BaseSpell]): The list of available spells to choose from.
             submenus (list[str], optional): A list of submenus to display. Defaults to [].
             exit_entry (Optional[str], optional): Text for exit option. Defaults to "Back".
 
         Returns:
-            Optional[Spell | str]: The selected spell, "q" for exit, or submenu.
+            Optional[BaseSpell | str]: The selected spell, "q" for exit, or submenu.
 
         """
         # Add "Back" to the submenus if requested.
@@ -323,7 +323,7 @@ class PlayerInterface:
     def choose_rank(
         self,
         actor: Character,
-        spell: Spell,
+        spell: BaseSpell,
         exit_entry: str | None = "Back",
     ) -> int:
         """
@@ -332,7 +332,7 @@ class PlayerInterface:
         Args:
             actor (Character):
                 The character casting the spell.
-            spell (Spell):
+            spell (BaseSpell):
                 The spell being cast.
             exit_entry (str | None):
                 Text for exit option. Defaults to "Back".

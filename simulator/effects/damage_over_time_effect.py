@@ -1,7 +1,8 @@
 from typing import Literal
 
 from combat.damage import DamageComponent
-from core.utils import cprint, roll_and_describe
+from core.dice_parser import roll_and_describe
+from core.utils import cprint
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect

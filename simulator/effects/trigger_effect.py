@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Literal, TypeAlias
 
 from combat.damage import DamageComponent
@@ -14,12 +13,12 @@ ValidTriggerEffect: TypeAlias = (
 )
 from .event_system import (
     CombatEvent,
+    DamageTakenEvent,
     EventType,
     HighHealthEvent,
     HitEvent,
     LowHealthEvent,
     SpellCastEvent,
-    DamageTakenEvent,
 )
 
 
@@ -58,6 +57,7 @@ class TriggerCondition(BaseModel):
         Returns:
             str:
                 The generated description.
+
         """
         if self.trigger_type == EventType.ON_HIT:
             return "when hitting with an attack"
@@ -447,6 +447,7 @@ class ActiveTriggerEffect(ActiveEffect):
             EventResponse | None:
                 The response to the hit event. If the effect does not respond
                 to hits, return None.
+
         """
         if not self.check_trigger(event):
             return None
@@ -474,6 +475,7 @@ class ActiveTriggerEffect(ActiveEffect):
             EventResponse | None:
                 The response to the damage taken event. If the effect does not
                 respond to damage, return None.
+
         """
         if not self.check_trigger(event):
             return None

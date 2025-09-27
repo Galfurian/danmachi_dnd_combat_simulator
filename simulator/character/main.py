@@ -1,19 +1,19 @@
 import json
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
-from actions.attacks import NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction
-from actions.spells import Spell
+from actions.spells.base_spell import BaseSpell
 from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
-from core.utils import VarInfo, cprint
+from core.dice_parser import VarInfo
+from core.utils import cprint
 from effects.base_effect import Effect, EventResponse
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.event_system import DamageTakenEvent, HitEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import TriggerEffect, CombatEvent
+from effects.trigger_effect import CombatEvent, TriggerEffect
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -29,6 +29,10 @@ from character.character_stats import CharacterStats
 ValidPassiveEffect: TypeAlias = (
     DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 )
+
+if TYPE_CHECKING:
+    from actions.attacks.natural_attack import NaturalAttack
+    from actions.attacks.weapon_attack import WeaponAttack
 
 
 class Character(BaseModel):
@@ -98,7 +102,7 @@ class Character(BaseModel):
         default_factory=dict,
         description="Dictionary of known actions",
     )
-    spells: dict[str, Spell] = Field(
+    spells: dict[str, BaseSpell] = Field(
         default_factory=dict,
         description="Dictionary of known spells",
     )
@@ -385,7 +389,7 @@ class Character(BaseModel):
         """Returns a list of actions that the character can use this turn."""
         return self._actions_module.get_available_actions()
 
-    def get_available_spells(self) -> list[Spell]:
+    def get_available_spells(self) -> list[BaseSpell]:
         """Returns a list of spells that the character can use this turn."""
         return self._actions_module.get_available_spells()
 
@@ -544,7 +548,7 @@ class Character(BaseModel):
         self._actions_module.unlearn_action(action)
 
     def learn_spell(self, spell: Any) -> None:
-        """Adds a Spell object to the character's known spells.
+        """Adds a BaseSpell object to the character's known spells.
 
         Args:
             spell (Any): The spell to learn.
@@ -553,7 +557,7 @@ class Character(BaseModel):
         self._actions_module.learn_spell(spell)
 
     def unlearn_spell(self, spell: Any) -> None:
-        """Removes a Spell object from the character's known spells.
+        """Removes a BaseSpell object from the character's known spells.
 
         Args:
             spell (Any): The spell to unlearn.
@@ -795,6 +799,7 @@ class Character(BaseModel):
         Returns:
             list[EventResponse]:
                 Responses from effects that were broken or triggered.
+
         """
         return self._effects_module.on_hit(event)
 
@@ -810,6 +815,7 @@ class Character(BaseModel):
         Returns:
             list[EventResponse]:
                 Responses from effects that were broken or triggered.
+
         """
         return self._effects_module.on_damage_taken(event)
 

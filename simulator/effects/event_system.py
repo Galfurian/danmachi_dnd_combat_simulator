@@ -4,6 +4,7 @@ Event system for handling combat-related triggers and events.
 
 from enum import Enum
 from typing import Any
+
 from pydantic import BaseModel, Field
 
 

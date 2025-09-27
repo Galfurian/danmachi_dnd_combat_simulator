@@ -1,4 +1,6 @@
-
+"""
+Module defining the WeaponAttack class for weapon-based attacks.
+"""
 
 from typing import Literal
 

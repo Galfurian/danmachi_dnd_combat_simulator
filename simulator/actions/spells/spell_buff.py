@@ -5,10 +5,10 @@ from typing import Any, Literal
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
 
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
 
 
-class SpellBuff(Spell):
+class SpellBuff(BaseSpell):
     """Beneficial spell that enhances targets with positive effects.
 
     This class represents spells designed to provide buffs or enhancements to

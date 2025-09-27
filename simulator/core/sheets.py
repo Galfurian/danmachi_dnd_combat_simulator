@@ -5,7 +5,7 @@ Module for printing character sheets and other game elements in a formatted way.
 from actions.abilities import AbilityBuff, AbilityHeal, AbilityOffensive, BaseAbility
 from actions.attacks.base_attack import BaseAttack
 from actions.base_action import BaseAction
-from actions.spells import Spell, SpellHeal, SpellOffensive
+from actions.spells import BaseSpell, SpellHeal, SpellOffensive
 from character.main import Character
 from combat.damage import DamageComponent
 from effects.base_effect import Effect
@@ -171,12 +171,12 @@ def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
             print_effect_sheet(effect, padding + 2)
 
 
-def print_spell_sheet(spell: Spell, padding: int = 2) -> None:
+def print_spell_sheet(spell: BaseSpell, padding: int = 2) -> None:
     """
     Prints the details of a spell in a formatted way.
 
     Args:
-        spell (Spell): The spell to display.
+        spell (BaseSpell): The spell to display.
         padding (int): Left padding for the output. Defaults to 2.
 
     """
@@ -259,7 +259,7 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
 
     """
-    if isinstance(action, Spell):
+    if isinstance(action, BaseSpell):
         print_spell_sheet(action, padding)
     elif isinstance(action, BaseAbility):
         print_ability_sheet(action, padding)
@@ -462,7 +462,7 @@ def print_content_repository_summary() -> None:
     # Spells
     if hasattr(repo, "spells") and repo.spells:
         cprint(f"\n[green]Spells ({len(repo.spells)})[/green]:")
-        spell_types: dict[str, list[tuple[str, Spell]]] = {}
+        spell_types: dict[str, list[tuple[str, BaseSpell]]] = {}
         for name, spell in repo.spells.items():
             spell_type = type(spell).__name__
             if spell_type not in spell_types:
@@ -532,7 +532,7 @@ def print_all_available_content() -> None:
                 for action in race.default_actions:
                     cprint(f"    {action}")
             if race.default_spells:
-                cprint("  [cyan]Spell[/]:")
+                cprint("  [cyan]BaseSpell[/]:")
                 for spell in race.default_spells:
                     cprint(f"    {spell}")
 

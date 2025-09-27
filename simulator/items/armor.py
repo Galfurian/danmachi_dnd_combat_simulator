@@ -1,15 +1,29 @@
-# armor.py
+"""
+Armor module for the simulator.
 
-from typing import Any, TypeAlias
+Defines the Armor class and related types for managing armor pieces,
+their properties, and effects within the combat simulator.
+"""
 
-from core.constants import ArmorSlot, ArmorType
-from effects.damage_over_time_effect import DamageOverTimeEffect
-from effects.incapacitating_effect import IncapacitatingEffect
-from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import TriggerEffect
+from typing import TYPE_CHECKING, Any, TypeAlias
+
 from pydantic import BaseModel, Field
 
-ValidArmorEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
+if TYPE_CHECKING:
+    from effects.damage_over_time_effect import DamageOverTimeEffect
+    from effects.incapacitating_effect import IncapacitatingEffect
+    from effects.modifier_effect import ModifierEffect
+    from effects.trigger_effect import TriggerEffect
+
+
+from core.constants import (
+    ArmorSlot,
+    ArmorType,
+)
+
+ValidArmorEffect: TypeAlias = (
+    "DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect"
+)
 
 
 class Armor(BaseModel):
@@ -110,5 +124,5 @@ class Armor(BaseModel):
         variables = wearer.get_expression_variables()
 
         for effect in self.effects:
-            if wearer.can_add_effect(wearer, effect):
-                wearer.add_effect(wearer, effect)
+            if wearer.can_add_effect(wearer, effect, variables):
+                wearer.add_effect(wearer, effect, variables)

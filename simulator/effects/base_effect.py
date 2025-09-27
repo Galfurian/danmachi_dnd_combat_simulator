@@ -1,9 +1,11 @@
-from typing import Any, Sequence
+from typing import Any
 
-from core.utils import VarInfo, cprint
-from effects.event_system import DamageTakenEvent, HitEvent
-from pydantic import BaseModel, Field
 from combat.damage import DamageComponent
+from core.dice_parser import VarInfo
+from core.utils import cprint
+from pydantic import BaseModel, Field
+
+from .event_system import DamageTakenEvent, HitEvent
 
 
 class Effect(BaseModel):
@@ -80,7 +82,7 @@ class Effect(BaseModel):
                 True if the effect can be applied, False otherwise.
 
         """
-        from character import Character
+        from character.main import Character
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"
@@ -186,6 +188,7 @@ class ActiveEffect(BaseModel):
             EventResponse | None:
                 The response to the damage taken event. If the effect does not
                 respond to damage, return None.
+
         """
         return None
 

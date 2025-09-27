@@ -5,10 +5,10 @@ from typing import Any, Literal
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
 
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
 
 
-class SpellDebuff(Spell):
+class SpellDebuff(BaseSpell):
     """Detrimental spell that weakens enemies with negative effects.
 
     This class represents spells designed to apply debuffs or negative effects

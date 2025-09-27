@@ -17,7 +17,7 @@ from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
-from character import Character, load_character, load_characters
+from character.main import Character, load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
 from core.sheets import crule, print_character_sheet

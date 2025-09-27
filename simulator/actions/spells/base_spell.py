@@ -3,9 +3,12 @@
 from abc import abstractmethod
 from typing import Any
 
-from combat.damage import DamageComponent, roll_damage_components
+from combat.damage import (
+    DamageComponent,
+    roll_damage_components,
+)
 from core.constants import BonusType
-from core.utils import (
+from core.dice_parser import (
     RollBreakdown,
     VarInfo,
     roll_and_describe,
@@ -16,7 +19,7 @@ from pydantic import Field
 from actions.base_action import BaseAction, ValidActionEffect
 
 
-class Spell(BaseAction):
+class BaseSpell(BaseAction):
     """Abstract base class for all magical spells in the combat system.
 
     This class provides a foundation for implementing various types of spells,
@@ -191,7 +194,7 @@ class Spell(BaseAction):
                 break
 
         if modifier_effect is None:
-            raise ValueError("Spell must have at least one ModifierEffect")
+            raise ValueError("BaseSpell must have at least one ModifierEffect")
 
         expressions: dict[BonusType, str] = {}
 
@@ -362,7 +365,7 @@ class Spell(BaseAction):
             str: The modified expression with substituted variables.
 
         """
-        from core.utils import substitute_variables
+        from core.dice_parser import substitute_variables
 
         # Evaluate and roll the expression.
         return substitute_variables(
@@ -374,14 +377,14 @@ class Spell(BaseAction):
         )
 
 
-def deserialize_spell(data: dict[str, Any]) -> Spell | None:
-    """Deserialize a dictionary into a Spell instance.
+def deserialize_spell(data: dict[str, Any]) -> BaseSpell | None:
+    """Deserialize a dictionary into a BaseSpell instance.
 
     Args:
         data (dict[str, Any]): The dictionary representation of the spell.
 
     Returns:
-        Spell | None: The deserialized Spell instance, or None on failure.
+        BaseSpell | None: The deserialized BaseSpell instance, or None on failure.
 
     """
     from actions.spells.spell_buff import SpellBuff

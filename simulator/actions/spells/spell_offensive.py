@@ -3,18 +3,14 @@
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
-from core.constants import (
-    GLOBAL_VERBOSE_LEVEL,
-    ActionCategory,
-    BonusType,
-)
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
 from pydantic import Field
 
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
 
 
-class SpellOffensive(Spell):
+class SpellOffensive(BaseSpell):
     """Offensive spell that deals damage through magical attacks.
 
     This class represents spells designed to inflict damage on targets using

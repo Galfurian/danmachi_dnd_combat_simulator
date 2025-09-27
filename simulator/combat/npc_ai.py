@@ -10,7 +10,7 @@ from actions.abilities.base_ability import BaseAbility
 from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
 from actions.base_action import BaseAction, ValidActionEffect
 from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
 from character import Character
 from core.utils import VarInfo
 from pydantic import BaseModel, Field
@@ -39,7 +39,7 @@ class SpellSelection(BaseModel):
     score.
     """
 
-    spell: Spell = Field(
+    spell: BaseSpell = Field(
         description="The spell being considered.",
     )
     rank: int = Field(

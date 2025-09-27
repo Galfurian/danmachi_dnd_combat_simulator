@@ -2,23 +2,20 @@
 
 from typing import Any, Literal
 
-from core.constants import (
-    GLOBAL_VERBOSE_LEVEL,
-    ActionCategory,
-)
-from core.utils import (
-    cprint,
+from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
+from core.dice_parser import (
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     simplify_expression,
     substitute_variables,
 )
+from core.utils import cprint
 from pydantic import Field
 
-from actions.spells.base_spell import Spell
+from actions.spells.base_spell import BaseSpell
 
 
-class SpellHeal(Spell):
+class SpellHeal(BaseSpell):
     """Restorative spell that heals hit points and can apply beneficial effects.
 
     This class represents spells designed to restore health to allies. It includes

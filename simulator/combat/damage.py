@@ -1,7 +1,7 @@
 from typing import Any
 
 from core.constants import DamageType
-from core.utils import VarInfo, roll_and_describe
+from core.dice_parser import VarInfo, roll_and_describe
 from pydantic import BaseModel, Field
 
 
