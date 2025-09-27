@@ -23,24 +23,30 @@ from .modifier_effect import Modifier, ModifierEffect
 
 # Import trigger effects and related classes
 from .trigger_effect import (
-    CriticalHitTriggerEvent,
-    DamageTakenTriggerEvent,
-    DeathTriggerEvent,
-    HealTriggerEvent,
-    HighHealthTriggerEvent,
-    HitTriggerEvent,
-    KillTriggerEvent,
-    LowHealthTriggerEvent,
-    MissTriggerEvent,
-    SpellCastTriggerEvent,
     TriggerCondition,
     TriggerEffect,
-    TriggerEvent,
-    TriggerType,
-    TurnEndTriggerEvent,
-    TurnStartTriggerEvent,
     ValidTriggerEffect,
 )
+
+# Import the event system.
+
+from .event_system import (
+    EventType,
+    CombatEvent,
+    HitEvent,
+    MissEvent,
+    CriticalHitEvent,
+    DamageTakenEvent,
+    LowHealthEvent,
+    HighHealthEvent,
+    TurnStartEvent,
+    TurnEndEvent,
+    DeathEvent,
+    KillEvent,
+    HealEvent,
+    SpellCastEvent,
+)
+
 
 __all__ = [
     # Base classes
@@ -56,20 +62,21 @@ __all__ = [
     "IncapacitatingEffect",
     # Trigger effects
     "ValidTriggerEffect",
-    "TriggerType",
-    "TriggerEvent",
-    "HitTriggerEvent",
-    "MissTriggerEvent",
-    "CriticalHitTriggerEvent",
-    "DamageTakenTriggerEvent",
-    "LowHealthTriggerEvent",
-    "HighHealthTriggerEvent",
-    "TurnStartTriggerEvent",
-    "TurnEndTriggerEvent",
-    "DeathTriggerEvent",
-    "KillTriggerEvent",
-    "HealTriggerEvent",
-    "SpellCastTriggerEvent",
     "TriggerCondition",
     "TriggerEffect",
+    # Event system
+    "EventType",
+    "CombatEvent",
+    "HitEvent",
+    "MissEvent",
+    "CriticalHitEvent",
+    "DamageTakenEvent",
+    "LowHealthEvent",
+    "HighHealthEvent",
+    "TurnStartEvent",
+    "TurnEndEvent",
+    "DeathEvent",
+    "KillEvent",
+    "HealEvent",
+    "SpellCastEvent",
 ]

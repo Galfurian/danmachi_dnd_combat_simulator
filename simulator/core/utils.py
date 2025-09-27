@@ -60,7 +60,6 @@ class GameException(Exception):
     """Custom exception for game errors."""
 
 
-
 # ---- Singleton Metaclass ----
 
 
@@ -92,7 +91,7 @@ class VarInfo(BaseModel):
     name: str = Field(description="Variable name")
     value: int = Field(description="Variable value")
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.name or not isinstance(self.name, str):
             raise ValueError("name must be a non-empty string")

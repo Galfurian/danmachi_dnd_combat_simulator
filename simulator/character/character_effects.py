@@ -7,11 +7,12 @@ from catchery import log_error
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.utils import VarInfo, cprint, get_max_roll
-from effects.base_effect import ActiveEffect, Effect
+from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
+from effects.event_system import HitEvent
 from effects.healing_over_time_effect import (
     ActiveHealingOverTimeEffect,
     HealingOverTimeEffect,
@@ -24,11 +25,10 @@ from effects.modifier_effect import ActiveModifierEffect, ModifierEffect
 from effects.trigger_effect import (
     ActiveTriggerEffect,
     TriggerEffect,
-    TriggerEvent,
-    TriggerType,
     ValidTriggerEffect,
 )
 from pydantic import BaseModel, Field
+from effects.trigger_effect import CombatEvent, EventType, DamageTakenEvent
 
 
 class TriggerResult(BaseModel):
@@ -332,11 +332,11 @@ class CharacterEffects(BaseModel):
             return False
 
         # Only allow one OnHit trigger spell at a time.
-        if effect.is_type(TriggerType.ON_HIT):
+        if effect.is_type(EventType.ON_HIT):
             existing_triggers = [
                 ae
                 for ae in self.trigger_effects
-                if ae.trigger_effect.is_type(TriggerType.ON_HIT)
+                if ae.trigger_effect.is_type(EventType.ON_HIT)
             ]
             # Remove any existing OnHit trigger effects first.
             for existing_trigger in existing_triggers:
@@ -357,43 +357,62 @@ class CharacterEffects(BaseModel):
 
         return True
 
-    def handle_damage_taken(
-        self,
-        damage_amount: int,
-    ) -> list[str]:
+    def on_hit(self, event: HitEvent) -> list[EventResponse]:
+        """
+        Handle effects that should trigger or break when a hit occurs.
+
+        Args:
+            event (HitEvent):
+                The hit event.
+
+        Returns:
+            list[EventResponse]:
+                Responses from effects that were broken or triggered.
+
+        """
+        responses: list[EventResponse] = []
+        effects_to_remove: list[ActiveEffect] = []
+        for ae in self.incapacitating_effects:
+            response = ae.on_hit(event)
+            if response:
+                if response.remove_effect:
+                    effects_to_remove.append(ae)
+                responses.append(response)
+
+        # Remove the effects that should break.
+        for effect_to_remove in effects_to_remove:
+            self.remove_effect(effect_to_remove)
+
+        return responses
+
+    def on_damage_taken(self, event: DamageTakenEvent) -> list[EventResponse]:
         """
         Handle effects that should trigger or break when damage is taken.
 
         Args:
-            damage_amount (int):
-                Amount of damage taken.
+            event (DamageTakenEvent):
+                The damage taken event.
 
         Returns:
-            list[str]:
-                Messages about effects that were broken or triggered.
+            list[EventResponse]:
+                Responses from effects that were broken or triggered.
 
         """
-        messages = []
+        # Check for incapacitating effects that should break on damage.
+        responses: list[EventResponse] = []
+        effects_to_remove: list[ActiveEffect] = []
+        for ae in self.incapacitating_effects:
+            response = ae.on_damage_taken(event)
+            if response:
+                if response.remove_effect:
+                    effects_to_remove.append(ae)
+                responses.append(response)
 
-        if damage_amount <= 0:
-            return messages
-
-        # Check for incapacitating effects that should break on damage
-        effects_to_remove = []
-        for active_effect in self.active_effects:
-            if isinstance(active_effect.effect, IncapacitatingEffect):
-                if active_effect.effect.breaks_on_damage(damage_amount):
-                    effects_to_remove.append(active_effect)
-                    messages.append(
-                        f"{self.owner.name} wakes up from "
-                        f"{active_effect.effect.name} due to taking damage!"
-                    )
-
-        # Remove the effects that should break
+        # Remove the effects that should break.
         for effect_to_remove in effects_to_remove:
             self.remove_effect(effect_to_remove)
 
-        return messages
+        return responses
 
     def remove_effect(self, effect: ActiveEffect) -> bool:
         """
@@ -474,12 +493,12 @@ class CharacterEffects(BaseModel):
 
     # === Trigger Checking and Activation ===
 
-    def check_triggers(self, event: TriggerEvent) -> TriggerResult:
+    def check_triggers(self, event: CombatEvent) -> TriggerResult:
         """
         Check and activate any triggers based on the provided event.
 
         Args:
-            event (TriggerEvent):
+            event (CombatEvent):
                 The event to check triggers against.
 
         Raises:

@@ -11,9 +11,11 @@ from core.constants import (
     BonusType,
 )
 from core.utils import cprint
+from effects.base_effect import EventResponse
+from effects.event_system import HitEvent
 from pydantic import Field
 
-from actions.base_action import BaseAction
+from actions.base_action import BaseAction, ValidActionEffect
 
 
 class BaseAttack(BaseAction):
@@ -121,6 +123,22 @@ class BaseAttack(BaseAction):
             cprint(msg)
             return True
 
+        # Get any on-hit triggers from effects.
+        event_responses: list[EventResponse] = actor.on_hit(
+            HitEvent(
+                actor=actor,
+                target=target,
+            )
+        )
+        # Collect all the new effects from the event responses.
+        event_effects: list[ValidActionEffect] = []
+        event_damage_bonuses: list[DamageComponent] = []
+        for response in event_responses:
+            for effect in response.new_effects:
+                if isinstance(effect, ValidActionEffect):
+                    event_effects.append(effect)
+            event_damage_bonuses.extend(response.damage_bonus)
+
         # =====================================================================
         # 3. DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
         # =====================================================================
@@ -144,20 +162,18 @@ class BaseAttack(BaseAction):
             damage_details += crit_details
 
         # =============================
-        # 3b. Get On-Hit Triggers
+        # 3b. Get On-Hit events.
         # =============================
 
-        # Get any on-hit triggers from effects.
-        trigger = self._trigger_on_hit(actor=actor, target=target)
-        # Roll the damage from triggers.
-        trigger_damage, trigger_damage_details = roll_damage_components(
+        # Roll damage from ON_HIT events.
+        event_damage, event_damage_details = roll_damage_components(
             actor,
             target,
-            trigger.damage_bonuses,
+            event_damage_bonuses,
         )
-        # Sum up the damage from triggers.
-        damage += trigger_damage
-        damage_details += trigger_damage_details
+        # Add the ON_HIT event damage.
+        damage += event_damage
+        damage_details += event_damage_details
 
         # =============================
         # 3c. Add bonus damage.
@@ -185,14 +201,11 @@ class BaseAttack(BaseAction):
         # 4. EFFECT APPLICATION
         # =====================================================================
 
-        # Build a full list of effects to apply (triggers + ability effects).
-        full_effects = trigger.effects_to_apply + self.effects
-
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
             actor,
             target,
-            full_effects,
+            self.effects + event_effects,
         )
 
         # =====================================================================
@@ -240,10 +253,8 @@ class BaseAttack(BaseAction):
 
         cprint(msg)
 
-        for consumed in trigger.consumed_triggers:
-            cprint(
-                f"    ⚡ {actor.colored_name}'s {consumed.trigger_effect.colored_name} activates!"
-            )
+        for response in event_responses:
+            cprint(f"    ⚡ {response.message}")
 
         return True
 

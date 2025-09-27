@@ -8,11 +8,12 @@ from actions.spells import Spell
 from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.utils import VarInfo, cprint
-from effects.base_effect import Effect
+from effects.base_effect import Effect, EventResponse
 from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.event_system import DamageTakenEvent, HitEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import TriggerEffect, TriggerEvent
+from effects.trigger_effect import TriggerEffect, CombatEvent
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -25,7 +26,9 @@ from character.character_inventory import CharacterInventory
 from character.character_race import CharacterRace
 from character.character_stats import CharacterStats
 
-ValidPassiveEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
+ValidPassiveEffect: TypeAlias = (
+    DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
+)
 
 
 class Character(BaseModel):
@@ -331,7 +334,7 @@ class Character(BaseModel):
         """Remove a passive effect."""
         return self._effects_module.remove_passive_effect(effect)
 
-    def check_triggers(self, event: TriggerEvent) -> TriggerResult:
+    def check_triggers(self, event: CombatEvent) -> TriggerResult:
         """
         Checks all active trigger effects against the given event.
         """
@@ -430,10 +433,15 @@ class Character(BaseModel):
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.
         if actual > 0:
-            wake_up_messages = self._effects_module.handle_damage_taken(actual)
-            if wake_up_messages:
-                for msg in wake_up_messages:
-                    cprint(f"    {msg}")
+            responses = self.on_damage_taken(
+                DamageTakenEvent(
+                    actor=self,
+                    damage_amount=actual,
+                    damage_type=damage_type,
+                )
+            )
+            for response in responses:
+                cprint(f"    {response.message}")
 
         return base, adjusted, actual
 
@@ -774,6 +782,36 @@ class Character(BaseModel):
 
         """
         return self._effects_module.get_modifier(bonus_type)
+
+    def on_hit(self, event: HitEvent) -> list[EventResponse]:
+        """
+        Handles the event when the character hits with an attack or spell,
+        triggering any effects.
+
+        Args:
+            event (CombatEvent):
+                The combat event representing the hit.
+
+        Returns:
+            list[EventResponse]:
+                Responses from effects that were broken or triggered.
+        """
+        return self._effects_module.on_hit(event)
+
+    def on_damage_taken(self, event: DamageTakenEvent) -> list[EventResponse]:
+        """
+        Handles the event when the character takes damage, triggering any
+        effects.
+
+        Args:
+            event (DamageTakenEvent):
+                The damage taken event.
+
+        Returns:
+            list[EventResponse]:
+                Responses from effects that were broken or triggered.
+        """
+        return self._effects_module.on_damage_taken(event)
 
     def __hash__(self) -> int:
         """

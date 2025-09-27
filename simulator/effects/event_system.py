@@ -1,0 +1,193 @@
+"""
+Event system for handling combat-related triggers and events.
+"""
+
+from enum import Enum
+from typing import Any
+from pydantic import BaseModel, Field
+
+
+class EventType(Enum):
+    """Enumeration of available event types."""
+
+    ON_HIT = "on_hit"  # When character hits with an attack
+    ON_MISS = "on_miss"  # When character misses an attack
+    ON_CRITICAL_HIT = "on_critical_hit"  # When character scores a critical hit
+    ON_DAMAGE_TAKEN = "on_damage_taken"  # When character takes damage
+
+    ON_LOW_HEALTH = "on_low_health"  # When HP drops below threshold
+    ON_HIGH_HEALTH = "on_high_health"  # When HP rises above threshold
+
+    ON_TURN_START = "on_turn_start"  # At the beginning of character's turn
+    ON_TURN_END = "on_turn_end"  # At the end of character's turn
+
+    ON_DEATH = "on_death"  # When character reaches 0 HP
+    ON_KILL = "on_kill"  # When character defeats an enemy
+
+    ON_HEAL = "on_heal"  # When character is healed
+    ON_SPELL_CAST = "on_spell_cast"  # When character casts a spell
+
+
+class CombatEvent(BaseModel):
+    """Base class for all trigger events."""
+
+    trigger_type: EventType = Field(
+        description="The type of trigger event.",
+    )
+    actor: Any = Field(description="The character or entity that triggered the event.")
+
+
+class HitEvent(CombatEvent):
+    """Event data for ON_HIT triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_HIT,
+        description="The type of trigger event.",
+    )
+    target: Any = Field(description="The target of the attack.")
+
+
+class MissEvent(CombatEvent):
+    """Event data for ON_MISS triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_MISS,
+        description="The type of trigger event.",
+    )
+    attack_roll: int = Field(description="The attack roll result.")
+    target: Any = Field(description="The target of the attack.")
+    weapon_used: Any | None = Field(
+        default=None, description="Weapon used in the attack."
+    )
+
+
+class CriticalHitEvent(CombatEvent):
+    """Event data for ON_CRITICAL_HIT triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_CRITICAL_HIT,
+        description="The type of trigger event.",
+    )
+    attack_roll: int = Field(description="The attack roll result.")
+    damage_dealt: int = Field(description="Amount of damage dealt.")
+    target: Any = Field(description="The target of the attack.")
+    weapon_used: Any | None = Field(
+        default=None, description="Weapon used in the attack."
+    )
+
+
+class DamageTakenEvent(CombatEvent):
+    """Event data for ON_DAMAGE_TAKEN triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_DAMAGE_TAKEN,
+        description="The type of trigger event.",
+    )
+    damage_amount: int = Field(description="Amount of damage taken.")
+    damage_type: Any = Field(description="Type of damage taken.")
+
+
+class LowHealthEvent(CombatEvent):
+    """Event data for ON_LOW_HEALTH triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_LOW_HEALTH,
+        description="The type of trigger event.",
+    )
+    current_hp: int = Field(description="Current HP value.")
+    max_hp: int = Field(description="Maximum HP value.")
+    threshold: float = Field(
+        description="HP threshold percentage that triggered this event."
+    )
+    previous_hp: int = Field(default=0, description="HP value before this event.")
+
+
+class HighHealthEvent(CombatEvent):
+    """Event data for ON_HIGH_HEALTH triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_HIGH_HEALTH,
+        description="The type of trigger event.",
+    )
+    current_hp: int = Field(description="Current HP value.")
+    max_hp: int = Field(description="Maximum HP value.")
+    threshold: float = Field(
+        description="HP threshold percentage that triggered this event."
+    )
+    previous_hp: int = Field(default=0, description="HP value before this event.")
+
+
+class TurnStartEvent(CombatEvent):
+    """Event data for ON_TURN_START triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_TURN_START,
+        description="The type of trigger event.",
+    )
+    turn_number: int = Field(description="Current turn number.")
+    round_number: int = Field(default=1, description="Current round number.")
+
+
+class TurnEndEvent(CombatEvent):
+    """Event data for ON_TURN_END triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_TURN_END,
+        description="The type of trigger event.",
+    )
+    turn_number: int = Field(description="Current turn number.")
+    round_number: int = Field(default=1, description="Current round number.")
+
+
+class DeathEvent(CombatEvent):
+    """Event data for ON_DEATH triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_DEATH,
+        description="The type of trigger event.",
+    )
+    cause: str = Field(default="unknown", description="Cause of death.")
+    final_hp: int = Field(default=0, description="Final HP value.")
+    killer: Any | None = Field(
+        default=None, description="Entity that caused the death."
+    )
+
+
+class KillEvent(CombatEvent):
+    """Event data for ON_KILL triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_KILL,
+        description="The type of trigger event.",
+    )
+    defeated_enemy: Any = Field(description="The enemy that was defeated.")
+    damage_dealt: int = Field(
+        default=0, description="Damage dealt in the killing blow."
+    )
+    kill_method: str = Field(
+        default="unknown", description="Method used to defeat the enemy."
+    )
+
+
+class HealEvent(CombatEvent):
+    """Event data for ON_HEAL triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_HEAL,
+        description="The type of trigger event.",
+    )
+    heal_amount: int = Field(description="Amount of healing received.")
+    source: Any | None = Field(default=None, description="Source of the healing.")
+    new_hp: int = Field(default=0, description="HP value after healing.")
+    max_hp: int = Field(default=0, description="Maximum HP value.")
+
+
+class SpellCastEvent(CombatEvent):
+    """Event data for ON_SPELL_CAST triggers."""
+
+    trigger_type: EventType = Field(
+        default=EventType.ON_SPELL_CAST,
+        description="The type of trigger event.",
+    )
+    spell_category: Any = Field(description="Category of the spell.")
+    target: Any | None = Field(default=None, description="Target of the spell.")

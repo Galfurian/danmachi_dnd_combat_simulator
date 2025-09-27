@@ -20,7 +20,7 @@ class DamageComponent(BaseModel):
         description="The type of damage (e.g., PHYSICAL, FIRE)",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.damage_roll:
             raise ValueError("damage_roll must be a non-empty string")

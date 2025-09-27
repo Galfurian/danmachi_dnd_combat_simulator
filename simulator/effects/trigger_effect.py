@@ -4,7 +4,7 @@ from typing import Any, Literal, TypeAlias
 from combat.damage import DamageComponent
 from pydantic import BaseModel, Field
 
-from .base_effect import ActiveEffect, Effect
+from .base_effect import ActiveEffect, Effect, EventResponse
 from .damage_over_time_effect import DamageOverTimeEffect
 from .incapacitating_effect import IncapacitatingEffect
 from .modifier_effect import ModifierEffect
@@ -12,197 +12,15 @@ from .modifier_effect import ModifierEffect
 ValidTriggerEffect: TypeAlias = (
     DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
 )
-
-
-class TriggerType(Enum):
-    """Enumeration of available trigger types for OnTrigger effects."""
-
-    ON_HIT = "on_hit"  # When character hits with an attack
-    ON_MISS = "on_miss"  # When character misses an attack
-    ON_CRITICAL_HIT = "on_critical_hit"  # When character scores a critical hit
-    ON_DAMAGE_TAKEN = "on_damage_taken"  # When character takes damage
-
-    ON_LOW_HEALTH = "on_low_health"  # When HP drops below threshold
-    ON_HIGH_HEALTH = "on_high_health"  # When HP rises above threshold
-
-    ON_TURN_START = "on_turn_start"  # At the beginning of character's turn
-    ON_TURN_END = "on_turn_end"  # At the end of character's turn
-
-    ON_DEATH = "on_death"  # When character reaches 0 HP
-    ON_KILL = "on_kill"  # When character defeats an enemy
-
-    ON_HEAL = "on_heal"  # When character is healed
-    ON_SPELL_CAST = "on_spell_cast"  # When character casts a spell
-
-
-class TriggerEvent(BaseModel):
-    """Base class for all trigger events."""
-
-    trigger_type: TriggerType = Field(
-        description="The type of trigger event.",
-    )
-    actor: Any = Field(description="The character or entity that triggered the event.")
-
-
-class HitTriggerEvent(TriggerEvent):
-    """Event data for ON_HIT triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_HIT,
-        description="The type of trigger event.",
-    )
-    target: Any = Field(description="The target of the attack.")
-
-
-class MissTriggerEvent(TriggerEvent):
-    """Event data for ON_MISS triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_MISS,
-        description="The type of trigger event.",
-    )
-    attack_roll: int = Field(description="The attack roll result.")
-    target: Any = Field(description="The target of the attack.")
-    weapon_used: Any | None = Field(
-        default=None, description="Weapon used in the attack."
-    )
-
-
-class CriticalHitTriggerEvent(TriggerEvent):
-    """Event data for ON_CRITICAL_HIT triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_CRITICAL_HIT,
-        description="The type of trigger event.",
-    )
-    attack_roll: int = Field(description="The attack roll result.")
-    damage_dealt: int = Field(description="Amount of damage dealt.")
-    target: Any = Field(description="The target of the attack.")
-    weapon_used: Any | None = Field(
-        default=None, description="Weapon used in the attack."
-    )
-
-
-class DamageTakenTriggerEvent(TriggerEvent):
-    """Event data for ON_DAMAGE_TAKEN triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_DAMAGE_TAKEN,
-        description="The type of trigger event.",
-    )
-    damage_amount: int = Field(description="Amount of damage taken.")
-    damage_type: Any = Field(description="Type of damage taken.")
-    source: Any | None = Field(default=None, description="Source of the damage.")
-    remaining_hp: int = Field(default=0, description="HP remaining after damage.")
-    total_damage_taken: int = Field(
-        default=0, description="Total damage taken in this event."
-    )
-
-
-class LowHealthTriggerEvent(TriggerEvent):
-    """Event data for ON_LOW_HEALTH triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_LOW_HEALTH,
-        description="The type of trigger event.",
-    )
-    current_hp: int = Field(description="Current HP value.")
-    max_hp: int = Field(description="Maximum HP value.")
-    threshold: float = Field(
-        description="HP threshold percentage that triggered this event."
-    )
-    previous_hp: int = Field(default=0, description="HP value before this event.")
-
-
-class HighHealthTriggerEvent(TriggerEvent):
-    """Event data for ON_HIGH_HEALTH triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_HIGH_HEALTH,
-        description="The type of trigger event.",
-    )
-    current_hp: int = Field(description="Current HP value.")
-    max_hp: int = Field(description="Maximum HP value.")
-    threshold: float = Field(
-        description="HP threshold percentage that triggered this event."
-    )
-    previous_hp: int = Field(default=0, description="HP value before this event.")
-
-
-class TurnStartTriggerEvent(TriggerEvent):
-    """Event data for ON_TURN_START triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_TURN_START,
-        description="The type of trigger event.",
-    )
-    turn_number: int = Field(description="Current turn number.")
-    round_number: int = Field(default=1, description="Current round number.")
-
-
-class TurnEndTriggerEvent(TriggerEvent):
-    """Event data for ON_TURN_END triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_TURN_END,
-        description="The type of trigger event.",
-    )
-    turn_number: int = Field(description="Current turn number.")
-    round_number: int = Field(default=1, description="Current round number.")
-
-
-class DeathTriggerEvent(TriggerEvent):
-    """Event data for ON_DEATH triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_DEATH,
-        description="The type of trigger event.",
-    )
-    cause: str = Field(default="unknown", description="Cause of death.")
-    final_hp: int = Field(default=0, description="Final HP value.")
-    killer: Any | None = Field(
-        default=None, description="Entity that caused the death."
-    )
-
-
-class KillTriggerEvent(TriggerEvent):
-    """Event data for ON_KILL triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_KILL,
-        description="The type of trigger event.",
-    )
-    defeated_enemy: Any = Field(description="The enemy that was defeated.")
-    damage_dealt: int = Field(
-        default=0, description="Damage dealt in the killing blow."
-    )
-    kill_method: str = Field(
-        default="unknown", description="Method used to defeat the enemy."
-    )
-
-
-class HealTriggerEvent(TriggerEvent):
-    """Event data for ON_HEAL triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_HEAL,
-        description="The type of trigger event.",
-    )
-    heal_amount: int = Field(description="Amount of healing received.")
-    source: Any | None = Field(default=None, description="Source of the healing.")
-    new_hp: int = Field(default=0, description="HP value after healing.")
-    max_hp: int = Field(default=0, description="Maximum HP value.")
-
-
-class SpellCastTriggerEvent(TriggerEvent):
-    """Event data for ON_SPELL_CAST triggers."""
-
-    trigger_type: TriggerType = Field(
-        default=TriggerType.ON_SPELL_CAST,
-        description="The type of trigger event.",
-    )
-    spell_category: Any = Field(description="Category of the spell.")
-    target: Any | None = Field(default=None, description="Target of the spell.")
+from .event_system import (
+    CombatEvent,
+    EventType,
+    HighHealthEvent,
+    HitEvent,
+    LowHealthEvent,
+    SpellCastEvent,
+    DamageTakenEvent,
+)
 
 
 class TriggerCondition(BaseModel):
@@ -213,7 +31,7 @@ class TriggerCondition(BaseModel):
     with parameters, thresholds, and custom validation logic.
     """
 
-    trigger_type: TriggerType = Field(
+    trigger_type: EventType = Field(
         description="Type of trigger event.",
     )
     threshold: float | None = Field(
@@ -241,42 +59,42 @@ class TriggerCondition(BaseModel):
             str:
                 The generated description.
         """
-        if self.trigger_type == TriggerType.ON_HIT:
+        if self.trigger_type == EventType.ON_HIT:
             return "when hitting with an attack"
-        if self.trigger_type == TriggerType.ON_MISS:
+        if self.trigger_type == EventType.ON_MISS:
             return "when missing with an attack"
-        if self.trigger_type == TriggerType.ON_CRITICAL_HIT:
+        if self.trigger_type == EventType.ON_CRITICAL_HIT:
             return "when scoring a critical hit"
-        if self.trigger_type == TriggerType.ON_DAMAGE_TAKEN:
+        if self.trigger_type == EventType.ON_DAMAGE_TAKEN:
             if self.damage_type:
                 return f"when taking {self.damage_type.name.lower()} damage"
             return "when taking damage"
-        if self.trigger_type == TriggerType.ON_LOW_HEALTH:
+        if self.trigger_type == EventType.ON_LOW_HEALTH:
             return f"when HP drops below {(self.threshold or 0.25) * 100:.0f}%"
-        if self.trigger_type == TriggerType.ON_HIGH_HEALTH:
+        if self.trigger_type == EventType.ON_HIGH_HEALTH:
             return f"when HP rises above {(self.threshold or 0.75) * 100:.0f}%"
-        if self.trigger_type == TriggerType.ON_TURN_START:
+        if self.trigger_type == EventType.ON_TURN_START:
             return "at the start of your turn"
-        if self.trigger_type == TriggerType.ON_TURN_END:
+        if self.trigger_type == EventType.ON_TURN_END:
             return "at the end of your turn"
-        if self.trigger_type == TriggerType.ON_DEATH:
+        if self.trigger_type == EventType.ON_DEATH:
             return "upon death"
-        if self.trigger_type == TriggerType.ON_KILL:
+        if self.trigger_type == EventType.ON_KILL:
             return "upon killing an enemy"
-        if self.trigger_type == TriggerType.ON_HEAL:
+        if self.trigger_type == EventType.ON_HEAL:
             return "when healed"
-        if self.trigger_type == TriggerType.ON_SPELL_CAST:
+        if self.trigger_type == EventType.ON_SPELL_CAST:
             if self.spell_category:
                 return f"when casting {self.spell_category.name.lower()} spells"
             return "when casting any spell"
         return self.trigger_type.value.replace("_", " ")
 
-    def is_met(self, event: TriggerEvent) -> bool:
+    def is_met(self, event: CombatEvent) -> bool:
         """
         Check if the trigger condition is met.
 
         Args:
-            event (TriggerEvent):
+            event (CombatEvent):
                 The event to evaluate the condition for.
 
         Returns:
@@ -290,42 +108,42 @@ class TriggerCondition(BaseModel):
         # There are some trigger types that always activate when the event
         # occurs.
         if event.trigger_type in [
-            TriggerType.ON_HIT,
-            TriggerType.ON_MISS,
-            TriggerType.ON_CRITICAL_HIT,
-            TriggerType.ON_TURN_START,
-            TriggerType.ON_TURN_END,
-            TriggerType.ON_DEATH,
-            TriggerType.ON_HEAL,
-            TriggerType.ON_KILL,
+            EventType.ON_HIT,
+            EventType.ON_MISS,
+            EventType.ON_CRITICAL_HIT,
+            EventType.ON_TURN_START,
+            EventType.ON_TURN_END,
+            EventType.ON_DEATH,
+            EventType.ON_HEAL,
+            EventType.ON_KILL,
         ]:
             return True
 
-        # If the event is DamageTakenTriggerEvent, check damage type and amount.
-        if isinstance(event, DamageTakenTriggerEvent):
+        # If the event is DamageTakenEvent, check damage type and amount.
+        if isinstance(event, DamageTakenEvent):
             if self.damage_type:
                 return event.damage_type == self.damage_type
             return event.damage_amount > 0
-        # If the event is LowHealthTriggerEvent, check HP ratio against threshold.
-        if isinstance(event, LowHealthTriggerEvent):
+        # If the event is LowHealthEvent, check HP ratio against threshold.
+        if isinstance(event, LowHealthEvent):
             return self._get_hp_ratio(event) <= (self.threshold or 0.25)
-        # If the event is HighHealthTriggerEvent, check HP ratio against threshold.
-        if isinstance(event, HighHealthTriggerEvent):
+        # If the event is HighHealthEvent, check HP ratio against threshold.
+        if isinstance(event, HighHealthEvent):
             return self._get_hp_ratio(event) >= (self.threshold or 0.75)
-        # If the event is SpellCastTriggerEvent, check spell category if specified.
-        if isinstance(event, SpellCastTriggerEvent):
+        # If the event is SpellCastEvent, check spell category if specified.
+        if isinstance(event, SpellCastEvent):
             if self.spell_category:
                 return event.spell_category == self.spell_category
             return True
 
         return False
 
-    def _get_hp_ratio(self, event: TriggerEvent) -> float:
+    def _get_hp_ratio(self, event: CombatEvent) -> float:
         """
         Get the HP ratio (current HP / max HP) of the actor involved in the event.
 
         Args:
-            event (TriggerEvent):
+            event (CombatEvent):
                 The event containing the actor whose HP ratio is to be calculated.
 
         Raises:
@@ -420,7 +238,7 @@ class TriggerEffect(Effect):
         if self.max_triggers is not None and self.max_triggers < 0:
             raise ValueError("Max triggers must be None (unlimited) or non-negative.")
 
-    def is_type(self, trigger_type: TriggerType) -> bool:
+    def is_type(self, trigger_type: EventType) -> bool:
         """Check if this trigger activates on the specified trigger type."""
         return self.trigger_condition.trigger_type == trigger_type
 
@@ -462,12 +280,12 @@ class ActiveTriggerEffect(ActiveEffect):
             raise TypeError(f"Expected TriggerEffect, got {type(self.effect)}")
         return self.effect
 
-    def check_trigger(self, event: "TriggerEvent") -> bool:
+    def check_trigger(self, event: "CombatEvent") -> bool:
         """
         Check if the trigger condition is met for the given event.
 
         Args:
-            event (TriggerEvent):
+            event (CombatEvent):
                 The event to check against the trigger condition.
 
         Returns:
@@ -567,8 +385,8 @@ class ActiveTriggerEffect(ActiveEffect):
         if not self.trigger_effect.trigger_condition.trigger_type:
             return False
         return self.trigger_effect.trigger_condition.trigger_type in [
-            TriggerType.ON_TURN_START,
-            TriggerType.ON_TURN_END,
+            EventType.ON_TURN_START,
+            EventType.ON_TURN_END,
         ]
 
     def mark_as_triggered_this_turn(self) -> None:
@@ -616,3 +434,58 @@ class ActiveTriggerEffect(ActiveEffect):
         if self.trigger_effect.max_triggers is None:
             return False
         return self.triggers_used >= self.trigger_effect.max_triggers
+
+    def on_hit(self, event: HitEvent) -> EventResponse | None:
+        """
+        Handle hit event for trigger effects.
+
+        Args:
+            event (HitEvent):
+                The hit event.
+
+        Returns:
+            EventResponse | None:
+                The response to the hit event. If the effect does not respond
+                to hits, return None.
+        """
+        if not self.check_trigger(event):
+            return None
+        damage_bonus, new_effects = self.activate_trigger()
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=self.trigger_effect.consumes_on_trigger,
+            new_effects=new_effects,
+            damage_bonus=damage_bonus,
+            message=(
+                f"{event.actor.colored_name}'s {self.effect.colored_name} triggered, "
+                f"applying {', '.join(e.colored_name for e in new_effects)}!"
+            ),
+        )
+
+    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
+        """
+        Handle damage taken event for incapacitating effects.
+
+        Args:
+            event (DamageTakenEvent):
+                The damage taken event.
+
+        Returns:
+            EventResponse | None:
+                The response to the damage taken event. If the effect does not
+                respond to damage, return None.
+        """
+        if not self.check_trigger(event):
+            return None
+        damage_bonus, new_effects = self.activate_trigger()
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=self.trigger_effect.consumes_on_trigger,
+            new_effects=new_effects,
+            damage_bonus=damage_bonus,
+            message=(
+                f"{event.actor.colored_name}'s {self.effect.colored_name} triggered, "
+                f"applying {', '.join(e.colored_name for e in new_effects)}!"
+            ),
+        )
+        return response

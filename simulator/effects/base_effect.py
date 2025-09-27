@@ -1,7 +1,9 @@
-from typing import Any
+from typing import Any, Sequence
 
 from core.utils import VarInfo, cprint
+from effects.event_system import DamageTakenEvent, HitEvent
 from pydantic import BaseModel, Field
+from combat.damage import DamageComponent
 
 
 class Effect(BaseModel):
@@ -78,6 +80,11 @@ class Effect(BaseModel):
                 True if the effect can be applied, False otherwise.
 
         """
+        from character import Character
+
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert isinstance(target, Character), "Target must be an object"
+
         if actor.is_dead():
             cprint(f"    [bold red]{actor.name} is dead and cannot apply effects![/]")
             return False
@@ -92,6 +99,32 @@ class Effect(BaseModel):
             self,
             actor.get_expression_variables(),
         )
+
+
+class EventResponse(BaseModel):
+    """
+    Represents a response to a combat event, indicating whether an effect should be removed.
+    """
+
+    effect: Effect = Field(
+        description="The effect that generated this response.",
+    )
+    remove_effect: bool = Field(
+        False,
+        description="Indicates if the effect should be removed after handling the event.",
+    )
+    new_effects: list[Effect] = Field(
+        default_factory=list,
+        description="New effects to apply as a result of the event.",
+    )
+    damage_bonus: list[DamageComponent] = Field(
+        default_factory=list,
+        description="Additional damage components applied as a result of the event.",
+    )
+    message: str | None = Field(
+        None,
+        description="Optional message to display as a result of the event.",
+    )
 
 
 class ActiveEffect(BaseModel):
@@ -124,6 +157,37 @@ class ActiveEffect(BaseModel):
         turn_update method.
         """
         raise NotImplementedError("Subclasses must implement turn_update.")
+
+    def on_hit(self, event: HitEvent) -> EventResponse | None:
+        """
+        Handle hit event for the effect.
+
+        Args:
+            event (HitEvent):
+                The hit event.
+
+        Returns:
+            EventResponse | None:
+                The response to the hit event. If the effect does not
+                respond to hits, return None.
+
+        """
+        return None
+
+    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
+        """
+        Handle damage taken event for the effect.
+
+        Args:
+            event (DamageTakenEvent):
+                The damage taken event.
+
+        Returns:
+            EventResponse | None:
+                The response to the damage taken event. If the effect does not
+                respond to damage, return None.
+        """
+        return None
 
     def model_post_init(self, _) -> None:
         if not isinstance(self.effect, Effect):

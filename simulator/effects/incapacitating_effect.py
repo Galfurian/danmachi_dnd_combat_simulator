@@ -1,8 +1,9 @@
 from typing import Literal
 
+from effects.event_system import DamageTakenEvent
 from pydantic import Field
 
-from .base_effect import ActiveEffect, Effect
+from .base_effect import ActiveEffect, Effect, EventResponse
 
 
 class IncapacitatingEffect(Effect):
@@ -113,6 +114,35 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         if not isinstance(self.effect, IncapacitatingEffect):
             raise TypeError(f"Expected IncapacitatingEffect, got {type(self.effect)}")
         return self.effect
+
+    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
+        """
+        Handle damage taken event for incapacitating effects.
+
+        Args:
+            event (DamageTakenEvent):
+                The damage taken event.
+
+        Returns:
+            EventResponse | None:
+                The response to the damage taken event. If the effect does not
+                respond to damage, return None.
+        """
+        from character.main import Character
+
+        if not isinstance(event.actor, Character):
+            raise TypeError(f"Expected Character, got {type(event.actor)}")
+
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=self.incapacitating_effect.breaks_on_damage(
+                event.damage_amount
+            ),
+            new_effects=[],
+            damage_bonus=[],
+            message=f"{event.actor.colored_name} wakes up from "
+            f"{self.incapacitating_effect.colored_name} due to taking damage!",
+        )
 
     def turn_update(self) -> None:
         """

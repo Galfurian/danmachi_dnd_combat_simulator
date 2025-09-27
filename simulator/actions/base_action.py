@@ -17,12 +17,19 @@ from core.utils import (
 )
 from effects import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
+from effects.healing_over_time_effect import HealingOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
-ValidActionEffect: TypeAlias = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
+ValidActionEffect: TypeAlias = (
+    DamageOverTimeEffect
+    | HealingOverTimeEffect
+    | ModifierEffect
+    | IncapacitatingEffect
+    | TriggerEffect
+)
 
 
 class BaseAction(BaseModel):
@@ -171,10 +178,8 @@ class BaseAction(BaseModel):
         from character.main import Character
         from core.constants import ActionCategory
 
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not isinstance(target, Character):
-            raise ValueError("Target must be a Character instance")
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert isinstance(target, Character), "Target must be an object"
 
         # Both must be alive to target.
         if not actor.is_alive() or not target.is_alive():
@@ -265,12 +270,14 @@ class BaseAction(BaseModel):
         """
         from character.main import Character
 
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not isinstance(target, Character):
-            raise ValueError("Target must be a Character instance")
-        if not all(isinstance(var, VarInfo) for var in variables):
-            raise ValueError("All items in variables must be VarInfo instances")
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert isinstance(target, Character), "Target must be an object"
+        assert all(
+            isinstance(effect, Effect) for effect in effects
+        ), "All effects must be Effect instances"
+        assert all(
+            isinstance(var, VarInfo) for var in variables
+        ), "All variables must be VarInfo instances"
 
         # Ensure both actor and target are alive.
         if not actor.is_alive() or not target.is_alive():
@@ -284,14 +291,12 @@ class BaseAction(BaseModel):
         successful_effects = []
         failed_effects = []
         for effect in effects:
-            # Make sure effect is an Effect instance.
-            if not isinstance(effect, Effect):
-                raise ValueError("All effects must be Effect instances")
             # Check if the effect can be applied.
-            if not effect.can_apply(actor, target) or not target.add_effect(actor, effect, variables):
-                failed_effects.append(effect)
-            else:
-                successful_effects.append(effect)
+            if effect.can_apply(actor, target):
+                if target.add_effect(actor, effect, variables):
+                    successful_effects.append(effect)
+                    continue
+            failed_effects.append(effect)
 
         return successful_effects, failed_effects
 
@@ -343,8 +348,7 @@ class BaseAction(BaseModel):
         """
         from character.main import Character
 
-        if not isinstance(actor, Character):
-            raise GameException("Actor must be a Character instance", actor)
+        assert isinstance(actor, Character), "Actor must be an object"
 
         # Build attack expression.
         expr = "1D20"
@@ -452,15 +456,14 @@ class BaseAction(BaseModel):
         """
         from character.main import Character
 
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
-            raise ValueError("All damage_components must be DamageComponent instances")
-        if not all(isinstance(var, VarInfo) for var in variables):
-            raise ValueError("All variables must be VarInfo instances")
-
-        if not damage_components:
-            raise ValueError("damage_components list cannot be empty")
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert damage_components, "damage_components list cannot be empty"
+        assert all(
+            isinstance(comp, DamageComponent) for comp in damage_components
+        ), "All damage_components must be DamageComponent instances"
+        assert all(
+            isinstance(var, VarInfo) for var in variables
+        ), "All variables must be VarInfo instances"
 
         # Build the full expression by substituting each component's damage roll.
         return " + ".join(
@@ -492,15 +495,14 @@ class BaseAction(BaseModel):
         """
         from character.main import Character
 
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
-            raise ValueError("All damage_components must be DamageComponent instances")
-        if not all(isinstance(var, VarInfo) for var in variables):
-            raise ValueError("All variables must be VarInfo instances")
-
-        if not damage_components:
-            raise ValueError("damage_components list cannot be empty")
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert damage_components, "damage_components list cannot be empty"
+        assert all(
+            isinstance(comp, DamageComponent) for comp in damage_components
+        ), "All damage_components must be DamageComponent instances"
+        assert all(
+            isinstance(var, VarInfo) for var in variables
+        ), "All variables must be VarInfo instances"
 
         # Calculate the minimum damage by assuming all dice roll their minimum values.
         return sum(
@@ -534,37 +536,20 @@ class BaseAction(BaseModel):
         """
         from character.main import Character
 
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be a Character instance")
-        if not all(isinstance(comp, DamageComponent) for comp in damage_components):
-            raise ValueError("All damage_components must be DamageComponent instances")
-        if not all(isinstance(var, VarInfo) for var in variables):
-            raise ValueError("All variables must be VarInfo instances")
+        assert isinstance(actor, Character), "Actor must be an object"
+        assert damage_components, "damage_components list cannot be empty"
+        assert all(
+            isinstance(comp, DamageComponent) for comp in damage_components
+        ), "All damage_components must be DamageComponent instances"
+        assert all(
+            isinstance(var, VarInfo) for var in variables
+        ), "All variables must be VarInfo instances"
 
-        if not damage_components:
-            raise ValueError("damage_components list cannot be empty")
-
-        # Calculate the maximum damage by assuming all dice roll their maximum values.
+        # Calculate the maximum damage by assuming all dice roll their maximum
+        # values.
         return sum(
             parse_expr_and_assume_max_roll(
                 substitute_variables(component.damage_roll, variables)
             )
             for component in damage_components
-        )
-
-    # =========================================================================
-    # TRIGGER HELPERS
-    # =========================================================================
-
-    def _trigger_on_hit(self, actor: Any, target: Any) -> TriggerResult:
-        from character.main import Character
-        from effects.trigger_effect import HitTriggerEvent
-
-        if not isinstance(actor, Character):
-            raise ValueError("Actor must be an instance of Character.")
-        return actor.check_triggers(
-            HitTriggerEvent(
-                actor=actor,
-                target=target,
-            )
         )
