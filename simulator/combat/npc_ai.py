@@ -15,7 +15,6 @@ from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
 from core.dice_parser import VarInfo
-from pydantic import BaseModel, Field
 from character.main import Character
 
 # =============================================================================
@@ -23,58 +22,94 @@ from character.main import Character
 # =============================================================================
 
 
-class AttackSelection(BaseModel):
-    attack: BaseAttack = Field(
-        description="The attack being considered.",
-    )
-    targets: list[Character] = Field(
-        default_factory=list,
-        description="List of selected targets for the spell.",
-    )
-    score: float = Field(
-        description="Score of the selection (higher is better).",
-    )
+class AttackSelection:
+    """
+    Represents a selected attack along with its targets and score.
+    """
+
+    def __init__(
+        self,
+        attack: BaseAttack,
+        targets: list[Character],
+        score: float,
+    ) -> None:
+        """
+        Initialize an AttackSelection instance.
+
+        Args:
+            attack (BaseAttack):
+                The attack being considered.
+            targets (list[Character]):
+                List of selected targets for the attack.
+            score (float):
+                Score of the selection (higher is better).
+        """
+        self.attack: BaseAttack = attack
+        self.targets: list[Character] = targets
+        self.score: float = score
 
 
-class SpellSelection(BaseModel):
+class SpellSelection:
     """
     Represents a selected spell along with its rank, mind level, targets, and
     score.
     """
 
-    spell: BaseSpell = Field(
-        description="The spell being considered.",
-    )
-    rank: int = Field(
-        description="The rank of the spell being considered.",
-    )
-    mind_level: int = Field(
-        description="The mind level to cast the spell at.",
-    )
-    targets: list[Character] = Field(
-        default_factory=list,
-        description="List of selected targets for the spell.",
-    )
-    score: float = Field(
-        description="Score of the selection (higher is better).",
-    )
+    def __init__(
+        self,
+        spell: BaseSpell,
+        rank: int,
+        mind_level: int,
+        targets: list[Character],
+        score: float,
+    ) -> None:
+        """
+        Initialize a SpellSelection instance.
+
+        Args:
+            spell (BaseSpell):
+                The spell being considered.
+            rank (int):
+                The rank of the spell being considered.
+            mind_level (int):
+                The mind level to cast the spell at.
+            targets (list[Character]):
+                List of selected targets for the spell.
+            score (float):
+                Score of the selection (higher is better).
+        """
+        self.spell: BaseSpell = spell
+        self.rank: int = rank
+        self.mind_level: int = mind_level
+        self.targets: list[Character] = targets
+        self.score: float = score
 
 
-class AbilitySelection(BaseModel):
+class AbilitySelection:
     """
     Represents a selected ability along with its targets and score.
     """
 
-    ability: BaseAbility = Field(
-        description="The ability being considered.",
-    )
-    targets: list[Character] = Field(
-        default_factory=list,
-        description="List of selected targets for the ability.",
-    )
-    score: float = Field(
-        description="Score of the selection (higher is better).",
-    )
+    def __init__(
+        self,
+        ability: BaseAbility,
+        targets: list[Character],
+        score: float,
+    ) -> None:
+        """
+        Initialize an AbilitySelection instance.
+
+        Args:
+            ability (BaseAbility):
+                The ability being considered.
+            targets (list[Character]):
+                List of selected targets for the ability.
+            score (float):
+                Score of the selection (higher is better).
+        """
+        self.ability: BaseAbility = ability
+        self.targets: list[Character] = targets
+        self.score: float = score
 
 
 def _hp_ratio(character: Character, missing: bool = False) -> float:

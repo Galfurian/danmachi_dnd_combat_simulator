@@ -101,7 +101,9 @@ class CombatManager:
             # Use bars only for turn order display to keep it compact
             # Show AC for player and allies, hide for enemies
             show_ac = participant.char_type != CharacterType.ENEMY
-            status_line = participant.get_status_line(show_bars=True, show_ac=show_ac)
+            status_line = participant.display_module.get_status_line(
+                show_bars=True, show_ac=show_ac
+            )
             cprint(f"    🎲 {self.initiatives[participant]:3}  {status_line}")
 
     def get_alive_participants(self) -> list[Character]:
@@ -197,15 +199,22 @@ class CombatManager:
             if participant == self.player:
                 # Player gets full display: numbers + bars + AC
                 cprint(
-                    participant.get_status_line(
-                        show_numbers=True, show_bars=True, show_ac=True
+                    participant.display_module.get_status_line(
+                        show_numbers=True,
+                        show_bars=True,
+                        show_ac=True,
                     )
                 )
             else:
                 # NPCs get bars only for cleaner display
                 # Show AC for allies, hide for enemies
                 show_ac = participant.char_type != CharacterType.ENEMY
-                cprint(participant.get_status_line(show_bars=True, show_ac=show_ac))
+                cprint(
+                    participant.display_module.get_status_line(
+                        show_bars=True,
+                        show_ac=show_ac,
+                    )
+                )
 
             # Check if character is incapacitated
             if participant.is_incapacitated():
@@ -935,8 +944,10 @@ class CombatManager:
             for ally in self.get_alive_friendlies(self.player):
                 # Show full details for healing phase (allies show AC)
                 cprint(
-                    ally.get_status_line(
-                        show_numbers=True, show_bars=True, show_ac=True
+                    ally.display_module.get_status_line(
+                        show_numbers=True,
+                        show_bars=True,
+                        show_ac=True,
                     )
                 )
             if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
@@ -951,14 +962,20 @@ class CombatManager:
         crule("📊  Final Battle Report", style="bold blue")
         # Player gets full display in final report
         cprint(
-            self.player.get_status_line(show_numbers=True, show_bars=True, show_ac=True)
+            self.player.display_module.get_status_line(
+                show_numbers=True,
+                show_bars=True,
+                show_ac=True,
+            )
         )
         # Allies get full display too in final report
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
                 cprint(
-                    ally.get_status_line(
-                        show_numbers=True, show_bars=True, show_ac=True
+                    ally.display_module.get_status_line(
+                        show_numbers=True,
+                        show_bars=True,
+                        show_ac=True,
                     )
                 )
         # Fallen foes

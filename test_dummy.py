@@ -12,7 +12,7 @@ from core.content import ContentRepository
 repo = ContentRepository(data_dir=Path("./data"))
 
 dummy_race = CharacterRace(
-    name="Construct",
+    name="Human",
     natural_ac=0,
     default_actions=[],
     default_spells=[],
@@ -33,12 +33,12 @@ training_dummy = Character(
     race=dummy_race,
     levels={dummy_class: 1},
     stats={
-        "STR": 10,
-        "DEX": 10,
-        "CON": 10,
-        "INT": 10,
-        "WIS": 10,
-        "CHA": 10,
+        "strength": 14,
+        "dexterity": 15,
+        "constitution": 15,
+        "intelligence": 16,
+        "wisdom": 14,
+        "charisma": 18,
     },
     spellcasting_ability=None,
     total_hands=0,

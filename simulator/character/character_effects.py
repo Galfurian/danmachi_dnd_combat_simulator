@@ -23,55 +23,43 @@ from effects.incapacitating_effect import (
     IncapacitatingEffect,
 )
 from effects.modifier_effect import ActiveModifierEffect, ModifierEffect
-from effects.trigger_effect import (
-    ActiveTriggerEffect,
-    TriggerEffect,
-    ValidTriggerEffect,
-)
-from pydantic import BaseModel, Field
+from effects.trigger_effect import ActiveTriggerEffect, TriggerEffect
 
 ValidPassiveEffect = (
     DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 )
 
 
-class TriggerResult(BaseModel):
-    """
-    Data structure to hold trigger activation results.
-    """
-
-    damage_bonuses: list[DamageComponent] = Field(
-        description="Damage bonuses to apply when triggered.",
-    )
-    effects_to_apply: list[ValidTriggerEffect] = Field(
-        description="Effects to apply when triggered.",
-    )
-    consumed_triggers: list[ActiveTriggerEffect] = Field(
-        description="Triggers that were consumed upon activation.",
-    )
-
-
-class CharacterEffects(BaseModel):
+class CharacterEffects:
     """
     Manages all effects (active, passive, modifiers, triggers) for a character,
     including application, removal, and effect updates.
+
+    Attributes:
+        owner (Any):
+            The character that owns this effects module.
+        active_effects (list[ActiveEffect]):
+            List of currently active effects on the character.
+        passive_effects (list[ActiveEffect]):
+            List of passive effects that are always active.
+        active_modifiers (dict[BonusType, ActiveEffect]):
+            Dictionary mapping bonus types to their active modifier effects.
     """
 
-    owner: Any = Field(
-        description="The character that owns this effects module",
-    )
-    active_effects: list[ActiveEffect] = Field(
-        default_factory=list,
-        description="List of currently active effects on the character",
-    )
-    passive_effects: list[ActiveEffect] = Field(
-        default_factory=list,
-        description="List of passive effects that are always active on the character",
-    )
-    active_modifiers: dict[BonusType, ActiveEffect] = Field(
-        default_factory=dict,
-        description="Mapping of active modifier effects by BonusType",
-    )
+    def __init__(self, owner: Any) -> None:
+        """
+        Initialize the CharacterEffects module.
+
+        Args:
+            owner (Any):
+                The character that owns this effects module.
+
+        """
+        super().__init__()
+        self.owner = owner
+        self.active_effects: list[ActiveEffect] = []
+        self.passive_effects: list[ActiveEffect] = []
+        self.active_modifiers: dict[BonusType, ActiveEffect] = {}
 
     # === Effect Management ===
 
@@ -494,59 +482,6 @@ class CharacterEffects(BaseModel):
                 self.passive_effects.remove(ae)
                 return True
         return False
-
-    # === Trigger Checking and Activation ===
-
-    def check_triggers(self, event: CombatEvent) -> TriggerResult:
-        """
-        Check and activate any triggers based on the provided event.
-
-        Args:
-            event (CombatEvent):
-                The event to check triggers against.
-
-        Raises:
-            ValueError:
-                If an active trigger is not a TriggerEffect.
-
-        Returns:
-            TriggerResult:
-                The result of trigger checks, including damage bonuses, effects
-                to apply, and consumed triggers.
-
-        """
-        # Prepare the object to return.
-        result = TriggerResult(
-            damage_bonuses=[],
-            effects_to_apply=[],
-            consumed_triggers=[],
-        )
-
-        # Keep track of the effects to remove.
-        triggers_to_remove: list[ActiveTriggerEffect] = []
-
-        for effect in self.trigger_effects:
-            if not isinstance(effect, TriggerEffect):
-                raise ValueError("ActiveTriggerEffect must contain a TriggerEffect.")
-            # Check if the trigger should activate
-            if effect.check_trigger(event):
-                # Activate the trigger and get results
-                damage_bonus, trigger_effects = effect.activate_trigger()
-                # Add damage bonuses from this trigger
-                for damage_component in damage_bonus:
-                    result.damage_bonuses.append(damage_component)
-                # Add effects to apply to target
-                for triggered_effect in trigger_effects:
-                    result.effects_to_apply.append(triggered_effect)
-                # Mark for removal if it consumes on trigger
-                if effect.trigger_effect.consumes_on_trigger:
-                    triggers_to_remove.append(effect)
-                    result.consumed_triggers.append(effect)
-
-        # Remove consumed effects
-        for effect in triggers_to_remove:
-            self.active_effects.remove(effect)
-        return result
 
     # === Regular Effect Management ===
 

@@ -10,33 +10,39 @@ from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
 from catchery import log_warning
 from core.constants import ActionClass
-from pydantic import BaseModel, Field
 
 
-class CharacterActions(BaseModel):
+class CharacterActions:
     """
     Manages character actions, turn state, cooldowns, and action availability
     for a Character.
+
+    Attributes:
+        owner (Any):
+            The Character instance this action manager belongs to.
+        available_actions (dict[ActionClass, bool]):
+            Tracks which action classes (standard, bonus) are available this
+            turn.
+        cooldowns (dict[str, int]):
+            Maps action names to their remaining cooldown turns.
+        uses (dict[str, int]):
+            Maps action names to their remaining uses if limited.
     """
 
-    owner: Any = Field(
-        description="The Character instance this action manager belongs to."
-    )
-    available_actions: dict[ActionClass, bool] = Field(
-        default={
+    def __init__(self, owner: Any) -> None:
+        """
+        Initialize the CharacterActions with the owning character.
+
+        Args:
+            owner (Any): The Character instance this action manager belongs to.
+        """
+        self.owner = owner
+        self.available_actions = {
             ActionClass.STANDARD: True,
             ActionClass.BONUS: True,
-        },
-        description="Flags to track used actions during the turn.",
-    )
-    cooldowns: dict[str, int] = Field(
-        default_factory=dict,
-        description="Cooldowns for actions, mapping action names to remaining turns.",
-    )
-    uses: dict[str, int] = Field(
-        default_factory=dict,
-        description="Tracks limited uses for actions, mapping action names to remaining uses.",
-    )
+        }
+        self.cooldowns = {}
+        self.uses = {}
 
     def reset_available_actions(self) -> None:
         """

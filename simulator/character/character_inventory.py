@@ -7,19 +7,28 @@ from typing import Any
 from catchery import log_warning
 from core.constants import ArmorSlot
 from items.armor import Armor
-from items.weapon import Weapon
-from pydantic import BaseModel, Field
+from items.weapon import Weapon, NaturalWeapon, WieldedWeapon
 
 
-class CharacterInventory(BaseModel):
+class CharacterInventory:
     """
     Manages character inventory including weapons, armor, and equipment
     validation.
+
+    Attributes:
+        owner (Any):
+            The Character instance this inventory manager belongs to.
     """
 
-    owner: Any = Field(
-        description="The Character instance this inventory manager belongs to."
-    )
+    def __init__(self, owner: Any) -> None:
+        """
+        Initialize the CharacterInventory with the owning character.
+
+        Args:
+            owner (Any):
+                The Character instance this inventory manager belongs to.
+        """
+        self.owner = owner
 
     def get_occupied_hands(self) -> int:
         """
@@ -90,7 +99,12 @@ class CharacterInventory(BaseModel):
         """
         if self.can_equip_weapon(weapon):
             # Add the weapon to the character's weapon list.
-            self.owner.equipped_weapons.append(weapon)
+            if isinstance(weapon, NaturalWeapon):
+                self.owner.natural_weapons.append(weapon)
+            elif isinstance(weapon, WieldedWeapon):
+                self.owner.equipped_weapons.append(weapon)
+            else:
+                raise ValueError(f"Unknown weapon type {type(weapon)}.")
             return True
         log_warning(
             f"{self.owner.name} cannot equip {weapon.name}",
@@ -109,9 +123,13 @@ class CharacterInventory(BaseModel):
             bool: True if the weapon was removed successfully, False otherwise.
 
         """
+        # Remove the weapon from the character's weapon list.
         if weapon in self.owner.equipped_weapons:
-            # Remove the weapon from the character's weapon list.
             self.owner.equipped_weapons.remove(weapon)
+            return True
+        # Remove the natural weapon from the character's natural weapon list.
+        if weapon in self.owner.natural_weapons:
+            self.owner.natural_weapons.remove(weapon)
             return True
         log_warning(
             f"{self.owner.name} does not have {weapon.name} equipped",

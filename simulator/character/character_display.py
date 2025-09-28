@@ -5,17 +5,26 @@ Character display and UI functionality.
 from typing import Any
 
 from core.utils import make_bar
-from pydantic import BaseModel, Field
 
 
-class CharacterDisplay(BaseModel):
+class CharacterDisplay:
     """
     Handles display, formatting, and UI functionality for Character objects.
+    
+    Attributes:
+        owner (Any):
+            The Character instance that this display is associated with.
     """
 
-    owner: Any = Field(
-        description="Reference to the Character instance that owns this display module."
-    )
+    def __init__(self, owner: Any) -> None:
+        """
+        Initialize the CharacterDisplay with its owner.
+
+        Args:
+            owner (Any):
+                The Character instance that this display is associated with.
+        """
+        self.owner = owner
 
     def get_status_line(
         self,

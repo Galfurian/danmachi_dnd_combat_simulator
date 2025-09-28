@@ -387,15 +387,6 @@ def print_character_sheet(char: Character) -> None:
                 effect_info += f" ({active_effect.duration} turns remaining)"
             cprint(Padding(effect_info, (0, 4)))
 
-    # Trigger Effects
-    if char.effects_module.trigger_effects:
-        cprint("  [yellow]Trigger Effects[/]:")
-        for trigger_effect in char.effects_module.trigger_effects:
-            effect_info = (
-                f"[{trigger_effect.effect.color}]{trigger_effect.effect.name}[/]"
-            )
-            cprint(Padding(effect_info, (0, 4)))
-
     # Passive Effects (if any)
     if hasattr(char, "passive_effects") and char.passive_effects:
         cprint("  [dim]Passive Effects[/]:")

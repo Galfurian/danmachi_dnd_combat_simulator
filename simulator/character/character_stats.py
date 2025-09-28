@@ -8,27 +8,35 @@ from typing import Any
 from core.constants import BonusType
 from core.dice_parser import VarInfo
 from core.utils import get_stat_modifier
-from pydantic import BaseModel, Field
 
 
-class CharacterStats(BaseModel):
+class CharacterStats:
     """
     Handles all stat calculations and derived properties for a Character,
     including ability modifiers, HP, AC, initiative, and utility stat
     expressions.
+
+    Attributes:
+        owner (Any):
+            The Character instance that owns this CharacterStats.
+        hp (int):
+            The current hit points (HP) of the character.
+        mind (int):
+            The current Mind points of the character.
     """
 
-    owner: Any = Field(
-        description="Reference to the parent Character instance",
-    )
-    hp: int = Field(
-        default=0,
-        description="Current hit points of the character",
-    )
-    mind: int = Field(
-        default=0,
-        description="Current mind points of the character",
-    )
+    def __init__(self, owner: Any) -> None:
+        """
+        Initializes the CharacterStats with a reference to its owner.
+
+        Args:
+            owner (Any):
+                The Character instance that owns this CharacterStats.
+
+        """
+        self.owner = owner
+        self.hp = self.HP_MAX
+        self.mind = self.MIND_MAX
 
     # ============================================================================
     # ABILITY SCORE MODIFIERS (D&D 5e Standard)

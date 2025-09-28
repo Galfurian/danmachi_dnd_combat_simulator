@@ -6,17 +6,16 @@ from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.utils import cprint
-from effects.base_effect import Effect, EventResponse
-from effects.event_system import CombatEvent, DamageTakenEvent, HitEvent
+from effects.base_effect import Effect, EventResponse, deserialize_effect
+from effects.event_system import DamageTakenEvent, HitEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from .character_actions import CharacterActions
 from .character_class import CharacterClass
 from .character_display import CharacterDisplay
-from .character_effects import CharacterEffects, TriggerResult, ValidPassiveEffect
+from .character_effects import CharacterEffects, ValidPassiveEffect
 from .character_inventory import CharacterInventory
 from .character_race import CharacterRace
 from .character_stats import CharacterStats
@@ -27,7 +26,7 @@ from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
 
 
-class Character(BaseModel):
+class Character:
     """
     Represents a character in the game, including stats, equipment, actions,
     effects, and all related management modules. Provides methods for stat
@@ -37,224 +36,74 @@ class Character(BaseModel):
 
     # === Static properties ===
 
-    char_type: CharacterType = Field(
-        description="The type of character (player, NPC, etc.)",
-    )
-    name: str = Field(
-        description="The character's name",
-    )
-    race: CharacterRace = Field(
-        description="The character's race",
-    )
-    levels: dict[CharacterClass, int] = Field(
-        description="The character's class levels",
-    )
-    stats: dict[str, int] = Field(
-        description="The character's base stats",
-    )
-    spellcasting_ability: str | None = Field(
-        default=None,
-        description="The spellcasting ability, if any",
-    )
-    total_hands: int = Field(
-        default=2,
-        description="The number of hands the character has",
-    )
-    resistances: set[DamageType] = Field(
-        default_factory=set,
-        description="Damage types the character resists",
-    )
-    vulnerabilities: set[DamageType] = Field(
-        default_factory=set,
-        description="Damage types the character is vulnerable to",
-    )
-    number_of_attacks: int = Field(
-        default=1,
-        description="Number of attacks per turn",
-    )
-    passive_effects: list[ValidPassiveEffect] = Field(
-        default_factory=list,
-        description="List of passive effects always active on the character",
-    )
+    char_type: CharacterType
+    name: str
+    race: CharacterRace
+    levels: dict[CharacterClass, int]
+    stats: dict[str, int]
+    spellcasting_ability: str | None
+    total_hands: int
+    resistances: set[DamageType]
+    vulnerabilities: set[DamageType]
+    number_of_attacks: int
+    passive_effects: list[ValidPassiveEffect]
 
     # === Dynamic properties ===
 
-    equipped_weapons: list["WieldedWeapon"] = Field(
-        default_factory=list,
-        description="List of currently equipped weapons",
-    )
-    natural_weapons: list["NaturalWeapon"] = Field(
-        default_factory=list,
-        description="List of natural weapons, if any",
-    )
-    equipped_armor: list[Armor] = Field(
-        default_factory=list,
-        description="List of currently equipped armor",
-    )
-    actions: dict[str, BaseAction] = Field(
-        default_factory=dict,
-        description="Dictionary of known actions",
-    )
-    spells: dict[str, BaseSpell] = Field(
-        default_factory=dict,
-        description="Dictionary of known spells",
-    )
+    equipped_weapons: list["WieldedWeapon"]
+    natural_weapons: list["NaturalWeapon"]
+    equipped_armor: list[Armor]
+    actions: dict[str, BaseAction]
+    spells: dict[str, BaseSpell]
 
     # === Management Modules ===
 
-    effects_module: CharacterEffects = Field(
-        description="Module managing active effects on the character",
-        default_factory=lambda: CharacterEffects(owner=None),
-        exclude=True,
-    )
-    stats_module: CharacterStats = Field(
-        description="Module managing character stats and calculations",
-        default_factory=lambda: CharacterStats(owner=None),
-        exclude=True,
-    )
-    inventory_module: CharacterInventory = Field(
-        description="Module managing character inventory and equipment",
-        default_factory=lambda: CharacterInventory(owner=None),
-        exclude=True,
-    )
-    actions_module: CharacterActions = Field(
-        description="Module managing character actions and spells",
-        default_factory=lambda: CharacterActions(owner=None),
-        exclude=True,
-    )
-    display_module: CharacterDisplay = Field(
-        description="Module managing character display and formatting",
-        default_factory=lambda: CharacterDisplay(owner=None),
-        exclude=True,
-    )
+    effects_module: CharacterEffects
+    stats_module: CharacterStats
+    inventory_module: CharacterInventory
+    actions_module: CharacterActions
+    display_module: CharacterDisplay
 
-    @model_validator(mode="before")
-    def replace_with_real(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """
-        Replaces weapons, armor, actions, and spells with actual instances from
-        the content repository during initialization.
+    def __init__(
+        self,
+        char_type: CharacterType,
+        name: str,
+        race: CharacterRace,
+        levels: dict[CharacterClass, int],
+        stats: dict[str, int],
+        spellcasting_ability: Optional[str],
+        total_hands: int,
+        resistances: set[DamageType],
+        vulnerabilities: set[DamageType],
+        number_of_attacks: int,
+        passive_effects: list[ValidPassiveEffect],
+    ) -> None:
+        # Initialize static properties.
+        self.char_type = char_type
+        self.name = name
+        self.race = race
+        self.levels = levels
+        self.stats = stats
+        self.spellcasting_ability = spellcasting_ability
+        self.total_hands = total_hands
+        self.resistances = resistances
+        self.vulnerabilities = vulnerabilities
+        self.number_of_attacks = number_of_attacks
+        self.passive_effects = passive_effects
 
-        Args:
-            data (dict[str, Any]):
-                The input data to validate and possibly modify.
+        # Initialize dynamic properties.
+        self.equipped_weapons = []
+        self.natural_weapons = []
+        self.equipped_armor = []
+        self.actions = {}
+        self.spells = {}
 
-        Returns:
-            dict[str, Any]:
-                The modified data with real instances.
-
-        """
-        from core.content import ContentRepository
-
-        # Import here to avoid circular imports.
-        repo: ContentRepository = ContentRepository()
-
-        # Replace the race with actual instance.
-        data["race"] = repo.get_character_race(data["race"])
-
-        # Replace character classes with actual instances.
-        real_levels: dict[CharacterClass, int] = {}
-        for class_name, level in data.get("levels", {}).items():
-            character_class = repo.get_character_class(class_name)
-            if character_class:
-                real_levels[character_class] = level
-        data["levels"] = real_levels
-
-        # Replace equipped weapons with actual instances.
-        real_weapons = []
-        for weapon_name in data.get("equipped_weapons", []):
-            from items.weapon import WieldedWeapon
-
-            weapon = repo.get_weapon(weapon_name)
-            if not weapon:
-                raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
-            if not isinstance(weapon, WieldedWeapon):
-                raise ValueError(f"Weapon '{weapon_name}' is not a WieldedWeapon.")
-            real_weapons.append(weapon)
-        data["equipped_weapons"] = real_weapons
-
-        # Replace natural weapons with actual instances.
-        real_natural_weapons = []
-        for weapon_name in data.get("natural_weapons", []):
-            from items.weapon import NaturalWeapon
-
-            weapon = repo.get_weapon(weapon_name)
-            if not weapon:
-                raise ValueError(
-                    f"Natural weapon '{weapon_name}' not found in repository."
-                )
-            if not isinstance(weapon, NaturalWeapon):
-                raise ValueError(f"Weapon '{weapon_name}' is not a NaturalWeapon.")
-            real_natural_weapons.append(weapon)
-        data["natural_weapons"] = real_natural_weapons
-
-        # Replace equipped armor with actual instances.
-        real_armor = []
-        for armor_name in data.get("equipped_armor", []):
-            armor = repo.get_armor(armor_name)
-            if armor:
-                real_armor.append(armor)
-        data["equipped_armor"] = real_armor
-
-        # Replace actions with actual instances.
-        real_actions = {}
-        for action_name in data.get("actions", []):
-            action = repo.get_action(action_name)
-            if action:
-                real_actions[action_name] = action
-        data["actions"] = real_actions
-
-        # Replace spells with actual instances.
-        real_spells = {}
-        for spell_name in data.get("spells", []):
-            spell = repo.get_spell(spell_name)
-            if spell:
-                real_spells[spell_name] = spell
-        data["spells"] = real_spells
-
-        return data
-
-    def model_post_init(self, _) -> None:
-        """
-        Post-initialization to set up dynamic properties and modules.
-        """
-        from core.content import ContentRepository
-
-        self.effects_module.owner = self
-        self.stats_module.owner = self
-        self.inventory_module.owner = self
-        self.actions_module.owner = self
-        self.display_module.owner = self
-
-        self.stats_module.adjust_hp(self.HP_MAX)
-        self.stats_module.adjust_mind(self.MIND_MAX)
-
-        # Import here to avoid circular imports.
-        repo: ContentRepository = ContentRepository()
-
-        # Add default race spells.
-        for spell_name in self.race.default_spells:
-            spell = repo.get_spell(spell_name)
-            if spell:
-                self.learn_spell(spell)
-
-        # Get spells from each class level
-        for character_class, class_level in self.levels.items():
-            # Get all spells up to the current class level
-            spell_names = character_class.get_all_spells_up_to_level(class_level)
-            # Get all actions up to the current class level
-            action_names = character_class.get_all_actions_up_to_level(class_level)
-            for spell_name in spell_names:
-                spell = repo.get_spell(spell_name)
-                if spell:
-                    self.learn_spell(spell)
-            for action_name in action_names:
-                action = repo.get_action(action_name)
-                if action:
-                    self.learn_action(action)
-                else:
-                    spell = repo.get_spell(action_name)
-                    if spell:
-                        self.learn_spell(spell)
+        # Initialize modules.
+        self.effects_module = CharacterEffects(owner=self)
+        self.stats_module = CharacterStats(owner=self)
+        self.inventory_module = CharacterInventory(owner=self)
+        self.actions_module = CharacterActions(owner=self)
+        self.display_module = CharacterDisplay(owner=self)
 
     # ============================================================================
     # DELEGATED STAT PROPERTIES
@@ -354,12 +203,6 @@ class Character(BaseModel):
     def remove_passive_effect(self, effect: Effect) -> bool:
         """Remove a passive effect."""
         return self.effects_module.remove_passive_effect(effect)
-
-    def check_triggers(self, event: CombatEvent) -> TriggerResult:
-        """
-        Checks all active trigger effects against the given event.
-        """
-        return self.effects_module.check_triggers(event)
 
     def reset_available_actions(self) -> None:
         """Resets the classes of available actions for the character."""
@@ -724,22 +567,6 @@ class Character(BaseModel):
         """
         return self.actions_module.decrement_uses(action)
 
-    def get_status_line(
-        self,
-        show_all_effects: bool = False,
-        show_numbers: bool = False,
-        show_bars: bool = False,
-        show_ac: bool = True,
-    ) -> str:
-        """Get a formatted status line for the character with health, mana, effects, etc."""
-        return self.display_module.get_status_line(
-            show_all_effects, show_numbers, show_bars, show_ac
-        )
-
-    def get_detailed_effects(self) -> str:
-        """Get a detailed multi-line view of all active effects."""
-        return self.display_module.get_detailed_effects()
-
     def can_add_effect(
         self,
         source: Any,
@@ -851,7 +678,133 @@ class Character(BaseModel):
         return self.name == getattr(other, "name", None)
 
 
-Character.model_rebuild()
+def character_from_dict(data: dict[str, Any]) -> Character:
+    """
+    Creates a Character instance from a dictionary of data.
+
+    Args:
+        data (dict[str, Any]):
+            The dictionary containing character data.
+
+    Returns:
+        Character:
+            The created Character instance.
+    """
+    from core.content import ContentRepository
+    from items.weapon import WieldedWeapon
+    from items.weapon import NaturalWeapon
+
+    # Get the repository instance.
+    repo: ContentRepository = ContentRepository()
+
+    # Get the race.
+    race_name: str = data.get("race", "")
+    race = repo.get_character_race(race_name)
+    if not race:
+        raise ValueError(f"Character race '{race_name}' not found.")
+
+    # Get the levels.
+    levels: dict[CharacterClass, int] = {}
+    for class_name, level in data.get("levels", {}).items():
+        character_class = repo.get_character_class(class_name)
+        if not character_class:
+            raise ValueError(f"Character class '{class_name}' not found.")
+        levels[character_class] = level
+
+    # Load the passive effects.
+    passive_effects: list[ValidPassiveEffect] = []
+    for effect_data in data.get("passive_effects", []):
+        effect = deserialize_effect(effect_data)
+        if not effect:
+            raise ValueError(f"Failed to deserialize effect: {effect_data}")
+        if not isinstance(effect, ValidPassiveEffect):
+            raise ValueError(f"Effect is not a valid passive effect: {effect_data}")
+        passive_effects.append(effect)
+
+    character = Character(
+        name=data["name"],
+        char_type=CharacterType(data["char_type"]),
+        race=race,
+        levels=levels,
+        stats=data["stats"],
+        spellcasting_ability=data.get("spellcasting_ability"),
+        total_hands=data.get("total_hands", 2),
+        resistances={DamageType(dt) for dt in data.get("resistances", [])},
+        vulnerabilities={DamageType(dt) for dt in data.get("vulnerabilities", [])},
+        number_of_attacks=data.get("number_of_attacks", 1),
+        passive_effects=passive_effects,
+    )
+
+    # Add default race spells.
+    for spell_name in character.race.default_spells:
+        spell = repo.get_spell(spell_name)
+        if spell:
+            character.learn_spell(spell)
+
+    # Get spells from each class level
+    for character_class, class_level in character.levels.items():
+        # Get all spells up to the current class level
+        spell_names = character_class.get_all_spells_up_to_level(class_level)
+        # Get all actions up to the current class level
+        action_names = character_class.get_all_actions_up_to_level(class_level)
+        for spell_name in spell_names:
+            spell = repo.get_spell(spell_name)
+            if spell:
+                character.learn_spell(spell)
+        for action_name in action_names:
+            action = repo.get_action(action_name)
+            if action:
+                character.learn_action(action)
+            else:
+                spell = repo.get_spell(action_name)
+                if spell:
+                    character.learn_spell(spell)
+
+    # Replace equipped weapons with actual instances.
+    for weapon_name in data.get("equipped_weapons", []):
+        weapon = repo.get_weapon(weapon_name)
+        if not weapon:
+            raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
+        if not isinstance(weapon, WieldedWeapon):
+            raise ValueError(f"Weapon '{weapon_name}' is not a WieldedWeapon.")
+        character.inventory_module.add_weapon(weapon)
+
+    # Replace natural weapons with actual instances.
+    for weapon_name in data.get("natural_weapons", []):
+        weapon = repo.get_weapon(weapon_name)
+        if not weapon:
+            raise ValueError(f"Natural weapon '{weapon_name}' not found in repository.")
+        if not isinstance(weapon, NaturalWeapon):
+            raise ValueError(f"Weapon '{weapon_name}' is not a NaturalWeapon.")
+        character.inventory_module.add_weapon(weapon)
+
+    # Replace equipped armor with actual instances.
+    for armor_name in data.get("equipped_armor", []):
+        armor = repo.get_armor(armor_name)
+        if not armor:
+            raise ValueError(f"Armor '{armor_name}' not found in repository.")
+        character.inventory_module.add_armor(armor)
+
+    # Replace actions with actual instances.
+    for action_name in data.get("actions", []):
+        action = repo.get_action(action_name)
+        if action:
+            character.learn_action(action)
+        else:
+            spell = repo.get_spell(action_name)
+            if not spell:
+                raise ValueError(
+                    f"Action or spell '{action_name}' not found in repository."
+                )
+            character.learn_spell(spell)
+    # Replace spells with actual instances.
+    for spell_name in data.get("spells", []):
+        spell = repo.get_spell(spell_name)
+        if not spell:
+            raise ValueError(f"Spell '{spell_name}' not found in repository.")
+        character.learn_spell(spell)
+
+    return character
 
 
 def load_character(file_path: Path) -> Character | None:
@@ -867,8 +820,7 @@ def load_character(file_path: Path) -> Character | None:
     """
     try:
         with open(file_path) as f:
-            data = json.load(f)
-            return Character(**data)
+            return character_from_dict(json.load(f))
     except (FileNotFoundError, json.JSONDecodeError) as e:
         log_error(
             f"Failed to load character from {file_path}: {e}",
@@ -899,7 +851,7 @@ def load_characters(file_path: Path) -> dict[str, Character]:
             character_list = json.load(f)
             if isinstance(character_list, list):
                 for character_data in character_list:
-                    character = Character(**character_data)
+                    character = character_from_dict(character_data)
                     if character is not None:
                         characters[character.name] = character
             else:

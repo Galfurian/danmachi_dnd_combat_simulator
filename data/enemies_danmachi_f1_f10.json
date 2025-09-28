@@ -369,7 +369,7 @@
         ],
         "passive_effects": [
             {
-                "action_type": "TriggerEffect",
+                "effect_type": "TriggerEffect",
                 "name": "Berserk Rage",
                 "description": "When below 25% HP, enters a berserker rage!",
                 "duration": 0,

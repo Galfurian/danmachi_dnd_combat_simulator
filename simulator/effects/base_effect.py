@@ -189,3 +189,37 @@ class ActiveEffect(BaseModel):
             raise ValueError("Duration must be a non-negative integer or None.")
         if not all(isinstance(var, VarInfo) for var in self.variables):
             raise ValueError("All items in variables must be VarInfo instances.")
+
+
+def deserialize_effect(data: dict[str, Any]) -> Effect | None:
+    """
+    Deserialize an effect from a dictionary.
+
+    Args:
+        data (dict[str, Any]):
+            The dictionary containing effect data.
+
+    Returns:
+        Effect | None:
+            The deserialized effect instance, or None if deserialization fails.
+    """
+    from .damage_over_time_effect import DamageOverTimeEffect
+    from .healing_over_time_effect import HealingOverTimeEffect
+    from .incapacitating_effect import IncapacitatingEffect
+    from .modifier_effect import ModifierEffect
+    from .trigger_effect import TriggerEffect
+
+    effect_type = data.get("effect_type")
+
+    if effect_type == "DamageOverTimeEffect":
+        return DamageOverTimeEffect(**data)
+    if effect_type == "HealingOverTimeEffect":
+        return HealingOverTimeEffect(**data)
+    if effect_type == "IncapacitatingEffect":
+        return IncapacitatingEffect(**data)
+    if effect_type == "ModifierEffect":
+        return ModifierEffect(**data)
+    if effect_type == "TriggerEffect":
+        return TriggerEffect(**data)
+
+    return None
