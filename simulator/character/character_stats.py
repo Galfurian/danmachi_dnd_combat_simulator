@@ -1,5 +1,6 @@
 """
-Character statistics and calculated properties module.
+Character statistics and derived properties, including ability modifiers,
+HP, AC, initiative, and utility stat expressions.
 """
 
 from typing import Any

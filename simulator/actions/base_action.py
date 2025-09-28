@@ -1,8 +1,5 @@
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-from combat.damage import (
-    DamageComponent,
-)
 from core.constants import (
     ActionCategory,
     ActionClass,
@@ -19,26 +16,30 @@ from core.dice_parser import (
 )
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from effects.damage_over_time_effect import (
-        DamageOverTimeEffect,
-    )
-    from effects.healing_over_time_effect import (
-        HealingOverTimeEffect,
-    )
-    from effects.incapacitating_effect import (
-        IncapacitatingEffect,
-    )
-    from effects.modifier_effect import (
-        ModifierEffect,
-    )
-    from effects.trigger_effect import (
-        TriggerEffect,
-    )
+from combat.damage import DamageComponent
+from effects.damage_over_time_effect import (
+    DamageOverTimeEffect,
+)
+from effects.healing_over_time_effect import (
+    HealingOverTimeEffect,
+)
+from effects.incapacitating_effect import (
+    IncapacitatingEffect,
+)
+from effects.modifier_effect import (
+    ModifierEffect,
+)
+from effects.trigger_effect import (
+    TriggerEffect,
+)
 
 
 ValidActionEffect: TypeAlias = (
-    "DamageOverTimeEffect | HealingOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect"
+    DamageOverTimeEffect
+    | HealingOverTimeEffect
+    | ModifierEffect
+    | IncapacitatingEffect
+    | TriggerEffect
 )
 
 
@@ -443,7 +444,7 @@ class BaseAction(BaseModel):
     def _common_get_damage_expr(
         self,
         actor: Any,
-        damage_components: list[DamageComponent],
+        damage_components: list["DamageComponent"],
         variables: list[VarInfo] = [],
     ) -> str:
         """
@@ -463,6 +464,7 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
+        from combat.damage import DamageComponent
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert damage_components, "damage_components list cannot be empty"
@@ -482,7 +484,7 @@ class BaseAction(BaseModel):
     def _common_get_min_damage(
         self,
         actor: Any,
-        damage_components: list[DamageComponent],
+        damage_components: list["DamageComponent"],
         variables: list[VarInfo] = [],
     ) -> int:
         """
@@ -502,6 +504,7 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
+        from combat.damage import DamageComponent
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert damage_components, "damage_components list cannot be empty"
@@ -523,7 +526,7 @@ class BaseAction(BaseModel):
     def _common_get_max_damage(
         self,
         actor: Any,
-        damage_components: list[DamageComponent],
+        damage_components: list["DamageComponent"],
         variables: list[VarInfo] = [],
     ) -> int:
         """
@@ -543,6 +546,7 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
+        from combat.damage import DamageComponent
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert damage_components, "damage_components list cannot be empty"
@@ -561,3 +565,6 @@ class BaseAction(BaseModel):
             )
             for component in damage_components
         )
+
+
+BaseAction.model_rebuild()

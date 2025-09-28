@@ -82,11 +82,6 @@ class Effect(BaseModel):
                 True if the effect can be applied, False otherwise.
 
         """
-        from character.main import Character
-
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert isinstance(target, Character), "Target must be an object"
-
         if actor.is_dead():
             cprint(f"    [bold red]{actor.name} is dead and cannot apply effects![/]")
             return False
@@ -95,12 +90,7 @@ class Effect(BaseModel):
                 f"    [bold red]{target.name} is dead and cannot receive effects![/]"
             )
             return False
-        # Check if the target is already affected by the same modifiers.
-        return target.can_add_effect(
-            actor,
-            self,
-            actor.get_expression_variables(),
-        )
+        return True
 
 
 class EventResponse(BaseModel):

@@ -1,12 +1,16 @@
 # cli_prompt.py
 from typing import Any
 
-from actions.attacks import *
-from actions.base_action import *
-from actions.spells import *
-from character import *
-from core.constants import *
-from core.utils import *
+from actions.base_action import BaseAction
+from actions.spells.base_spell import BaseSpell
+from actions.spells.spell_buff import SpellBuff
+from actions.spells.spell_debuff import SpellDebuff
+from actions.spells.spell_heal import SpellHeal
+from actions.spells.spell_offensive import SpellOffensive
+from core.constants import ActionCategory, ActionClass
+from core.dice_parser import VarInfo, evaluate_expression, simplify_expression
+from core.utils import ccapture
+from character.main import Character
 from prompt_toolkit import ANSI, PromptSession
 from rich.table import Table
 

@@ -2,10 +2,9 @@
 
 from typing import Any, Literal
 
+from actions.abilities.base_ability import BaseAbility
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
-
-from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityBuff(BaseAbility):

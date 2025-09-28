@@ -3,6 +3,7 @@
 from abc import abstractmethod
 from typing import Any
 
+from actions.base_action import BaseAction, ValidActionEffect
 from combat.damage import (
     DamageComponent,
     roll_damage_components,
@@ -15,8 +16,6 @@ from core.dice_parser import (
     roll_dice_expression,
 )
 from pydantic import Field
-
-from actions.base_action import BaseAction, ValidActionEffect
 
 
 class BaseSpell(BaseAction):

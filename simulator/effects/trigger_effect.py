@@ -1,16 +1,10 @@
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
 from .damage_over_time_effect import DamageOverTimeEffect
-from .incapacitating_effect import IncapacitatingEffect
-from .modifier_effect import ModifierEffect
-
-ValidTriggerEffect: TypeAlias = (
-    DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
-)
 from .event_system import (
     CombatEvent,
     DamageTakenEvent,
@@ -20,6 +14,10 @@ from .event_system import (
     LowHealthEvent,
     SpellCastEvent,
 )
+from .incapacitating_effect import IncapacitatingEffect
+from .modifier_effect import ModifierEffect
+
+ValidTriggerEffect = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
 
 
 class TriggerCondition(BaseModel):

@@ -1,3 +1,7 @@
+"""
+Character race model representing a character's race, including natural AC,
+default and available actions and spells.
+"""
 
 from pydantic import BaseModel, Field
 

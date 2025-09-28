@@ -2,12 +2,12 @@
 Module for printing character sheets and other game elements in a formatted way.
 """
 
-from actions.abilities import AbilityBuff, AbilityHeal, AbilityOffensive, BaseAbility
-from actions.attacks.base_attack import BaseAttack
-from actions.base_action import BaseAction
-from actions.spells import BaseSpell, SpellHeal, SpellOffensive
+from typing import TYPE_CHECKING
+
 from character.main import Character
 from combat.damage import DamageComponent
+from core.content import ContentRepository
+from core.utils import cprint, crule
 from effects.base_effect import Effect
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.healing_over_time_effect import HealingOverTimeEffect
@@ -17,8 +17,11 @@ from items.armor import Armor
 from items.weapon import Weapon
 from rich.padding import Padding
 
-from core.content import ContentRepository
-from core.utils import cprint, crule
+if TYPE_CHECKING:
+    from actions.abilities.base_ability import BaseAbility
+    from actions.spells.base_spell import BaseSpell
+    from actions.attacks.base_attack import BaseAttack
+    from actions.base_action import BaseAction
 
 
 def modifier_to_string(modifier: Modifier) -> str:
@@ -132,7 +135,7 @@ def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
                 print_effect_sheet(trigger_effect, padding + 4)
 
 
-def print_base_attack_sheet(attack: BaseAttack, padding: int = 2) -> None:
+def print_base_attack_sheet(attack: "BaseAttack", padding: int = 2) -> None:
     """Prints the details of a base attack in a formatted way."""
     sheet = f"[green]{attack.name}[/], "
     sheet += f"roll: [blue]1D20+{attack.attack_roll}[/], "
@@ -171,7 +174,7 @@ def print_armor_sheet(armor: Armor, padding: int = 2) -> None:
             print_effect_sheet(effect, padding + 2)
 
 
-def print_spell_sheet(spell: BaseSpell, padding: int = 2) -> None:
+def print_spell_sheet(spell: "BaseSpell", padding: int = 2) -> None:
     """
     Prints the details of a spell in a formatted way.
 
@@ -180,6 +183,9 @@ def print_spell_sheet(spell: BaseSpell, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
 
     """
+    from actions.spells.spell_heal import SpellHeal
+    from actions.spells.spell_offensive import SpellOffensive
+
     sheet: str = f"{spell.category.colorize(spell.name)}, "
     sheet += f"lvl {spell.level}, "
     sheet += f"{spell.action_class.colored_name}, "
@@ -207,7 +213,7 @@ def print_spell_sheet(spell: BaseSpell, padding: int = 2) -> None:
             print_effect_sheet(effect, padding)
 
 
-def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
+def print_ability_sheet(ability: "BaseAbility", padding: int = 2) -> None:
     """
     Prints the details of an ability in a formatted way.
 
@@ -216,6 +222,10 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
 
     """
+    from actions.abilities.ability_buff import AbilityBuff
+    from actions.abilities.ability_heal import AbilityHeal
+    from actions.abilities.ability_offensive import AbilityOffensive
+
     sheet: str = f"{ability.category.colorize(ability.name)}, "
     sheet += f"{ability.action_class.colored_name}, "
 
@@ -250,7 +260,7 @@ def print_ability_sheet(ability: BaseAbility, padding: int = 2) -> None:
             print_effect_sheet(effect, padding + 2)
 
 
-def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
+def print_action_sheet(action: "BaseAction", padding: int = 2) -> None:
     """
     Prints the details of any action in a formatted way.
 
@@ -259,6 +269,10 @@ def print_action_sheet(action: BaseAction, padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
 
     """
+    from actions.attacks.base_attack import BaseAttack
+    from actions.abilities.base_ability import BaseAbility
+    from actions.spells.base_spell import BaseSpell
+
     if isinstance(action, BaseSpell):
         print_spell_sheet(action, padding)
     elif isinstance(action, BaseAbility):
@@ -363,9 +377,9 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [red]Vulnerabilities[/]: {', '.join(vlist)}")
 
     # Active Effects
-    if char._effects_module.active_effects:
+    if char.effects_module.active_effects:
         cprint("  [yellow]Active Effects[/]:")
-        for active_effect in char._effects_module.active_effects:
+        for active_effect in char.effects_module.active_effects:
             effect_info = (
                 f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
             )
@@ -374,9 +388,9 @@ def print_character_sheet(char: Character) -> None:
             cprint(Padding(effect_info, (0, 4)))
 
     # Trigger Effects
-    if char._effects_module.trigger_effects:
+    if char.effects_module.trigger_effects:
         cprint("  [yellow]Trigger Effects[/]:")
-        for trigger_effect in char._effects_module.trigger_effects:
+        for trigger_effect in char.effects_module.trigger_effects:
             effect_info = (
                 f"[{trigger_effect.effect.color}]{trigger_effect.effect.name}[/]"
             )
@@ -391,7 +405,7 @@ def print_character_sheet(char: Character) -> None:
     # Cooldowns and uses
     active_cooldowns = {
         name: turns
-        for name, turns in char._actions_module.cooldowns.items()
+        for name, turns in char.actions_module.cooldowns.items()
         if turns > 0
     }
     if active_cooldowns:
@@ -400,7 +414,7 @@ def print_character_sheet(char: Character) -> None:
             cprint(Padding(f"{action_name}: {turns} turns", (0, 4)))
 
     active_uses = {
-        name: uses for name, uses in char._actions_module.uses.items() if uses > 0
+        name: uses for name, uses in char.actions_module.uses.items() if uses > 0
     }
     if active_uses:
         cprint("  [orange1]Used Abilities[/]:")

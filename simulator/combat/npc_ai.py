@@ -1,19 +1,22 @@
 from typing import Any
 
-from actions.abilities import (
-    AbilityBuff,
-    AbilityDebuff,
-    AbilityHeal,
-    AbilityOffensive,
-)
+from actions.abilities.ability_buff import AbilityBuff
+from actions.abilities.ability_debuff import AbilityDebuff
+from actions.abilities.ability_heal import AbilityHeal
+from actions.abilities.ability_offensive import AbilityOffensive
 from actions.abilities.base_ability import BaseAbility
-from actions.attacks import BaseAttack, NaturalAttack, WeaponAttack
+from actions.attacks.base_attack import BaseAttack
+from actions.attacks.natural_attack import NaturalAttack
+from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction, ValidActionEffect
-from actions.spells import SpellBuff, SpellDebuff, SpellHeal, SpellOffensive
 from actions.spells.base_spell import BaseSpell
-from character import Character
-from core.utils import VarInfo
+from actions.spells.spell_buff import SpellBuff
+from actions.spells.spell_debuff import SpellDebuff
+from actions.spells.spell_heal import SpellHeal
+from actions.spells.spell_offensive import SpellOffensive
+from core.dice_parser import VarInfo
 from pydantic import BaseModel, Field
+from character.main import Character
 
 # =============================================================================
 # Support Functions
@@ -662,7 +665,7 @@ def _get_best_ability_buff_or_debuff(
 # =============================================================================
 
 
-def get_weapon_attacks(source: Character) -> list["WeaponAttack"]:
+def get_weapon_attacks(source: Character) -> list[WeaponAttack]:
     """
     Get available weapon attacks for a character.
 
@@ -676,7 +679,7 @@ def get_weapon_attacks(source: Character) -> list["WeaponAttack"]:
     return source.get_available_weapon_attacks()
 
 
-def get_natural_attacks(source: Character) -> list["NaturalAttack"]:
+def get_natural_attacks(source: Character) -> list[NaturalAttack]:
     """
     Get available natural attacks for a character.
 

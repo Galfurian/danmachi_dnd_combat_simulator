@@ -1,38 +1,30 @@
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import Annotated, Any, Optional
 
-from actions.base_action import BaseAction
-from actions.spells.base_spell import BaseSpell
 from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.utils import cprint
 from effects.base_effect import Effect, EventResponse
-from effects.damage_over_time_effect import DamageOverTimeEffect
-from effects.event_system import DamageTakenEvent, HitEvent
+from effects.event_system import CombatEvent, DamageTakenEvent, HitEvent
 from effects.incapacitating_effect import IncapacitatingEffect
-from effects.modifier_effect import ModifierEffect
-from effects.trigger_effect import CombatEvent, TriggerEffect
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
-from character.character_actions import CharacterActions
-from character.character_class import CharacterClass
-from character.character_display import CharacterDisplay
-from character.character_effects import CharacterEffects, TriggerResult
-from character.character_inventory import CharacterInventory
-from character.character_race import CharacterRace
-from character.character_stats import CharacterStats
+from .character_actions import CharacterActions
+from .character_class import CharacterClass
+from .character_display import CharacterDisplay
+from .character_effects import CharacterEffects, TriggerResult, ValidPassiveEffect
+from .character_inventory import CharacterInventory
+from .character_race import CharacterRace
+from .character_stats import CharacterStats
 
-ValidPassiveEffect: TypeAlias = (
-    DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
-)
-
-if TYPE_CHECKING:
-    from actions.attacks.natural_attack import NaturalAttack
-    from actions.attacks.weapon_attack import WeaponAttack
+from actions.attacks.natural_attack import NaturalAttack
+from actions.attacks.weapon_attack import WeaponAttack
+from actions.base_action import BaseAction
+from actions.spells.base_spell import BaseSpell
 
 
 class Character(BaseModel):
@@ -86,11 +78,12 @@ class Character(BaseModel):
     )
 
     # === Dynamic properties ===
-    equipped_weapons: list[WieldedWeapon] = Field(
+
+    equipped_weapons: list["WieldedWeapon"] = Field(
         default_factory=list,
         description="List of currently equipped weapons",
     )
-    natural_weapons: list[NaturalWeapon] = Field(
+    natural_weapons: list["NaturalWeapon"] = Field(
         default_factory=list,
         description="List of natural weapons, if any",
     )
@@ -107,13 +100,33 @@ class Character(BaseModel):
         description="Dictionary of known spells",
     )
 
-    # === Management modules ===
+    # === Management Modules ===
 
-    _effects_module: CharacterEffects = PrivateAttr()
-    _stats_module: CharacterStats = PrivateAttr()
-    _inventory_module: CharacterInventory = PrivateAttr()
-    _actions_module: CharacterActions = PrivateAttr()
-    _display_module: CharacterDisplay = PrivateAttr()
+    effects_module: CharacterEffects = Field(
+        description="Module managing active effects on the character",
+        default_factory=lambda: CharacterEffects(owner=None),
+        exclude=True,
+    )
+    stats_module: CharacterStats = Field(
+        description="Module managing character stats and calculations",
+        default_factory=lambda: CharacterStats(owner=None),
+        exclude=True,
+    )
+    inventory_module: CharacterInventory = Field(
+        description="Module managing character inventory and equipment",
+        default_factory=lambda: CharacterInventory(owner=None),
+        exclude=True,
+    )
+    actions_module: CharacterActions = Field(
+        description="Module managing character actions and spells",
+        default_factory=lambda: CharacterActions(owner=None),
+        exclude=True,
+    )
+    display_module: CharacterDisplay = Field(
+        description="Module managing character display and formatting",
+        default_factory=lambda: CharacterDisplay(owner=None),
+        exclude=True,
+    )
 
     @model_validator(mode="before")
     def replace_with_real(cls, data: dict[str, Any]) -> dict[str, Any]:
@@ -149,6 +162,8 @@ class Character(BaseModel):
         # Replace equipped weapons with actual instances.
         real_weapons = []
         for weapon_name in data.get("equipped_weapons", []):
+            from items.weapon import WieldedWeapon
+
             weapon = repo.get_weapon(weapon_name)
             if not weapon:
                 raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
@@ -160,6 +175,8 @@ class Character(BaseModel):
         # Replace natural weapons with actual instances.
         real_natural_weapons = []
         for weapon_name in data.get("natural_weapons", []):
+            from items.weapon import NaturalWeapon
+
             weapon = repo.get_weapon(weapon_name)
             if not weapon:
                 raise ValueError(
@@ -202,17 +219,17 @@ class Character(BaseModel):
         """
         from core.content import ContentRepository
 
+        self.effects_module.owner = self
+        self.stats_module.owner = self
+        self.inventory_module.owner = self
+        self.actions_module.owner = self
+        self.display_module.owner = self
+
+        self.stats_module.adjust_hp(self.HP_MAX)
+        self.stats_module.adjust_mind(self.MIND_MAX)
+
         # Import here to avoid circular imports.
         repo: ContentRepository = ContentRepository()
-
-        self._effects_module: CharacterEffects = CharacterEffects(owner=self)
-        self._stats_module = CharacterStats(owner=self)
-        self._inventory_module = CharacterInventory(owner=self)
-        self._actions_module = CharacterActions(owner=self)
-        self._display_module = CharacterDisplay(owner=self)
-
-        self._stats_module.adjust_hp(self.HP_MAX)
-        self._stats_module.adjust_mind(self.MIND_MAX)
 
         # Add default race spells.
         for spell_name in self.race.default_spells:
@@ -254,62 +271,62 @@ class Character(BaseModel):
     @property
     def hp(self) -> int:
         """Returns the current HP of the character."""
-        return self._stats_module.HP_CURRENT
+        return self.stats_module.HP_CURRENT
 
     @property
     def mind(self) -> int:
         """Returns the current Mind of the character."""
-        return self._stats_module.MIND_CURRENT
+        return self.stats_module.MIND_CURRENT
 
     @property
     def HP_MAX(self) -> int:
         """Returns the maximum HP of the character."""
-        return self._stats_module.HP_MAX
+        return self.stats_module.HP_MAX
 
     @property
     def MIND_MAX(self) -> int:
         """Returns the maximum Mind of the character."""
-        return self._stats_module.MIND_MAX
+        return self.stats_module.MIND_MAX
 
     @property
     def STR(self) -> int:
         """Returns the D&D strength modifier."""
-        return self._stats_module.STR
+        return self.stats_module.STR
 
     @property
     def DEX(self) -> int:
         """Returns the D&D dexterity modifier."""
-        return self._stats_module.DEX
+        return self.stats_module.DEX
 
     @property
     def CON(self) -> int:
         """Returns the D&D constitution modifier."""
-        return self._stats_module.CON
+        return self.stats_module.CON
 
     @property
     def INT(self) -> int:
         """Returns the D&D intelligence modifier."""
-        return self._stats_module.INT
+        return self.stats_module.INT
 
     @property
     def WIS(self) -> int:
         """Returns the D&D wisdom modifier."""
-        return self._stats_module.WIS
+        return self.stats_module.WIS
 
     @property
     def CHA(self) -> int:
         """Returns the D&D charisma modifier."""
-        return self._stats_module.CHA
+        return self.stats_module.CHA
 
     @property
     def SPELLCASTING(self) -> int:
         """Returns the D&D spellcasting ability modifier."""
-        return self._stats_module.SPELLCASTING
+        return self.stats_module.SPELLCASTING
 
     @property
     def AC(self) -> int:
         """Calculates Armor Class (AC) using D&D 5e rules."""
-        return self._stats_module.AC
+        return self.stats_module.AC
 
     @property
     def INITIATIVE(self) -> int:
@@ -317,48 +334,48 @@ class Character(BaseModel):
         Calculates the character's initiative based on dexterity and any active
         effects.
         """
-        return self._stats_module.INITIATIVE
+        return self.stats_module.INITIATIVE
 
     def adjust_mind(self, amount: int) -> int:
         """
         Adjusts the character's Mind by a specific amount, clamped between 0 and
         MIND_MAX.
         """
-        return self._stats_module.adjust_mind(amount)
+        return self.stats_module.adjust_mind(amount)
 
     def get_expression_variables(self) -> list[VarInfo]:
         """Returns a dictionary of the character's modifiers."""
-        return self._stats_module.get_expression_variables()
+        return self.stats_module.get_expression_variables()
 
     def add_passive_effect(self, effect: Effect) -> bool:
         """Add a passive effect that is always active (like boss phase triggers)."""
-        return self._effects_module.add_passive_effect(effect)
+        return self.effects_module.add_passive_effect(effect)
 
     def remove_passive_effect(self, effect: Effect) -> bool:
         """Remove a passive effect."""
-        return self._effects_module.remove_passive_effect(effect)
+        return self.effects_module.remove_passive_effect(effect)
 
     def check_triggers(self, event: CombatEvent) -> TriggerResult:
         """
         Checks all active trigger effects against the given event.
         """
-        return self._effects_module.check_triggers(event)
+        return self.effects_module.check_triggers(event)
 
     def reset_available_actions(self) -> None:
         """Resets the classes of available actions for the character."""
-        return self._actions_module.reset_available_actions()
+        return self.actions_module.reset_available_actions()
 
     def use_action_class(self, action_class: ActionClass) -> None:
         """Marks an action class as used for the current turn."""
-        return self._actions_module.use_action_class(action_class)
+        return self.actions_module.use_action_class(action_class)
 
     def has_action_class(self, action_class: ActionClass) -> bool:
         """Checks if the character can use a specific action class this turn."""
-        return self._actions_module.has_action_class(action_class)
+        return self.actions_module.has_action_class(action_class)
 
     def is_incapacitated(self) -> bool:
         """Check if the character is incapacitated and cannot take actions."""
-        for ae in self._effects_module.active_effects:
+        for ae in self.effects_module.active_effects:
             if isinstance(ae.effect, IncapacitatingEffect):
                 if ae.effect.prevents_actions():
                     return True
@@ -368,30 +385,30 @@ class Character(BaseModel):
         """Check if character can take any actions this turn."""
         return not self.is_incapacitated() and self.is_alive()
 
-    def get_available_natural_weapon_attacks(self) -> list["NaturalAttack"]:
+    def get_available_natural_weapon_attacks(self) -> list[NaturalAttack]:
         """Returns a list of natural weapon attacks available to the character.
 
         Returns:
             list[NaturalAttack]: A list of natural weapon attacks
 
         """
-        return self._actions_module.get_available_natural_weapon_attacks()
+        return self.actions_module.get_available_natural_weapon_attacks()
 
-    def get_available_weapon_attacks(self) -> list["WeaponAttack"]:
+    def get_available_weapon_attacks(self) -> list[WeaponAttack]:
         """Returns a list of weapon attacks that the character can use this turn."""
-        return self._actions_module.get_available_weapon_attacks()
+        return self.actions_module.get_available_weapon_attacks()
 
     def get_available_attacks(self) -> list[BaseAction]:
         """Returns a list of all attacks (weapon + natural) that the character can use this turn."""
-        return self._actions_module.get_available_attacks()
+        return self.actions_module.get_available_attacks()
 
     def get_available_actions(self) -> list[BaseAction]:
         """Returns a list of actions that the character can use this turn."""
-        return self._actions_module.get_available_actions()
+        return self.actions_module.get_available_actions()
 
     def get_available_spells(self) -> list[BaseSpell]:
         """Returns a list of spells that the character can use this turn."""
-        return self._actions_module.get_available_spells()
+        return self.actions_module.get_available_spells()
 
     def turn_done(self) -> bool:
         """Checks if the character has used both a standard and bonus action this turn.
@@ -400,7 +417,7 @@ class Character(BaseModel):
             bool: True if both actions are used, False otherwise
 
         """
-        return self._actions_module.turn_done()
+        return self.actions_module.turn_done()
 
     def take_damage(
         self,
@@ -432,7 +449,7 @@ class Character(BaseModel):
         adjusted = max(adjusted, 0)
 
         # Apply the damage and get the actual damage taken.
-        actual = abs(self._stats_module.adjust_hp(-adjusted))
+        actual = abs(self.stats_module.adjust_hp(-adjusted))
 
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.
@@ -459,7 +476,7 @@ class Character(BaseModel):
             int: The actual amount healed
 
         """
-        return self._stats_module.adjust_hp(amount)
+        return self.stats_module.adjust_hp(amount)
 
     def use_mind(self, amount: int) -> bool:
         """
@@ -476,7 +493,7 @@ class Character(BaseModel):
 
         """
         if self.mind >= amount:
-            self._stats_module.adjust_mind(-amount)
+            self.stats_module.adjust_mind(-amount)
             return True
         return False
 
@@ -493,7 +510,7 @@ class Character(BaseModel):
                 The actual amount of mind points regained.
 
         """
-        return self._stats_module.adjust_mind(amount)
+        return self.stats_module.adjust_mind(amount)
 
     def is_alive(self) -> bool:
         """
@@ -536,7 +553,7 @@ class Character(BaseModel):
             action (Any): The action to learn.
 
         """
-        self._actions_module.learn_action(action)
+        self.actions_module.learn_action(action)
 
     def unlearn_action(self, action: Any) -> None:
         """Removes an Action object from the character's known actions.
@@ -545,7 +562,7 @@ class Character(BaseModel):
             action (Any): The action to unlearn.
 
         """
-        self._actions_module.unlearn_action(action)
+        self.actions_module.unlearn_action(action)
 
     def learn_spell(self, spell: Any) -> None:
         """Adds a BaseSpell object to the character's known spells.
@@ -554,7 +571,7 @@ class Character(BaseModel):
             spell (Any): The spell to learn.
 
         """
-        self._actions_module.learn_spell(spell)
+        self.actions_module.learn_spell(spell)
 
     def unlearn_spell(self, spell: Any) -> None:
         """Removes a BaseSpell object from the character's known spells.
@@ -563,15 +580,15 @@ class Character(BaseModel):
             spell (Any): The spell to unlearn.
 
         """
-        self._actions_module.unlearn_spell(spell)
+        self.actions_module.unlearn_spell(spell)
 
     def get_occupied_hands(self) -> int:
         """Returns the number of hands currently occupied by equipped weapons and armor."""
-        return self._inventory_module.get_occupied_hands()
+        return self.inventory_module.get_occupied_hands()
 
     def get_free_hands(self) -> int:
         """Returns the number of free hands available for equipping items."""
-        return self._inventory_module.get_free_hands()
+        return self.inventory_module.get_free_hands()
 
     def can_equip_weapon(self, weapon: Weapon) -> bool:
         """Checks if the character can equip a specific weapon.
@@ -583,7 +600,7 @@ class Character(BaseModel):
             bool: True if the weapon can be equipped, False otherwise.
 
         """
-        return self._inventory_module.can_equip_weapon(weapon)
+        return self.inventory_module.can_equip_weapon(weapon)
 
     def add_weapon(self, weapon: Weapon) -> bool:
         """Adds a weapon to the character's equipped weapons.
@@ -595,7 +612,7 @@ class Character(BaseModel):
             bool: True if the weapon was equipped successfully, False otherwise.
 
         """
-        return self._inventory_module.add_weapon(weapon)
+        return self.inventory_module.add_weapon(weapon)
 
     def remove_weapon(self, weapon: Weapon) -> bool:
         """Removes a weapon from the character's equipped weapons.
@@ -607,7 +624,7 @@ class Character(BaseModel):
             bool: True if the weapon was removed successfully, False otherwise.
 
         """
-        return self._inventory_module.remove_weapon(weapon)
+        return self.inventory_module.remove_weapon(weapon)
 
     def can_equip_armor(self, armor: Armor) -> bool:
         """Checks if the character can equip a specific armor.
@@ -619,7 +636,7 @@ class Character(BaseModel):
             bool: True if the armor can be equipped, False otherwise.
 
         """
-        return self._inventory_module.can_equip_armor(armor)
+        return self.inventory_module.can_equip_armor(armor)
 
     def add_armor(self, armor: Armor) -> bool:
         """Adds an armor to the character's equipped armor.
@@ -631,7 +648,7 @@ class Character(BaseModel):
             bool: True if the armor was equipped successfully, False otherwise.
 
         """
-        return self._inventory_module.add_armor(armor)
+        return self.inventory_module.add_armor(armor)
 
     def remove_armor(self, armor: Armor) -> bool:
         """Removes an armor from the character's equipped armor.
@@ -643,7 +660,7 @@ class Character(BaseModel):
             bool: True if the armor was removed successfully, False otherwise.
 
         """
-        return self._inventory_module.remove_armor(armor)
+        return self.inventory_module.remove_armor(armor)
 
     def turn_update(self) -> None:
         """
@@ -652,9 +669,9 @@ class Character(BaseModel):
         or a round.
         """
         # Update all active effects.
-        self._effects_module.turn_update()
+        self.effects_module.turn_update()
         # Update action cooldowns and reset turn flags.
-        self._actions_module.turn_update()
+        self.actions_module.turn_update()
 
     def add_cooldown(self, action: BaseAction):
         """Adds a cooldown to an action.
@@ -663,7 +680,7 @@ class Character(BaseModel):
             action_name (BaseAction): The action to add a cooldown to.
 
         """
-        return self._actions_module.add_cooldown(action)
+        return self.actions_module.add_cooldown(action)
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.
@@ -675,7 +692,7 @@ class Character(BaseModel):
             bool: True if the action is on cooldown, False otherwise.
 
         """
-        return self._actions_module.is_on_cooldown(action)
+        return self.actions_module.is_on_cooldown(action)
 
     def initialize_uses(self, action: BaseAction):
         """Initializes the uses of an action to its maximum uses.
@@ -684,7 +701,7 @@ class Character(BaseModel):
             action (BaseAction): The action to initialize uses for.
 
         """
-        return self._actions_module.initialize_uses(action)
+        return self.actions_module.initialize_uses(action)
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Returns the remaining uses of an action.
@@ -696,7 +713,7 @@ class Character(BaseModel):
             int: The remaining uses of the action. Returns -1 for unlimited use actions.
 
         """
-        return self._actions_module.get_remaining_uses(action)
+        return self.actions_module.get_remaining_uses(action)
 
     def decrement_uses(self, action: BaseAction):
         """Decrements the uses of an action by 1.
@@ -705,7 +722,7 @@ class Character(BaseModel):
             action (BaseAction): The action to decrement uses for.
 
         """
-        return self._actions_module.decrement_uses(action)
+        return self.actions_module.decrement_uses(action)
 
     def get_status_line(
         self,
@@ -715,13 +732,13 @@ class Character(BaseModel):
         show_ac: bool = True,
     ) -> str:
         """Get a formatted status line for the character with health, mana, effects, etc."""
-        return self._display_module.get_status_line(
+        return self.display_module.get_status_line(
             show_all_effects, show_numbers, show_bars, show_ac
         )
 
     def get_detailed_effects(self) -> str:
         """Get a detailed multi-line view of all active effects."""
-        return self._display_module.get_detailed_effects()
+        return self.display_module.get_detailed_effects()
 
     def can_add_effect(
         self,
@@ -745,7 +762,7 @@ class Character(BaseModel):
                 True if the effect can be added, False otherwise.
 
         """
-        return self._effects_module.can_add_effect(source, effect, variables)
+        return self.effects_module.can_add_effect(source, effect, variables)
 
     def add_effect(
         self,
@@ -769,7 +786,7 @@ class Character(BaseModel):
                 True if the effect was added successfully, False otherwise.
 
         """
-        return self._effects_module.add_effect(source, effect, variables)
+        return self.effects_module.add_effect(source, effect, variables)
 
     def get_modifier(self, bonus_type: BonusType) -> Any:
         """
@@ -785,7 +802,7 @@ class Character(BaseModel):
                 The total modifier for the specified bonus type.
 
         """
-        return self._effects_module.get_modifier(bonus_type)
+        return self.effects_module.get_modifier(bonus_type)
 
     def on_hit(self, event: HitEvent) -> list[EventResponse]:
         """
@@ -801,7 +818,7 @@ class Character(BaseModel):
                 Responses from effects that were broken or triggered.
 
         """
-        return self._effects_module.on_hit(event)
+        return self.effects_module.on_hit(event)
 
     def on_damage_taken(self, event: DamageTakenEvent) -> list[EventResponse]:
         """
@@ -817,7 +834,7 @@ class Character(BaseModel):
                 Responses from effects that were broken or triggered.
 
         """
-        return self._effects_module.on_damage_taken(event)
+        return self.effects_module.on_damage_taken(event)
 
     def __hash__(self) -> int:
         """
@@ -832,6 +849,9 @@ class Character(BaseModel):
 
     def __eq__(self, other: object) -> bool:
         return self.name == getattr(other, "name", None)
+
+
+Character.model_rebuild()
 
 
 def load_character(file_path: Path) -> Character | None:

@@ -1,0 +1,3 @@
+"""
+Simulator package initialization.
+"""

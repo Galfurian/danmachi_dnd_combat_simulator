@@ -1,3 +1,7 @@
+"""
+Defines the CharacterClass model representing a character class with its
+properties and available actions per level.
+"""
 
 from pydantic import BaseModel, Field
 

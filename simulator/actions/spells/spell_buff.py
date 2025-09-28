@@ -2,10 +2,9 @@
 
 from typing import Any, Literal
 
+from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
-
-from actions.spells.base_spell import BaseSpell
 
 
 class SpellBuff(BaseSpell):

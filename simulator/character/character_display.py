@@ -1,4 +1,6 @@
-"""Character Display Module - handles character display, formatting, and UI functionality."""
+"""
+Character display and UI functionality.
+"""
 
 from typing import Any
 
@@ -37,8 +39,8 @@ class CharacterDisplay(BaseModel):
         """
         # Collect all effects with better formatting
         effects_list = []
-        if self.owner._effects_module.active_effects:
-            for e in self.owner._effects_module.active_effects:
+        if self.owner.effects_module.active_effects:
+            for e in self.owner.effects_module.active_effects:
                 color = e.effect.color
                 # Truncate long effect names and show duration more compactly
                 effect_name = (
@@ -133,11 +135,11 @@ class CharacterDisplay(BaseModel):
             str: A detailed string of all active effects with descriptions.
 
         """
-        if not self.owner._effects_module.active_effects:
+        if not self.owner.effects_module.active_effects:
             return "No active effects"
 
         effects_info = []
-        for e in self.owner._effects_module.active_effects:
+        for e in self.owner.effects_module.active_effects:
             color = e.effect.color
             effects_info.append(
                 f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"

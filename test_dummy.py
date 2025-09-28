@@ -1,7 +1,15 @@
+from pathlib import Path
+
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.main import Character
 from core.constants import CharacterType
+from core.content import ContentRepository
+
+# Initialize the ContentRepository for tests
+# This is necessary because Character's model_validator and model_post_init
+# methods access the ContentRepository.
+repo = ContentRepository(data_dir=Path("./data"))
 
 dummy_race = CharacterRace(
     name="Construct",

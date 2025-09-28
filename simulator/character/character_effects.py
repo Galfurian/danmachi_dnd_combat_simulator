@@ -13,7 +13,7 @@ from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
-from effects.event_system import HitEvent
+from effects.event_system import CombatEvent, DamageTakenEvent, EventType, HitEvent
 from effects.healing_over_time_effect import (
     ActiveHealingOverTimeEffect,
     HealingOverTimeEffect,
@@ -25,13 +25,14 @@ from effects.incapacitating_effect import (
 from effects.modifier_effect import ActiveModifierEffect, ModifierEffect
 from effects.trigger_effect import (
     ActiveTriggerEffect,
-    CombatEvent,
-    DamageTakenEvent,
-    EventType,
     TriggerEffect,
     ValidTriggerEffect,
 )
 from pydantic import BaseModel, Field
+
+ValidPassiveEffect = (
+    DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
+)
 
 
 class TriggerResult(BaseModel):

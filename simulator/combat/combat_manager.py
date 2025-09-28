@@ -14,15 +14,6 @@ from actions.spells.base_spell import (
 )
 from catchery import log_warning
 from character.main import Character
-from core.constants import (
-    ActionCategory,
-    ActionClass,
-    CharacterType,
-    is_oponent,
-)
-from core.utils import cprint, crule
-from ui.cli_interface import PlayerInterface
-
 from combat.npc_ai import (
     choose_best_attack_spell_action,
     choose_best_buff_or_debuff_ability_action,
@@ -35,6 +26,14 @@ from combat.npc_ai import (
     get_actions_by_type,
     get_natural_attacks,
 )
+from core.constants import (
+    ActionCategory,
+    ActionClass,
+    CharacterType,
+    is_oponent,
+)
+from core.utils import cprint, crule
+from ui.cli_interface import PlayerInterface
 
 FULL_ATTACK = BaseAction(
     name="Full Attack",

@@ -2,12 +2,11 @@
 
 from typing import Any, Literal
 
+from actions.spells.base_spell import BaseSpell
 from combat.damage import DamageComponent
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
 from pydantic import Field
-
-from actions.spells.base_spell import BaseSpell
 
 
 class SpellOffensive(BaseSpell):

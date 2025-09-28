@@ -2,6 +2,7 @@
 
 from typing import Any, Literal
 
+from actions.abilities.base_ability import BaseAbility
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
     parse_expr_and_assume_max_roll,
@@ -11,8 +12,6 @@ from core.dice_parser import (
 )
 from core.utils import cprint
 from pydantic import Field
-
-from actions.abilities.base_ability import BaseAbility
 
 
 class AbilityHeal(BaseAbility):
