@@ -1,5 +1,8 @@
 """
-Module defining the NaturalAttack class for natural or innate attacks.
+Natural attack module for the simulator.
+
+Defines natural or innate attacks that are part of a creature's biology,
+such as bites, claws, or tail slaps.
 """
 
 from typing import Literal

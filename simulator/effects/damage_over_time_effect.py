@@ -1,3 +1,10 @@
+"""
+Damage over time effect module for the simulator.
+
+Defines effects that deal damage over multiple turns, such as
+poison, bleed, or ongoing damage spells.
+"""
+
 from typing import Literal
 
 from combat.damage import DamageComponent

@@ -1,4 +1,9 @@
-"""Base spell classes for the magical combat system."""
+"""
+Base spell module for the simulator.
+
+Defines the base classes for spells, including offensive, defensive,
+healing, and buff spells, with common functionality for casting and effects.
+"""
 
 from abc import abstractmethod
 from typing import Any

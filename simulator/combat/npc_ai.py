@@ -1,3 +1,10 @@
+"""
+NPC AI module for the simulator.
+
+Implements artificial intelligence for non-player characters, including
+decision-making for actions, target selection, and combat behavior.
+"""
+
 from typing import Any
 
 from actions.abilities.ability_buff import AbilityBuff
@@ -14,8 +21,8 @@ from actions.spells.spell_buff import SpellBuff
 from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
-from core.dice_parser import VarInfo
 from character.main import Character
+from core.dice_parser import VarInfo
 
 # =============================================================================
 # Support Functions
@@ -43,6 +50,7 @@ class AttackSelection:
                 List of selected targets for the attack.
             score (float):
                 Score of the selection (higher is better).
+
         """
         self.attack: BaseAttack = attack
         self.targets: list[Character] = targets
@@ -77,6 +85,7 @@ class SpellSelection:
                 List of selected targets for the spell.
             score (float):
                 Score of the selection (higher is better).
+
         """
         self.spell: BaseSpell = spell
         self.rank: int = rank
@@ -106,6 +115,7 @@ class AbilitySelection:
                 List of selected targets for the ability.
             score (float):
                 Score of the selection (higher is better).
+
         """
         self.ability: BaseAbility = ability
         self.targets: list[Character] = targets

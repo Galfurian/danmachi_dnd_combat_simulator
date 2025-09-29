@@ -1,4 +1,9 @@
-"""Buff abilities that provide beneficial effects to allies."""
+"""
+Ability buff module for the simulator.
+
+Defines buff abilities that provide beneficial effects to allies, such as
+stat bonuses, damage resistance, or other positive enhancements.
+"""
 
 from typing import Any, Literal
 

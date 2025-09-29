@@ -1,3 +1,10 @@
+"""
+Trigger effect module for the simulator.
+
+Defines effects that trigger based on events, such as conditional
+effects, reactive abilities, or event-based modifications.
+"""
+
 from typing import Any, Literal
 
 from combat.damage import DamageComponent

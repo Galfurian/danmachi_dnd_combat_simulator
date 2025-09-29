@@ -1,3 +1,11 @@
+"""
+Constants and enumerations for the simulator.
+
+Defines global constants, enumerations for character types, action classes,
+damage types, armor slots, and other core game elements used throughout the
+simulator.
+"""
+
 from enum import Enum
 
 # Global verbose level for combat output:

@@ -1,5 +1,8 @@
 """
-Character Action Management Module - handles action-related functionality.
+Character actions module for the simulator.
+
+Manages the actions available to characters, including attacks, spells,
+and abilities, with functionality for action selection and execution.
 """
 
 from typing import Any
@@ -27,6 +30,7 @@ class CharacterActions:
             Maps action names to their remaining cooldown turns.
         uses (dict[str, int]):
             Maps action names to their remaining uses if limited.
+
     """
 
     def __init__(self, owner: Any) -> None:
@@ -35,6 +39,7 @@ class CharacterActions:
 
         Args:
             owner (Any): The Character instance this action manager belongs to.
+
         """
         self.owner = owner
         self.available_actions = {

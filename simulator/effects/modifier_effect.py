@@ -1,3 +1,10 @@
+"""
+Modifier effect module for the simulator.
+
+Defines effects that modify character stats, such as bonuses or penalties to
+attributes, AC, or other properties.
+"""
+
 from typing import Any, Literal
 
 from core.constants import BonusType

@@ -1,3 +1,10 @@
+"""
+Base effect module for the simulator.
+
+Defines the base classes and interfaces for effects, including
+active effects, event responses, and effect management.
+"""
+
 from typing import Any
 
 from combat.damage import DamageComponent
@@ -202,6 +209,7 @@ def deserialize_effect(data: dict[str, Any]) -> Effect | None:
     Returns:
         Effect | None:
             The deserialized effect instance, or None if deserialization fails.
+
     """
     from .damage_over_time_effect import DamageOverTimeEffect
     from .healing_over_time_effect import HealingOverTimeEffect

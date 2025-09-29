@@ -1,4 +1,10 @@
-# cli_prompt.py
+"""
+User interface module for the simulator.
+
+Provides console-based user interface components for interacting with the
+simulator, including prompts, menus, and output formatting.
+"""
+
 from typing import Any
 
 from actions.base_action import BaseAction
@@ -7,10 +13,10 @@ from actions.spells.spell_buff import SpellBuff
 from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
+from character.main import Character
 from core.constants import ActionCategory, ActionClass
 from core.dice_parser import VarInfo, evaluate_expression, simplify_expression
 from core.utils import ccapture
-from character.main import Character
 from prompt_toolkit import ANSI, PromptSession
 from rich.table import Table
 

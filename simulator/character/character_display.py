@@ -1,5 +1,8 @@
 """
-Character display and UI functionality.
+Character display module for the simulator.
+
+Provides display and UI functionality for characters, including
+health bars, status displays, and character information formatting.
 """
 
 from typing import Any
@@ -14,6 +17,7 @@ class CharacterDisplay:
     Attributes:
         owner (Any):
             The Character instance that this display is associated with.
+
     """
 
     def __init__(self, owner: Any) -> None:
@@ -23,6 +27,7 @@ class CharacterDisplay:
         Args:
             owner (Any):
                 The Character instance that this display is associated with.
+
         """
         self.owner = owner
 

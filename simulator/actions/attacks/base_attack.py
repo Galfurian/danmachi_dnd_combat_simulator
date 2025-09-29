@@ -1,3 +1,10 @@
+"""
+Base attack module for the simulator.
+
+Defines the base classes for character attacks, including weapon attacks
+and natural attacks, with common functionality for execution and effects.
+"""
+
 from typing import Any
 
 from actions.base_action import BaseAction, ValidActionEffect

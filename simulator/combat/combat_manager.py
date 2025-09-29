@@ -1,3 +1,10 @@
+"""
+Combat manager module for the simulator.
+
+Handles the overall combat flow, including turn management, initiative,
+character actions, and combat resolution between players and enemies.
+"""
+
 # combat_manager.py
 import random
 from collections import deque

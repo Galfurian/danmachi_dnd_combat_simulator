@@ -1,7 +1,19 @@
+"""
+Character management module for the simulator.
+
+Defines the Character class and related functions for creating, loading, and
+managing characters, including stats, equipment, actions, spells, and effects.
+Handles character serialization from JSON data.
+"""
+
 import json
 from pathlib import Path
-from typing import Annotated, Any, Optional
+from typing import Any
 
+from actions.attacks.natural_attack import NaturalAttack
+from actions.attacks.weapon_attack import WeaponAttack
+from actions.base_action import BaseAction
+from actions.spells.base_spell import BaseSpell
 from catchery import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.dice_parser import VarInfo
@@ -19,11 +31,6 @@ from .character_effects import CharacterEffects, ValidPassiveEffect
 from .character_inventory import CharacterInventory
 from .character_race import CharacterRace
 from .character_stats import CharacterStats
-
-from actions.attacks.natural_attack import NaturalAttack
-from actions.attacks.weapon_attack import WeaponAttack
-from actions.base_action import BaseAction
-from actions.spells.base_spell import BaseSpell
 
 
 class Character:
@@ -71,7 +78,7 @@ class Character:
         race: CharacterRace,
         levels: dict[CharacterClass, int],
         stats: dict[str, int],
-        spellcasting_ability: Optional[str],
+        spellcasting_ability: str | None,
         total_hands: int,
         resistances: set[DamageType],
         vulnerabilities: set[DamageType],
@@ -689,10 +696,10 @@ def character_from_dict(data: dict[str, Any]) -> Character:
     Returns:
         Character:
             The created Character instance.
+
     """
     from core.content import ContentRepository
-    from items.weapon import WieldedWeapon
-    from items.weapon import NaturalWeapon
+    from items.weapon import NaturalWeapon, WieldedWeapon
 
     # Get the repository instance.
     repo: ContentRepository = ContentRepository()

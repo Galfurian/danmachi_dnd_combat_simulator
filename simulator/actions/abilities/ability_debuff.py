@@ -1,4 +1,9 @@
-"""Buff abilities that provide beneficial effects to allies."""
+"""
+Ability debuff module for the simulator.
+
+Defines debuff abilities that apply negative effects to targets, such as
+stat reductions, status conditions, or other detrimental effects.
+"""
 
 from typing import Any, Literal
 

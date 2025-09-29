@@ -1,5 +1,8 @@
 """
-Character Inventory Management Module - handles inventory-related functionality.
+Character inventory management module for the simulator.
+
+Handles equipping and unequipping weapons and armor for characters, including
+validation of hand requirements, armor slots, and inventory constraints.
 """
 
 from typing import Any
@@ -7,7 +10,7 @@ from typing import Any
 from catchery import log_warning
 from core.constants import ArmorSlot
 from items.armor import Armor
-from items.weapon import Weapon, NaturalWeapon, WieldedWeapon
+from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
 
 class CharacterInventory:
@@ -18,6 +21,7 @@ class CharacterInventory:
     Attributes:
         owner (Any):
             The Character instance this inventory manager belongs to.
+
     """
 
     def __init__(self, owner: Any) -> None:
@@ -27,6 +31,7 @@ class CharacterInventory:
         Args:
             owner (Any):
                 The Character instance this inventory manager belongs to.
+
         """
         self.owner = owner
 

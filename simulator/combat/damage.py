@@ -1,3 +1,10 @@
+"""
+Damage module for the simulator.
+
+Handles damage calculation, application, and resolution, including
+damage components, types, and effects on characters.
+"""
+
 from typing import Any
 
 from core.constants import DamageType

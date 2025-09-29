@@ -1,6 +1,8 @@
 """
-Defines the CharacterClass model representing a character class with its
-properties and available actions per level.
+Character class module for the simulator.
+
+Defines character classes with their properties, actions, and spells available
+at different levels.
 """
 
 from pydantic import BaseModel, Field

@@ -1,4 +1,9 @@
-"""Healing spell implementation."""
+"""
+Spell heal module for the simulator.
+
+Defines healing spells that restore hit points to allies, including
+various restorative magic with different effects and ranges.
+"""
 
 from typing import Any, Literal
 

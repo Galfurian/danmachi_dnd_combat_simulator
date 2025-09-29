@@ -1,4 +1,9 @@
-"""Base ability class for all special character abilities."""
+"""
+Base ability module for the simulator.
+
+Defines the base classes for character abilities, including offensive, defensive,
+healing, and buff abilities, with common functionality for execution and effects.
+"""
 
 from abc import ABC, abstractmethod
 from typing import Any

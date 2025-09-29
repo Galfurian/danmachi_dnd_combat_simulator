@@ -1,5 +1,8 @@
 """
-Module defining the WeaponAttack class for weapon-based attacks.
+Weapon attack module for the simulator.
+
+Defines weapon-based attacks that can be equipped and unequipped, such as
+swords, bows, or other equipment.
 """
 
 from typing import Literal

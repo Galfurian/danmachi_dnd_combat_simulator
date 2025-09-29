@@ -1,6 +1,8 @@
 """
-Character statistics and derived properties, including ability modifiers,
-HP, AC, initiative, and utility stat expressions.
+Character stats module for the simulator.
+
+Handles all stat calculations and derived properties for a Character, including
+ability modifiers, HP, AC, initiative, and utility stat expressions.
 """
 
 from typing import Any
@@ -23,6 +25,7 @@ class CharacterStats:
             The current hit points (HP) of the character.
         mind (int):
             The current Mind points of the character.
+
     """
 
     def __init__(self, owner: Any) -> None:

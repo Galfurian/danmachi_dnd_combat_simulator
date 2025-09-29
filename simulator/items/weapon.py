@@ -1,9 +1,15 @@
-from typing import Any, Literal
+"""
+Weapon module for the simulator.
 
-from pydantic import BaseModel, Field
+Defines weapon classes and related types for managing weapons, their attacks,
+properties, and effects within the combat simulator.
+"""
+
+from typing import Any, Literal
 
 from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
+from pydantic import BaseModel, Field
 
 
 class Weapon(BaseModel):

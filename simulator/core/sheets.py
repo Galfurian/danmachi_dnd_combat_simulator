@@ -1,5 +1,9 @@
 """
-Module for printing character sheets and other game elements in a formatted way.
+Sheet printing utilities for the simulator.
+
+Provides functions to print formatted sheets for characters, weapons, armors,
+actions, spells, and other game elements, using rich text formatting for
+display in the console.
 """
 
 from typing import TYPE_CHECKING
@@ -19,9 +23,9 @@ from rich.padding import Padding
 
 if TYPE_CHECKING:
     from actions.abilities.base_ability import BaseAbility
-    from actions.spells.base_spell import BaseSpell
     from actions.attacks.base_attack import BaseAttack
     from actions.base_action import BaseAction
+    from actions.spells.base_spell import BaseSpell
 
 
 def modifier_to_string(modifier: Modifier) -> str:
@@ -269,8 +273,8 @@ def print_action_sheet(action: "BaseAction", padding: int = 2) -> None:
         padding (int): Left padding for the output. Defaults to 2.
 
     """
-    from actions.attacks.base_attack import BaseAttack
     from actions.abilities.base_ability import BaseAbility
+    from actions.attacks.base_attack import BaseAttack
     from actions.spells.base_spell import BaseSpell
 
     if isinstance(action, BaseSpell):

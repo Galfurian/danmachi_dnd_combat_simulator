@@ -1,7 +1,15 @@
+"""
+Content repository module for the simulator.
+
+Provides a centralized registry for loading and accessing game assets such as
+characters, classes, races, weapons, armors, actions, and spells from JSON files.
+Handles data validation and provides fast by-name lookups.
+"""
+
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from catchery import log_warning
 from character.character_class import CharacterClass
@@ -9,14 +17,14 @@ from character.character_race import CharacterRace
 from core.utils import Singleton, cprint
 
 if TYPE_CHECKING:
-    from items.armor import Armor
-    from items.weapon import Weapon
     from actions.base_action import BaseAction
     from actions.spells.base_spell import BaseSpell
     from actions.spells.spell_buff import SpellBuff
     from actions.spells.spell_debuff import SpellDebuff
     from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_offensive import SpellOffensive
+    from items.armor import Armor
+    from items.weapon import Weapon
 
 
 class ContentRepository(metaclass=Singleton):

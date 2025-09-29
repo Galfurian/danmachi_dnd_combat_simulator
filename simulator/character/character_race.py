@@ -1,6 +1,8 @@
 """
-Character race model representing a character's race, including natural AC,
-default and available actions and spells.
+Character race module for the simulator.
+
+Defines the CharacterRace model representing a character's race with its
+properties, natural AC, and available actions and spells.
 """
 
 from pydantic import BaseModel, Field

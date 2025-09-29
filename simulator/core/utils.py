@@ -1,3 +1,10 @@
+"""
+Utilities module for the simulator.
+
+Provides common utility functions and helpers, including console printing
+with rich formatting, singleton pattern, and other shared functionality.
+"""
+
 from typing import Any
 
 from rich.console import Console

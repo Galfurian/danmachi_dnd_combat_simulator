@@ -1,4 +1,9 @@
-"""Offensive spell attack implementation."""
+"""
+Spell offensive module for the simulator.
+
+Defines offensive spells that deal damage to enemies, including
+direct damage spells, area effects, and magical attacks.
+"""
 
 from typing import Any, Literal
 

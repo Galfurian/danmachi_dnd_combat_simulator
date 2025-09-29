@@ -1,4 +1,9 @@
-"""Beneficial spell buff implementation."""
+"""
+Spell buff module for the simulator.
+
+Defines buff spells that provide beneficial effects to targets, such as
+stat enhancements, protection, or other positive magical effects.
+"""
 
 from typing import Any, Literal
 

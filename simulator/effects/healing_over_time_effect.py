@@ -1,3 +1,10 @@
+"""
+Healing over time effect module for the simulator.
+
+Defines effects that provide healing over multiple turns, such as
+regeneration or restorative spells with ongoing benefits.
+"""
+
 from typing import Literal
 
 from core.dice_parser import roll_and_describe

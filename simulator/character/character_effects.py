@@ -1,3 +1,10 @@
+"""
+Character effects module for the simulator.
+
+Manages the application, tracking, and resolution of effects on characters,
+including bonuses, penalties, status conditions, and temporary modifications.
+"""
+
 # Revised effects_module.py (per-BonusType tracking, 5e-style strict)
 
 from collections.abc import Iterator
@@ -13,7 +20,7 @@ from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
-from effects.event_system import CombatEvent, DamageTakenEvent, EventType, HitEvent
+from effects.event_system import DamageTakenEvent, EventType, HitEvent
 from effects.healing_over_time_effect import (
     ActiveHealingOverTimeEffect,
     HealingOverTimeEffect,
@@ -44,6 +51,7 @@ class CharacterEffects:
             List of passive effects that are always active.
         active_modifiers (dict[BonusType, ActiveEffect]):
             Dictionary mapping bonus types to their active modifier effects.
+
     """
 
     def __init__(self, owner: Any) -> None:

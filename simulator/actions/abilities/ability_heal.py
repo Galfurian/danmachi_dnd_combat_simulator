@@ -1,4 +1,9 @@
-"""Healing abilities that restore hit points to allies."""
+"""
+Ability heal module for the simulator.
+
+Defines healing abilities that restore hit points to allies, including
+various healing spells and abilities with different effects and ranges.
+"""
 
 from typing import Any, Literal
 

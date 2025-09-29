@@ -1,5 +1,13 @@
-from typing import TYPE_CHECKING, Any, TypeAlias
+"""
+Base action module for the simulator.
 
+Defines the base classes and interfaces for actions, including attacks,
+abilities, and spells, with common functionality for execution and effects.
+"""
+
+from typing import Any, TypeAlias
+
+from combat.damage import DamageComponent
 from core.constants import (
     ActionCategory,
     ActionClass,
@@ -14,9 +22,6 @@ from core.dice_parser import (
     roll_and_describe,
     substitute_variables,
 )
-from pydantic import BaseModel, Field
-
-from combat.damage import DamageComponent
 from effects.damage_over_time_effect import (
     DamageOverTimeEffect,
 )
@@ -32,7 +37,7 @@ from effects.modifier_effect import (
 from effects.trigger_effect import (
     TriggerEffect,
 )
-
+from pydantic import BaseModel, Field
 
 ValidActionEffect: TypeAlias = (
     DamageOverTimeEffect

@@ -1,4 +1,9 @@
-"""Offensive abilities that deal damage to enemies."""
+"""
+Ability offensive module for the simulator.
+
+Defines offensive abilities that deal damage to enemies, including
+special attacks, area effects, and other combat abilities.
+"""
 
 from typing import Any, Literal
 

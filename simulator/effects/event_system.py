@@ -1,5 +1,8 @@
 """
-Event system for handling combat-related triggers and events.
+Event system module for the simulator.
+
+Handles combat-related triggers and events, including event types,
+event dispatching, and event-based effect resolution.
 """
 
 from enum import Enum

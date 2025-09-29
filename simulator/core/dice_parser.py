@@ -1,5 +1,8 @@
 """
-Safe dice expression parser to replace eval() usage.
+Dice parser module for the simulator.
+
+Provides a safe dice expression parser to replace eval() usage, supporting
+mathematical operations, dice rolls, and custom functions for combat calculations.
 """
 
 import math

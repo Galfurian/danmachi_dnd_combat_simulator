@@ -1,4 +1,9 @@
-"""Detrimental spell debuff implementation."""
+"""
+Spell debuff module for the simulator.
+
+Defines debuff spells that apply negative effects to targets, such as
+stat reductions, curses, or other detrimental magical effects.
+"""
 
 from typing import Any, Literal
 
