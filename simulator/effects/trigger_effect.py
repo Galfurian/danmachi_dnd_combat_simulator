@@ -165,7 +165,7 @@ class TriggerCondition(BaseModel):
         if not isinstance(event.actor, Character):
             raise ValueError("Actor must be a Character instance to get HP ratio.")
 
-        return event.actor.hp / event.actor.HP_MAX if event.actor.HP_MAX > 0 else 0
+        return event.actor.stats.hp / event.actor.HP_MAX if event.actor.HP_MAX > 0 else 0
 
 
 class TriggerEffect(Effect):

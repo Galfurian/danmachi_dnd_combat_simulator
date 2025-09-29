@@ -68,7 +68,7 @@ class CharacterDisplay:
 
         # Build status line with better spacing
         hp_bar = (
-            make_bar(self.owner.hp, self.owner.HP_MAX, color="green", length=8)
+            make_bar(self.owner.stats.hp, self.owner.HP_MAX, color="green", length=8)
             if show_bars
             else ""
         )
@@ -87,21 +87,21 @@ class CharacterDisplay:
         hp_display = ""
         if show_numbers and show_bars:
             hp_display = (
-                f"| [green]HP:{self.owner.hp:>3}/{self.owner.HP_MAX}[/]{hp_bar} "
+                f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/]{hp_bar} "
             )
         elif show_numbers:
-            hp_display = f"| [green]HP:{self.owner.hp:>3}/{self.owner.HP_MAX}[/] "
+            hp_display = f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/] "
         elif show_bars:
             hp_display = f"| [green]HP:[/]{hp_bar} "
         else:
             # Default to showing numbers if neither is specified
-            hp_display = f"| [green]HP:{self.owner.hp:>3}/{self.owner.HP_MAX}[/] "
+            hp_display = f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/] "
         status += hp_display
 
         if self.owner.MIND_MAX > 0:
             mind_bar = (
                 make_bar(
-                    self.owner.mind,
+                    self.owner.stats.mind,
                     self.owner.MIND_MAX,
                     color="blue",
                     length=8,
@@ -113,17 +113,17 @@ class CharacterDisplay:
             # Build MP display based on parameters with blue color
             mp_display = ""
             if show_numbers and show_bars:
-                mp_display = f"| [blue]MP:{self.owner.mind:>3}/{self.owner.MIND_MAX}[/]{mind_bar} "
+                mp_display = f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/]{mind_bar} "
             elif show_numbers:
                 mp_display = (
-                    f"| [blue]MP:{self.owner.mind:>3}/{self.owner.MIND_MAX}[/] "
+                    f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/] "
                 )
             elif show_bars:
                 mp_display = f"| [blue]MP:[/]{mind_bar} "
             else:
                 # Default to showing numbers if neither is specified
                 mp_display = (
-                    f"| [blue]MP:{self.owner.mind:>3}/{self.owner.MIND_MAX}[/] "
+                    f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/] "
                 )
             status += mp_display
 

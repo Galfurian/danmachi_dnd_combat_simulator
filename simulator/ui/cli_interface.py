@@ -138,7 +138,7 @@ class PlayerInterface:
             table.add_row(
                 str(i),
                 target.name,
-                f"{target.hp:>3}/{target.HP_MAX:<3}",
+                f"{target.stats.hp:>3}/{target.HP_MAX:<3}",
                 str(target.AC),
             )
         # Add an empty row if there are submenus or an exit entry.
@@ -213,7 +213,7 @@ class PlayerInterface:
                 table.add_row(
                     str(i),
                     t.name,
-                    str(t.hp),
+                    str(t.stats.hp),
                     str(t.AC),
                     "[green]✓[/]" if t in selected else "",
                 )

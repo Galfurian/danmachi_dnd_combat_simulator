@@ -21,6 +21,9 @@ class CharacterStats:
     Attributes:
         owner (Any):
             The Character instance that owns this CharacterStats.
+        stats (dict[str, int]):
+            A dictionary of the character's base stats (e.g., strength,
+            dexterity).
         hp (int):
             The current hit points (HP) of the character.
         mind (int):
@@ -28,7 +31,7 @@ class CharacterStats:
 
     """
 
-    def __init__(self, owner: Any) -> None:
+    def __init__(self, owner: Any, stats: dict[str, int]) -> None:
         """
         Initializes the CharacterStats with a reference to its owner.
 
@@ -37,9 +40,10 @@ class CharacterStats:
                 The Character instance that owns this CharacterStats.
 
         """
-        self.owner = owner
-        self.hp = self.HP_MAX
-        self.mind = self.MIND_MAX
+        self.owner: Any = owner
+        self.statistics: dict[str, int] = stats
+        self.hp: int = self.HP_MAX
+        self.mind: int = self.MIND_MAX
 
     # ============================================================================
     # ABILITY SCORE MODIFIERS (D&D 5e Standard)
@@ -54,7 +58,7 @@ class CharacterStats:
             int: The strength modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["strength"])
+        return get_stat_modifier(self.statistics["strength"])
 
     @property
     def DEX(self) -> int:
@@ -65,7 +69,7 @@ class CharacterStats:
             int: The dexterity modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["dexterity"])
+        return get_stat_modifier(self.statistics["dexterity"])
 
     @property
     def CON(self) -> int:
@@ -76,7 +80,7 @@ class CharacterStats:
             int: The constitution modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["constitution"])
+        return get_stat_modifier(self.statistics["constitution"])
 
     @property
     def INT(self) -> int:
@@ -87,7 +91,7 @@ class CharacterStats:
             int: The intelligence modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["intelligence"])
+        return get_stat_modifier(self.statistics["intelligence"])
 
     @property
     def WIS(self) -> int:
@@ -98,7 +102,7 @@ class CharacterStats:
             int: The wisdom modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["wisdom"])
+        return get_stat_modifier(self.statistics["wisdom"])
 
     @property
     def CHA(self) -> int:
@@ -109,7 +113,7 @@ class CharacterStats:
             int: The charisma modifier value.
 
         """
-        return get_stat_modifier(self.owner.stats["charisma"])
+        return get_stat_modifier(self.statistics["charisma"])
 
     @property
     def SPELLCASTING(self) -> int:
@@ -122,30 +126,14 @@ class CharacterStats:
         """
         if (
             self.owner.spellcasting_ability
-            and self.owner.spellcasting_ability in self.owner.stats
+            and self.owner.spellcasting_ability in self.statistics
         ):
-            return get_stat_modifier(self.owner.stats[self.owner.spellcasting_ability])
+            return get_stat_modifier(self.statistics[self.owner.spellcasting_ability])
         return 0
 
     # ============================================================================
     # DERIVED STATS (HP, MIND, AC, etc.)
     # ============================================================================
-
-    @property
-    def HP_CURRENT(self) -> int:
-        """
-        Returns the current HP of the character.
-
-        """
-        return self.hp
-
-    @property
-    def MIND_CURRENT(self) -> int:
-        """
-        Returns the current Mind of the character.
-
-        """
-        return self.mind
 
     @property
     def HP_MAX(self) -> int:

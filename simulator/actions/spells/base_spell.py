@@ -133,7 +133,7 @@ class BaseSpell(BaseAction):
             return False
 
         # Check if actor has enough mind points to cast the spell.
-        if actor.mind < self.mind_cost[rank]:
+        if actor.stats.mind < self.mind_cost[rank]:
             return False
 
         return True

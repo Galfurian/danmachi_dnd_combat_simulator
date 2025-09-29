@@ -548,7 +548,7 @@ class CharacterEffects:
 
         """
         if isinstance(effect, HealingOverTimeEffect):
-            return self.owner.hp < self.owner.HP_MAX and not self.has_effect(effect)
+            return self.owner.stats.hp < self.owner.HP_MAX and not self.has_effect(effect)
 
         if isinstance(effect, DamageOverTimeEffect):
             return not self.has_effect(effect)

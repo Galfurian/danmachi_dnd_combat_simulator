@@ -182,7 +182,7 @@ class CharacterActions:
                 continue
             if not self.has_action_class(spell.action_class):
                 continue
-            if self.owner.mind < (spell.mind_cost[0] if spell.mind_cost else 0):
+            if self.owner.stats.mind < (spell.mind_cost[0] if spell.mind_cost else 0):
                 continue
             available_spells.append(spell)
         return available_spells

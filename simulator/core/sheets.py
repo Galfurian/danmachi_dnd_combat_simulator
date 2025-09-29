@@ -316,11 +316,11 @@ def print_character_sheet(char: Character) -> None:
 
     # Core stats
     cprint(
-        f"  HP: [green]{char.hp}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]"
+        f"  HP: [green]{char.stats.hp}/{char.HP_MAX}[/], AC: [yellow]{char.AC}[/], Initiative: [cyan]{char.INITIATIVE}[/]"
     )
 
     if char.MIND_MAX > 0:
-        cprint(f"  Mind: [blue]{char.mind}/{char.MIND_MAX}[/]")
+        cprint(f"  Mind: [blue]{char.stats.mind}/{char.MIND_MAX}[/]")
 
     if char.spellcasting_ability:
         # Convert full ability name to 3-letter abbreviation
@@ -332,7 +332,7 @@ def print_character_sheet(char: Character) -> None:
 
     # Ability scores and modifiers
     stat_display = []
-    for stat_name, stat_value in char.stats.items():
+    for stat_name, stat_value in char.stats.statistics.items():
         modifier = getattr(char, stat_name[:3].upper())
         stat_display.append(f"{stat_name.capitalize()}: {stat_value} ({modifier:+d})")
     cprint(f"  {', '.join(stat_display)}")

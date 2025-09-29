@@ -137,7 +137,7 @@ def _hp_ratio(character: Character, missing: bool = False) -> float:
             The HP ratio (0.0 to 1.0), or missing HP ratio if specified.
 
     """
-    ratio = (character.hp / character.HP_MAX) if character.HP_MAX > 0 else 1.0
+    ratio = (character.stats.hp / character.HP_MAX) if character.HP_MAX > 0 else 1.0
     return 1.0 - ratio if missing else ratio
 
 
@@ -411,7 +411,7 @@ def _get_best_spell_attack(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.mind:
+        if mind_level > source.stats.mind:
             continue
 
         max_targets = spell.target_count(variables)
@@ -467,7 +467,7 @@ def _get_best_spell_heal(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.mind:
+        if mind_level > source.stats.mind:
             continue
 
         max_targets = spell.target_count(variables)
@@ -484,7 +484,7 @@ def _get_best_spell_heal(
         if not sorted_targets:
             continue
 
-        total_hp_missing = sum(t.HP_MAX - t.hp for t in sorted_targets)
+        total_hp_missing = sum(t.HP_MAX - t.stats.hp for t in sorted_targets)
         total_affected = len(sorted_targets)
         score = total_hp_missing + total_affected * 10 - mind_level
 
@@ -526,7 +526,7 @@ def _get_best_spell_buff_or_debuff(
     for rank, mind_level in enumerate(spell.mind_cost, 0):
         variables = spell.spell_get_variables(source, rank)
 
-        if mind_level > source.mind:
+        if mind_level > source.stats.mind:
             continue
 
         max_targets = spell.target_count(variables)

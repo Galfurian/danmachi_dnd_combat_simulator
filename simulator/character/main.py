@@ -47,7 +47,6 @@ class Character:
     name: str
     race: CharacterRace
     levels: dict[CharacterClass, int]
-    stats: dict[str, int]
     spellcasting_ability: str | None
     total_hands: int
     resistances: set[DamageType]
@@ -66,7 +65,7 @@ class Character:
     # === Management Modules ===
 
     effects_module: CharacterEffects
-    stats_module: CharacterStats
+    stats: CharacterStats
     inventory_module: CharacterInventory
     actions_module: CharacterActions
     display_module: CharacterDisplay
@@ -90,7 +89,6 @@ class Character:
         self.name = name
         self.race = race
         self.levels = levels
-        self.stats = stats
         self.spellcasting_ability = spellcasting_ability
         self.total_hands = total_hands
         self.resistances = resistances
@@ -107,7 +105,7 @@ class Character:
 
         # Initialize modules.
         self.effects_module = CharacterEffects(owner=self)
-        self.stats_module = CharacterStats(owner=self)
+        self.stats = CharacterStats(owner=self, stats=stats)
         self.inventory_module = CharacterInventory(owner=self)
         self.actions_module = CharacterActions(owner=self)
         self.display_module = CharacterDisplay(owner=self)
@@ -125,64 +123,54 @@ class Character:
         return self.char_type.colorize(self.name)
 
     @property
-    def hp(self) -> int:
-        """Returns the current HP of the character."""
-        return self.stats_module.HP_CURRENT
-
-    @property
-    def mind(self) -> int:
-        """Returns the current Mind of the character."""
-        return self.stats_module.MIND_CURRENT
-
-    @property
     def HP_MAX(self) -> int:
         """Returns the maximum HP of the character."""
-        return self.stats_module.HP_MAX
+        return self.stats.HP_MAX
 
     @property
     def MIND_MAX(self) -> int:
         """Returns the maximum Mind of the character."""
-        return self.stats_module.MIND_MAX
+        return self.stats.MIND_MAX
 
     @property
     def STR(self) -> int:
         """Returns the D&D strength modifier."""
-        return self.stats_module.STR
+        return self.stats.STR
 
     @property
     def DEX(self) -> int:
         """Returns the D&D dexterity modifier."""
-        return self.stats_module.DEX
+        return self.stats.DEX
 
     @property
     def CON(self) -> int:
         """Returns the D&D constitution modifier."""
-        return self.stats_module.CON
+        return self.stats.CON
 
     @property
     def INT(self) -> int:
         """Returns the D&D intelligence modifier."""
-        return self.stats_module.INT
+        return self.stats.INT
 
     @property
     def WIS(self) -> int:
         """Returns the D&D wisdom modifier."""
-        return self.stats_module.WIS
+        return self.stats.WIS
 
     @property
     def CHA(self) -> int:
         """Returns the D&D charisma modifier."""
-        return self.stats_module.CHA
+        return self.stats.CHA
 
     @property
     def SPELLCASTING(self) -> int:
         """Returns the D&D spellcasting ability modifier."""
-        return self.stats_module.SPELLCASTING
+        return self.stats.SPELLCASTING
 
     @property
     def AC(self) -> int:
         """Calculates Armor Class (AC) using D&D 5e rules."""
-        return self.stats_module.AC
+        return self.stats.AC
 
     @property
     def INITIATIVE(self) -> int:
@@ -190,18 +178,18 @@ class Character:
         Calculates the character's initiative based on dexterity and any active
         effects.
         """
-        return self.stats_module.INITIATIVE
+        return self.stats.INITIATIVE
 
     def adjust_mind(self, amount: int) -> int:
         """
         Adjusts the character's Mind by a specific amount, clamped between 0 and
         MIND_MAX.
         """
-        return self.stats_module.adjust_mind(amount)
+        return self.stats.adjust_mind(amount)
 
     def get_expression_variables(self) -> list[VarInfo]:
         """Returns a dictionary of the character's modifiers."""
-        return self.stats_module.get_expression_variables()
+        return self.stats.get_expression_variables()
 
     def add_passive_effect(self, effect: Effect) -> bool:
         """Add a passive effect that is always active (like boss phase triggers)."""
@@ -299,7 +287,7 @@ class Character:
         adjusted = max(adjusted, 0)
 
         # Apply the damage and get the actual damage taken.
-        actual = abs(self.stats_module.adjust_hp(-adjusted))
+        actual = abs(self.stats.adjust_hp(-adjusted))
 
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.
@@ -326,7 +314,7 @@ class Character:
             int: The actual amount healed
 
         """
-        return self.stats_module.adjust_hp(amount)
+        return self.stats.adjust_hp(amount)
 
     def use_mind(self, amount: int) -> bool:
         """
@@ -342,8 +330,8 @@ class Character:
                 True if the mind points were successfully used, False otherwise.
 
         """
-        if self.mind >= amount:
-            self.stats_module.adjust_mind(-amount)
+        if self.stats.mind >= amount:
+            self.stats.adjust_mind(-amount)
             return True
         return False
 
@@ -360,7 +348,7 @@ class Character:
                 The actual amount of mind points regained.
 
         """
-        return self.stats_module.adjust_mind(amount)
+        return self.stats.adjust_mind(amount)
 
     def is_alive(self) -> bool:
         """
@@ -371,7 +359,7 @@ class Character:
                 True if the character is alive, False otherwise
 
         """
-        return self.hp > 0
+        return self.stats.hp > 0
 
     def is_dead(self) -> bool:
         """
@@ -382,7 +370,7 @@ class Character:
                 True if the character is dead, False otherwise
 
         """
-        return self.hp <= 0
+        return self.stats.hp <= 0
 
     def get_spell_attack_bonus(self, spell_level: int = 1) -> int:
         """Calculates the spell attack bonus for the character.

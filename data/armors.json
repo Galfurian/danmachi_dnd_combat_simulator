@@ -12,32 +12,7 @@
         "ac": 16,
         "armor_slot": "TORSO",
         "armor_type": "HEAVY",
-        "max_dex_bonus": 2,
-        "effects": [
-            {
-                "action_type": "TriggerEffect",
-                "name": "Last Stand",
-                "description": "When below 25% HP, it enchances the wearer's armor class.",
-                "trigger_condition": {
-                    "trigger_type": "on_low_health",
-                    "threshold": 0.25
-                },
-                "trigger_effects": [
-                    {
-                        "name": "Last Stand Buff",
-                        "effect_type": "ModifierEffect",
-                        "description": "Increases AC by 2 for 3 turns.",
-                        "duration": 3,
-                        "modifiers": [
-                            {
-                                "bonus_type": "AC",
-                                "value": "2"
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
+        "max_dex_bonus": 2
     },
     {
         "name": "Brigandine Armor",

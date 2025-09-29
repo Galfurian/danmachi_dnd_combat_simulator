@@ -911,7 +911,7 @@ class CombatManager:
         ]
         heals: list[BaseSpell] = (
             [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
-            if any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
+            if any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
             else []
         )
         # If the player has no spells, skip this phase.
@@ -936,7 +936,7 @@ class CombatManager:
 
         crule(":hourglass_done: Post-Combat Healing", style="green")
         # Stop now if there are no friendly character that needs healing.
-        if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+        if not any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
             cprint("[yellow]No friendly characters to heal.[/]")
             return
         # Gather viable healing spells.
@@ -957,7 +957,7 @@ class CombatManager:
                         show_ac=True,
                     )
                 )
-            if not any(t.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
+            if not any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
                 cprint("[yellow]No friendly characters needs more healing.[/]")
                 return
             # let the UI list ONLY those spells plus an 'End' sentinel.
