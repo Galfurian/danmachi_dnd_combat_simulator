@@ -64,7 +64,9 @@ class CharacterEffects:
         super().__init__()
         self.owner = owner
         self.active_effects: list[ActiveEffect] = []
+        # TODO: Properly populate this one.
         self.passive_effects: list[ActiveEffect] = []
+        # TODO: Remove the active_modifiers dict and compute on the fly.
         self.active_modifiers: dict[BonusType, ActiveEffect] = {}
 
     # === Effect Management ===
