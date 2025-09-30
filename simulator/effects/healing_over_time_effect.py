@@ -107,7 +107,7 @@ class HealingOverTimeEffect(Effect):
         actor: Any,
         target: Any,
         variables: list[VarInfo],
-    ) -> None:
+    ) -> bool:
         """
         Apply the healing over time effect to the target, creating an
         ActiveEffect if valid.
@@ -120,11 +120,15 @@ class HealingOverTimeEffect(Effect):
             variables (list[VarInfo]):
                 List of variable info for dynamic calculations.
 
+        Returns:
+            bool:
+                True if the effect was applied successfully, False otherwise.
+
         """
         from character.main import Character
 
         if not self.can_apply(actor, target, variables):
-            return None
+            return False
 
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
@@ -144,7 +148,7 @@ class HealingOverTimeEffect(Effect):
         if existing_effects:
             existing_effects[0].duration = self.duration
             cprint(f"    ⚠️  {self.name} duration refreshed on {target.colored_name}.")
-            return None
+            return True
 
         log_debug(
             f"Applying DoT effect '{self.colored_name}' "
@@ -161,6 +165,7 @@ class HealingOverTimeEffect(Effect):
                 variables=variables,
             )
         )
+        return True
 
 
 class ActiveHealingOverTimeEffect(ActiveEffect):

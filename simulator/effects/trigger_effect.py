@@ -288,7 +288,7 @@ class TriggerEffect(Effect):
         actor: Any,
         target: Any,
         variables: list[VarInfo],
-    ) -> None:
+    ) -> bool:
         """
         Apply the trigger effect to the target, creating an ActiveEffect if valid.
 
@@ -302,11 +302,15 @@ class TriggerEffect(Effect):
             variables (list[VarInfo]):
                 List of variable info for dynamic calculations.
 
+        Returns:
+            bool:
+                True if the effect was applied successfully, False otherwise.
+
         """
         from character.main import Character
 
         if not self.can_apply(actor, target, variables):
-            return None
+            return False
 
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
@@ -343,6 +347,7 @@ class TriggerEffect(Effect):
                 cooldown_remaining=0,
             )
         )
+        return True
 
 
 class ActiveTriggerEffect(ActiveEffect):

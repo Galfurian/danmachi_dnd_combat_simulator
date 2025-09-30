@@ -268,7 +268,7 @@ class ModifierEffect(Effect):
         actor: Any,
         target: Any,
         variables: list[VarInfo],
-    ) -> None:
+    ) -> bool:
         """
         Apply the modifier effect to the target, creating an ActiveEffect if valid.
 
@@ -283,15 +283,15 @@ class ModifierEffect(Effect):
                 List of variable info for dynamic calculations.
 
         Returns:
-            ActiveEffect | None:
-                The new ActiveEffect if applied successfully, None otherwise.
+            bool:
+                True if the effect was applied successfully, False otherwise.
 
         """
         from character.main import Character
         from combat.damage import DamageComponent
 
         if not self.can_apply(actor, target, variables):
-            return None
+            return False
 
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
@@ -325,7 +325,7 @@ class ModifierEffect(Effect):
                 f"from {actor.colored_name} to {target.colored_name}: "
                 "No existing weaker effect found."
             )
-            return None
+            return False
 
         log_debug(
             f"Applying modifier effect '{self.colored_name}' "
@@ -342,6 +342,7 @@ class ModifierEffect(Effect):
                 variables=variables,
             )
         )
+        return True
 
 
 class ActiveModifierEffect(ActiveEffect):

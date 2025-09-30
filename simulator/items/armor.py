@@ -127,5 +127,4 @@ class Armor(BaseModel):
                 f"Applying effect {effect.colored_name} from armor {self.colored_name} to {wearer.colored_name}",
                 {"character": wearer.name, "armor": self.name, "effect": effect.name},
             )
-            if effect.can_apply(wearer, wearer, variables):
-                wearer.effects.apply_effect(wearer, effect, variables)
+            effect.apply_effect(wearer, wearer, variables)

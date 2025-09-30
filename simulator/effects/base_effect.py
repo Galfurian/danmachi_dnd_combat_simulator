@@ -113,7 +113,7 @@ class Effect(BaseModel):
         actor: Any,
         target: Any,
         variables: list[VarInfo],
-    ) -> None:
+    ) -> bool:
         """
         Apply the effect to the target, creating an ActiveEffect if valid.
 
@@ -128,6 +128,10 @@ class Effect(BaseModel):
                 The character receiving the effect.
             variables (list[VarInfo]):
                 List of variable info for dynamic calculations.
+
+        Returns:
+            bool:
+                True if the effect was applied successfully, False otherwise.
 
         """
         raise NotImplementedError("Subclasses must implement apply_effect.")
