@@ -9,6 +9,7 @@ from typing import Any
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
+from core.logging import log_debug
 from core.utils import cprint
 from pydantic import BaseModel, Field
 
@@ -98,8 +99,10 @@ class Effect(BaseModel):
         assert isinstance(target, Character), "Target must be a Character."
 
         if actor.is_dead():
+            log_debug(f"Cannot apply effect: Actor {actor.name} is dead.")
             return False
         if target.is_dead():
+            log_debug(f"Cannot apply effect: Target {target.name} is dead.")
             return False
         return True
 

@@ -8,6 +8,7 @@ taking actions or participating in combat.
 from typing import Any, Literal
 
 from core.dice_parser import VarInfo
+from core.logging import log_debug
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -140,11 +141,19 @@ class IncapacitatingEffect(Effect):
 
         # Rule 2: Self-targeting restriction
         if actor == target:
+            log_debug(
+                "Cannot apply incapacitating effect: Self-targeting is not allowed."
+            )
             return False
 
         # Rule 3: No stacking - prevent applying if target already has
         # incapacitating effect.
         if sum(1 for _ in target.effects.incapacitating_effects) >= 1:
+            log_debug(
+                f"Cannot apply incapacitating effect: Target "
+                f"{target.colored_name} already has an active "
+                "incapacitating effect."
+            )
             return False
 
         return True

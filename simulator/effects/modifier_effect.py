@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from core.constants import BonusType
 from core.dice_parser import VarInfo
+from core.logging import log_debug
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect
@@ -162,6 +163,10 @@ class ModifierEffect(Effect):
         # Rule 2: Stacking limit - prevent applying if target has 5+ modifier
         # effects.
         if sum(1 for _ in target.effects.modifier_effects) >= 5:
+            log_debug(
+                f"Cannot apply modifier effect: Target {target.colored_name} "
+                "already has 5 or more active modifier effects."
+            )
             return False
 
         return True

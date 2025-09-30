@@ -8,6 +8,7 @@ regeneration or restorative spells with ongoing benefits.
 from typing import Any, Literal
 
 from core.dice_parser import VarInfo, roll_and_describe
+from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
 
@@ -83,6 +84,10 @@ class HealingOverTimeEffect(Effect):
 
         # Rule 2: Stacking limit - prevent applying if target has 3+ HoT effects
         if sum(1 for _ in target.effects.healing_over_time_effects) >= 3:
+            log_debug(
+                f"Cannot apply HoT effect: Target {target.colored_name} "
+                "already has 3 or more active HoT effects."
+            )
             return False
 
         return True

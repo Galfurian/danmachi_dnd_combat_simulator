@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
+from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
 
@@ -87,14 +88,23 @@ class DamageOverTimeEffect(Effect):
 
         # Rule 2: Self-targeting restriction
         if actor == target:
+            log_debug("Cannot apply DoT effect: Self-targeting is not allowed.")
             return False
 
         # Rule 3: Damage type immunity check
         if self.damage.damage_type in target.immunities:
+            log_debug(
+                f"Cannot apply DoT effect: Target {target.colored_name} "
+                f"is immune to {self.damage.damage_type}."
+            )
             return False
 
         # Rule 4: Stacking limit - prevent applying if target has 3+ DoT effects
         if sum(1 for _ in target.effects.damage_over_time_effects) >= 3:
+            log_debug(
+                f"Cannot apply DoT effect: Target {target.colored_name} "
+                "already has 3 or more active DoT effects."
+            )
             return False
 
         return True

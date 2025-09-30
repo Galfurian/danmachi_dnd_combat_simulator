@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
+from core.logging import log_debug
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -269,6 +270,10 @@ class TriggerEffect(Effect):
         # Rule 2: Stacking limit - prevent applying if target has 3+ trigger
         # effects
         if sum(1 for _ in target.effects.trigger_effects) >= 3:
+            log_debug(
+                f"Cannot apply trigger effect: Target {target.colored_name} "
+                "already has 3 or more active trigger effects."
+            )
             return False
 
         return True
