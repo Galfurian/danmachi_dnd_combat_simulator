@@ -20,8 +20,12 @@ from pathlib import Path
 from character.main import Character, load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
+from core.logging import setup_logging
 from core.sheets import crule, print_character_sheet
 from core.utils import cprint
+
+# Set up logging
+setup_logging()
 
 # Get the path to the data folder.
 data_dir = Path(__file__).with_suffix("").parent / "../data"

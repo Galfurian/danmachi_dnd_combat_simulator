@@ -12,7 +12,7 @@ from collections.abc import Callable
 from logging import debug
 from typing import Any
 
-from catchery import log_warning
+from core.logging import log_warning
 from pydantic import BaseModel, Field
 
 
@@ -536,9 +536,6 @@ def _process_dice_expression(
                 "error": str(e),
                 "context": "dice_expression_evaluation",
             },
-            Exception("Error evaluating dice expression."),
-            True,
-            e,
         )
         return 0
 
@@ -698,9 +695,6 @@ def roll_and_describe(
                 "error": str(e),
                 "context": "dice_breakdown_evaluation",
             },
-            Exception("Error evaluating dice expression."),
-            True,
-            e,
         )
         return RollBreakdown(value=0, description="", rolls=[])
 

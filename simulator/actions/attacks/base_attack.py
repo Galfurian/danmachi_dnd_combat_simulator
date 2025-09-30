@@ -8,7 +8,7 @@ and natural attacks, with common functionality for execution and effects.
 from typing import Any
 
 from actions.base_action import BaseAction, ValidActionEffect
-from catchery import log_warning
+from core.logging import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint

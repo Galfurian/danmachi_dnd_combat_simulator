@@ -5,6 +5,7 @@ Contains dummy tests and examples for verifying simulator functionality.
 """
 
 import json
+import logging
 from pathlib import Path
 
 from character.character_class import CharacterClass
@@ -12,9 +13,13 @@ from character.character_race import CharacterRace
 from character.main import Character, load_character
 from core.constants import ArmorSlot, ArmorType, CharacterType, DamageType
 from core.content import ContentRepository
+from core.logging import setup_logging
 from effects.trigger_effect import TriggerEffect
 from items.armor import Armor
-from core.sheets import *
+
+# Set up logging
+setup_logging(logging.DEBUG)
+
 
 # Initialize the ContentRepository for tests
 # This is necessary because Character's model_validator and model_post_init

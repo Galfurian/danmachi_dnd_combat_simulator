@@ -19,7 +19,7 @@ from actions.base_action import (
 from actions.spells.base_spell import (
     BaseSpell,
 )
-from catchery import log_warning
+from core.logging import log_warning
 from character.main import Character
 from combat.npc_ai import (
     choose_best_attack_spell_action,

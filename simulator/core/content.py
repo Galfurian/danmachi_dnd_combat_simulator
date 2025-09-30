@@ -11,7 +11,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from catchery import log_warning
+from core.logging import log_warning
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from core.utils import Singleton, cprint

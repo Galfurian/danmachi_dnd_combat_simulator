@@ -15,7 +15,6 @@ dependencies = [
     "ruff",
     "flake8",
     "flake8-pyproject",
-    "catchery",
 ]
 
 [project.urls]

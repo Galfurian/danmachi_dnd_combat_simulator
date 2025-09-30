@@ -14,7 +14,7 @@ from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
-from catchery import log_error
+from core.logging import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.utils import cprint

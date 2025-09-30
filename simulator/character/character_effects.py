@@ -10,7 +10,7 @@ including bonuses, penalties, status conditions, and temporary modifications.
 from collections.abc import Iterator
 from typing import Any
 
-from catchery import log_error
+from core.logging import log_error
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.dice_parser import VarInfo, get_max_roll

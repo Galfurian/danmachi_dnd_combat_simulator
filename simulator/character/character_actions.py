@@ -11,7 +11,7 @@ from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
-from catchery import log_warning
+from core.logging import log_warning
 from core.constants import ActionClass
 
 
