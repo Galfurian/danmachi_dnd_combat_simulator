@@ -344,19 +344,19 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  Attacks per turn: {char.number_of_attacks}")
 
     # Equipment
-    if char.equipped_weapons:
+    if char.inventory.equipped_weapons:
         cprint("  [blue]Equipped Weapons[/]:")
-        for weapon in char.equipped_weapons:
+        for weapon in char.inventory.equipped_weapons:
             print_weapon_sheet(weapon, 4)
 
-    if char.natural_weapons:
+    if char.inventory.natural_weapons:
         cprint("  [blue]Natural Weapons[/]:")
-        for weapon in char.natural_weapons:
+        for weapon in char.inventory.natural_weapons:
             print_weapon_sheet(weapon, 4)
 
-    if char.equipped_armor:
+    if char.inventory.equipped_armor:
         cprint("  [blue]Armor[/]:")
-        for armor in char.equipped_armor:
+        for armor in char.inventory.equipped_armor:
             print_armor_sheet(armor, 4)
 
     # Actions and Abilities
@@ -381,9 +381,9 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  [red]Vulnerabilities[/]: {', '.join(vlist)}")
 
     # Active Effects
-    if char.effects_module.active_effects:
+    if char.effects.active_effects:
         cprint("  [yellow]Active Effects[/]:")
-        for active_effect in char.effects_module.active_effects:
+        for active_effect in char.effects.active_effects:
             effect_info = (
                 f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
             )

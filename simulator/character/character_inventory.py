@@ -8,7 +8,7 @@ validation of hand requirements, armor slots, and inventory constraints.
 from typing import Any
 
 from core.constants import ArmorSlot
-from core.logging import log_warning
+from core.logging import log_debug, log_warning
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
@@ -24,6 +24,10 @@ class CharacterInventory:
 
     """
 
+    equipped_weapons: list[WieldedWeapon]
+    natural_weapons: list[NaturalWeapon]
+    equipped_armor: list[Armor]
+
     def __init__(self, owner: Any) -> None:
         """
         Initialize the CharacterInventory with the owning character.
@@ -34,6 +38,9 @@ class CharacterInventory:
 
         """
         self.owner = owner
+        self.equipped_weapons = []
+        self.natural_weapons = []
+        self.equipped_armor = []
 
     def get_occupied_hands(self) -> int:
         """
@@ -45,11 +52,11 @@ class CharacterInventory:
         """
         used_hands = sum(
             item.get_required_hands()
-            for item in self.owner.equipped_weapons
+            for item in self.equipped_weapons
             if item.requires_hands()
         )
         used_hands += sum(
-            armor.armor_slot == ArmorSlot.SHIELD for armor in self.owner.equipped_armor
+            armor.armor_slot == ArmorSlot.SHIELD for armor in self.equipped_armor
         )
         return used_hands
 
@@ -105,9 +112,9 @@ class CharacterInventory:
         if self.can_equip_weapon(weapon):
             # Add the weapon to the character's weapon list.
             if isinstance(weapon, NaturalWeapon):
-                self.owner.natural_weapons.append(weapon)
+                self.natural_weapons.append(weapon)
             elif isinstance(weapon, WieldedWeapon):
-                self.owner.equipped_weapons.append(weapon)
+                self.equipped_weapons.append(weapon)
             else:
                 raise ValueError(f"Unknown weapon type {type(weapon)}.")
             return True
@@ -129,12 +136,12 @@ class CharacterInventory:
 
         """
         # Remove the weapon from the character's weapon list.
-        if weapon in self.owner.equipped_weapons:
-            self.owner.equipped_weapons.remove(weapon)
+        if weapon in self.equipped_weapons and isinstance(weapon, WieldedWeapon):
+            self.equipped_weapons.remove(weapon)
             return True
         # Remove the natural weapon from the character's natural weapon list.
-        if weapon in self.owner.natural_weapons:
-            self.owner.natural_weapons.remove(weapon)
+        if weapon in self.natural_weapons and isinstance(weapon, NaturalWeapon):
+            self.natural_weapons.remove(weapon)
             return True
         log_warning(
             f"{self.owner.name} does not have {weapon.name} equipped",
@@ -167,7 +174,7 @@ class CharacterInventory:
                 return False
             return True
         # Otherwise, check if the armor slot is already occupied.
-        for equipped in self.owner.equipped_armor:
+        for equipped in self.equipped_armor:
             if equipped.armor_slot == armor.armor_slot:
                 log_warning(
                     f"{self.owner.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
@@ -194,8 +201,12 @@ class CharacterInventory:
 
         """
         if self.can_equip_armor(armor):
+            log_debug(
+                f"{self.owner.name} is equipping {armor.name}",
+                {"character": self.owner.name, "armor": armor.name},
+            )
             # Add the armor to the character's armor list.
-            self.owner.equipped_armor.append(armor)
+            self.equipped_armor.append(armor)
             # Apply armor effects to the character.
             armor.apply_effects(self.owner)
             return True
@@ -220,9 +231,9 @@ class CharacterInventory:
             bool: True if the armor was removed successfully, False otherwise.
 
         """
-        if armor in self.owner.equipped_armor:
+        if armor in self.equipped_armor:
             # Remove the armor from the character's armor list.
-            self.owner.equipped_armor.remove(armor)
+            self.equipped_armor.remove(armor)
             return True
         log_warning(
             f"{self.owner.name} does not have {armor.name} equipped",

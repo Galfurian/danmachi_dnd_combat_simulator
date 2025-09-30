@@ -207,7 +207,7 @@ class TriggerEffect(Effect):
     @property
     def color(self) -> str:
         """Returns the color string for trigger effects."""
-        return "bold white"
+        return "bold magenta"
 
     @property
     def emoji(self) -> str:

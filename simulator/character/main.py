@@ -14,15 +14,11 @@ from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
-from core.constants import ActionClass, BonusType, CharacterType, DamageType
+from core.constants import ActionClass, CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.logging import log_error
 from core.utils import cprint
-from effects.base_effect import Effect, EventResponse, deserialize_effect
-from effects.event_system import DamageTakenEvent, HitEvent
 from effects.incapacitating_effect import IncapacitatingEffect
-from items.armor import Armor
-from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
 from .character_actions import CharacterActions
 from .character_class import CharacterClass
@@ -56,19 +52,16 @@ class Character:
 
     # === Dynamic properties ===
 
-    equipped_weapons: list["WieldedWeapon"]
-    natural_weapons: list["NaturalWeapon"]
-    equipped_armor: list[Armor]
     actions: dict[str, BaseAction]
     spells: dict[str, BaseSpell]
 
     # === Management Modules ===
 
-    effects_module: CharacterEffects
+    effects: CharacterEffects
     stats: CharacterStats
-    inventory_module: CharacterInventory
+    inventory: CharacterInventory
     actions_module: CharacterActions
-    display_module: CharacterDisplay
+    display: CharacterDisplay
 
     def __init__(
         self,
@@ -97,18 +90,15 @@ class Character:
         self.passive_effects = passive_effects
 
         # Initialize dynamic properties.
-        self.equipped_weapons = []
-        self.natural_weapons = []
-        self.equipped_armor = []
         self.actions = {}
         self.spells = {}
 
         # Initialize modules.
-        self.effects_module = CharacterEffects(owner=self)
+        self.effects = CharacterEffects(owner=self)
         self.stats = CharacterStats(owner=self, stats=stats)
-        self.inventory_module = CharacterInventory(owner=self)
+        self.inventory = CharacterInventory(owner=self)
         self.actions_module = CharacterActions(owner=self)
-        self.display_module = CharacterDisplay(owner=self)
+        self.display = CharacterDisplay(owner=self)
 
     # ============================================================================
     # DELEGATED STAT PROPERTIES
@@ -191,14 +181,6 @@ class Character:
         """Returns a dictionary of the character's modifiers."""
         return self.stats.get_expression_variables()
 
-    def add_passive_effect(self, effect: Effect) -> bool:
-        """Add a passive effect that is always active (like boss phase triggers)."""
-        return self.effects_module.add_passive_effect(effect)
-
-    def remove_passive_effect(self, effect: Effect) -> bool:
-        """Remove a passive effect."""
-        return self.effects_module.remove_passive_effect(effect)
-
     def reset_available_actions(self) -> None:
         """Resets the classes of available actions for the character."""
         return self.actions_module.reset_available_actions()
@@ -213,7 +195,7 @@ class Character:
 
     def is_incapacitated(self) -> bool:
         """Check if the character is incapacitated and cannot take actions."""
-        for ae in self.effects_module.active_effects:
+        for ae in self.effects.active_effects:
             if isinstance(ae.effect, IncapacitatingEffect):
                 if ae.effect.prevents_actions():
                     return True
@@ -278,6 +260,8 @@ class Character:
                 - The actual damage taken after applying to HP
 
         """
+        from effects.event_system import DamageTakenEvent
+        
         base = amount
         adjusted = base
         if damage_type in self.resistances:
@@ -292,7 +276,7 @@ class Character:
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.
         if actual > 0:
-            responses = self.on_damage_taken(
+            responses = self.effects.on_damage_taken(
                 DamageTakenEvent(
                     actor=self,
                     damage_amount=actual,
@@ -420,86 +404,6 @@ class Character:
         """
         self.actions_module.unlearn_spell(spell)
 
-    def get_occupied_hands(self) -> int:
-        """Returns the number of hands currently occupied by equipped weapons and armor."""
-        return self.inventory_module.get_occupied_hands()
-
-    def get_free_hands(self) -> int:
-        """Returns the number of free hands available for equipping items."""
-        return self.inventory_module.get_free_hands()
-
-    def can_equip_weapon(self, weapon: Weapon) -> bool:
-        """Checks if the character can equip a specific weapon.
-
-        Args:
-            weapon (Weapon): The weapon to check.
-
-        Returns:
-            bool: True if the weapon can be equipped, False otherwise.
-
-        """
-        return self.inventory_module.can_equip_weapon(weapon)
-
-    def add_weapon(self, weapon: Weapon) -> bool:
-        """Adds a weapon to the character's equipped weapons.
-
-        Args:
-            weapon (Weapon): The weapon to equip.
-
-        Returns:
-            bool: True if the weapon was equipped successfully, False otherwise.
-
-        """
-        return self.inventory_module.add_weapon(weapon)
-
-    def remove_weapon(self, weapon: Weapon) -> bool:
-        """Removes a weapon from the character's equipped weapons.
-
-        Args:
-            weapon (Weapon): The weapon to remove.
-
-        Returns:
-            bool: True if the weapon was removed successfully, False otherwise.
-
-        """
-        return self.inventory_module.remove_weapon(weapon)
-
-    def can_equip_armor(self, armor: Armor) -> bool:
-        """Checks if the character can equip a specific armor.
-
-        Args:
-            armor (Armor): The armor to check.
-
-        Returns:
-            bool: True if the armor can be equipped, False otherwise.
-
-        """
-        return self.inventory_module.can_equip_armor(armor)
-
-    def add_armor(self, armor: Armor) -> bool:
-        """Adds an armor to the character's equipped armor.
-
-        Args:
-            armor (Armor): The armor to equip.
-
-        Returns:
-            bool: True if the armor was equipped successfully, False otherwise.
-
-        """
-        return self.inventory_module.add_armor(armor)
-
-    def remove_armor(self, armor: Armor) -> bool:
-        """Removes an armor from the character's equipped armor.
-
-        Args:
-            armor (Armor): The armor to remove.
-
-        Returns:
-            bool: True if the armor was removed successfully, False otherwise.
-
-        """
-        return self.inventory_module.remove_armor(armor)
-
     def turn_update(self) -> None:
         """
         Updates the duration of all active effects, and cooldowns. Removes
@@ -507,7 +411,7 @@ class Character:
         or a round.
         """
         # Update all active effects.
-        self.effects_module.turn_update()
+        self.effects.turn_update()
         # Update action cooldowns and reset turn flags.
         self.actions_module.turn_update()
 
@@ -562,102 +466,6 @@ class Character:
         """
         self.actions_module.decrement_uses(action)
 
-    def can_add_effect(
-        self,
-        source: Any,
-        effect: Effect,
-        variables: list[VarInfo] = [],
-    ) -> bool:
-        """
-        Checks if an effect can be added to the character.
-
-        Args:
-            source (Any):
-                The source of the effect (e.g., another character, an item).
-            effect (Effect):
-                The effect to check.
-            variables (list[VarInfo], optional):
-                Additional variables for effect calculations.
-
-        Returns:
-            bool:
-                True if the effect can be added, False otherwise.
-
-        """
-        return self.effects_module.can_add_effect(source, effect, variables)
-
-    def add_effect(
-        self,
-        source: Any,
-        effect: Effect,
-        variables: list[VarInfo] = [],
-    ) -> bool:
-        """
-        Adds an effect to the character.
-
-        Args:
-            source (Any):
-                The source of the effect (e.g., another character, an item).
-            effect (Effect):
-                The effect to add.
-            variables (list[VarInfo], optional):
-                Additional variables for effect calculations.
-
-        Returns:
-            bool:
-                True if the effect was added successfully, False otherwise.
-
-        """
-        return self.effects_module.add_effect(source, effect, variables)
-
-    def get_modifier(self, bonus_type: BonusType) -> Any:
-        """
-        Gets the total modifier for a specific bonus type from all active
-        effects.
-
-        Args:
-            bonus_type (BonusType):
-                The type of bonus to calculate.
-
-        Returns:
-            Any:
-                The total modifier for the specified bonus type.
-
-        """
-        return self.effects_module.get_modifier(bonus_type)
-
-    def on_hit(self, event: HitEvent) -> list[EventResponse]:
-        """
-        Handles the event when the character hits with an attack or spell,
-        triggering any effects.
-
-        Args:
-            event (CombatEvent):
-                The combat event representing the hit.
-
-        Returns:
-            list[EventResponse]:
-                Responses from effects that were broken or triggered.
-
-        """
-        return self.effects_module.on_hit(event)
-
-    def on_damage_taken(self, event: DamageTakenEvent) -> list[EventResponse]:
-        """
-        Handles the event when the character takes damage, triggering any
-        effects.
-
-        Args:
-            event (DamageTakenEvent):
-                The damage taken event.
-
-        Returns:
-            list[EventResponse]:
-                Responses from effects that were broken or triggered.
-
-        """
-        return self.effects_module.on_damage_taken(event)
-
     def __hash__(self) -> int:
         """
         Hashes the character based on its name.
@@ -688,6 +496,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
     """
     from core.content import ContentRepository
     from items.weapon import NaturalWeapon, WieldedWeapon
+    from effects.base_effect import deserialize_effect
 
     # Get the repository instance.
     repo = ContentRepository()
@@ -762,7 +571,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
             raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
         if not isinstance(weapon, WieldedWeapon):
             raise ValueError(f"Weapon '{weapon_name}' is not a WieldedWeapon.")
-        character.inventory_module.add_weapon(weapon)
+        character.inventory.add_weapon(weapon)
 
     # Replace natural weapons with actual instances.
     for weapon_name in data.get("natural_weapons", []):
@@ -771,14 +580,14 @@ def character_from_dict(data: dict[str, Any]) -> Character:
             raise ValueError(f"Natural weapon '{weapon_name}' not found in repository.")
         if not isinstance(weapon, NaturalWeapon):
             raise ValueError(f"Weapon '{weapon_name}' is not a NaturalWeapon.")
-        character.inventory_module.add_weapon(weapon)
+        character.inventory.add_weapon(weapon)
 
     # Replace equipped armor with actual instances.
     for armor_name in data.get("equipped_armor", []):
         armor = repo.get_armor(armor_name)
         if not armor:
             raise ValueError(f"Armor '{armor_name}' not found in repository.")
-        character.inventory_module.add_armor(armor)
+        character.inventory.add_armor(armor)
 
     # Replace actions with actual instances.
     for action_name in data.get("actions", []):

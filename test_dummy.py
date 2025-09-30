@@ -102,5 +102,5 @@ ring_of_last_stand_data: str = """
 """
 
 ring_of_last_stand = Armor(**json.loads(ring_of_last_stand_data))
-player.add_armor(ring_of_last_stand)
+player.inventory.add_armor(ring_of_last_stand)
 player.take_damage(player.HP_MAX - 1, DamageType.BLUDGEONING)

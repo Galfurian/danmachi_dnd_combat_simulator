@@ -34,15 +34,6 @@ class CharacterType(NiceEnum):
     ALLY = "ALLY"
 
     @property
-    def color(self) -> str:
-        """Returns the color string associated with this character type."""
-        return {
-            CharacterType.PLAYER: "bold blue",
-            CharacterType.ENEMY: "bold red",
-            CharacterType.ALLY: "bold green",
-        }.get(self, "dim white")
-
-    @property
     def emoji(self) -> str:
         """Returns the emoji associated with this character type."""
         return {
@@ -50,6 +41,15 @@ class CharacterType(NiceEnum):
             CharacterType.ENEMY: "👹",
             CharacterType.ALLY: "🤝",
         }.get(self, "❔")
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this character type."""
+        return {
+            CharacterType.PLAYER: "bold blue",
+            CharacterType.ENEMY: "bold red",
+            CharacterType.ALLY: "bold green",
+        }.get(self, "dim white")
 
     @property
     def colored_name(self) -> str:
@@ -118,25 +118,6 @@ class DamageType(NiceEnum):
     ACID = "ACID"
 
     @property
-    def color(self) -> str:
-        """Returns the color string associated with this damage type."""
-        return {
-            DamageType.PIERCING: "bold magenta",
-            DamageType.SLASHING: "bold yellow",
-            DamageType.BLUDGEONING: "bold red",
-            DamageType.FIRE: "bold red",
-            DamageType.COLD: "bold cyan",
-            DamageType.LIGHTNING: "bold blue",
-            DamageType.THUNDER: "bold purple",
-            DamageType.POISON: "bold green",
-            DamageType.NECROTIC: "dim white",
-            DamageType.RADIANT: "bold white",
-            DamageType.PSYCHIC: "magenta",
-            DamageType.FORCE: "cyan",
-            DamageType.ACID: "green",
-        }.get(self, "dim white")
-
-    @property
     def emoji(self) -> str:
         """Returns the emoji associated with this damage type."""
         return {
@@ -154,6 +135,25 @@ class DamageType(NiceEnum):
             DamageType.FORCE: "🌀",
             DamageType.ACID: "🧪",
         }.get(self, "❔")
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this damage type."""
+        return {
+            DamageType.PIERCING: "bold magenta",
+            DamageType.SLASHING: "bold yellow",
+            DamageType.BLUDGEONING: "bold red",
+            DamageType.FIRE: "bold red",
+            DamageType.COLD: "bold cyan",
+            DamageType.LIGHTNING: "bold blue",
+            DamageType.THUNDER: "bold purple",
+            DamageType.POISON: "bold green",
+            DamageType.NECROTIC: "dim white",
+            DamageType.RADIANT: "bold white",
+            DamageType.PSYCHIC: "magenta",
+            DamageType.FORCE: "cyan",
+            DamageType.ACID: "green",
+        }.get(self, "dim white")
 
     @property
     def colored_name(self) -> str:
@@ -175,18 +175,6 @@ class ActionCategory(NiceEnum):
     DEBUG = "DEBUG"
 
     @property
-    def color(self) -> str:
-        """Returns the color string associated with this action category."""
-        return {
-            ActionCategory.OFFENSIVE: "bold red",
-            ActionCategory.HEALING: "bold green",
-            ActionCategory.BUFF: "bold yellow",
-            ActionCategory.DEBUFF: "bold magenta",
-            ActionCategory.UTILITY: "bold cyan",
-            ActionCategory.DEBUG: "dim white",
-        }.get(self, "dim white")
-
-    @property
     def emoji(self) -> str:
         """Returns the emoji associated with this action category."""
         return {
@@ -197,6 +185,18 @@ class ActionCategory(NiceEnum):
             ActionCategory.UTILITY: "🔧",
             ActionCategory.DEBUG: "🐞",
         }.get(self, "❔")
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this action category."""
+        return {
+            ActionCategory.OFFENSIVE: "bold red",
+            ActionCategory.HEALING: "bold green",
+            ActionCategory.BUFF: "bold yellow",
+            ActionCategory.DEBUFF: "bold magenta",
+            ActionCategory.UTILITY: "bold cyan",
+            ActionCategory.DEBUG: "dim white",
+        }.get(self, "dim white")
 
     @property
     def colored_name(self) -> str:
@@ -237,6 +237,24 @@ class ArmorType(NiceEnum):
             ArmorType.HEAVY: ":shield:",
             ArmorType.OTHER: "🎭",
         }.get(self, "❔")
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this armor type."""
+        return {
+            ArmorType.HEAVY: "bold red",
+            ArmorType.MEDIUM: "bold yellow",
+            ArmorType.LIGHT: "bold green",
+            ArmorType.OTHER: "dim white",
+        }.get(self, "dim white")
+
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
+
+    def colorize(self, message: str) -> str:
+        """Applies armor type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
 
 
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:

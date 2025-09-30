@@ -168,7 +168,7 @@ def _can_apply_any_effect(
     if not effects:
         return False
     return any(
-        target.can_add_effect(
+        target.effects.can_add_effect(
             source=source,
             effect=effect,
             variables=variables,

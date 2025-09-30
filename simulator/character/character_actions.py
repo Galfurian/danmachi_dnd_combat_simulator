@@ -122,10 +122,15 @@ class CharacterActions:
 
         """
         from items.weapon import WieldedWeapon
+        from character.main import Character
+
+        assert isinstance(
+            self.owner, Character
+        ), f"Expected Character, got {type(self.owner)}"
 
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
-        for weapon in self.owner.equipped_weapons:
+        for weapon in self.owner.inventory.equipped_weapons:
 
             assert isinstance(
                 weapon, WieldedWeapon

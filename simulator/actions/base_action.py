@@ -307,7 +307,7 @@ class BaseAction(BaseModel):
         for effect in effects:
             # Check if the effect can be applied.
             if effect.can_apply(actor, target):
-                if target.add_effect(actor, effect, variables):
+                if target.effects.add_effect(actor, effect, variables):
                     successful_effects.append(effect)
                     continue
             failed_effects.append(effect)

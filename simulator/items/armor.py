@@ -8,6 +8,7 @@ their properties, and effects within the combat simulator.
 from typing import Any, TypeAlias
 
 from core.constants import ArmorSlot, ArmorType
+from core.logging import log_debug
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
@@ -56,6 +57,11 @@ class Armor(BaseModel):
         default_factory=list,
         description="An optional special effect granted by this armor piece.",
     )
+
+    @property
+    def colored_name(self) -> str:
+        """Returns the armor name with ANSI color codes for terminal display."""
+        return self.armor_type.colorize(self.name)
 
     def model_post_init(self, _: Any) -> None:
         """
@@ -117,5 +123,9 @@ class Armor(BaseModel):
         variables = wearer.get_expression_variables()
 
         for effect in self.effects:
-            if wearer.can_add_effect(wearer, effect, variables):
-                wearer.add_effect(wearer, effect, variables)
+            log_debug(
+                f"Applying effect {effect.colored_name} from armor {self.colored_name} to {wearer.colored_name}",
+                {"character": wearer.name, "armor": self.name, "effect": effect.name},
+            )
+            if wearer.effects.can_add_effect(wearer, effect, variables):
+                wearer.effects.add_effect(wearer, effect, variables)

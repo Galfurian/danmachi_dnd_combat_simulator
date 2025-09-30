@@ -149,7 +149,7 @@ class CharacterStats:
         for cls, lvl in self.owner.levels.items():
             hp_max += lvl * (cls.hp_mult + self.CON)
         # Sum all the HP modifiers from effects.
-        modifiers = self.owner.get_modifier(BonusType.HP)
+        modifiers = self.owner.effects.get_modifier(BonusType.HP)
         if isinstance(modifiers, list):
             hp_max += sum(int(mod) for mod in modifiers)
         return hp_max
@@ -168,7 +168,7 @@ class CharacterStats:
         for cls, lvl in self.owner.levels.items():
             mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
         # Sum all the Mind modifiers from effects.
-        modifiers = self.owner.get_modifier(BonusType.MIND)
+        modifiers = self.owner.effects.get_modifier(BonusType.MIND)
         if isinstance(modifiers, list):
             mind_max += sum(int(mod) for mod in modifiers)
         return mind_max
@@ -186,11 +186,13 @@ class CharacterStats:
         base_ac = 10 + self.DEX
 
         # If there is equipped armor, replace base AC.
-        if self.owner.equipped_armor:
-            base_ac = sum(armor.get_ac(self.DEX) for armor in self.owner.equipped_armor)
+        if self.owner.inventory.equipped_armor:
+            base_ac = sum(
+                armor.get_ac(self.DEX) for armor in self.owner.inventory.equipped_armor
+            )
 
         # Sum all AC modifiers from active effects.
-        modifiers = self.owner.get_modifier(BonusType.AC)
+        modifiers = self.owner.effects.get_modifier(BonusType.AC)
         effect_ac = 0
         if isinstance(modifiers, list):
             effect_ac += sum(int(mod) for mod in modifiers)
@@ -211,7 +213,7 @@ class CharacterStats:
         # Base initiative is DEX modifier.
         initiative = self.DEX
         # Sum all initiative modifiers from active effects.
-        modifiers = self.owner.get_modifier(BonusType.INITIATIVE)
+        modifiers = self.owner.effects.get_modifier(BonusType.INITIATIVE)
         if isinstance(modifiers, list):
             initiative += sum(int(mod) for mod in modifiers)
         return initiative
@@ -228,7 +230,7 @@ class CharacterStats:
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
 
         # Sum all concentration modifiers from active effects.
-        modifiers = self.owner.get_modifier(BonusType.CONCENTRATION)
+        modifiers = self.owner.effects.get_modifier(BonusType.CONCENTRATION)
         bonus_value = 0
         if isinstance(modifiers, list):
             bonus_value = sum(int(mod) for mod in modifiers)

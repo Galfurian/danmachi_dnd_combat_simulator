@@ -53,8 +53,8 @@ class CharacterDisplay:
         """
         # Collect all effects with better formatting
         effects_list = []
-        if self.owner.effects_module.active_effects:
-            for e in self.owner.effects_module.active_effects:
+        if self.owner.effects.active_effects:
+            for e in self.owner.effects.active_effects:
                 color = e.effect.color
                 # Truncate long effect names and show duration more compactly
                 effect_name = (
@@ -149,11 +149,11 @@ class CharacterDisplay:
             str: A detailed string of all active effects with descriptions.
 
         """
-        if not self.owner.effects_module.active_effects:
+        if not self.owner.effects.active_effects:
             return "No active effects"
 
         effects_info = []
-        for e in self.owner.effects_module.active_effects:
+        for e in self.owner.effects.active_effects:
             color = e.effect.color
             effects_info.append(
                 f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"

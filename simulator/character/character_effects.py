@@ -5,8 +5,6 @@ Manages the application, tracking, and resolution of effects on characters,
 including bonuses, penalties, status conditions, and temporary modifications.
 """
 
-# Revised effects_module.py (per-BonusType tracking, 5e-style strict)
-
 from collections.abc import Iterator
 from typing import Any
 

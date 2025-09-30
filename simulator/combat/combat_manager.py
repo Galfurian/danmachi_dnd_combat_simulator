@@ -108,7 +108,7 @@ class CombatManager:
             # Use bars only for turn order display to keep it compact
             # Show AC for player and allies, hide for enemies
             show_ac = participant.char_type != CharacterType.ENEMY
-            status_line = participant.display_module.get_status_line(
+            status_line = participant.display.get_status_line(
                 show_bars=True, show_ac=show_ac
             )
             cprint(f"    🎲 {self.initiatives[participant]:3}  {status_line}")
@@ -206,7 +206,7 @@ class CombatManager:
             if participant == self.player:
                 # Player gets full display: numbers + bars + AC
                 cprint(
-                    participant.display_module.get_status_line(
+                    participant.display.get_status_line(
                         show_numbers=True,
                         show_bars=True,
                         show_ac=True,
@@ -217,7 +217,7 @@ class CombatManager:
                 # Show AC for allies, hide for enemies
                 show_ac = participant.char_type != CharacterType.ENEMY
                 cprint(
-                    participant.display_module.get_status_line(
+                    participant.display.get_status_line(
                         show_bars=True,
                         show_ac=show_ac,
                     )
@@ -951,7 +951,7 @@ class CombatManager:
             for ally in self.get_alive_friendlies(self.player):
                 # Show full details for healing phase (allies show AC)
                 cprint(
-                    ally.display_module.get_status_line(
+                    ally.display.get_status_line(
                         show_numbers=True,
                         show_bars=True,
                         show_ac=True,
@@ -969,7 +969,7 @@ class CombatManager:
         crule("📊  Final Battle Report", style="bold blue")
         # Player gets full display in final report
         cprint(
-            self.player.display_module.get_status_line(
+            self.player.display.get_status_line(
                 show_numbers=True,
                 show_bars=True,
                 show_ac=True,
@@ -979,7 +979,7 @@ class CombatManager:
         for ally in self.get_alive_friendlies(self.player):
             if ally != self.player:
                 cprint(
-                    ally.display_module.get_status_line(
+                    ally.display.get_status_line(
                         show_numbers=True,
                         show_bars=True,
                         show_ac=True,

@@ -61,7 +61,7 @@ class SpellOffensive(BaseSpell):
 
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
-        attack_modifier = actor.get_modifier(BonusType.ATTACK)
+        attack_modifier = actor.effects.get_modifier(BonusType.ATTACK)
 
         # Roll spell attack vs target AC
         attack = self._roll_attack(

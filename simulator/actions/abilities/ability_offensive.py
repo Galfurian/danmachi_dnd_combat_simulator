@@ -84,7 +84,7 @@ class AbilityOffensive(BaseAbility):
         """Perform an attack roll using the same logic as BaseAttack."""
 
         # Get the attack modifier from effects.
-        modifiers = actor.get_modifier(BonusType.ATTACK)
+        modifiers = actor.effects.get_modifier(BonusType.ATTACK)
 
         if not all(isinstance(modifier, str) for modifier in modifiers):
             log_warning(
@@ -119,7 +119,7 @@ class AbilityOffensive(BaseAbility):
             return True
 
         # Get any on-hit triggers from effects.
-        event_responses: list[EventResponse] = actor.on_hit(
+        event_responses: list[EventResponse] = actor.effects.on_hit(
             HitEvent(
                 actor=actor,
                 target=target,
@@ -175,7 +175,7 @@ class AbilityOffensive(BaseAbility):
         # =============================
 
         # Get all damage modifiers from effects.
-        modifiers = actor.get_modifier(BonusType.DAMAGE)
+        modifiers = actor.effects.get_modifier(BonusType.DAMAGE)
         if not all(isinstance(modifier, str) for modifier in modifiers):
             log_warning(
                 "Modifiers for damage roll must be strings.",
