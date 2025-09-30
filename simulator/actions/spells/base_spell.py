@@ -48,7 +48,7 @@ class BaseSpell(BaseAction):
         description="Whether the spell requires concentration to maintain.",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.mind_cost or not isinstance(self.mind_cost, list):
             raise ValueError("mind_cost must be a non-empty list of integers")

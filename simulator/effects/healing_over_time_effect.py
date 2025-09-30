@@ -5,7 +5,7 @@ Defines effects that provide healing over multiple turns, such as
 regeneration or restorative spells with ongoing benefits.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from core.dice_parser import roll_and_describe
 from core.utils import cprint
@@ -38,7 +38,7 @@ class HealingOverTimeEffect(Effect):
         """Returns the emoji for healing over time effects."""
         return "💚"
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         if self.duration is None or self.duration <= 0:
             raise ValueError(
                 "Duration must be a positive integer for HealingOverTimeEffect."

@@ -11,9 +11,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from core.logging import log_warning
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
+from core.logging import log_warning
 from core.utils import Singleton, cprint
 
 if TYPE_CHECKING:
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from actions.spells.spell_debuff import SpellDebuff
     from actions.spells.spell_heal import SpellHeal
     from actions.spells.spell_offensive import SpellOffensive
+    from core.utils import Singleton
     from items.armor import Armor
     from items.weapon import Weapon
 

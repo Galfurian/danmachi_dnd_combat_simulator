@@ -19,7 +19,6 @@ from actions.base_action import (
 from actions.spells.base_spell import (
     BaseSpell,
 )
-from core.logging import log_warning
 from character.main import Character
 from combat.npc_ai import (
     choose_best_attack_spell_action,
@@ -28,8 +27,8 @@ from combat.npc_ai import (
     choose_best_healing_ability_action,
     choose_best_healing_spell_action,
     choose_best_offensive_ability_action,
-    choose_best_target_for_weapon,
-    choose_best_weapon_for_situation,
+    choose_best_target_for_attack,
+    choose_best_weapon_attack_for_situation,
     get_actions_by_type,
     get_natural_attacks,
 )
@@ -39,6 +38,7 @@ from core.constants import (
     CharacterType,
     is_oponent,
 )
+from core.logging import log_warning
 from core.utils import cprint, crule
 from ui.cli_interface import PlayerInterface
 
@@ -822,14 +822,14 @@ class CombatManager:
             return
 
         # Choose the best weapon type once for the full attack sequence
-        attack = choose_best_weapon_for_situation(npc, weapon_attacks, enemies)
+        attack = choose_best_weapon_attack_for_situation(npc, weapon_attacks, enemies)
         if not attack:
             return
 
         # Perform multiple attacks with the same weapon type.
         attacks_made: bool = False
         for _ in range(npc.number_of_attacks):
-            target = choose_best_target_for_weapon(npc, attack, enemies)
+            target = choose_best_target_for_attack(npc, attack, enemies)
             # If we have a valid target, perform the attack.
             if target:
                 attack.execute(npc, target)
@@ -866,7 +866,7 @@ class CombatManager:
         # All natural attacks are performed once each in a full sequence.
         for attack in natural_attacks:
             # Choose the best target for this attack.
-            target = choose_best_target_for_weapon(npc, attack, enemies)
+            target = choose_best_target_for_attack(npc, attack, enemies)
             # If we have a valid target, perform the attack.
             if target:
                 attack.execute(npc, target)

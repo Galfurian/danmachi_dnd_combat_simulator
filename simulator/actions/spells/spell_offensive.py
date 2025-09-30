@@ -30,7 +30,7 @@ class SpellOffensive(BaseSpell):
         description="List of damage components for this ability",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.damage or not isinstance(self.damage, list):
             raise ValueError("damage must be a non-empty list of DamageComponent")

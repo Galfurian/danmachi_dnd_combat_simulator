@@ -11,8 +11,8 @@ from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
-from core.logging import log_warning
 from core.constants import ActionClass
+from core.logging import log_warning
 
 
 class CharacterActions:
@@ -46,8 +46,8 @@ class CharacterActions:
             ActionClass.STANDARD: True,
             ActionClass.BONUS: True,
         }
-        self.cooldowns = {}
-        self.uses = {}
+        self.cooldowns: dict[str, int] = {}
+        self.uses: dict[str, int] = {}
 
     def reset_available_actions(self) -> None:
         """

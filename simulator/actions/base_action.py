@@ -200,7 +200,7 @@ class BaseAction(BaseModel):
 
         def _is_relationship_valid(actor: Any, target: Any, is_ally: bool) -> bool:
             """Helper to check if actor and target have the correct relationship."""
-            are_opponents = is_oponent(actor.char_type, target.char_type)
+            are_opponents: bool = is_oponent(actor.char_type, target.char_type)
             if is_ally:
                 return not are_opponents
             return are_opponents
@@ -570,6 +570,3 @@ class BaseAction(BaseModel):
             )
             for component in damage_components
         )
-
-
-BaseAction.model_rebuild()

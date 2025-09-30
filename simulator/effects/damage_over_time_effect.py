@@ -5,7 +5,7 @@ Defines effects that deal damage over multiple turns, such as
 poison, bleed, or ongoing damage spells.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import roll_and_describe
@@ -39,7 +39,7 @@ class DamageOverTimeEffect(Effect):
         """Returns the emoji for damage over time effects."""
         return "❣️"
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         if self.duration is None or self.duration <= 0:
             raise ValueError(
                 "Duration must be a positive integer for DamageOverTimeEffect."

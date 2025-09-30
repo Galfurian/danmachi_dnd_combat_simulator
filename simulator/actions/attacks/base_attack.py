@@ -8,9 +8,9 @@ and natural attacks, with common functionality for execution and effects.
 from typing import Any
 
 from actions.base_action import BaseAction, ValidActionEffect
-from core.logging import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.logging import log_warning
 from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import HitEvent
@@ -35,7 +35,7 @@ class BaseAttack(BaseAction):
         description="List of damage components for the attack",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.attack_roll:
             raise ValueError("attack_roll must be a non-empty string")

@@ -9,9 +9,9 @@ from typing import Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
-from core.logging import log_warning
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.logging import log_warning
 from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import HitEvent
@@ -32,7 +32,7 @@ class AbilityOffensive(BaseAbility):
         description="List of damage components for this ability",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.damage or not isinstance(self.damage, list):
             raise ValueError("damage must be a non-empty list of DamageComponent")

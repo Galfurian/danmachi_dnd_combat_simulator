@@ -24,7 +24,7 @@ class SpellDebuff(BaseSpell):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         from effects.incapacitating_effect import IncapacitatingEffect
         from effects.modifier_effect import ModifierEffect

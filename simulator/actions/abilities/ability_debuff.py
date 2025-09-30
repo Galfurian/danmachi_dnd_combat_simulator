@@ -22,7 +22,7 @@ class AbilityDebuff(BaseAbility):
 
     category: ActionCategory = ActionCategory.DEBUFF
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Ensure that the effect field is properly set."""
         from effects.base_effect import Effect
 

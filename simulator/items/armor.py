@@ -5,7 +5,7 @@ Defines the Armor class and related types for managing armor pieces,
 their properties, and effects within the combat simulator.
 """
 
-from typing import Any
+from typing import Any, TypeAlias
 
 from core.constants import ArmorSlot, ArmorType
 from effects.damage_over_time_effect import DamageOverTimeEffect
@@ -14,7 +14,7 @@ from effects.modifier_effect import ModifierEffect
 from effects.trigger_effect import TriggerEffect
 from pydantic import BaseModel, Field
 
-ValidArmorEffect = (
+ValidArmorEffect: TypeAlias = (
     DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | TriggerEffect
 )
 
@@ -57,7 +57,7 @@ class Armor(BaseModel):
         description="An optional special effect granted by this armor piece.",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """
         Validate the armor's properties.
 
@@ -119,5 +119,3 @@ class Armor(BaseModel):
         for effect in self.effects:
             if wearer.can_add_effect(wearer, effect, variables):
                 wearer.add_effect(wearer, effect, variables)
-
-Armor.model_rebuild()

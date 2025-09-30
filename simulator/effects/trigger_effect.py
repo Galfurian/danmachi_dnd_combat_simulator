@@ -88,11 +88,9 @@ class TriggerCondition(BaseModel):
             return "upon killing an enemy"
         if self.trigger_type == EventType.ON_HEAL:
             return "when healed"
-        if self.trigger_type == EventType.ON_SPELL_CAST:
-            if self.spell_category:
-                return f"when casting {self.spell_category.name.lower()} spells"
-            return "when casting any spell"
-        return self.trigger_type.value.replace("_", " ")
+        if self.spell_category:
+            return f"when casting {self.spell_category.name.lower()} spells"
+        return "when casting any spell"
 
     def is_met(self, event: CombatEvent) -> bool:
         """
@@ -165,7 +163,9 @@ class TriggerCondition(BaseModel):
         if not isinstance(event.actor, Character):
             raise ValueError("Actor must be a Character instance to get HP ratio.")
 
-        return event.actor.stats.hp / event.actor.HP_MAX if event.actor.HP_MAX > 0 else 0
+        return (
+            event.actor.stats.hp / event.actor.HP_MAX if event.actor.HP_MAX > 0 else 0
+        )
 
 
 class TriggerEffect(Effect):
@@ -194,7 +194,7 @@ class TriggerEffect(Effect):
         True,
         description="Whether the effect is consumed when triggered.",
     )
-    cooldown_turns: int = Field(
+    cooldown_turns: int | None = Field(
         0,
         ge=0,
         description="Number of turns before trigger can activate again.",
@@ -214,32 +214,18 @@ class TriggerEffect(Effect):
         """Returns the emoji for trigger effects."""
         return "⚡"
 
-    def model_post_init(self, _) -> None:
-        if not isinstance(self.trigger_condition, TriggerCondition):
-            raise ValueError("Trigger condition must be a TriggerCondition instance.")
+    def model_post_init(self, _: Any) -> None:
         if not self.trigger_condition.description:
             self.trigger_condition.description = (
                 self.trigger_condition._generate_description()
             )
-        for effect in self.trigger_effects or []:
-            if not isinstance(effect, Effect):
-                raise ValueError(
-                    f"Each trigger effect must be an Effect instance, got {type(effect)}"
-                )
-        if self.damage_bonus is None:
-            self.damage_bonus = []
-        elif not isinstance(self.damage_bonus, list):
+        if not all(isinstance(e, ValidTriggerEffect) for e in self.trigger_effects):
             raise ValueError(
-                "Damage bonus must be a list of DamageComponent instances."
+                "All trigger effects must be valid effect types (ModifierEffect, "
+                "IncapacitatingEffect, or DamageOverTimeEffect)."
             )
-        else:
-            for dmg in self.damage_bonus:
-                if not isinstance(dmg, DamageComponent):
-                    raise ValueError(
-                        f"Each damage bonus must be a DamageComponent instance, got {type(dmg)}"
-                    )
-        if self.cooldown_turns < 0:
-            raise ValueError("Cooldown turns must be non-negative.")
+        if not all(isinstance(dmg, DamageComponent) for dmg in self.damage_bonus):
+            raise ValueError("All damage bonuses must be DamageComponent instances.")
         if self.max_triggers is not None and self.max_triggers < 0:
             raise ValueError("Max triggers must be None (unlimited) or non-negative.")
 
@@ -336,19 +322,6 @@ class ActiveTriggerEffect(ActiveEffect):
 
         return self.trigger_effect.damage_bonus, self.trigger_effect.trigger_effects
 
-    def is_cooldown_defined(self) -> bool:
-        """
-        Check if the trigger has a defined cooldown.
-
-        Returns:
-            bool:
-                True if the trigger has a defined cooldown, False otherwise.
-
-        """
-        if self.trigger_effect.cooldown_turns is None:
-            return False
-        return self.trigger_effect.cooldown_turns > 0
-
     def is_in_cooldown(self) -> bool:
         """
         Check if the trigger is currently on cooldown.
@@ -358,7 +331,7 @@ class ActiveTriggerEffect(ActiveEffect):
                 True if the trigger is on cooldown, False otherwise.
 
         """
-        if self.is_cooldown_defined():
+        if self.trigger_effect.cooldown_turns:
             return self.cooldown_remaining > 0
         return False
 
@@ -367,14 +340,14 @@ class ActiveTriggerEffect(ActiveEffect):
         Start the cooldown of the trigger by setting it to the defined cooldown
         turns.
         """
-        if self.is_cooldown_defined():
+        if self.trigger_effect.cooldown_turns:
             self.cooldown_remaining = self.trigger_effect.cooldown_turns
 
     def decrement_cooldown(self) -> None:
         """
         Decrement the cooldown counter by one turn if it's greater than zero.
         """
-        if self.is_cooldown_defined() and self.cooldown_remaining > 0:
+        if self.trigger_effect.cooldown_turns and self.cooldown_remaining > 0:
             self.cooldown_remaining -= 1
 
     def is_turn_based_trigger(self) -> bool:
@@ -387,8 +360,6 @@ class ActiveTriggerEffect(ActiveEffect):
                 True if the trigger is turn-based, False otherwise.
 
         """
-        if not self.trigger_effect.trigger_condition.trigger_type:
-            return False
         return self.trigger_effect.trigger_condition.trigger_type in [
             EventType.ON_TURN_START,
             EventType.ON_TURN_END,
@@ -457,10 +428,11 @@ class ActiveTriggerEffect(ActiveEffect):
         if not self.check_trigger(event):
             return None
         damage_bonus, new_effects = self.activate_trigger()
+
         return EventResponse(
             effect=self.effect,
             remove_effect=self.trigger_effect.consumes_on_trigger,
-            new_effects=new_effects,
+            new_effects=new_effects,  # type: ignore[arg-type]
             damage_bonus=damage_bonus,
             message=(
                 f"{event.actor.colored_name}'s {self.effect.colored_name} triggered, "
@@ -488,11 +460,10 @@ class ActiveTriggerEffect(ActiveEffect):
         return EventResponse(
             effect=self.effect,
             remove_effect=self.trigger_effect.consumes_on_trigger,
-            new_effects=new_effects,
+            new_effects=new_effects,  # type: ignore[arg-type]
             damage_bonus=damage_bonus,
             message=(
                 f"{event.actor.colored_name}'s {self.effect.colored_name} triggered, "
                 f"applying {', '.join(e.colored_name for e in new_effects)}!"
             ),
         )
-        return response

@@ -24,7 +24,7 @@ class SpellBuff(BaseSpell):
 
     category: ActionCategory = ActionCategory.BUFF
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Ensure that the effects field is properly set."""
         from effects.modifier_effect import ModifierEffect
         from effects.trigger_effect import TriggerEffect

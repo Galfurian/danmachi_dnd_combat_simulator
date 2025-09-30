@@ -35,7 +35,7 @@ class Weapon(BaseModel):
         description="Number of hands required to wield this weapon.",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """
         Automatically prefix attack names with the weapon name for clarity.
 
@@ -74,7 +74,7 @@ class NaturalWeapon(Weapon):
 
     weapon_type: Literal["NaturalWeapon"] = "NaturalWeapon"
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         if self.hands_required != 0:
             raise ValueError("Natural weapons cannot require hands.")
 
@@ -87,7 +87,7 @@ class WieldedWeapon(Weapon):
 
     weapon_type: Literal["WieldedWeapon"] = "WieldedWeapon"
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         if self.hands_required <= 0:
             raise ValueError("Wielded weapons must require at least one hand.")
 
@@ -122,6 +122,3 @@ def deserialize_weapon(data: dict[str, Any]) -> Weapon:
         return WieldedWeapon(**data)
 
     raise ValueError(f"Unknown weapon type: {weapon_type}")
-
-
-NaturalWeapon.model_rebuild()

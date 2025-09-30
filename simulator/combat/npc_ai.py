@@ -145,7 +145,7 @@ def _can_apply_any_effect(
     source: Character,
     target: Character,
     effects: list[ValidActionEffect],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> bool:
     """
     Checks if any effect can be applied to the target.
@@ -186,7 +186,7 @@ def _sort_targets_by_usefulness_and_hp_offensive(
     action: BaseAttack | AbilityOffensive | SpellOffensive,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -238,7 +238,7 @@ def _sort_targets_by_usefulness_and_hp_healing(
     action: AbilityHeal | SpellHeal,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -289,7 +289,7 @@ def _sort_targets_by_usefulness_and_buff(
     action: AbilityBuff | AbilityDebuff | SpellBuff | SpellDebuff,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -340,7 +340,7 @@ def _get_best_base_attack(
     attack: BaseAttack,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> AttackSelection | None:
     """
     Prioritizes targets for base attacks.
@@ -562,7 +562,7 @@ def _get_best_ability_attack(
     ability: AbilityOffensive,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
     max_targets: int = 0,
 ) -> AbilitySelection | None:
     """
@@ -776,9 +776,9 @@ def get_actions_by_type(source: Character, action_class: type) -> list[Any]:
     return [a for a in get_all_combat_actions(source) if isinstance(a, action_class)]
 
 
-def choose_best_weapon_for_situation(
+def choose_best_weapon_attack_for_situation(
     source: Character,
-    weapons: list[WeaponAttack],
+    weapon_attacks: list[WeaponAttack],
     enemies: list[Character],
 ) -> WeaponAttack | None:
     """
@@ -789,7 +789,7 @@ def choose_best_weapon_for_situation(
     Args:
         source (Character):
             The NPC making the decision.
-        weapons (list[WeaponAttack]):
+        weapon_attacks (list[WeaponAttack]):
             List of available weapon attacks.
         enemies (list[Character]):
             List of enemy characters.
@@ -799,20 +799,23 @@ def choose_best_weapon_for_situation(
             The best weapon for the situation, or None if no valid weapon is found.
 
     """
-    if not weapons or not enemies:
+    if not weapon_attacks or not enemies:
         return None
 
-    best_weapon = None
-    best_score = -1
+    # Get the source variables once.
+    variables = source.get_expression_variables()
 
-    for weapon in weapons:
-        # Skip if weapon is on cooldown
-        if source.is_on_cooldown(weapon):
+    best_weapon_attack: WeaponAttack | None = None
+    best_score: float = -1
+
+    for weapon_attack in weapon_attacks:
+        # Skip if weapon_attack is on cooldown
+        if source.is_on_cooldown(weapon_attack):
             continue
 
-        # Calculate weapon effectiveness against all available targets
-        total_score = 0
-        valid_target_count = 0
+        # Calculate weapon_attack effectiveness against all available targets.
+        valid_target_count: int = 0
+        total_score: float = 0
 
         for target in enemies:
             # Skip dead targets
@@ -821,33 +824,29 @@ def choose_best_weapon_for_situation(
 
             valid_target_count += 1
 
-            # Effect score
-            effect_score = 0
+            # Add the effect potential score.
             if _can_apply_any_effect(
-                source=source,
-                target=target,
-                effects=weapon.effects,
+                source,
+                target,
+                weapon_attack.effects,
+                variables,
             ):
-                effect_score = 10
+                total_score += 5
 
-            # Damage potential score
-            damage_score = len(weapon.damage) * 2
+            # Add the damage potential score.
+            total_score += len(weapon_attack.damage) * 2
 
-            # Weapon versatility score
-            target_score = effect_score + damage_score
-            total_score += target_score
-
+        # If we had at least one valid target, calculate average score.
         if valid_target_count > 0:
-            # Average effectiveness across all targets
             avg_score = total_score / valid_target_count
             if avg_score > best_score:
                 best_score = avg_score
-                best_weapon = weapon
+                best_weapon_attack = weapon_attack
 
-    return best_weapon
+    return best_weapon_attack
 
 
-def choose_best_target_for_weapon(
+def choose_best_target_for_attack(
     source: Character,
     attack: BaseAttack,
     enemies: list[Character],
@@ -876,6 +875,7 @@ def choose_best_target_for_weapon(
         attack=attack,
         source=source,
         targets=enemies,
+        variables=source.get_expression_variables(),
     )
     if not best_attack:
         return None
@@ -914,6 +914,9 @@ def choose_best_base_attack_action(
     """
     best_attack: AttackSelection | None = None
 
+    # Get the source variables once.
+    variables = source.get_expression_variables()
+
     for attack in base_attacks:
         if source.is_on_cooldown(attack):
             continue
@@ -921,6 +924,7 @@ def choose_best_base_attack_action(
             attack=attack,
             source=source,
             targets=enemies,
+            variables=variables,
         )
         if not candidate_attack:
             continue
@@ -1088,6 +1092,9 @@ def choose_best_offensive_ability_action(
     """
     best_ability: AbilitySelection | None = None
 
+    # Get the source variables once.
+    variables = source.get_expression_variables()
+
     for ability in abilities:
         if source.is_on_cooldown(ability):
             continue
@@ -1095,6 +1102,7 @@ def choose_best_offensive_ability_action(
             ability=ability,
             source=source,
             targets=enemies,
+            variables=variables,
         )
         if not candidate_ability:
             continue

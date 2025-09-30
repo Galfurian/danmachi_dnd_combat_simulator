@@ -5,8 +5,7 @@ Provides centralized logging setup with colored output using rich.
 """
 
 import logging
-import sys
-from typing import Any, Dict
+from typing import Any
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -73,7 +72,7 @@ def get_logger(name: str) -> logging.Logger:
 logger = get_logger("simulator")
 
 
-def log_error(message: str, context: Dict[str, Any] | None = None) -> None:
+def log_error(message: str, context: dict[str, Any] | None = None) -> None:
     """
     Logs an error message with optional context.
 
@@ -90,7 +89,7 @@ def log_error(message: str, context: Dict[str, Any] | None = None) -> None:
     logger.error(message)
 
 
-def log_warning(message: str, context: Dict[str, Any] | None = None) -> None:
+def log_warning(message: str, context: dict[str, Any] | None = None) -> None:
     """
     Logs a warning message with optional context.
 
@@ -107,7 +106,7 @@ def log_warning(message: str, context: Dict[str, Any] | None = None) -> None:
     logger.warning(message)
 
 
-def log_info(message: str, context: Dict[str, Any] | None = None) -> None:
+def log_info(message: str, context: dict[str, Any] | None = None) -> None:
     """
     Logs an info message with optional context.
 
@@ -124,7 +123,7 @@ def log_info(message: str, context: Dict[str, Any] | None = None) -> None:
     logger.info(message)
 
 
-def log_debug(message: str, context: Dict[str, Any] | None = None) -> None:
+def log_debug(message: str, context: dict[str, Any] | None = None) -> None:
     """
     Logs a debug message with optional context.
 

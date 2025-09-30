@@ -30,7 +30,7 @@ class Modifier(BaseModel):
         ),
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         from combat.damage import DamageComponent
 
         if self.bonus_type == BonusType.DAMAGE:
@@ -108,7 +108,7 @@ class ModifierEffect(Effect):
         """Returns the emoji for modifier effects."""
         return "🛡️"
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """
         Ensure that the modifiers list is not empty.
 

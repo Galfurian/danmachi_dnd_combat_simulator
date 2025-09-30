@@ -14,9 +14,9 @@ from actions.attacks.natural_attack import NaturalAttack
 from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
-from core.logging import log_error
 from core.constants import ActionClass, BonusType, CharacterType, DamageType
 from core.dice_parser import VarInfo
+from core.logging import log_error
 from core.utils import cprint
 from effects.base_effect import Effect, EventResponse, deserialize_effect
 from effects.event_system import DamageTakenEvent, HitEvent
@@ -511,14 +511,14 @@ class Character:
         # Update action cooldowns and reset turn flags.
         self.actions_module.turn_update()
 
-    def add_cooldown(self, action: BaseAction):
+    def add_cooldown(self, action: BaseAction) -> None:
         """Adds a cooldown to an action.
 
         Args:
             action_name (BaseAction): The action to add a cooldown to.
 
         """
-        return self.actions_module.add_cooldown(action)
+        self.actions_module.add_cooldown(action)
 
     def is_on_cooldown(self, action: BaseAction) -> bool:
         """Checks if an action is currently on cooldown.
@@ -532,14 +532,14 @@ class Character:
         """
         return self.actions_module.is_on_cooldown(action)
 
-    def initialize_uses(self, action: BaseAction):
+    def initialize_uses(self, action: BaseAction) -> None:
         """Initializes the uses of an action to its maximum uses.
 
         Args:
             action (BaseAction): The action to initialize uses for.
 
         """
-        return self.actions_module.initialize_uses(action)
+        self.actions_module.initialize_uses(action)
 
     def get_remaining_uses(self, action: BaseAction) -> int:
         """Returns the remaining uses of an action.
@@ -553,14 +553,14 @@ class Character:
         """
         return self.actions_module.get_remaining_uses(action)
 
-    def decrement_uses(self, action: BaseAction):
+    def decrement_uses(self, action: BaseAction) -> None:
         """Decrements the uses of an action by 1.
 
         Args:
             action (BaseAction): The action to decrement uses for.
 
         """
-        return self.actions_module.decrement_uses(action)
+        self.actions_module.decrement_uses(action)
 
     def can_add_effect(
         self,
@@ -690,7 +690,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
     from items.weapon import NaturalWeapon, WieldedWeapon
 
     # Get the repository instance.
-    repo: ContentRepository = ContentRepository()
+    repo = ContentRepository()
 
     # Get the race.
     race_name: str = data.get("race", "")

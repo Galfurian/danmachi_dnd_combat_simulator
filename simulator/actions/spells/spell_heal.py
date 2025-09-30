@@ -35,7 +35,7 @@ class SpellHeal(BaseSpell):
         description="The expression used to calculate healing amount.",
     )
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         """Validates fields after model initialization."""
         if not self.heal_roll or not isinstance(self.heal_roll, str):
             raise ValueError("heal_roll must be a non-empty string")

@@ -58,7 +58,7 @@ class BaseAbility(BaseAction, ABC):
         """
 
 
-def deserialize_ability(data: dict[str, Any]) -> BaseAbility | None:
+def deserialize_ability(data: dict[str, Any]) -> Any:
     """Deserialize a dictionary into a BaseAbility instance.
 
     Args:

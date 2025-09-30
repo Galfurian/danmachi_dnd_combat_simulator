@@ -5,7 +5,9 @@ Provides common utility functions and helpers, including console printing
 with rich formatting, singleton pattern, and other shared functionality.
 """
 
-from typing import Any
+from __future__ import annotations
+from typing import Any, Generic
+from typing_extensions import TypeVar
 
 from rich.console import Console
 from rich.rule import Rule
@@ -57,26 +59,18 @@ def ccapture(content: Any) -> str:
 # ---- Singleton Metaclass ----
 
 
-class Singleton(type):
+_T = TypeVar("_T")
+
+
+class Singleton(type, Generic[_T]):
     """Metaclass that returns the same instance every time."""
 
-    _inst: "Singleton | None" = None
+    _instances: dict[Singleton[_T], _T] = {}
 
-    def __call__(cls: Any, *args: Any, **kwargs: Any) -> Any:
-        """
-        Creates or returns the singleton instance.
-
-        Args:
-            *args: Positional arguments for instance creation.
-            **kwargs: Keyword arguments for instance creation.
-
-        Returns:
-            Any: The singleton instance.
-
-        """
-        if cls._inst is None:
-            cls._inst = super().__call__(*args, **kwargs)
-        return cls._inst
+    def __call__(cls, *args: Any, **kwargs: Any) -> _T:
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 # ---- Stat Modifier ----

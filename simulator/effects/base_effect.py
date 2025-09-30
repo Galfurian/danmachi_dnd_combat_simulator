@@ -189,7 +189,7 @@ class ActiveEffect(BaseModel):
         """
         return None
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         if not isinstance(self.effect, Effect):
             raise ValueError("Effect must be an Effect instance.")
         if self.duration is not None and self.duration < 0:
