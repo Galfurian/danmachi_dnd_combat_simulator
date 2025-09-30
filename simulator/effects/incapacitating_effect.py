@@ -9,6 +9,7 @@ from typing import Any, Literal
 
 from core.dice_parser import VarInfo
 from core.logging import log_debug
+from core.utils import cprint
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -157,6 +158,49 @@ class IncapacitatingEffect(Effect):
             return False
 
         return True
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> None:
+        """
+        Apply the incapacitating effect to the target, creating an
+        ActiveEffect if valid.
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        """
+        from character.main import Character
+
+        if not self.can_apply(actor, target, variables):
+            return None
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        log_debug(
+            f"Applying incapacitating effect {self.colored_name} "
+            f"from {actor.colored_name} to {target.colored_name}."
+        )
+
+        # Create new ActiveIncapacitatingEffect.
+        target.effects.active_effects.append(
+            ActiveIncapacitatingEffect(
+                source=actor,
+                target=target,
+                effect=self,
+                duration=self.duration,
+                variables=variables,
+            )
+        )
 
 
 class ActiveIncapacitatingEffect(ActiveEffect):

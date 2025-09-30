@@ -99,7 +99,17 @@ class DamageOverTimeEffect(Effect):
             )
             return False
 
-        # Rule 4: Stacking limit - prevent applying if target has 3+ DoT effects
+        # Rule 4: Stacking limit - prevent applying if target has 3+ DoT
+        # effects.
+        existing_effects = [
+            effect
+            for effect in target.effects.damage_over_time_effects
+            if effect.effect.name == self.name
+        ]
+        # Allow refreshing the duration of an existing effect of the same name.
+        if existing_effects:
+            return True
+        # Otherwise, enforce stacking limit.
         if sum(1 for _ in target.effects.damage_over_time_effects) >= 3:
             log_debug(
                 f"Cannot apply DoT effect: Target {target.colored_name} "
@@ -108,6 +118,66 @@ class DamageOverTimeEffect(Effect):
             return False
 
         return True
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> None:
+        """
+        Apply the damage over time effect to the target, creating an
+        ActiveEffect if valid.
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        """
+        from character.main import Character
+
+        if not self.can_apply(actor, target, variables):
+            return None
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        existing_effects = [
+            effect
+            for effect in target.effects.damage_over_time_effects
+            if effect.effect.name == self.name
+        ]
+
+        assert len(existing_effects) <= 1, (
+            "Data integrity error: More than one instance of the same "
+            "DamageOverTimeEffect found on target."
+        )
+
+        # Refresh duration of existing effect.
+        if existing_effects:
+            existing_effects[0].duration = self.duration
+            cprint(f"    ⚠️  {self.name} duration refreshed on {target.colored_name}.")
+            return None
+
+        log_debug(
+            f"Applying DoT effect '{self.colored_name}' "
+            f"from {actor.colored_name} to {target.colored_name}."
+        )
+
+        # Create new ActiveDamageOverTimeEffect.
+        target.effects.active_effects.append(
+            ActiveDamageOverTimeEffect(
+                source=actor,
+                target=target,
+                effect=self,
+                duration=self.duration,
+                variables=variables,
+            )
+        )
 
 
 class ActiveDamageOverTimeEffect(ActiveEffect):

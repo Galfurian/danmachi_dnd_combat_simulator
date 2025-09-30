@@ -10,6 +10,7 @@ from typing import Any, Literal
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
 from core.logging import log_debug
+from core.utils import cprint
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -281,6 +282,67 @@ class TriggerEffect(Effect):
     def is_type(self, trigger_type: EventType) -> bool:
         """Check if this trigger activates on the specified trigger type."""
         return self.trigger_condition.trigger_type == trigger_type
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> None:
+        """
+        Apply the trigger effect to the target, creating an ActiveEffect if valid.
+
+        Handles replacing existing OnHit triggers.
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        """
+        from character.main import Character
+
+        if not self.can_apply(actor, target, variables):
+            return None
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Handle OnHit trigger replacement
+        if self.trigger_condition.trigger_type == EventType.ON_HIT:
+            existing_on_hit = [
+                ae
+                for ae in target.effects.trigger_effects
+                if ae.trigger_effect.trigger_condition.trigger_type == EventType.ON_HIT
+            ]
+
+            assert len(existing_on_hit) <= 1, (
+                "Data integrity error: More than one instance of the same "
+                "OnHitTriggerEffect found on target."
+            )
+
+            # Remove existing OnHit triggers
+            if existing_on_hit:
+                target.effects.active_effects.remove(existing_on_hit[0])
+                cprint(
+                    f"    ⚠️  {self.colored_name} replaced existing "
+                    f"OnHit trigger on {target.colored_name}."
+                )
+
+        # Add the new effect.
+        target.effects.active_effects.append(
+            ActiveTriggerEffect(
+                source=actor,
+                target=target,
+                effect=self,
+                duration=self.duration,
+                variables=variables,
+                cooldown_remaining=0,
+            )
+        )
 
 
 class ActiveTriggerEffect(ActiveEffect):

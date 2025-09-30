@@ -128,4 +128,4 @@ class Armor(BaseModel):
                 {"character": wearer.name, "armor": self.name, "effect": effect.name},
             )
             if effect.can_apply(wearer, wearer, variables):
-                wearer.effects.add_effect(wearer, effect, variables)
+                wearer.effects.apply_effect(wearer, effect, variables)

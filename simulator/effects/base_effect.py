@@ -5,6 +5,8 @@ Defines the base classes and interfaces for effects, including
 active effects, event responses, and effect management.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from combat.damage import DamageComponent
@@ -105,6 +107,30 @@ class Effect(BaseModel):
             log_debug(f"Cannot apply effect: Target {target.name} is dead.")
             return False
         return True
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> None:
+        """
+        Apply the effect to the target, creating an ActiveEffect if valid.
+
+        This base implementation checks can_apply and creates a generic
+        ActiveEffect. Subclasses should override for specific ActiveEffect types
+        and merging logic.
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        """
+        raise NotImplementedError("Subclasses must implement apply_effect.")
 
 
 class EventResponse(BaseModel):

@@ -69,7 +69,7 @@ class CharacterEffects:
 
     # === Effect Management ===
 
-    def add_effect(
+    def apply_effect(
         self,
         source: Any,
         effect: Effect,

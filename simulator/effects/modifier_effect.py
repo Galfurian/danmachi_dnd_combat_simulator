@@ -5,11 +5,15 @@ Defines effects that modify character stats, such as bonuses or penalties to
 attributes, AC, or other properties.
 """
 
+from __future__ import annotations
+
 from typing import Any, Literal
 
+from combat.damage import DamageComponent
 from core.constants import BonusType
-from core.dice_parser import VarInfo
+from core.dice_parser import VarInfo, get_max_roll
 from core.logging import log_debug
+from core.utils import cprint
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect
@@ -124,6 +128,94 @@ class ModifierEffect(Effect):
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
 
+    def get_modifier_strength(
+        self,
+        bonus_type: BonusType,
+        variables: list[VarInfo],
+    ) -> int:
+        """
+        Helper to determine the strength of a modifier for comparison purposes.
+
+        Args:
+            ae (ActiveEffect): The active effect to evaluate.
+            bonus_type (BonusType): The bonus type to check.
+
+        Returns:
+            int: The strength value of the modifier.
+        """
+        # Find the modifier for the specific bonus type
+        modifier = None
+        for mod in self.modifiers:
+            if mod.bonus_type == bonus_type:
+                modifier = mod
+                break
+
+        if not modifier:
+            return 0
+
+        if bonus_type in [
+            BonusType.HP,
+            BonusType.MIND,
+            BonusType.AC,
+            BonusType.INITIATIVE,
+        ]:
+            if isinstance(modifier.value, int):
+                return modifier.value
+            if isinstance(modifier.value, str):
+                return int(modifier.value)
+            return 0
+        if bonus_type == BonusType.ATTACK:
+            if isinstance(modifier.value, str):
+                return get_max_roll(modifier.value, variables)
+            return (
+                get_max_roll(str(modifier.value), variables)
+                if isinstance(modifier.value, int)
+                else 0
+            )
+        if bonus_type == BonusType.DAMAGE:
+            if isinstance(modifier.value, DamageComponent):
+                return get_max_roll(modifier.value.damage_roll, variables)
+        return 0
+
+    def is_stronger_than(
+        self,
+        other: ModifierEffect,
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Compare this ModifierEffect to another to determine if it is stronger.
+
+        Args:
+            other (ModifierEffect):
+                The other ModifierEffect to compare against.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Raises:
+            TypeError:
+                If the other effect is not a ModifierEffect.
+
+        Returns:
+            bool:
+                True if this effect is stronger than the other, False otherwise.
+        """
+        if not isinstance(other, ModifierEffect):
+            raise TypeError(f"Cannot compare ModifierEffect with {type(other)}")
+
+        # Find at least one modifier that is stronger.
+        for modifier in self.modifiers:
+            bonus_type = modifier.bonus_type
+            self_strength = self.get_modifier_strength(bonus_type, variables)
+            other_strength = other.get_modifier_strength(bonus_type, variables)
+            if self_strength > other_strength:
+                log_debug(
+                    f"ModifierEffect {self.colored_name} is stronger than "
+                    f"{other.colored_name} for bonus type {bonus_type.name}: "
+                    f"{self_strength} > {other_strength}"
+                )
+                return True
+        return False
+
     def can_apply(
         self,
         actor: Any,
@@ -170,6 +262,86 @@ class ModifierEffect(Effect):
             return False
 
         return True
+
+    def apply_effect(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> None:
+        """
+        Apply the modifier effect to the target, creating an ActiveEffect if valid.
+
+        Handles merging by comparing modifier strengths and replacing weaker effects.
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            ActiveEffect | None:
+                The new ActiveEffect if applied successfully, None otherwise.
+
+        """
+        from character.main import Character
+        from combat.damage import DamageComponent
+
+        if not self.can_apply(actor, target, variables):
+            return None
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Check if this one is stronger than at least one existing effect.
+        weaker_found = False
+
+        for modifier in self.modifiers:
+            bonus_type = modifier.bonus_type
+
+            # Find existing effect with this bonus_type.
+            existing_effects = [
+                ae
+                for ae in target.effects.modifier_effects
+                if any(m.bonus_type == bonus_type for m in ae.modifier_effect.modifiers)
+            ]
+
+            # Just check if there is at least one existing effect that is
+            # weaker.
+            for existing in existing_effects:
+                if self.is_stronger_than(existing.modifier_effect, variables):
+                    weaker_found = True
+                    break
+
+            if weaker_found:
+                break
+
+        if not weaker_found:
+            log_debug(
+                f"Not applying modifier effect '{self.colored_name}' "
+                f"from {actor.colored_name} to {target.colored_name}: "
+                "No existing weaker effect found."
+            )
+            return None
+
+        log_debug(
+            f"Applying modifier effect '{self.colored_name}' "
+            f"from {actor.colored_name} to {target.colored_name}."
+        )
+
+        # Add the new effect.
+        target.effects.active_effects.append(
+            ActiveModifierEffect(
+                source=actor,
+                target=target,
+                effect=self,
+                duration=self.duration,
+                variables=variables,
+            )
+        )
 
 
 class ActiveModifierEffect(ActiveEffect):
