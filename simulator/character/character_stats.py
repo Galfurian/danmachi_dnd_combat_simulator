@@ -186,9 +186,9 @@ class CharacterStats:
         base_ac = 10 + self.DEX
 
         # If there is equipped armor, replace base AC.
-        if self.owner.inventory.equipped_armor:
+        if self.owner.inventory.armors:
             base_ac = sum(
-                armor.get_ac(self.DEX) for armor in self.owner.inventory.equipped_armor
+                armor.get_ac(self.DEX) for armor in self.owner.inventory.armors
             )
 
         # Sum all AC modifiers from active effects.

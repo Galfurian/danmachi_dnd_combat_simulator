@@ -49,13 +49,5 @@
         "ac": 1,
         "armor_slot": "SHIELD",
         "armor_type": "LIGHT"
-    },
-    {
-        "type": "Armor",
-        "name": "Defense Style",
-        "description": "A combat style that focuses on enhancing your armor class through defensive techniques.",
-        "ac": 1,
-        "armor_slot": "COMBAT_STYLE",
-        "armor_type": "OTHER"
     }
 ]

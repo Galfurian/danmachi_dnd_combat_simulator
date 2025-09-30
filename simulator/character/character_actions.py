@@ -130,7 +130,7 @@ class CharacterActions:
 
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
-        for weapon in self.owner.inventory.equipped_weapons:
+        for weapon in self.owner.inventory.wielded_weapons:
 
             assert isinstance(
                 weapon, WieldedWeapon

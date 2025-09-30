@@ -14,7 +14,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Dagger"
         ]
     },
@@ -33,7 +33,7 @@
             "wisdom": 6,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Shortsword"
         ]
     },
@@ -131,7 +131,7 @@
             "wisdom": 8,
             "charisma": 6
         },
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Greatclub"
         ]
     },
@@ -317,10 +317,10 @@
             "wisdom": 10,
             "charisma": 8
         },
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Shortsword"
         ],
-        "equipped_armor": [
+        "armors": [
             "Leather Armor"
         ]
     },
@@ -364,7 +364,7 @@
             "wisdom": 10,
             "charisma": 8
         },
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Greatclub"
         ],
         "passive_effects": [

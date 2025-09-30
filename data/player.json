@@ -16,13 +16,12 @@
     },
     "spellcasting_ability": "charisma",
     "number_of_attacks": 2,
-    "equipped_weapons": [
+    "wielded_weapons": [
         "Fine Shortsword"
     ],
-    "equipped_armor": [
+    "armors": [
         "Chainmail",
-        "Steel Shield",
-        "Defense Style"
+        "Steel Shield"
     ],
     "actions": [
         "Radiant Smite"

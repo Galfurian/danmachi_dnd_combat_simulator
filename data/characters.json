@@ -15,10 +15,10 @@
             "charisma": 11
         },
         "number_of_attacks": 2,
-        "equipped_weapons": [
+        "wielded_weapons": [
             "Shortsword"
         ],
-        "equipped_armor": [
+        "armors": [
             "Leather Armor"
         ],
         "active_effects": [],

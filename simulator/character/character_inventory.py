@@ -21,12 +21,19 @@ class CharacterInventory:
     Attributes:
         owner (Any):
             The Character instance this inventory manager belongs to.
+        wielded_weapons (list[WieldedWeapon]):
+            List of currently wielded weapons.
+        natural_weapons (list[NaturalWeapon]):
+            List of natural weapons the character possesses.
+        armors (list[Armor]):
+            List of currently equipped armor pieces.
 
     """
 
-    equipped_weapons: list[WieldedWeapon]
+    owner: Any
+    wielded_weapons: list[WieldedWeapon]
     natural_weapons: list[NaturalWeapon]
-    equipped_armor: list[Armor]
+    armors: list[Armor]
 
     def __init__(self, owner: Any) -> None:
         """
@@ -38,25 +45,27 @@ class CharacterInventory:
 
         """
         self.owner = owner
-        self.equipped_weapons = []
+        self.wielded_weapons = []
         self.natural_weapons = []
-        self.equipped_armor = []
+        self.armors = []
 
     def get_occupied_hands(self) -> int:
         """
-        Return the number of hands currently occupied by equipped weapons and armor.
+        Return the number of hands currently occupied by equipped weapons and
+        armor.
 
         Returns:
-            int: The number of hands currently occupied.
+            int:
+                The number of hands currently occupied.
 
         """
         used_hands = sum(
             item.get_required_hands()
-            for item in self.equipped_weapons
+            for item in self.wielded_weapons
             if item.requires_hands()
         )
         used_hands += sum(
-            armor.armor_slot == ArmorSlot.SHIELD for armor in self.equipped_armor
+            armor.armor_slot == ArmorSlot.SHIELD for armor in self.armors
         )
         return used_hands
 
@@ -65,9 +74,14 @@ class CharacterInventory:
         Return the number of free hands available for equipping items.
 
         Returns:
-            int: The number of free hands available.
+            int:
+                The number of free hands available.
 
         """
+        from character.main import Character
+
+        assert isinstance(self.owner, Character), "Owner must be a Character."
+
         return self.owner.total_hands - self.get_occupied_hands()
 
     def can_equip_weapon(self, weapon: Weapon) -> bool:
@@ -75,10 +89,12 @@ class CharacterInventory:
         Check if the character can equip a specific weapon.
 
         Args:
-            weapon (Weapon): The weapon to check.
+            weapon (Weapon):
+                The weapon to check.
 
         Returns:
-            bool: True if the weapon can be equipped, False otherwise.
+            bool:
+                True if the weapon can be equipped, False otherwise.
 
         """
         # If the weapon requires no hands, it can always be equipped.
@@ -86,15 +102,6 @@ class CharacterInventory:
             return True
         # Check if the character has enough free hands to equip the weapon.
         if weapon.get_required_hands() > self.get_free_hands():
-            log_warning(
-                f"{self.owner.name} does not have enough free hands to equip {weapon.name}.",
-                {
-                    "character": self.owner.name,
-                    "weapon": weapon.name,
-                    "hands_required": weapon.get_required_hands(),
-                    "free_hands": self.get_free_hands(),
-                },
-            )
             return False
         return True
 
@@ -103,25 +110,27 @@ class CharacterInventory:
         Add a weapon to the character's equipped weapons.
 
         Args:
-            weapon (Weapon): The weapon to equip.
+            weapon (Weapon):
+                The weapon to equip.
 
         Returns:
-            bool: True if the weapon was equipped successfully, False otherwise.
+            bool:
+                True if the weapon was equipped successfully, False otherwise.
 
         """
+        from character.main import Character
+
+        assert isinstance(self.owner, Character), "Owner must be a Character."
+
         if self.can_equip_weapon(weapon):
             # Add the weapon to the character's weapon list.
             if isinstance(weapon, NaturalWeapon):
                 self.natural_weapons.append(weapon)
             elif isinstance(weapon, WieldedWeapon):
-                self.equipped_weapons.append(weapon)
+                self.wielded_weapons.append(weapon)
             else:
                 raise ValueError(f"Unknown weapon type {type(weapon)}.")
             return True
-        log_warning(
-            f"{self.owner.name} cannot equip {weapon.name}",
-            {"character": self.owner.name, "weapon": weapon.name},
-        )
         return False
 
     def remove_weapon(self, weapon: Weapon) -> bool:
@@ -129,24 +138,22 @@ class CharacterInventory:
         Remove a weapon from the character's equipped weapons.
 
         Args:
-            weapon (Weapon): The weapon to remove.
+            weapon (Weapon):
+                The weapon to remove.
 
         Returns:
-            bool: True if the weapon was removed successfully, False otherwise.
+            bool:
+                True if the weapon was removed successfully, False otherwise.
 
         """
         # Remove the weapon from the character's weapon list.
-        if weapon in self.equipped_weapons and isinstance(weapon, WieldedWeapon):
-            self.equipped_weapons.remove(weapon)
+        if weapon in self.wielded_weapons and isinstance(weapon, WieldedWeapon):
+            self.wielded_weapons.remove(weapon)
             return True
         # Remove the natural weapon from the character's natural weapon list.
         if weapon in self.natural_weapons and isinstance(weapon, NaturalWeapon):
             self.natural_weapons.remove(weapon)
             return True
-        log_warning(
-            f"{self.owner.name} does not have {weapon.name} equipped",
-            {"character": self.owner.name, "weapon": weapon.name},
-        )
         return False
 
     def can_equip_armor(self, armor: Armor) -> bool:
@@ -154,37 +161,23 @@ class CharacterInventory:
         Check if the character can equip a specific armor.
 
         Args:
-            armor (Armor): The armor to check.
+            armor (Armor):
+                The armor to check.
 
         Returns:
-            bool: True if the armor can be equipped, False otherwise.
+            bool:
+                True if the armor can be equipped, False otherwise.
 
         """
-        # If the armor is a shield, it can be equipped if the character has a free hand.
+        # If the armor is a shield, it can be equipped if the character has a
+        # free hand.
         if armor.armor_slot == ArmorSlot.SHIELD:
             if self.get_free_hands() <= 0:
-                log_warning(
-                    f"{self.owner.name} does not have a free hand to equip {armor.name}",
-                    {
-                        "character": self.owner.name,
-                        "armor": armor.name,
-                        "free_hands": self.get_free_hands(),
-                    },
-                )
                 return False
             return True
         # Otherwise, check if the armor slot is already occupied.
-        for equipped in self.equipped_armor:
+        for equipped in self.armors:
             if equipped.armor_slot == armor.armor_slot:
-                log_warning(
-                    f"{self.owner.name} already has armor in slot {armor.armor_slot.name}. Cannot equip {armor.name}",
-                    {
-                        "character": self.owner.name,
-                        "armor": armor.name,
-                        "slot": armor.armor_slot.name,
-                        "equipped": equipped.name,
-                    },
-                )
                 return False
         # If the armor slot is not occupied, we can equip it.
         return True
@@ -200,24 +193,20 @@ class CharacterInventory:
             bool: True if the armor was equipped successfully, False otherwise.
 
         """
+        from character.main import Character
+
+        assert isinstance(self.owner, Character), "Owner must be a Character."
+
         if self.can_equip_armor(armor):
             log_debug(
-                f"{self.owner.name} is equipping {armor.name}",
+                f"{self.owner.colored_name} is equipping {armor.colored_name}",
                 {"character": self.owner.name, "armor": armor.name},
             )
             # Add the armor to the character's armor list.
-            self.equipped_armor.append(armor)
+            self.armors.append(armor)
             # Apply armor effects to the character.
             armor.apply_effects(self.owner)
             return True
-        log_warning(
-            f"{self.owner.name} cannot equip {armor.name} because the armor slot is already occupied",
-            {
-                "character": self.owner.name,
-                "armor": armor.name,
-                "slot": armor.armor_slot.name,
-            },
-        )
         return False
 
     def remove_armor(self, armor: Armor) -> bool:
@@ -231,9 +220,9 @@ class CharacterInventory:
             bool: True if the armor was removed successfully, False otherwise.
 
         """
-        if armor in self.equipped_armor:
+        if armor in self.armors:
             # Remove the armor from the character's armor list.
-            self.equipped_armor.remove(armor)
+            self.armors.remove(armor)
             return True
         log_warning(
             f"{self.owner.name} does not have {armor.name} equipped",

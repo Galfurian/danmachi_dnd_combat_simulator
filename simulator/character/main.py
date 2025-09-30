@@ -565,7 +565,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
                     character.learn_spell(spell)
 
     # Replace equipped weapons with actual instances.
-    for weapon_name in data.get("equipped_weapons", []):
+    for weapon_name in data.get("wielded_weapons", []):
         weapon = repo.get_weapon(weapon_name)
         if not weapon:
             raise ValueError(f"Weapon '{weapon_name}' not found in repository.")
@@ -583,7 +583,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
         character.inventory.add_weapon(weapon)
 
     # Replace equipped armor with actual instances.
-    for armor_name in data.get("equipped_armor", []):
+    for armor_name in data.get("armors", []):
         armor = repo.get_armor(armor_name)
         if not armor:
             raise ValueError(f"Armor '{armor_name}' not found in repository.")

@@ -2,8 +2,8 @@
 Sheet printing utilities for the simulator.
 
 Provides functions to print formatted sheets for characters, weapons, armors,
-actions, spells, and other game elements, using rich text formatting for
-display in the console.
+actions, spells, and other game elements, using rich text formatting for display
+in the console.
 """
 
 from typing import TYPE_CHECKING
@@ -344,9 +344,9 @@ def print_character_sheet(char: Character) -> None:
         cprint(f"  Attacks per turn: {char.number_of_attacks}")
 
     # Equipment
-    if char.inventory.equipped_weapons:
+    if char.inventory.wielded_weapons:
         cprint("  [blue]Equipped Weapons[/]:")
-        for weapon in char.inventory.equipped_weapons:
+        for weapon in char.inventory.wielded_weapons:
             print_weapon_sheet(weapon, 4)
 
     if char.inventory.natural_weapons:
@@ -354,9 +354,9 @@ def print_character_sheet(char: Character) -> None:
         for weapon in char.inventory.natural_weapons:
             print_weapon_sheet(weapon, 4)
 
-    if char.inventory.equipped_armor:
+    if char.inventory.armors:
         cprint("  [blue]Armor[/]:")
-        for armor in char.inventory.equipped_armor:
+        for armor in char.inventory.armors:
             print_armor_sheet(armor, 4)
 
     # Actions and Abilities

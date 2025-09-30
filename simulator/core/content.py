@@ -97,7 +97,7 @@ class ContentRepository(metaclass=Singleton):
 
         self.armors = _load_json_file(
             root / "armors.json",
-            self._load_armors,
+            self._load_defences,
             "armors",
         )
         self.spells = _load_json_file(
@@ -273,7 +273,7 @@ class ContentRepository(metaclass=Singleton):
         return races
 
     @staticmethod
-    def _load_armors(data: list[dict]) -> dict[str, "Armor"]:
+    def _load_defences(data: list[dict]) -> dict[str, "Armor"]:
         """
         Load armors from JSON data.
 
