@@ -167,14 +167,7 @@ def _can_apply_any_effect(
     """
     if not effects:
         return False
-    return any(
-        target.effects.can_add_effect(
-            source=source,
-            effect=effect,
-            variables=variables,
-        )
-        for effect in effects
-    )
+    return any(effect.can_apply(source, target, variables) for effect in effects)
 
 
 # =============================================================================

@@ -56,6 +56,7 @@ training_dummy = Character(
     },
     spellcasting_ability=None,
     total_hands=0,
+    immunities=set(),
     resistances=set(),
     vulnerabilities=set(),
     number_of_attacks=0,

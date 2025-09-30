@@ -8,6 +8,7 @@ effects, reactive abilities, or event-based modifications.
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
+from core.dice_parser import VarInfo
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -228,6 +229,49 @@ class TriggerEffect(Effect):
             raise ValueError("All damage bonuses must be DamageComponent instances.")
         if self.max_triggers is not None and self.max_triggers < 0:
             raise ValueError("Max triggers must be None (unlimited) or non-negative.")
+
+    def can_apply(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Check if the trigger effect can be applied to the target.
+
+        Rules for trigger effect application:
+            1. Basic eligibility: Actor and target must be alive Characters
+            2. Stacking limit: Target cannot have 3 or more active trigger
+               effects
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            bool:
+                True if the effect can be applied, False otherwise.
+
+        """
+        from character.main import Character
+
+        # Rule 1: Basic validation from parent class
+        if not super().can_apply(actor, target, variables):
+            return False
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Rule 2: Stacking limit - prevent applying if target has 3+ trigger
+        # effects
+        if sum(1 for _ in target.effects.trigger_effects) >= 3:
+            return False
+
+        return True
 
     def is_type(self, trigger_type: EventType) -> bool:
         """Check if this trigger activates on the specified trigger type."""

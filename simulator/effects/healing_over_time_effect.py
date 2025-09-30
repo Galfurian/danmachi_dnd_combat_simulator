@@ -7,7 +7,7 @@ regeneration or restorative spells with ongoing benefits.
 
 from typing import Any, Literal
 
-from core.dice_parser import roll_and_describe
+from core.dice_parser import VarInfo, roll_and_describe
 from core.utils import cprint
 from pydantic import Field
 
@@ -45,6 +45,47 @@ class HealingOverTimeEffect(Effect):
             )
         if not isinstance(self.heal_per_turn, str):
             raise ValueError("Heal per turn must be a string expression.")
+
+    def can_apply(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Check if the healing over time effect can be applied to the target.
+
+        Rules for HoT application:
+            1. Basic eligibility: Actor and target must be alive Characters
+            2. Stacking limit: Target cannot have 3 or more active HoT effects
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            bool:
+                True if the effect can be applied, False otherwise.
+
+        """
+        from character.main import Character
+
+        # Rule 1: Basic validation from parent class
+        if not super().can_apply(actor, target, variables):
+            return False
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Rule 2: Stacking limit - prevent applying if target has 3+ HoT effects
+        if sum(1 for _ in target.effects.healing_over_time_effects) >= 3:
+            return False
+
+        return True
 
 
 class ActiveHealingOverTimeEffect(ActiveEffect):

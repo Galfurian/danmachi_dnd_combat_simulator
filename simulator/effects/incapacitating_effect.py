@@ -5,8 +5,9 @@ Defines effects that incapacitate characters, preventing them from
 taking actions or participating in combat.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
+from core.dice_parser import VarInfo
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -100,6 +101,53 @@ class IncapacitatingEffect(Effect):
 
         # Then check if damage meets the threshold
         return damage_amount >= self.damage_threshold
+
+    def can_apply(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Check if the incapacitating effect can be applied to the target.
+
+        Rules for incapacitating effect application:
+            1. Basic eligibility: Actor and target must be alive Characters
+            2. Self-targeting: Cannot apply incapacitating effects to self
+            3. No stacking: Target cannot already have an incapacitating effect
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            bool:
+                True if the effect can be applied, False otherwise.
+
+        """
+        from character.main import Character
+
+        # Rule 1: Basic validation from parent class
+        if not super().can_apply(actor, target, variables):
+            return False
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Rule 2: Self-targeting restriction
+        if actor == target:
+            return False
+
+        # Rule 3: No stacking - prevent applying if target already has
+        # incapacitating effect.
+        if sum(1 for _ in target.effects.incapacitating_effects) >= 1:
+            return False
+
+        return True
 
 
 class ActiveIncapacitatingEffect(ActiveEffect):

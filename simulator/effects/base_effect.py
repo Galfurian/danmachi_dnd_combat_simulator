@@ -74,6 +74,7 @@ class Effect(BaseModel):
         self,
         actor: Any,
         target: Any,
+        variables: list[VarInfo],
     ) -> bool:
         """
         Check if the effect can be applied to the target.
@@ -83,19 +84,22 @@ class Effect(BaseModel):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
 
         Returns:
             bool:
                 True if the effect can be applied, False otherwise.
 
         """
+        from character.main import Character
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
         if actor.is_dead():
-            cprint(f"    [bold red]{actor.name} is dead and cannot apply effects![/]")
             return False
         if target.is_dead():
-            cprint(
-                f"    [bold red]{target.name} is dead and cannot receive effects![/]"
-            )
             return False
         return True
 

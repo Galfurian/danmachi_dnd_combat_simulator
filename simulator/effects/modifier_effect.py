@@ -8,6 +8,7 @@ attributes, AC, or other properties.
 from typing import Any, Literal
 
 from core.constants import BonusType
+from core.dice_parser import VarInfo
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect
@@ -121,6 +122,49 @@ class ModifierEffect(Effect):
         for modifier in self.modifiers:
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
+
+    def can_apply(
+        self,
+        actor: Any,
+        target: Any,
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Check if the modifier effect can be applied to the target.
+
+        Rules for modifier effect application:
+            1. Basic eligibility: Actor and target must be alive Characters
+            2. Stacking limit: Target cannot have 5 or more active modifier
+               effects
+
+        Args:
+            actor (Character):
+                The character applying the effect.
+            target (Character):
+                The character receiving the effect.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            bool:
+                True if the effect can be applied, False otherwise.
+
+        """
+        from character.main import Character
+
+        # Rule 1: Basic validation from parent class
+        if not super().can_apply(actor, target, variables):
+            return False
+
+        assert isinstance(actor, Character), "Actor must be a Character."
+        assert isinstance(target, Character), "Target must be a Character."
+
+        # Rule 2: Stacking limit - prevent applying if target has 5+ modifier
+        # effects.
+        if sum(1 for _ in target.effects.modifier_effects) >= 5:
+            return False
+
+        return True
 
 
 class ActiveModifierEffect(ActiveEffect):

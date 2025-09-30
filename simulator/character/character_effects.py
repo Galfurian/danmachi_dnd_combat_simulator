@@ -140,10 +140,6 @@ class CharacterEffects:
         """
         assert all(isinstance(v, VarInfo) for v in variables)
 
-        # Basic validation.
-        if self.has_effect(effect):
-            return False
-
         self.active_effects.append(
             ActiveHealingOverTimeEffect(
                 source=source,
@@ -180,10 +176,6 @@ class CharacterEffects:
         """
         assert all(isinstance(v, VarInfo) for v in variables)
 
-        # Basic validation.
-        if self.has_effect(effect):
-            return False
-
         self.active_effects.append(
             ActiveDamageOverTimeEffect(
                 source=source,
@@ -218,10 +210,6 @@ class CharacterEffects:
 
         """
         assert all(isinstance(v, VarInfo) for v in variables)
-
-        # Basic validation.
-        if self.has_effect(effect):
-            return False
 
         existing_incap = [
             ae
@@ -268,11 +256,6 @@ class CharacterEffects:
 
         """
         assert all(isinstance(v, VarInfo) for v in variables)
-
-        # Basic validation.
-        if self.has_effect(effect):
-            cprint(f"    ⚠️  {effect.name} not applied; already active.")
-            return False
 
         new_effect = ActiveModifierEffect(
             source=source,
@@ -324,10 +307,6 @@ class CharacterEffects:
 
         """
         assert all(isinstance(v, VarInfo) for v in variables)
-
-        # Basic validation.
-        if self.has_effect(effect):
-            return False
 
         # Only allow one OnHit trigger spell at a time.
         if effect.is_type(EventType.ON_HIT):
@@ -509,78 +488,6 @@ class CharacterEffects:
             if ae.effect == effect:
                 return ae.duration
         return 0
-
-    def has_effect(self, effect: Effect) -> bool:
-        """
-        Check if a specific effect is currently active.
-
-        Args:
-            effect (Effect): The effect to check.
-
-        Returns:
-            bool: True if the effect is active, False otherwise.
-
-        """
-        return any(ae.effect == effect for ae in self.active_effects)
-
-    def can_add_effect(
-        self,
-        source: Any,
-        effect: Effect,
-        variables: list[VarInfo] = [],
-    ) -> bool:
-        """
-        Determine if an effect can be added to the character.
-
-        Args:
-            effect (Effect):
-                The effect to check.
-            source (Any):
-                The source of the effect (e.g., the caster).
-            variables (list[VarInfo]):
-                The variables associated with the effect.
-
-        Returns:
-            bool:
-                True if the effect can be added, False otherwise.
-
-        """
-        if isinstance(effect, HealingOverTimeEffect):
-            return self.owner.stats.hp < self.owner.HP_MAX and not self.has_effect(effect)
-
-        if isinstance(effect, DamageOverTimeEffect):
-            return not self.has_effect(effect)
-
-        if isinstance(effect, ModifierEffect):
-            candidate = ActiveEffect(
-                source=source,
-                target=self.owner,
-                effect=effect,
-                duration=effect.duration,
-                variables=variables,
-            )
-            for modifier in effect.modifiers:
-                bonus_type = modifier.bonus_type
-                existing = self.active_modifiers.get(bonus_type)
-                if not existing or self._get_modifier_strength(
-                    candidate, bonus_type
-                ) > self._get_modifier_strength(existing, bonus_type):
-                    return True
-            return False
-
-        # Check for IncapacitatingEffect - don't apply same type if already active
-
-        if isinstance(effect, IncapacitatingEffect):
-            # Don't apply the same incapacitation type if already present
-            for ae in self.active_effects:
-                if (
-                    isinstance(ae.effect, IncapacitatingEffect)
-                    and ae.effect.incapacitation_type == effect.incapacitation_type
-                ):
-                    return False
-            return True
-
-        return True
 
     # === Modifier Management ===
 

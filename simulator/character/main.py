@@ -35,6 +35,30 @@ class Character:
     effects, and all related management modules. Provides methods for stat
     calculation, action and spell management, equipment handling, effect
     processing, and serialization.
+    
+    Attributes:
+        char_type (CharacterType):
+            The type of character (e.g., player, enemy, NPC).
+        name (str):
+            The name of the character.
+        race (CharacterRace):
+            The race of the character.
+        levels (dict[CharacterClass, int]):
+            The character's levels in different classes.
+        spellcasting_ability (str | None):
+            The ability score used for spellcasting, if applicable.
+        total_hands (int):
+            The total number of hands the character has for wielding weapons.
+        immunities (set[DamageType]):
+            The set of damage types the character is immune to.
+        resistances (set[DamageType]):
+            The set of damage types the character is resistant to.
+        vulnerabilities (set[DamageType]):
+            The set of damage types the character is vulnerable to.
+        number_of_attacks (int):
+            The number of attacks the character can make in a turn.
+        passive_effects (list[ValidPassiveEffect]):
+            List of passive effects that are always active on the character.
     """
 
     # === Static properties ===
@@ -45,6 +69,7 @@ class Character:
     levels: dict[CharacterClass, int]
     spellcasting_ability: str | None
     total_hands: int
+    immunities: set[DamageType]
     resistances: set[DamageType]
     vulnerabilities: set[DamageType]
     number_of_attacks: int
@@ -72,6 +97,7 @@ class Character:
         stats: dict[str, int],
         spellcasting_ability: str | None,
         total_hands: int,
+        immunities: set[DamageType],
         resistances: set[DamageType],
         vulnerabilities: set[DamageType],
         number_of_attacks: int,
@@ -84,6 +110,7 @@ class Character:
         self.levels = levels
         self.spellcasting_ability = spellcasting_ability
         self.total_hands = total_hands
+        self.immunities = immunities
         self.resistances = resistances
         self.vulnerabilities = vulnerabilities
         self.number_of_attacks = number_of_attacks
@@ -533,6 +560,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
         stats=data["stats"],
         spellcasting_ability=data.get("spellcasting_ability"),
         total_hands=data.get("total_hands", 2),
+        immunities={DamageType(dt) for dt in data.get("immunities", [])},
         resistances={DamageType(dt) for dt in data.get("resistances", [])},
         vulnerabilities={DamageType(dt) for dt in data.get("vulnerabilities", [])},
         number_of_attacks=data.get("number_of_attacks", 1),
