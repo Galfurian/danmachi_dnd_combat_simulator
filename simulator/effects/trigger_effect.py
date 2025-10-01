@@ -336,6 +336,11 @@ class TriggerEffect(Effect):
                     f"OnHit trigger on {target.colored_name}."
                 )
 
+        log_debug(
+            f"Applying trigger effect '{self.colored_name}' "
+            f"from {actor.colored_name} to {target.colored_name}."
+        )
+
         # Add the new effect.
         target.effects.active_effects.append(
             ActiveTriggerEffect(
