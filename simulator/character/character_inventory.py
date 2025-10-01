@@ -200,7 +200,7 @@ class CharacterInventory:
         if self.can_equip_armor(armor):
             log_debug(
                 f"{self.owner.colored_name} is equipping {armor.colored_name}",
-                {"character": self.owner.name, "armor": armor.name},
+                context={"character": self.owner.name, "armor": armor.name},
             )
             # Add the armor to the character's armor list.
             self.armors.append(armor)

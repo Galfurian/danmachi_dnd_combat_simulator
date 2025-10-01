@@ -34,19 +34,11 @@ def setup_logging(level: int = logging.INFO) -> None:
     )
 
     # Set up the formatter
-    rich_handler.setFormatter(
-        logging.Formatter(
-            "%(message)s",
-            datefmt="%X"
-        )
-    )
+    rich_handler.setFormatter(logging.Formatter("%(message)s", datefmt="%X"))
 
     # Configure the root logger
     logging.basicConfig(
-        level=level,
-        format="%(message)s",
-        datefmt="%X",
-        handlers=[rich_handler]
+        level=level, format="%(message)s", datefmt="%X", handlers=[rich_handler]
     )
 
     # Set specific levels for noisy libraries if needed
@@ -83,8 +75,8 @@ def log_error(message: str, context: dict[str, Any] | None = None) -> None:
     """
     if context:
         # Format context as key=value pairs
-        context_str = " ".join(f"{k}={v}" for k, v in context.items())
-        message = f"{message} [{context_str}]"
+        context_str = ", ".join(f"{k}={v}" for k, v in context.items())
+        message = f"{message} ({context_str})"
 
     logger.error(message)
 
@@ -100,8 +92,8 @@ def log_warning(message: str, context: dict[str, Any] | None = None) -> None:
     """
     if context:
         # Format context as key=value pairs
-        context_str = " ".join(f"{k}={v}" for k, v in context.items())
-        message = f"{message} [{context_str}]"
+        context_str = ", ".join(f"{k}={v}" for k, v in context.items())
+        message = f"{message} ({context_str})"
 
     logger.warning(message)
 
@@ -117,8 +109,8 @@ def log_info(message: str, context: dict[str, Any] | None = None) -> None:
     """
     if context:
         # Format context as key=value pairs
-        context_str = " ".join(f"{k}={v}" for k, v in context.items())
-        message = f"{message} [{context_str}]"
+        context_str = ", ".join(f"{k}={v}" for k, v in context.items())
+        message = f"{message} ({context_str})"
 
     logger.info(message)
 
@@ -134,7 +126,7 @@ def log_debug(message: str, context: dict[str, Any] | None = None) -> None:
     """
     if context:
         # Format context as key=value pairs
-        context_str = " ".join(f"{k}={v}" for k, v in context.items())
-        message = f"{message} [{context_str}]"
+        context_str = ", ".join(f"{k}={v}" for k, v in context.items())
+        message = f"{message} ({context_str})"
 
     logger.debug(message)
