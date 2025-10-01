@@ -187,17 +187,27 @@ class ActiveEffect(BaseModel):
         description="List of variable info for dynamic calculations",
     )
 
-    def turn_start(self) -> None:
+    def turn_start(self) -> bool:
         """
         Called at the start of the target's turn.
-        """
-        pass
 
-    def turn_end(self) -> None:
+        Returns:
+            bool:
+                True if the effect should be removed before the turn starts,
+                False otherwise.
+        """
+        return False
+
+    def turn_end(self) -> bool:
         """
         Called at the end of the target's turn.
+
+        Returns:
+            bool:
+                True if the effect should be removed after this turn, False
+                otherwise.
         """
-        pass
+        return False
 
     def on_hit(self, event: HitEvent) -> EventResponse | None:
         """

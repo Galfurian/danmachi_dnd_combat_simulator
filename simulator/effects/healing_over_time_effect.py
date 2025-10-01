@@ -191,7 +191,7 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
             raise ValueError("Effect must be a HealingOverTimeEffect instance.")
         return self.effect
 
-    def turn_end(self) -> None:
+    def turn_end(self) -> bool:
         """
         Apply healing to the target at the end of their turn.
         """
@@ -216,3 +216,13 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
         message += f" heals for {hot_value} ([white]{outcome.description}[/]) hp from "
         message += HOT.colored_name + "."
         cprint(message)
+        # Decrement duration and check for expiration.
+        if self.duration is not None:
+            self.duration -= 1
+            if self.duration <= 0:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
+                return True
+        return False

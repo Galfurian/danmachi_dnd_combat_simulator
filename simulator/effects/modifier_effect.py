@@ -368,8 +368,17 @@ class ActiveModifierEffect(ActiveEffect):
             raise TypeError(f"Expected ModifierEffect, got {type(self.effect)}")
         return self.effect
 
-    def turn_update(self) -> None:
+    def turn_end(self) -> bool:
         """
-        Update the effect for the current turn by calling the effect's
-        turn_update method.
+        Update the effect for the current turn.
         """
+        # Decrement duration and check for expiration
+        if self.duration is not None:
+            self.duration -= 1
+            if self.duration <= 0:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
+                return True
+        return False

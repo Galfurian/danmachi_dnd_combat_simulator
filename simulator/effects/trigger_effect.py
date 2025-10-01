@@ -392,18 +392,29 @@ class ActiveTriggerEffect(ActiveEffect):
             raise TypeError(f"Expected TriggerEffect, got {type(self.effect)}")
         return self.effect
 
-    def turn_start(self) -> None:
+    def turn_start(self) -> bool:
         """
-        Handle turn start for trigger effects: decrement cooldown and clear triggered flag.
+        Handle turn start for trigger effects: decrement cooldown and clear
+        triggered flag.
         """
         self.decrement_cooldown()
         self.clear_triggered_this_turn()
+        return False
 
-    def turn_end(self) -> None:
+    def turn_end(self) -> bool:
         """
         Handle turn end for trigger effects.
         """
-        pass
+        # Decrement duration and check for expiration.
+        if self.duration is not None:
+            self.duration -= 1
+            if self.duration <= 0:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
+                return True
+        return False
 
     def check_trigger(self, event: "CombatEvent") -> bool:
         """

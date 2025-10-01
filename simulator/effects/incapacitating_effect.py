@@ -258,12 +258,20 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             f"{self.incapacitating_effect.colored_name} due to taking damage!",
         )
 
-    def turn_end(self) -> None:
+    def turn_end(self) -> bool:
         """
-        Update the effect for the current turn by decrementing duration at the end of the turn.
+        Update the effect for the current turn by decrementing duration at the
+        end of the turn.
         """
         if not self.duration:
             raise ValueError("Effect duration is not set.")
         if self.duration <= 0:
             raise ValueError("Effect duration is already zero or negative.")
         self.duration -= 1
+        if self.duration <= 0:
+            cprint(
+                f"    :hourglass_done: {self.effect.colored_name} "
+                f"has expired on {self.target.colored_name}."
+            )
+            return True
+        return False

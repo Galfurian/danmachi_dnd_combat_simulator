@@ -208,7 +208,7 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
             raise TypeError("Effect is not a DamageOverTimeEffect.")
         return self.effect
 
-    def turn_end(self) -> None:
+    def turn_end(self) -> bool:
         """
         Update the effect for the current turn by dealing damage at the end of the turn.
         """
@@ -244,3 +244,13 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
         # If the target is defeated, print a message.
         if not self.target.is_alive():
             cprint(f"    [bold red]{self.target.name} has been defeated![/]")
+        # Decrement duration and check for expiration.
+        if self.duration is not None:
+            self.duration -= 1
+            if self.duration <= 0:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
+                return True
+        return False

@@ -41,16 +41,18 @@ class CharacterEffects:
     including application, removal, and effect updates.
 
     Attributes:
-        owner (Any):
+        _owner (Any):
             The character that owns this effects module.
         active_effects (list[ActiveEffect]):
             List of currently active effects on the character.
         passive_effects (list[ActiveEffect]):
             List of passive effects that are always active.
-        active_modifiers (dict[BonusType, ActiveEffect]):
-            Dictionary mapping bonus types to their active modifier effects.
 
     """
+
+    _owner: Any
+    active_effects: list[ActiveEffect]
+    passive_effects: list[ActiveEffect]
 
     def __init__(self, owner: Any) -> None:
         """
@@ -66,8 +68,6 @@ class CharacterEffects:
         self.active_effects: list[ActiveEffect] = []
         # TODO: Properly populate this one.
         self.passive_effects: list[ActiveEffect] = []
-        # TODO: Remove the active_modifiers dict and compute on the fly.
-        self.active_modifiers: dict[BonusType, ActiveEffect] = {}
 
     # === Effect Management ===
 
@@ -245,18 +245,12 @@ class CharacterEffects:
                 bonus type, or an empty list if no modifier is active.
 
         """
-        # Get all the active effects for the bonus type.
-        ae = self.active_modifiers.get(bonus_type)
-        if not ae:
-            return []
-        # If the effect is not a ModifierEffect, return an empty list.
-        if not isinstance(ae.effect, ModifierEffect):
-            return []
         # Find the modifier for the specific bonus type.
         modifiers = []
-        for mod in ae.effect.modifiers:
-            if mod.bonus_type == bonus_type:
-                modifiers.append(mod)
+        for effect in self.modifier_effects:
+            for mod in effect.modifier_effect.modifiers:
+                if mod.bonus_type == bonus_type:
+                    modifiers.append(mod)
         # If no modifiers found, return None.
         if not modifiers:
             return []
@@ -267,82 +261,26 @@ class CharacterEffects:
             return [modifier.value for modifier in modifiers]
         return [modifier.value for modifier in modifiers]
 
-    def get_damage_modifiers(self) -> list[DamageComponent]:
-        """
-        Get the best damage modifiers for each damage type from all active
-        effects.
-
-        Returns:
-            list[DamageComponent]:
-                List of the best modifier for each damage type.
-
-        """
-        best_by_type: dict[DamageType, DamageComponent] = {}
-
-        for ae in self.active_effects:
-            if not isinstance(ae.effect, ModifierEffect):
-                continue
-
-            # Find damage modifier in the effect
-            damage_modifier = None
-            for modifier in ae.effect.modifiers:
-                if modifier.bonus_type == BonusType.DAMAGE:
-                    damage_modifier = modifier
-                    break
-
-            if not damage_modifier or not isinstance(
-                damage_modifier.value, DamageComponent
-            ):
-                continue
-
-            mod = damage_modifier.value
-            new_max = get_max_roll(mod.damage_roll, ae.variables)
-            current = best_by_type.get(mod.damage_type)
-            current_max = (
-                get_max_roll(current.damage_roll, ae.variables) if current else -1
-            )
-            if new_max > current_max:
-                best_by_type[mod.damage_type] = mod
-
-        return list(best_by_type.values())
-
     def turn_start(self) -> None:
         """
         Initialize effects at the start of the turn.
         """
+        to_keep: list[ActiveEffect] = []
         for ae in self.active_effects:
-            ae.turn_start()
+            if not ae.turn_start():
+                to_keep.append(ae)
+        self.active_effects = to_keep
 
     def turn_end(self) -> None:
         """
-        Update the effects for a turn, applying any changes and removing expired effects.
+        Update the effects for a turn, applying any changes and removing expired
+        effects.
         """
-        updated = []
+        to_keep: list[ActiveEffect] = []
         for ae in self.active_effects:
-
-            ae.turn_end()
-
-            # Only decrement duration if it's not None (indefinite effects)
-            if ae.duration is not None:
-                ae.duration -= 1
-
-            # Keep effect if duration is None (indefinite) or still has time remaining
-            if ae.duration is None or ae.duration > 0:
-                updated.append(ae)
-            else:
-                cprint(
-                    f"    :hourglass_done: [bold yellow]{ae.effect.name}[/] "
-                    f"has expired on [bold]{self._owner.name}[/]."
-                )
-        self.active_effects = updated
-        # Rebuild active_modifiers
-        self.active_modifiers.clear()
-        for ae in self.active_effects:
-            if isinstance(ae.effect, ModifierEffect):
-                for modifier in ae.effect.modifiers:
-                    bt = modifier.bonus_type
-                    if bt not in self.active_modifiers:
-                        self.active_modifiers[bt] = ae
+            if not ae.turn_end():
+                to_keep.append(ae)
+        self.active_effects = to_keep
 
     # === Helpers ===
 
