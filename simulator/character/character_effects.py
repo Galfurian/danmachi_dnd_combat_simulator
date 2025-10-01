@@ -306,14 +306,21 @@ class CharacterEffects:
 
         return list(best_by_type.values())
 
-    def turn_update(self) -> None:
+    def turn_start(self) -> None:
+        """
+        Initialize effects at the start of the turn.
+        """
+        for ae in self.active_effects:
+            ae.turn_start()
+
+    def turn_end(self) -> None:
         """
         Update the effects for a turn, applying any changes and removing expired effects.
         """
         updated = []
         for ae in self.active_effects:
 
-            ae.turn_update()
+            ae.turn_end()
 
             # Only decrement duration if it's not None (indefinite effects)
             if ae.duration is not None:

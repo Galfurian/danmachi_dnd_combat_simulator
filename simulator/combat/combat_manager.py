@@ -228,14 +228,18 @@ class CombatManager:
                 cprint(
                     f"    💤 {participant.name} is incapacitated and cannot act this turn."
                 )
-            # Execute the participant's action based on whether they are the player or an NPC.
-            elif participant == self.player:
-                self.ask_for_player_action()
             else:
-                self.execute_npc_action(participant)
+                # Start of turn effects
+                participant.turn_start()
+
+                # Execute the participant's action based on whether they are the player or an NPC.
+                if participant == self.player:
+                    self.ask_for_player_action()
+                else:
+                    self.execute_npc_action(participant)
 
             # Apply end-of-turn updates and check for expiration
-            participant.turn_update()
+            participant.turn_end()
 
             cprint("")
 

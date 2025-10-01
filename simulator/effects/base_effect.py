@@ -187,12 +187,17 @@ class ActiveEffect(BaseModel):
         description="List of variable info for dynamic calculations",
     )
 
-    def turn_update(self) -> None:
+    def turn_start(self) -> None:
         """
-        Update the effect for the current turn by calling the effect's
-        turn_update method.
+        Called at the start of the target's turn.
         """
-        raise NotImplementedError("Subclasses must implement turn_update.")
+        pass
+
+    def turn_end(self) -> None:
+        """
+        Called at the end of the target's turn.
+        """
+        pass
 
     def on_hit(self, event: HitEvent) -> EventResponse | None:
         """

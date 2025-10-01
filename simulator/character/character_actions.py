@@ -342,7 +342,13 @@ class CharacterActions:
         if spell.name.lower() in self.owner.spells:
             del self.owner.spells[spell.name.lower()]
 
-    def turn_update(self) -> None:
+    def turn_start(self) -> None:
+        """
+        Initialize the character's action state at the start of their turn.
+        """
+        pass
+
+    def turn_end(self) -> None:
         """
         Update the character's action state at the end of their turn.
         This includes decrementing cooldowns and resetting turn flags.

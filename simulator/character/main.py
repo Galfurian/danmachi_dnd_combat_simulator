@@ -431,16 +431,25 @@ class Character:
         """
         self.actions_module.unlearn_spell(spell)
 
-    def turn_update(self) -> None:
+    def turn_start(self) -> None:
+        """
+        Initializes the character at the start of their turn.
+        """
+        # Update all active effects.
+        self.effects.turn_start()
+        # Update action state.
+        self.actions_module.turn_start()
+
+    def turn_end(self) -> None:
         """
         Updates the duration of all active effects, and cooldowns. Removes
         expired effects. This should be called at the end of a character's turn
         or a round.
         """
         # Update all active effects.
-        self.effects.turn_update()
+        self.effects.turn_end()
         # Update action cooldowns and reset turn flags.
-        self.actions_module.turn_update()
+        self.actions_module.turn_end()
 
     def add_cooldown(self, action: BaseAction) -> None:
         """Adds a cooldown to an action.

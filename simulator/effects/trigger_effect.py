@@ -392,6 +392,19 @@ class ActiveTriggerEffect(ActiveEffect):
             raise TypeError(f"Expected TriggerEffect, got {type(self.effect)}")
         return self.effect
 
+    def turn_start(self) -> None:
+        """
+        Handle turn start for trigger effects: decrement cooldown and clear triggered flag.
+        """
+        self.decrement_cooldown()
+        self.clear_triggered_this_turn()
+
+    def turn_end(self) -> None:
+        """
+        Handle turn end for trigger effects.
+        """
+        pass
+
     def check_trigger(self, event: "CombatEvent") -> bool:
         """
         Check if the trigger condition is met for the given event.

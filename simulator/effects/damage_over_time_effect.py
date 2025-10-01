@@ -208,10 +208,9 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
             raise TypeError("Effect is not a DamageOverTimeEffect.")
         return self.effect
 
-    def turn_update(self) -> None:
+    def turn_end(self) -> None:
         """
-        Update the effect for the current turn by calling the effect's
-        turn_update method.
+        Update the effect for the current turn by dealing damage at the end of the turn.
         """
         DOT = self.damage_over_time_effect
 

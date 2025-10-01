@@ -258,10 +258,9 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             f"{self.incapacitating_effect.colored_name} due to taking damage!",
         )
 
-    def turn_update(self) -> None:
+    def turn_end(self) -> None:
         """
-        Update the effect for the current turn by calling the effect's
-        turn_update method.
+        Update the effect for the current turn by decrementing duration at the end of the turn.
         """
         if not self.duration:
             raise ValueError("Effect duration is not set.")

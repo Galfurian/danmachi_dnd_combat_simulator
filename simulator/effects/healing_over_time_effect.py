@@ -191,9 +191,9 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
             raise ValueError("Effect must be a HealingOverTimeEffect instance.")
         return self.effect
 
-    def turn_update(self) -> None:
+    def turn_end(self) -> None:
         """
-        Apply healing to the target at the start of their turn.
+        Apply healing to the target at the end of their turn.
         """
         HOT = self.healing_over_time_effect
 
