@@ -6,6 +6,7 @@ including bonuses, penalties, status conditions, and temporary modifications.
 """
 
 from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Any
 
 from combat.damage import DamageComponent
@@ -228,10 +229,7 @@ class CharacterEffects:
 
     # === Modifier Management ===
 
-    def get_modifier(
-        self,
-        bonus_type: BonusType,
-    ) -> Any:
+    def get_modifier(self, bonus_type: BonusType) -> list[str | DamageComponent]:
         """
         Get the modifier value for a specific bonus type.
 
@@ -240,26 +238,54 @@ class CharacterEffects:
                 The type of bonus to retrieve.
 
         Returns:
-            Any:
-                Either `list[str]` or `list[DamageComponent]` depending on the
-                bonus type, or an empty list if no modifier is active.
+            list[str | DamageComponent]:
+                List of modifier values for the specified bonus type.
 
         """
-        # Find the modifier for the specific bonus type.
-        modifiers = []
+
+        @dataclass
+        class Entry:
+            value: str | DamageComponent
+            score: int
+
+        # Collect all modifiers for this bonus type
+        modifiers: list[Entry] = []
+        has_non_stacking = False
         for effect in self.modifier_effects:
             for mod in effect.modifier_effect.modifiers:
-                if mod.bonus_type == bonus_type:
-                    modifiers.append(mod)
-        # If no modifiers found, return None.
-        if not modifiers:
+                if mod.bonus_type != bonus_type:
+                    continue
+                if not mod.stacks:
+                    has_non_stacking = True
+                # Compute the projected strength with current variables.
+                new_entry = Entry(
+                    value=mod.value,
+                    score=mod.get_projected_strength(effect.variables),
+                )
+                # If the score is zero, skip adding this modifier.
+                if new_entry.score == 0:
+                    continue
+                # If there is already one with the same value, keep the one with
+                # the higher score, but only for those modifiers where we keep
+                # only the strongest.
+                existing = next((e for e in modifiers if e.value == mod.value), None)
+                if existing:
+                    if new_entry.score > existing.score:
+                        existing.value = new_entry.value
+                        existing.score = new_entry.score
+                    continue
+                # Otherwise, add the new modifier.
+                modifiers.append(new_entry)
+        
+        if has_non_stacking:
+            # For non-stacking, find the strongest modifier
+            if modifiers:
+                best = max(modifiers, key=lambda e: e.score)
+                return [best.value]
             return []
-        # Return the modifier value(s) based on the bonus type.
-        if bonus_type == BonusType.ATTACK:
-            return [str(modifier.value) for modifier in modifiers]
-        if bonus_type == BonusType.DAMAGE:
-            return [modifier.value for modifier in modifiers]
-        return [modifier.value for modifier in modifiers]
+        else:
+            # Stacking: return all
+            return [m.value for m in modifiers]
 
     def turn_start(self) -> None:
         """
@@ -283,71 +309,6 @@ class CharacterEffects:
         self.active_effects = to_keep
 
     # === Helpers ===
-
-    def _get_modifier_strength(
-        self,
-        ae: ActiveEffect,
-        bonus_type: BonusType,
-    ) -> int:
-        """
-        Helper to determine the strength of a modifier for comparison purposes.
-
-        Args:
-            ae (ActiveEffect): The active effect to evaluate.
-            bonus_type (BonusType): The bonus type to check.
-
-        Returns:
-            int: The strength value of the modifier.
-
-        """
-        if not isinstance(ae.effect, ModifierEffect):
-            return 0
-
-        # Find the modifier for the specific bonus type
-        modifier = None
-        for mod in ae.effect.modifiers:
-            if mod.bonus_type == bonus_type:
-                modifier = mod
-                break
-
-        if not modifier:
-            return 0
-
-        if bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ]:
-            if isinstance(modifier.value, int):
-                return modifier.value
-            if isinstance(modifier.value, str):
-                return int(modifier.value)
-            # DamageComponent - shouldn't happen for these bonus types
-            return 0
-        if bonus_type == BonusType.ATTACK:
-            if isinstance(modifier.value, str):
-                return get_max_roll(modifier.value, ae.variables)
-            # int or DamageComponent - convert to string or return 0
-            return (
-                get_max_roll(str(modifier.value), ae.variables)
-                if isinstance(modifier.value, int)
-                else 0
-            )
-        if bonus_type == BonusType.DAMAGE:
-            if isinstance(modifier.value, DamageComponent):
-                return get_max_roll(modifier.value.damage_roll, ae.variables)
-        return 0
-
-    def _iterate_active_effects(self) -> Iterator[ActiveEffect]:
-        """
-        Iterator over all active effects.
-
-        Returns:
-            Iterator[ActiveEffect]: An iterator over active effects.
-
-        """
-        yield from self.active_effects
 
     @property
     def damage_over_time_effects(self) -> Iterator[ActiveDamageOverTimeEffect]:

@@ -30,34 +30,52 @@ class Modifier(BaseModel):
     bonus_type: BonusType = Field(
         description="The type of bonus the modifier applies.",
     )
-    value: Any = Field(
+    value: str | DamageComponent = Field(
         description=(
             "The value of the modifier. Can be an integer, string expression, or DamageComponent."
         ),
     )
 
+    @property
+    def stacks(self) -> bool:
+        """
+        Indicates if the modifier stacks with others of the same type.
+
+        Returns:
+            bool:
+                True if the modifier stacks, False otherwise.
+        """
+        if self.bonus_type == BonusType.AC:
+            return False
+        return True
+
     def model_post_init(self, _: Any) -> None:
         from combat.damage import DamageComponent
 
         if self.bonus_type == BonusType.DAMAGE:
-            self.value = DamageComponent(**self.value)
-        elif self.bonus_type == BonusType.ATTACK:
+            assert isinstance(
+                self.value, DamageComponent
+            ), "Modifier value for 'DAMAGE' must be a DamageComponent."
+        else:
             assert isinstance(
                 self.value, str
-            ), f"Modifier value for '{self.bonus_type}' must be a string expression."
-        elif self.bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ]:
-            # Should be either an integer or a string expression
-            if not isinstance(self.value, (int, str)):
-                raise ValueError(
-                    f"Modifier value for '{self.bonus_type}' must be an integer or string expression."
-                )
-        else:
-            raise ValueError(f"Unknown bonus type: {self.bonus_type}")
+            ), f"Modifier value for '{self.bonus_type}' must be a string."
+
+    def get_projected_strength(self, variables: list[VarInfo]) -> int:
+        """
+        Determine the strength of a specific modifier type.
+
+        Args:
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
+
+        Returns:
+            int:
+                The strength value of the modifier.
+        """
+        if isinstance(self.value, DamageComponent):
+            return get_max_roll(self.value.damage_roll, variables)
+        return get_max_roll(self.value, variables)
 
     def __eq__(self, other: object) -> bool:
         """
@@ -128,53 +146,27 @@ class ModifierEffect(Effect):
             if not isinstance(modifier, Modifier):
                 raise ValueError(f"Invalid modifier: {modifier}")
 
-    def get_modifier_strength(
+    def get_projected_strength(
         self,
         bonus_type: BonusType,
         variables: list[VarInfo],
     ) -> int:
         """
-        Helper to determine the strength of a modifier for comparison purposes.
+        Determine the strength of a specific modifier type.
 
         Args:
-            ae (ActiveEffect): The active effect to evaluate.
-            bonus_type (BonusType): The bonus type to check.
+            bonus_type (BonusType):
+                The bonus type to evaluate.
+            variables (list[VarInfo]):
+                List of variable info for dynamic calculations.
 
         Returns:
-            int: The strength value of the modifier.
+            int:
+                The strength value of the modifier. 0 if not present.
         """
-        # Find the modifier for the specific bonus type
-        modifier = None
         for mod in self.modifiers:
             if mod.bonus_type == bonus_type:
-                modifier = mod
-                break
-
-        if not modifier:
-            return 0
-
-        if bonus_type in [
-            BonusType.HP,
-            BonusType.MIND,
-            BonusType.AC,
-            BonusType.INITIATIVE,
-        ]:
-            if isinstance(modifier.value, int):
-                return modifier.value
-            if isinstance(modifier.value, str):
-                return int(modifier.value)
-            return 0
-        if bonus_type == BonusType.ATTACK:
-            if isinstance(modifier.value, str):
-                return get_max_roll(modifier.value, variables)
-            return (
-                get_max_roll(str(modifier.value), variables)
-                if isinstance(modifier.value, int)
-                else 0
-            )
-        if bonus_type == BonusType.DAMAGE:
-            if isinstance(modifier.value, DamageComponent):
-                return get_max_roll(modifier.value.damage_roll, variables)
+                return mod.get_projected_strength(variables)
         return 0
 
     def is_stronger_than(
@@ -205,8 +197,8 @@ class ModifierEffect(Effect):
         # Find at least one modifier that is stronger.
         for modifier in self.modifiers:
             bonus_type = modifier.bonus_type
-            self_strength = self.get_modifier_strength(bonus_type, variables)
-            other_strength = other.get_modifier_strength(bonus_type, variables)
+            self_strength = self.get_projected_strength(bonus_type, variables)
+            other_strength = other.get_projected_strength(bonus_type, variables)
             if self_strength > other_strength:
                 log_debug(
                     f"ModifierEffect {self.colored_name} is stronger than "
@@ -367,6 +359,20 @@ class ActiveModifierEffect(ActiveEffect):
         if not isinstance(self.effect, ModifierEffect):
             raise TypeError(f"Expected ModifierEffect, got {type(self.effect)}")
         return self.effect
+
+    def get_projected_strength(self, bonus_type: BonusType) -> int:
+        """
+        Determine the strength of a specific modifier type.
+
+        Args:
+            bonus_type (BonusType):
+                The bonus type to evaluate.
+
+        Returns:
+            int:
+                The strength value of the modifier.
+        """
+        return self.modifier_effect.get_projected_strength(bonus_type, self.variables)
 
     def turn_end(self) -> bool:
         """
