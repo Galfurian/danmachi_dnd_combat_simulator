@@ -36,8 +36,8 @@ def setup_logging(level: int = logging.INFO) -> None:
     # Set up the formatter
     rich_handler.setFormatter(
         logging.Formatter(
-            "%(name)s - %(levelname)s - %(message)s",
-            datefmt="[%X]"
+            "%(message)s",
+            datefmt="%X"
         )
     )
 
@@ -45,7 +45,7 @@ def setup_logging(level: int = logging.INFO) -> None:
     logging.basicConfig(
         level=level,
         format="%(message)s",
-        datefmt="[%X]",
+        datefmt="%X",
         handlers=[rich_handler]
     )
 
