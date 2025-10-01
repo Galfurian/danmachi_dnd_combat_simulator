@@ -17,7 +17,8 @@ from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
-from character.main import Character, load_character, load_characters
+from character.main import Character
+from character.character_serialization import load_character, load_characters
 from combat.combat_manager import CombatManager
 from core.content import ContentRepository
 from core.logging import setup_logging

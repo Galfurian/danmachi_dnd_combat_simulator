@@ -10,6 +10,7 @@ import random
 from collections import deque
 from logging import debug
 
+from actions.abilities.base_ability import BaseAbility
 from actions.attacks.base_attack import (
     BaseAttack,
 )
@@ -200,7 +201,7 @@ class CombatManager:
         """
         if participant.is_alive():
             # Reset the participant's turn flags to allow for new actions.
-            participant.reset_available_actions()
+            participant.actions.reset_available_actions()
 
             # Print the participant's status line with appropriate display mode
             if participant == self.player:
@@ -248,18 +249,18 @@ class CombatManager:
         if not self.get_alive_opponents(self.player):
             return
 
-        while not self.player.turn_done():
+        while not self.player.actions.turn_done():
             # Gather available actions and attacks.
             actions = []
-            if self.player.has_action_class(ActionClass.STANDARD):
+            if self.player.actions.has_action_class(ActionClass.STANDARD):
                 actions.append(FULL_ATTACK)
-            actions.extend(self.player.get_available_actions())
-            spells = self.player.get_available_spells()
+            actions.extend(self.player.actions.get_available_abilities())
+            spells = self.player.actions.get_available_spells()
 
             # Main action selection menu.
             submenus = []
             if spells:
-                submenus.append("Cast a BaseSpell")
+                submenus.append("Cast a Spell")
 
             # Player selects an action or submenu option.
             choice = self.ui.choose_action(actions, submenus, "Skip")
@@ -268,13 +269,13 @@ class CombatManager:
             # If the action is a BaseSpell, we need to handle it differently.
             if choice == FULL_ATTACK:
                 self.ask_for_player_full_attack()
-            elif choice == "Cast a BaseSpell":
+            elif choice == "Cast a Spell":
                 self.ask_for_player_spell_cast(spells)
 
     def ask_for_player_full_attack(self) -> None:
         """Asks the player to choose targets for a full attack action."""
         # Get the list of all attacks available in the full attack.
-        attacks = self.player.get_available_attacks()
+        attacks = self.player.actions.get_available_attacks()
         if not attacks:
             log_warning(
                 "No available attacks for the full attack action",
@@ -337,10 +338,10 @@ class CombatManager:
 
             # Add cooldown only once for the attack type
             if attack_num == 0:
-                self.player.add_cooldown(attack)
+                self.player.actions.add_cooldown(attack)
 
         # Mark the action class as used.
-        self.player.use_action_class(ActionClass.STANDARD)
+        self.player.actions.use_action_class(ActionClass.STANDARD)
 
     def ask_for_player_spell_cast(self, spells: list[BaseSpell]) -> bool:
         """Handles the player's choice to cast a spell.
@@ -396,9 +397,9 @@ class CombatManager:
                 # Remove the MIND cost from the player.
                 self.player.use_mind(spell.mind_cost[rank])
                 # Mark the action class as used.
-                self.player.use_action_class(spell.action_class)
+                self.player.actions.use_action_class(spell.action_class)
                 # Add the spell to the cooldowns if it has one.
-                self.player.add_cooldown(spell)
+                self.player.actions.add_cooldown(spell)
                 return True
         return False
 
@@ -547,9 +548,9 @@ class CombatManager:
         # Just check if the NPC still has all action classes available but did
         # nothing.
         if (
-            npc.has_action_class(ActionClass.BONUS)
-            and npc.has_action_class(ActionClass.FREE)
-            and npc.has_action_class(ActionClass.STANDARD)
+            npc.actions.has_action_class(ActionClass.BONUS)
+            and npc.actions.has_action_class(ActionClass.FREE)
+            and npc.actions.has_action_class(ActionClass.STANDARD)
         ):
             log_warning(
                 f"SKIP: {npc.name} could not find any action to perform",
@@ -598,9 +599,9 @@ class CombatManager:
                     rank=candidate_spell.rank,
                 )
             # Add the spell to the cooldowns if it has one.
-            npc.add_cooldown(candidate_spell.spell)
+            npc.actions.add_cooldown(candidate_spell.spell)
             # Mark the action class as used.
-            npc.use_action_class(candidate_spell.spell.action_class)
+            npc.actions.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -618,9 +619,9 @@ class CombatManager:
                     target=target,
                 )
             # Add the ability to the cooldowns if it has one.
-            npc.add_cooldown(candidate_ability.ability)
+            npc.actions.add_cooldown(candidate_ability.ability)
             # Mark the action class as used.
-            npc.use_action_class(candidate_ability.ability.action_class)
+            npc.actions.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_buff(
         self,
@@ -659,9 +660,9 @@ class CombatManager:
                     rank=candidate_spell.rank,
                 )
             # Add the spell to the cooldowns if it has one.
-            npc.add_cooldown(candidate_spell.spell)
+            npc.actions.add_cooldown(candidate_spell.spell)
             # Mark the action class as used.
-            npc.use_action_class(candidate_spell.spell.action_class)
+            npc.actions.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -679,9 +680,9 @@ class CombatManager:
                     target=target,
                 )
             # Add the ability to the cooldowns if it has one.
-            npc.add_cooldown(candidate_ability.ability)
+            npc.actions.add_cooldown(candidate_ability.ability)
             # Mark the action class as used.
-            npc.use_action_class(candidate_ability.ability.action_class)
+            npc.actions.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_debuff(
         self,
@@ -720,9 +721,9 @@ class CombatManager:
                     rank=candidate_spell.rank,
                 )
             # Add the spell to the cooldowns if it has one.
-            npc.add_cooldown(candidate_spell.spell)
+            npc.actions.add_cooldown(candidate_spell.spell)
             # Mark the action class as used.
-            npc.use_action_class(candidate_spell.spell.action_class)
+            npc.actions.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -740,9 +741,9 @@ class CombatManager:
                     target=target,
                 )
             # Add the ability to the cooldowns if it has one.
-            npc.add_cooldown(candidate_ability.ability)
+            npc.actions.add_cooldown(candidate_ability.ability)
             # Mark the action class as used.
-            npc.use_action_class(candidate_ability.ability.action_class)
+            npc.actions.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_offensive(
         self,
@@ -781,9 +782,9 @@ class CombatManager:
                     rank=candidate_spell.rank,
                 )
             # Add the spell to the cooldowns if it has one.
-            npc.add_cooldown(candidate_spell.spell)
+            npc.actions.add_cooldown(candidate_spell.spell)
             # Mark the action class as used.
-            npc.use_action_class(candidate_spell.spell.action_class)
+            npc.actions.use_action_class(candidate_spell.spell.action_class)
             # Remove the MIND cost from the NPC.
             npc.use_mind(candidate_spell.mind_level)
 
@@ -798,9 +799,9 @@ class CombatManager:
             for target in candidate_ability.targets:
                 candidate_ability.ability.execute(npc, target)
             # Add the ability to the cooldowns if it has one.
-            npc.add_cooldown(candidate_ability.ability)
+            npc.actions.add_cooldown(candidate_ability.ability)
             # Mark the action class as used.
-            npc.use_action_class(candidate_ability.ability.action_class)
+            npc.actions.use_action_class(candidate_ability.ability.action_class)
 
     def _execute_npc_full_attack(
         self,
@@ -841,8 +842,8 @@ class CombatManager:
 
         # Add cooldown and mark action class only once after all attacks.
         if attacks_made:
-            npc.add_cooldown(attack)
-            npc.use_action_class(attack.action_class)
+            npc.actions.add_cooldown(attack)
+            npc.actions.use_action_class(attack.action_class)
 
     def _execute_npc_full_natural_attack(
         self,
@@ -875,8 +876,8 @@ class CombatManager:
             if target:
                 attack.execute(npc, target)
                 # Add cooldown and mark action class for the natural attack.
-                npc.add_cooldown(attack)
-                npc.use_action_class(attack.action_class)
+                npc.actions.add_cooldown(attack)
+                npc.actions.use_action_class(attack.action_class)
 
     def _get_legal_targets(
         self, character: Character, ability: BaseAction
@@ -901,33 +902,68 @@ class CombatManager:
         """
         Handles the pre-combat phase where the player can prepare for combat.
         """
-        from actions.spells.spell_buff import (
-            SpellBuff,
-        )
-        from actions.spells.spell_heal import (
-            SpellHeal,
-        )
-
         crule(":hourglass_done: Pre-Combat Phase", style="blue")
-        # Gather viable healing spells.
-        buffs: list[BaseSpell] = [
-            s for s in self.player.spells.values() if isinstance(s, SpellBuff)
-        ]
-        heals: list[BaseSpell] = (
-            [s for s in self.player.spells.values() if isinstance(s, SpellHeal)]
-            if any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player))
-            else []
-        )
-        # If the player has no spells, skip this phase.
-        if not heals and not buffs:
-            cprint(
-                "[yellow]No healing or buff spells known. Skipping pre-combat phase.[/]"
-            )
-            return
-        # Otherwise, allow to perform healing actions.
+
+        targets = self.get_alive_friendlies(self.player)
+
         while True:
-            if not self.ask_for_player_spell_cast(buffs + heals):
+            for ally in targets:
+                # Show full details for healing phase (allies show AC)
+                cprint(
+                    ally.display.get_status_line(
+                        show_numbers=True,
+                        show_bars=True,
+                        show_ac=True,
+                    )
+                )
+            abilities: list[BaseAction] = []
+            spells: list[BaseSpell] = []
+
+            # Get the list of buff spells/abilities.
+            abilities.extend(
+                [
+                    a
+                    for a in self.player.actions.abilities.values()
+                    if a.category == ActionCategory.BUFF
+                ]
+            )
+            spells.extend(
+                [
+                    s
+                    for s in self.player.actions.spells.values()
+                    if s.category == ActionCategory.BUFF
+                ]
+            )
+
+            # If someone needs healing, add healing spells/abilities.
+            if any(t.stats.hp < t.HP_MAX for t in targets):
+                abilities.extend(
+                    [
+                        a
+                        for a in self.player.actions.abilities.values()
+                        if a.category == ActionCategory.HEALING
+                    ]
+                )
+                spells.extend(
+                    [
+                        s
+                        for s in self.player.actions.spells.values()
+                        if s.category == ActionCategory.HEALING
+                    ]
+                )
+
+            # Main action selection menu.
+            submenus = []
+            if spells:
+                submenus.append("Cast a Spell")
+
+            # Player selects an action or submenu option.
+            choice = self.ui.choose_action(abilities, submenus, "Skip")
+            if choice is None or (isinstance(choice, str) and choice == "q"):
                 break
+            # If the action is a BaseSpell, we need to handle it differently.
+            if choice == "Cast a Spell":
+                self.ask_for_player_spell_cast(spells)
 
     def post_combat_phase(self) -> None:
         """
@@ -939,20 +975,15 @@ class CombatManager:
         )
 
         crule(":hourglass_done: Post-Combat Healing", style="green")
-        # Stop now if there are no friendly character that needs healing.
-        if not any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
-            cprint("[yellow]No friendly characters to heal.[/]")
-            return
-        # Gather viable healing spells.
-        heals: list[BaseSpell] = [
-            s for s in self.player.spells.values() if isinstance(s, SpellHeal)
-        ]
-        if not heals:
-            cprint("[yellow]No healing spells known.[/]")
-            return
-        # Otherwise, allow to perform healing actions.
+
+        targets = self.get_alive_friendlies(self.player)
+
+        abilities: list[BaseAction]
+        spells: list[BaseSpell]
+        
         while True:
-            for ally in self.get_alive_friendlies(self.player):
+
+            for ally in targets:
                 # Show full details for healing phase (allies show AC)
                 cprint(
                     ally.display.get_status_line(
@@ -961,12 +992,34 @@ class CombatManager:
                         show_ac=True,
                     )
                 )
-            if not any(t.stats.hp < t.HP_MAX for t in self.get_alive_friendlies(self.player)):
-                cprint("[yellow]No friendly characters needs more healing.[/]")
-                return
-            # let the UI list ONLY those spells plus an 'End' sentinel.
-            if not self.ask_for_player_spell_cast(heals):
+
+            # If someone needs healing, add healing spells/abilities.
+            if not any(t.stats.hp < t.HP_MAX for t in targets):
+                cprint("[bold green]All allies are at full health![/]")
+
+            abilities = [
+                a
+                for a in self.player.actions.abilities.values()
+                if a.category == ActionCategory.HEALING
+            ]
+            spells = [
+                s
+                for s in self.player.actions.spells.values()
+                if s.category == ActionCategory.HEALING
+            ]
+
+            # Main action selection menu.
+            submenus = []
+            if spells:
+                submenus.append("Cast a Spell")
+
+            # Player selects an action or submenu option.
+            choice = self.ui.choose_action(abilities, submenus, "Skip")
+            if choice is None or (isinstance(choice, str) and choice == "q"):
                 break
+            # If the action is a BaseSpell, we need to handle it differently.
+            if choice == "Cast a Spell":
+                self.ask_for_player_spell_cast(spells)
 
     def final_report(self) -> None:
         """Generates the final battle report after combat ends."""

@@ -129,7 +129,7 @@ class BaseSpell(BaseAction):
             raise ValueError("Rank is out of bounds for this spell.")
 
         # Check if the ability is on cooldown.
-        if actor.is_on_cooldown(self):
+        if actor.actions.is_on_cooldown(self):
             return False
 
         # Check if actor has enough mind points to cast the spell.

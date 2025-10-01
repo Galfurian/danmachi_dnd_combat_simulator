@@ -10,7 +10,8 @@ from pathlib import Path
 
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
-from character.main import Character, load_character
+from character.character_serialization import load_character
+from character.main import Character
 from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
 from core.logging import setup_logging

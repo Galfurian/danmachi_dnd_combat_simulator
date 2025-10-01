@@ -167,6 +167,7 @@ class DamageType(NiceEnum):
 class ActionCategory(NiceEnum):
     """Defines the primary purpose or effect category of an action or spell."""
 
+    NONE = "NONE"
     OFFENSIVE = "OFFENSIVE"
     HEALING = "HEALING"
     BUFF = "BUFF"

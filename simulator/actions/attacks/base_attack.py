@@ -79,7 +79,7 @@ class BaseAttack(BaseAction):
             raise ValueError("The target must be a Character instance.")
 
         # Check if the ability is on cooldown.
-        if actor.is_on_cooldown(self):
+        if actor.actions.is_on_cooldown(self):
             return False
 
         # =====================================================================

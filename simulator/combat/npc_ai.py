@@ -714,7 +714,7 @@ def get_weapon_attacks(source: Character) -> list[WeaponAttack]:
         list[WeaponAttack]: List of available weapon attacks.
 
     """
-    return source.get_available_weapon_attacks()
+    return source.actions.get_available_weapon_attacks()
 
 
 def get_natural_attacks(source: Character) -> list[NaturalAttack]:
@@ -728,7 +728,7 @@ def get_natural_attacks(source: Character) -> list[NaturalAttack]:
         list[NaturalAttack]: List of available natural attacks.
 
     """
-    return source.get_available_natural_weapon_attacks()
+    return source.actions.get_available_natural_weapon_attacks()
 
 
 # =============================================================================
@@ -748,9 +748,9 @@ def get_all_combat_actions(source: Character) -> list[BaseAction]:
 
     """
     return (
-        source.get_available_attacks()
-        + source.get_available_actions()
-        + source.get_available_spells()
+        source.actions.get_available_attacks()
+        + source.actions.get_available_abilities()
+        + source.actions.get_available_spells()
     )
 
 
@@ -803,7 +803,7 @@ def choose_best_weapon_attack_for_situation(
 
     for weapon_attack in weapon_attacks:
         # Skip if weapon_attack is on cooldown
-        if source.is_on_cooldown(weapon_attack):
+        if source.actions.is_on_cooldown(weapon_attack):
             continue
 
         # Calculate weapon_attack effectiveness against all available targets.
@@ -911,7 +911,7 @@ def choose_best_base_attack_action(
     variables = source.get_expression_variables()
 
     for attack in base_attacks:
-        if source.is_on_cooldown(attack):
+        if source.actions.is_on_cooldown(attack):
             continue
         candidate_attack = _get_best_base_attack(
             attack=attack,
@@ -953,7 +953,7 @@ def choose_best_attack_spell_action(
     best_spell: SpellSelection | None = None
 
     for spell in spells:
-        if source.is_on_cooldown(spell):
+        if source.actions.is_on_cooldown(spell):
             continue
         candidate_spell = _get_best_spell_attack(
             spell=spell,
@@ -995,7 +995,7 @@ def choose_best_healing_spell_action(
     for spell in spells:
         if not spell.mind_cost:
             continue
-        if source.is_on_cooldown(spell):
+        if source.actions.is_on_cooldown(spell):
             continue
         candidate_spell = _get_best_spell_heal(
             spell=spell,
@@ -1041,7 +1041,7 @@ def choose_best_buff_or_debuff_spell_action(
     for spell in spells:
         if not spell.mind_cost:
             continue
-        if source.is_on_cooldown(spell):
+        if source.actions.is_on_cooldown(spell):
             continue
         candidate_spell = _get_best_spell_buff_or_debuff(
             spell=spell,
@@ -1089,7 +1089,7 @@ def choose_best_offensive_ability_action(
     variables = source.get_expression_variables()
 
     for ability in abilities:
-        if source.is_on_cooldown(ability):
+        if source.actions.is_on_cooldown(ability):
             continue
         candidate_ability = _get_best_ability_attack(
             ability=ability,
@@ -1130,7 +1130,7 @@ def choose_best_healing_ability_action(
     best_ability: AbilitySelection | None = None
 
     for ability in abilities:
-        if source.is_on_cooldown(ability):
+        if source.actions.is_on_cooldown(ability):
             continue
         candidate_ability = _get_best_ability_heal(
             ability=ability,
@@ -1170,7 +1170,7 @@ def choose_best_buff_or_debuff_ability_action(
     best_ability: AbilitySelection | None = None
 
     for ability in abilities:
-        if source.is_on_cooldown(ability):
+        if source.actions.is_on_cooldown(ability):
             continue
         candidate_ability = _get_best_ability_buff_or_debuff(
             ability=ability,

@@ -359,16 +359,22 @@ def print_character_sheet(char: Character) -> None:
         for armor in char.inventory.armors:
             print_armor_sheet(armor, 4)
 
-    # Actions and Abilities
-    if char.actions:
-        cprint("  [cyan]Actions & Abilities[/]:")
-        for action in char.actions.values():
+    # Attacks
+    if char.actions.attacks:
+        cprint("  [red]Attacks[/]:")
+        for attack in char.actions.attacks.values():
+            print_action_sheet(attack, 4)
+
+    # Abilities
+    if char.actions.abilities:
+        cprint("  [cyan]Abilities[/]:")
+        for action in char.actions.abilities.values():
             print_action_sheet(action, 4)
 
     # Spells
-    if char.spells:
+    if char.actions.spells:
         cprint("  [magenta]Spells[/]:")
-        for spell in char.spells.values():
+        for spell in char.actions.spells.values():
             print_spell_sheet(spell, 4)
 
     # Resistances and Vulnerabilities
@@ -399,18 +405,14 @@ def print_character_sheet(char: Character) -> None:
 
     # Cooldowns and uses
     active_cooldowns = {
-        name: turns
-        for name, turns in char.actions_module.cooldowns.items()
-        if turns > 0
+        name: turns for name, turns in char.actions._cooldowns.items() if turns > 0
     }
     if active_cooldowns:
         cprint("  [orange1]Active Cooldowns[/]:")
         for action_name, turns in active_cooldowns.items():
             cprint(Padding(f"{action_name}: {turns} turns", (0, 4)))
 
-    active_uses = {
-        name: uses for name, uses in char.actions_module.uses.items() if uses > 0
-    }
+    active_uses = {name: uses for name, uses in char.actions._uses.items() if uses > 0}
     if active_uses:
         cprint("  [orange1]Used Abilities[/]:")
         for action_name, uses in active_uses.items():
