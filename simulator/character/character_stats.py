@@ -40,7 +40,7 @@ class CharacterStats:
                 The Character instance that owns this CharacterStats.
 
         """
-        self.owner: Any = owner
+        self._owner: Any = owner
         self.statistics: dict[str, int] = stats
         self.hp: int = self.HP_MAX
         self.mind: int = self.MIND_MAX
@@ -125,10 +125,10 @@ class CharacterStats:
 
         """
         if (
-            self.owner.spellcasting_ability
-            and self.owner.spellcasting_ability in self.statistics
+            self._owner.spellcasting_ability
+            and self._owner.spellcasting_ability in self.statistics
         ):
-            return get_stat_modifier(self.statistics[self.owner.spellcasting_ability])
+            return get_stat_modifier(self.statistics[self._owner.spellcasting_ability])
         return 0
 
     # ============================================================================
@@ -146,10 +146,10 @@ class CharacterStats:
         """
         hp_max: int = 0
         # Add the class levels' HP multipliers to the max HP.
-        for cls, lvl in self.owner.levels.items():
+        for cls, lvl in self._owner.levels.items():
             hp_max += lvl * (cls.hp_mult + self.CON)
         # Sum all the HP modifiers from effects.
-        modifiers = self.owner.effects.get_modifier(BonusType.HP)
+        modifiers = self._owner.effects.get_modifier(BonusType.HP)
         if isinstance(modifiers, list):
             hp_max += sum(int(mod) for mod in modifiers)
         return hp_max
@@ -165,10 +165,10 @@ class CharacterStats:
         """
         mind_max: int = 0
         # Add the class levels' Mind multipliers to the max Mind.
-        for cls, lvl in self.owner.levels.items():
+        for cls, lvl in self._owner.levels.items():
             mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
         # Sum all the Mind modifiers from effects.
-        modifiers = self.owner.effects.get_modifier(BonusType.MIND)
+        modifiers = self._owner.effects.get_modifier(BonusType.MIND)
         if isinstance(modifiers, list):
             mind_max += sum(int(mod) for mod in modifiers)
         return mind_max
@@ -186,19 +186,19 @@ class CharacterStats:
         base_ac = 10 + self.DEX
 
         # If there is equipped armor, replace base AC.
-        if self.owner.inventory.armors:
+        if self._owner.inventory.armors:
             base_ac = sum(
-                armor.get_ac(self.DEX) for armor in self.owner.inventory.armors
+                armor.get_ac(self.DEX) for armor in self._owner.inventory.armors
             )
 
         # Sum all AC modifiers from active effects.
-        modifiers = self.owner.effects.get_modifier(BonusType.AC)
+        modifiers = self._owner.effects.get_modifier(BonusType.AC)
         effect_ac = 0
         if isinstance(modifiers, list):
             effect_ac += sum(int(mod) for mod in modifiers)
 
         # Determine final AC.
-        race_bonus = self.owner.race.natural_ac if self.owner.race else 0
+        race_bonus = self._owner.race.natural_ac if self._owner.race else 0
         return base_ac + race_bonus + effect_ac
 
     @property
@@ -213,7 +213,7 @@ class CharacterStats:
         # Base initiative is DEX modifier.
         initiative = self.DEX
         # Sum all initiative modifiers from active effects.
-        modifiers = self.owner.effects.get_modifier(BonusType.INITIATIVE)
+        modifiers = self._owner.effects.get_modifier(BonusType.INITIATIVE)
         if isinstance(modifiers, list):
             initiative += sum(int(mod) for mod in modifiers)
         return initiative
@@ -230,7 +230,7 @@ class CharacterStats:
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
 
         # Sum all concentration modifiers from active effects.
-        modifiers = self.owner.effects.get_modifier(BonusType.CONCENTRATION)
+        modifiers = self._owner.effects.get_modifier(BonusType.CONCENTRATION)
         bonus_value = 0
         if isinstance(modifiers, list):
             bonus_value = sum(int(mod) for mod in modifiers)

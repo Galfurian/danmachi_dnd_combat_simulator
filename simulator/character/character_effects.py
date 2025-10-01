@@ -62,7 +62,7 @@ class CharacterEffects:
 
         """
         super().__init__()
-        self.owner = owner
+        self._owner = owner
         self.active_effects: list[ActiveEffect] = []
         # TODO: Properly populate this one.
         self.passive_effects: list[ActiveEffect] = []
@@ -173,12 +173,12 @@ class CharacterEffects:
             return False
 
         # Use provided variables or get default ones from the owner.
-        variables = variables or self.owner.get_expression_variables()
+        variables = variables or self._owner.get_expression_variables()
 
         # Build the ActiveEffect for the passive effect.
         passive_ae = ActiveEffect(
-            source=self.owner,
-            target=self.owner,
+            source=self._owner,
+            target=self._owner,
             effect=effect,
             duration=None,
             variables=variables,
@@ -332,7 +332,7 @@ class CharacterEffects:
             else:
                 cprint(
                     f"    :hourglass_done: [bold yellow]{ae.effect.name}[/] "
-                    f"has expired on [bold]{self.owner.name}[/]."
+                    f"has expired on [bold]{self._owner.name}[/]."
                 )
         self.active_effects = updated
         # Rebuild active_modifiers

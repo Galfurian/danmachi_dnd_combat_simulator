@@ -29,7 +29,7 @@ class CharacterDisplay:
                 The Character instance that this display is associated with.
 
         """
-        self.owner = owner
+        self._owner = owner
 
     def get_status_line(
         self,
@@ -53,8 +53,8 @@ class CharacterDisplay:
         """
         # Collect all effects with better formatting
         effects_list = []
-        if self.owner.effects.active_effects:
-            for e in self.owner.effects.active_effects:
+        if self._owner.effects.active_effects:
+            for e in self._owner.effects.active_effects:
                 color = e.effect.color
                 # Truncate long effect names and show duration more compactly
                 effect_name = (
@@ -68,41 +68,41 @@ class CharacterDisplay:
 
         # Build status line with better spacing
         hp_bar = (
-            make_bar(self.owner.stats.hp, self.owner.HP_MAX, color="green", length=8)
+            make_bar(self._owner.stats.hp, self._owner.HP_MAX, color="green", length=8)
             if show_bars
             else ""
         )
 
         # Use dynamic name width based on name length, but cap it
-        name_width = min(max(len(self.owner.name), 8), 16)
+        name_width = min(max(len(self._owner.name), 8), 16)
         status = (
-            f"{self.owner.char_type.emoji} [bold]{self.owner.name:<{name_width}}[/] "
+            f"{self._owner.char_type.emoji} [bold]{self._owner.name:<{name_width}}[/] "
         )
 
         # Show AC only for player and allies (not enemies) with yellow color
         if show_ac:
-            status += f"| [yellow]AC:{self.owner.AC:>2}[/] "
+            status += f"| [yellow]AC:{self._owner.AC:>2}[/] "
 
         # Build HP display based on parameters with green color
         hp_display = ""
         if show_numbers and show_bars:
             hp_display = (
-                f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/]{hp_bar} "
+                f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/]{hp_bar} "
             )
         elif show_numbers:
-            hp_display = f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/] "
+            hp_display = f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/] "
         elif show_bars:
             hp_display = f"| [green]HP:[/]{hp_bar} "
         else:
             # Default to showing numbers if neither is specified
-            hp_display = f"| [green]HP:{self.owner.stats.hp:>3}/{self.owner.HP_MAX}[/] "
+            hp_display = f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/] "
         status += hp_display
 
-        if self.owner.MIND_MAX > 0:
+        if self._owner.MIND_MAX > 0:
             mind_bar = (
                 make_bar(
-                    self.owner.stats.mind,
-                    self.owner.MIND_MAX,
+                    self._owner.stats.mind,
+                    self._owner.MIND_MAX,
                     color="blue",
                     length=8,
                 )
@@ -113,17 +113,17 @@ class CharacterDisplay:
             # Build MP display based on parameters with blue color
             mp_display = ""
             if show_numbers and show_bars:
-                mp_display = f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/]{mind_bar} "
+                mp_display = f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/]{mind_bar} "
             elif show_numbers:
                 mp_display = (
-                    f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/] "
+                    f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/] "
                 )
             elif show_bars:
                 mp_display = f"| [blue]MP:[/]{mind_bar} "
             else:
                 # Default to showing numbers if neither is specified
                 mp_display = (
-                    f"| [blue]MP:{self.owner.stats.mind:>3}/{self.owner.MIND_MAX}[/] "
+                    f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/] "
                 )
             status += mp_display
 
@@ -149,11 +149,11 @@ class CharacterDisplay:
             str: A detailed string of all active effects with descriptions.
 
         """
-        if not self.owner.effects.active_effects:
+        if not self._owner.effects.active_effects:
             return "No active effects"
 
         effects_info = []
-        for e in self.owner.effects.active_effects:
+        for e in self._owner.effects.active_effects:
             color = e.effect.color
             effects_info.append(
                 f"  [{color}]{e.effect.name}[/] ({e.duration} turns): {e.effect.description}"

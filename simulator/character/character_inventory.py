@@ -44,7 +44,7 @@ class CharacterInventory:
                 The Character instance this inventory manager belongs to.
 
         """
-        self.owner = owner
+        self._owner = owner
         self.wielded_weapons = []
         self.natural_weapons = []
         self.armors = []
@@ -80,9 +80,9 @@ class CharacterInventory:
         """
         from character.main import Character
 
-        assert isinstance(self.owner, Character), "Owner must be a Character."
+        assert isinstance(self._owner, Character), "Owner must be a Character."
 
-        return self.owner.total_hands - self.get_occupied_hands()
+        return self._owner.total_hands - self.get_occupied_hands()
 
     def can_equip_weapon(self, weapon: Weapon) -> bool:
         """
@@ -120,7 +120,7 @@ class CharacterInventory:
         """
         from character.main import Character
 
-        assert isinstance(self.owner, Character), "Owner must be a Character."
+        assert isinstance(self._owner, Character), "Owner must be a Character."
 
         if self.can_equip_weapon(weapon):
             # Add the weapon to the character's weapon list.
@@ -195,17 +195,17 @@ class CharacterInventory:
         """
         from character.main import Character
 
-        assert isinstance(self.owner, Character), "Owner must be a Character."
+        assert isinstance(self._owner, Character), "Owner must be a Character."
 
         if self.can_equip_armor(armor):
             log_debug(
-                f"{self.owner.colored_name} is equipping {armor.colored_name}",
-                context={"character": self.owner.name, "armor": armor.name},
+                f"{self._owner.colored_name} is equipping {armor.colored_name}",
+                context={"character": self._owner.name, "armor": armor.name},
             )
             # Add the armor to the character's armor list.
             self.armors.append(armor)
             # Apply armor effects to the character.
-            armor.apply_effects(self.owner)
+            armor.apply_effects(self._owner)
             return True
         return False
 
@@ -225,7 +225,7 @@ class CharacterInventory:
             self.armors.remove(armor)
             return True
         log_warning(
-            f"{self.owner.name} does not have {armor.name} equipped",
-            {"character": self.owner.name, "armor": armor.name},
+            f"{self._owner.name} does not have {armor.name} equipped",
+            {"character": self._owner.name, "armor": armor.name},
         )
         return False
