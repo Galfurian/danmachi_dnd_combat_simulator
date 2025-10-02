@@ -13,7 +13,7 @@ from core.utils import cprint
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
-from .event_system import DamageTakenEvent, EventType, TurnEndEvent
+from .event_system import CombatEvent, DamageTakenEvent, EventType, TurnEndEvent
 
 
 class IncapacitatingEffect(Effect):
@@ -228,7 +228,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             raise TypeError(f"Expected IncapacitatingEffect, got {type(self.effect)}")
         return self.effect
 
-    def on_event(self, event: Any) -> EventResponse | None:
+    def on_event(self, event: CombatEvent) -> EventResponse | None:
         """
         Handle a generic event for the effect.
 
@@ -240,9 +240,9 @@ class ActiveIncapacitatingEffect(ActiveEffect):
                 The response to the event. If the effect does not
                 respond to this event type, return None.
         """
-        if event.event_type == EventType.ON_TURN_END:
+        if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)
-        if event.event_type == EventType.ON_DAMAGE_TAKEN:
+        if isinstance(event, DamageTakenEvent):
             return self._on_damage_taken(event)
         return None
 
@@ -262,8 +262,8 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         """
         from character.main import Character
 
-        if not isinstance(event.actor, Character):
-            raise TypeError(f"Expected Character, got {type(event.actor)}")
+        if not isinstance(event.source, Character):
+            raise TypeError(f"Expected Character, got {type(event.source)}")
 
         return EventResponse(
             effect=self.effect,
@@ -272,7 +272,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             ),
             new_effects=[],
             damage_bonus=[],
-            message=f"{event.actor.colored_name} wakes up from "
+            message=f"{event.source.colored_name} wakes up from "
             f"{self.incapacitating_effect.colored_name} due to taking damage!",
         )
 

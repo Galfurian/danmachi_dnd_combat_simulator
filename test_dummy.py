@@ -16,7 +16,14 @@ from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
 from core.logging import log_info, setup_logging
 from core.utils import crule
-from effects.event_system import EventType
+from effects.base_effect import EventResponse
+from effects.event_system import (
+    CombatEvent,
+    DamageTakenEvent,
+    EventType,
+    HitEvent,
+    LowHealthEvent,
+)
 from effects.event_system import EventType
 from items.armor import Armor
 
@@ -107,6 +114,36 @@ ring_of_last_stand_data: str = """
 """
 
 
+def on_event(character: Character, event: CombatEvent):
+    responses: list[EventResponse] = character.on_event(event)
+    for response in responses:
+        if response.message:
+            log_info(response.message)
+        for damage_bonus in response.damage_bonus:
+            log_info(
+                f"  Damage bonus applied to {character.colored_name}: {damage_bonus}"
+            )
+        for new_effect in response.new_effects:
+            if isinstance(event, HitEvent):
+                new_effect.apply_effect(
+                    actor=event.source,
+                    target=event.target,
+                    variables=event.source.get_expression_variables(),
+                )
+            elif isinstance(event, DamageTakenEvent):
+                new_effect.apply_effect(
+                    actor=event.source,
+                    target=event.target,
+                    variables=event.source.get_expression_variables(),
+                )
+            elif isinstance(event, LowHealthEvent):
+                new_effect.apply_effect(
+                    actor=event.source,
+                    target=event.source,
+                    variables=event.source.get_expression_variables(),
+                )
+
+
 def print_active_effects(character: Character):
     if not character.effects.active_effects:
         log_info(f"{character.colored_name} has no active effects.")
@@ -149,7 +186,30 @@ print_active_effects(player)
 print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
 print()
 
-player.take_damage(player.HP_MAX - 1, DamageType.BLUDGEONING)
+base, adjusted, actual = player.take_damage(player.HP_MAX - 1, DamageType.BLUDGEONING)
+if actual > 0:
+    on_event(
+        player,
+        HitEvent(
+            source=training_dummy,
+            target=player,
+        ),
+    )
+    on_event(
+        player,
+        DamageTakenEvent(
+            source=training_dummy,
+            target=player,
+            damage_amount=actual,
+            damage_type=DamageType.BLUDGEONING,
+        ),
+    )
+    on_event(
+        player,
+        LowHealthEvent(
+            source=player,
+        ),
+    )
 
 print()
 print_active_effects(player)

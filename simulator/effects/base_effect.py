@@ -15,7 +15,7 @@ from core.logging import log_debug
 from core.utils import cprint
 from pydantic import BaseModel, Field
 
-from .event_system import DamageTakenEvent, HitEvent
+from .event_system import CombatEvent, DamageTakenEvent, HitEvent
 
 
 class Effect(BaseModel):
@@ -191,7 +191,7 @@ class ActiveEffect(BaseModel):
     def colored_name(self) -> str:
         return self.effect.colored_name
 
-    def on_event(self, event: Any) -> EventResponse | None:
+    def on_event(self, event: CombatEvent) -> EventResponse | None:
         """
         Handle a generic event for the effect.
 

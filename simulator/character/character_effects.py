@@ -19,7 +19,7 @@ from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
-from effects.event_system import DamageTakenEvent, EventType, HitEvent
+from effects.event_system import CombatEvent, DamageTakenEvent, EventType, HitEvent
 from effects.healing_over_time_effect import (
     ActiveHealingOverTimeEffect,
     HealingOverTimeEffect,
@@ -72,7 +72,7 @@ class CharacterEffects:
 
     # === Effect Management ===
 
-    def on_event(self, event: Any) -> list[EventResponse]:
+    def on_event(self, event: CombatEvent) -> list[EventResponse]:
         """
         Handle effects that should trigger or break on generic events.
 
@@ -94,6 +94,10 @@ class CharacterEffects:
                 responses.append(response)
         # Remove the effects that should break.
         for effect_to_remove in effects_to_remove:
+            log_debug(
+                f"Removing effect {effect_to_remove.colored_name} "
+                f"from {self._owner.colored_name} due to event {event}."
+            )
             self.remove_effect(effect_to_remove)
         return responses
 

@@ -11,7 +11,8 @@ from core.constants import CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.logging import log_debug
 from core.utils import cprint
-from effects.event_system import LowHealthEvent, TurnEndEvent, TurnStartEvent
+from effects.base_effect import EventResponse
+from effects.event_system import CombatEvent, LowHealthEvent, TurnEndEvent, TurnStartEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 
 from .character_actions import CharacterActions
@@ -205,17 +206,13 @@ class Character:
         """Check if character can take any actions this turn."""
         return not self.is_incapacitated() and self.is_alive()
 
-    def on_event(self, event: Any) -> None:
+    def on_event(self, event: CombatEvent) -> list[EventResponse]:
         """
         Pass an event to the character's effects for processing.
         """
-        self.effects.on_event(event)
+        return self.effects.on_event(event)
 
-    def take_damage(
-        self,
-        amount: int,
-        damage_type: DamageType,
-    ) -> tuple[int, int, int]:
+    def take_damage(self, amount: int, damage_type: DamageType) -> tuple[int, int, int]:
         """
         Applies damage to the character, factoring in resistances and vulnerabilities.
 
@@ -232,7 +229,6 @@ class Character:
                 - The actual damage taken after applying to HP
 
         """
-        from effects.event_system import DamageTakenEvent
 
         base = amount
         adjusted = base
@@ -249,25 +245,6 @@ class Character:
             f"{self.colored_name} takes {actual} {damage_type.value} damage "
             f"(base: {base}, adjusted: {adjusted}, remaining HP: {self.stats.hp})"
         )
-
-        # Handle event-based effects that trigger on taking damage, but only
-        # if actual damage was taken.
-        if actual > 0:
-            # First, those that activates on any damage taken.
-            responses = self.effects.on_event(
-                DamageTakenEvent(
-                    actor=self,
-                    damage_amount=actual,
-                    damage_type=damage_type,
-                )
-            )
-            for response in responses:
-                cprint(f"    {response.message}")
-            # Second, those that are activated when the health drops below a
-            # certain threshold.
-            responses = self.effects.on_event(LowHealthEvent(actor=self))
-            for response in responses:
-                cprint(f"    {response.message}")
 
         return base, adjusted, actual
 
@@ -356,7 +333,7 @@ class Character:
         Initializes the character at the start of their turn.
         """
         # Update all active effects.
-        self.effects.on_event(TurnStartEvent(actor=self, turn_number=turn_number))
+        self.effects.on_event(TurnStartEvent(source=self, turn_number=turn_number))
         # Update action state.
         self.actions.turn_start()
 
@@ -367,7 +344,7 @@ class Character:
         or a round.
         """
         # Update all active effects.
-        self.effects.on_event(TurnEndEvent(actor=self, turn_number=turn_number))
+        self.effects.on_event(TurnEndEvent(source=self, turn_number=turn_number))
         # Update action cooldowns and reset turn flags.
         self.actions.turn_end()
 

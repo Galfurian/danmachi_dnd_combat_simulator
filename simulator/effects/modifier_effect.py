@@ -348,7 +348,7 @@ class ActiveModifierEffect(ActiveEffect):
         """
         return self.modifier_effect.get_projected_strength(bonus_type, self.variables)
 
-    def on_event(self, event: Any) -> EventResponse | None:
+    def on_event(self, event: CombatEvent) -> EventResponse | None:
         """
         Handle a generic event for the effect.
 
@@ -360,7 +360,7 @@ class ActiveModifierEffect(ActiveEffect):
                 The response to the event. If the effect does not
                 respond to this event type, return None.
         """
-        if event.event_type == EventType.ON_TURN_END:
+        if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)
         return None
 

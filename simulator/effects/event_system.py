@@ -52,7 +52,7 @@ class CombatEvent(BaseModel):
     event_type: EventType = Field(
         description="The type of trigger event.",
     )
-    actor: Any = Field(description="The character or entity that triggered the event.")
+    source: Any = Field(description="The character or entity that triggered the event.")
 
 
 class HitEvent(CombatEvent):
@@ -72,7 +72,7 @@ class HitEvent(CombatEvent):
             str:
                 Formatted string representing the HitEvent.
         """
-        return f"HitEvent({self.actor.colored_name} on {self.target.colored_name})"
+        return f"HitEvent({self.source.colored_name} on {self.target.colored_name})"
 
 
 class MissEvent(CombatEvent):
@@ -92,7 +92,7 @@ class MissEvent(CombatEvent):
             str:
                 Formatted string representing the MissEvent.
         """
-        return f"MissEvent({self.actor.colored_name} on {self.target.colored_name})"
+        return f"MissEvent({self.source.colored_name} on {self.target.colored_name})"
 
 
 class CriticalHitEvent(CombatEvent):
@@ -102,10 +102,10 @@ class CriticalHitEvent(CombatEvent):
         default=EventType.ON_CRITICAL_HIT,
         description="The type of trigger event.",
     )
+    target: Any = Field(description="The target of the attack.")
     attack_roll: int = Field(description="The attack roll result.")
     damage_dealt: int = Field(description="Amount of damage dealt.")
     damage_type: DamageType = Field(description="Type of damage dealt.")
-    target: Any = Field(description="The target of the attack.")
 
     def __str__(self) -> str:
         """
@@ -116,7 +116,8 @@ class CriticalHitEvent(CombatEvent):
                 Formatted string representing the CriticalHitEvent.
         """
         return (
-            f"CriticalHitEvent({self.actor.colored_name} on {self.target.colored_name}, "
+            "CriticalHitEvent("
+            f"{self.source.colored_name} on {self.target.colored_name}, "
             f"attack={self.attack_roll}, damage={self.damage_dealt}, "
             f"type={self.damage_type})"
         )
@@ -129,6 +130,7 @@ class DamageTakenEvent(CombatEvent):
         default=EventType.ON_DAMAGE_TAKEN,
         description="The type of trigger event.",
     )
+    target: Any = Field(description="The target of the damage.")
     damage_amount: int = Field(description="Amount of damage taken.")
     damage_type: DamageType = Field(description="Type of damage taken.")
 
@@ -141,8 +143,9 @@ class DamageTakenEvent(CombatEvent):
                 Formatted string representing the DamageTakenEvent.
         """
         return (
-            f"DamageTakenEvent({self.actor.colored_name}, damage={self.damage_amount}, "
-            f"type={self.damage_type})"
+            "DamageTakenEvent("
+            f"{self.source.colored_name} on {self.target.colored_name}, "
+            f"damage={self.damage_amount}, type={self.damage_type})"
         )
 
 
@@ -162,7 +165,7 @@ class LowHealthEvent(CombatEvent):
             str:
                 Formatted string representing the LowHealthEvent.
         """
-        return f"LowHealthEvent({self.actor.colored_name}, hp={self.actor.stats.hp_ratio():.2f}%)"
+        return f"LowHealthEvent({self.source.colored_name}, hp={self.source.stats.hp_ratio():.2f}%)"
 
 
 class TurnStartEvent(CombatEvent):
@@ -182,7 +185,7 @@ class TurnStartEvent(CombatEvent):
             str:
                 Formatted string representing the TurnStartEvent.
         """
-        return f"TurnStartEvent({self.actor.colored_name}, turn={self.turn_number})"
+        return f"TurnStartEvent({self.source.colored_name}, turn={self.turn_number})"
 
 
 class TurnEndEvent(CombatEvent):
@@ -202,7 +205,7 @@ class TurnEndEvent(CombatEvent):
             str:
                 Formatted string representing the TurnEndEvent.
         """
-        return f"TurnEndEvent({self.actor.colored_name}, turn={self.turn_number})"
+        return f"TurnEndEvent({self.source.colored_name}, turn={self.turn_number})"
 
 
 class DeathEvent(CombatEvent):
@@ -224,7 +227,7 @@ class DeathEvent(CombatEvent):
             str:
                 Formatted string representing the DeathEvent.
         """
-        return f"DeathEvent({self.actor.colored_name}, killed_by={self.killer})"
+        return f"DeathEvent({self.source.colored_name}, killed_by={self.killer})"
 
 
 class KillEvent(CombatEvent):
@@ -234,10 +237,7 @@ class KillEvent(CombatEvent):
         default=EventType.ON_KILL,
         description="The type of trigger event.",
     )
-    defeated_enemy: Any = Field(description="The enemy that was defeated.")
-    damage_dealt: int = Field(
-        default=0, description="Damage dealt in the killing blow."
-    )
+    killed: Any = Field(description="The enemy that was defeated.")
 
     def __str__(self) -> str:
         """
@@ -247,7 +247,7 @@ class KillEvent(CombatEvent):
             str:
                 Formatted string representing the KillEvent.
         """
-        return f"KillEvent({self.actor.colored_name}, defeated={self.defeated_enemy})"
+        return f"KillEvent({self.source.colored_name}, defeated={self.killed.colored_name})"
 
 
 class HealEvent(CombatEvent):
@@ -268,8 +268,8 @@ class HealEvent(CombatEvent):
                 Formatted string representing the HealEvent.
         """
         return (
-            f"HealEvent({self.actor.colored_name}, amount={self.amount}, "
-            f"hp={self.actor.stats.hp}/{self.actor.stats.max_hp})"
+            f"HealEvent({self.source.colored_name}, amount={self.amount}, "
+            f"hp={self.source.stats.hp}/{self.source.stats.max_hp})"
         )
 
 
@@ -292,6 +292,6 @@ class SpellCastEvent(CombatEvent):
                 Formatted string representing the SpellCastEvent.
         """
         return (
-            f"SpellCastEvent({self.actor.colored_name}, category={self.spell_category}, "
+            f"SpellCastEvent({self.source.colored_name}, category={self.spell_category}, "
             f"target={self.target.colored_name})"
         )

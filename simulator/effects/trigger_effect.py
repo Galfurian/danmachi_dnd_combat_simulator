@@ -114,6 +114,7 @@ class TriggerCondition(BaseModel):
         log_debug(f"  {self}")
         log_debug(f"  {event}")
         if self.event_type != event.event_type:
+            log_debug(f"  Event type mismatch: {self.event_type} != {event.event_type}")
             return False
 
         # There are some trigger types that always activate when the event
@@ -128,21 +129,41 @@ class TriggerCondition(BaseModel):
             EventType.ON_HEAL,
             EventType.ON_KILL,
         ]:
+            log_debug("  Trigger condition met (unconditional event).")
             return True
 
         # If the event is DamageTakenEvent, check damage type and amount.
         if isinstance(event, DamageTakenEvent):
             if self.damage_type:
+                log_debug(
+                    f"  Checking damage type: {self.damage_type} vs {event.damage_type}"
+                )
                 return event.damage_type == self.damage_type
+            log_debug(
+                f"  Checking damage amount: {event.damage_amount} > 0 = "
+                f"{event.damage_amount > 0}"
+            )
             return event.damage_amount > 0
         # If the event is LowHealthEvent, check HP ratio against threshold.
         if isinstance(event, LowHealthEvent):
-            return event.actor.stats.hp_ratio() <= (self.threshold or 0.25)
+            log_debug(
+                f"  Checking HP ratio: {event.source.stats.hp_ratio():.2f} <= "
+                f"{(self.threshold or 0.25):.2f} = "
+                f"{event.source.stats.hp_ratio() <= (self.threshold or 0.25)}"
+            )
+            return event.source.stats.hp_ratio() <= (self.threshold or 0.25)
         # If the event is SpellCastEvent, check spell category if specified.
         if isinstance(event, SpellCastEvent):
             if self.spell_category:
+                log_debug(
+                    f"  Checking spell category: {self.spell_category} vs "
+                    f"{event.spell_category} = "
+                    f"{event.spell_category == self.spell_category}"
+                )
                 return event.spell_category == self.spell_category
+            log_debug("  Trigger condition met (any spell cast).")
             return True
+        log_debug("  Trigger condition not met.")
         return False
 
     def __str__(self) -> str:
@@ -521,7 +542,7 @@ class ActiveTriggerEffect(ActiveEffect):
             return False
         return self.triggers_used >= self.trigger_effect.max_triggers
 
-    def on_event(self, event: Any) -> EventResponse | None:
+    def on_event(self, event: CombatEvent) -> EventResponse | None:
         """
         Handle a generic event for the effect.
 
@@ -533,9 +554,9 @@ class ActiveTriggerEffect(ActiveEffect):
                 The response to the event. If the effect does not
                 respond to this event type, return None.
         """
-        if event.event_type == EventType.ON_TURN_START:
+        if isinstance(event, TurnStartEvent):
             return self._on_turn_start(event)
-        if event.event_type == EventType.ON_TURN_END:
+        if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)
 
         # For all other event types, check if the trigger condition is met.
@@ -551,7 +572,7 @@ class ActiveTriggerEffect(ActiveEffect):
             new_effects=new_effects,  # type: ignore[arg-type]
             damage_bonus=damage_bonus,
             message=(
-                f"{event.actor.colored_name}'s {self.effect.colored_name} triggered, "
+                f"{event.source.colored_name}'s {self.effect.colored_name} triggered, "
                 f"applying {', '.join(e.colored_name for e in new_effects)}!"
             ),
         )

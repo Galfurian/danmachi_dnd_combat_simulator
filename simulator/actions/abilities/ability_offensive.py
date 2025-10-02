@@ -120,10 +120,7 @@ class AbilityOffensive(BaseAbility):
 
         # Get any on-hit triggers from effects.
         event_responses: list[EventResponse] = actor.effects.on_event(
-            HitEvent(
-                actor=actor,
-                target=target,
-            )
+            HitEvent(source=actor, target=target)
         )
         # Collect all the new effects from the event responses.
         event_effects: list[ValidActionEffect] = []
