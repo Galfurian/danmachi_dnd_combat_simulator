@@ -186,6 +186,10 @@ class ActiveEffect(BaseModel):
         default_factory=list,
         description="List of variable info for dynamic calculations",
     )
+    
+    @property
+    def colored_name(self) -> str:
+        return self.effect.colored_name
 
     def on_event(self, event: Any) -> EventResponse | None:
         """

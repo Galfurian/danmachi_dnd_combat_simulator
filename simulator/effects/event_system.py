@@ -32,6 +32,19 @@ class EventType(Enum):
     ON_HEAL = "on_heal"  # When character is healed
     ON_SPELL_CAST = "on_spell_cast"  # When character casts a spell
 
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this character type."""
+        return "bold yellow"
+
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.name.lower().replace("_", " ").capitalize())
+
+    def colorize(self, message: str) -> str:
+        """Applies character type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
+
 
 class CombatEvent(BaseModel):
     """Base class for all trigger events."""
@@ -244,10 +257,7 @@ class HealEvent(CombatEvent):
         default=EventType.ON_HEAL,
         description="The type of trigger event.",
     )
-    heal_amount: int = Field(description="Amount of healing received.")
-    source: Any | None = Field(default=None, description="Source of the healing.")
-    new_hp: int = Field(default=0, description="HP value after healing.")
-    max_hp: int = Field(default=0, description="Maximum HP value.")
+    amount: int = Field(description="Amount of healing received.")
 
     def __str__(self) -> str:
         """
@@ -258,8 +268,8 @@ class HealEvent(CombatEvent):
                 Formatted string representing the HealEvent.
         """
         return (
-            f"HealEvent({self.actor.colored_name}, heal={self.heal_amount}, "
-            f"source={self.source}, new_hp={self.new_hp}/{self.max_hp})"
+            f"HealEvent({self.actor.colored_name}, amount={self.amount}, "
+            f"hp={self.actor.stats.hp}/{self.actor.stats.max_hp})"
         )
 
 
@@ -271,7 +281,7 @@ class SpellCastEvent(CombatEvent):
         description="The type of trigger event.",
     )
     spell_category: ActionCategory = Field(description="Category of the spell.")
-    target: Any | None = Field(default=None, description="Target of the spell.")
+    target: Any = Field(default=None, description="Target of the spell.")
 
     def __str__(self) -> str:
         """

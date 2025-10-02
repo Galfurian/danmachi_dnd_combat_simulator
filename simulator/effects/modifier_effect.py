@@ -200,6 +200,10 @@ class ModifierEffect(Effect):
             bonus_type = modifier.bonus_type
             self_strength = self.get_projected_strength(bonus_type, variables)
             other_strength = other.get_projected_strength(bonus_type, variables)
+            log_debug(
+                f"Comparing ModifierEffect strengths for bonus type {bonus_type.name}: "
+                f"{self_strength} (self) vs {other_strength} (other)"
+            )
             if self_strength > other_strength:
                 log_debug(
                     f"ModifierEffect {self.colored_name} is stronger than "
@@ -288,37 +292,6 @@ class ModifierEffect(Effect):
 
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
-
-        # Check if this one is stronger than at least one existing effect.
-        weaker_found = False
-
-        for modifier in self.modifiers:
-            bonus_type = modifier.bonus_type
-
-            # Find existing effect with this bonus_type.
-            existing_effects = [
-                ae
-                for ae in target.effects.modifier_effects
-                if any(m.bonus_type == bonus_type for m in ae.modifier_effect.modifiers)
-            ]
-
-            # Just check if there is at least one existing effect that is
-            # weaker.
-            for existing in existing_effects:
-                if self.is_stronger_than(existing.modifier_effect, variables):
-                    weaker_found = True
-                    break
-
-            if weaker_found:
-                break
-
-        if not weaker_found:
-            log_debug(
-                f"Not applying modifier effect '{self.colored_name}' "
-                f"from {actor.colored_name} to {target.colored_name}: "
-                "No existing weaker effect found."
-            )
-            return False
 
         log_debug(
             f"Applying modifier effect '{self.colored_name}' "

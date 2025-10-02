@@ -14,7 +14,10 @@ from character.character_serialization import load_character
 from character.main import Character
 from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
-from core.logging import setup_logging
+from core.logging import log_info, setup_logging
+from core.utils import crule
+from effects.event_system import EventType
+from effects.event_system import EventType
 from items.armor import Armor
 
 # Set up logging
@@ -103,6 +106,69 @@ ring_of_last_stand_data: str = """
 }
 """
 
+
+def print_active_effects(character: Character):
+    if not character.effects.active_effects:
+        log_info(f"{character.colored_name} has no active effects.")
+        return
+    log_info(f"Active effects for {character.colored_name}:")
+    for effect in character.effects.active_effects:
+        log_info(f" - {effect.colored_name} (Duration: {effect.duration})")
+
+
+def print_triggers_of_type(character: Character, event_type: EventType):
+    existing = [
+        effect
+        for effect in character.effects.trigger_effects
+        if effect.trigger_effect.is_type(event_type)
+    ]
+    if not existing:
+        log_info(
+            f"{character.colored_name} has no trigger effects of type {event_type.colored_name}."
+        )
+        return
+    log_info(
+        f"Triggers of type {event_type.colored_name} for {character.colored_name}:"
+    )
+    for effect in existing:
+        log_info(f" - {effect.trigger_effect.colored_name}")
+
+
+crule("Armor Effects")
+
+print()
+print_active_effects(player)
+print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
+print()
+
 ring_of_last_stand = Armor(**json.loads(ring_of_last_stand_data))
 player.inventory.add_armor(ring_of_last_stand)
+
+print()
+print_active_effects(player)
+print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
+print()
+
 player.take_damage(player.HP_MAX - 1, DamageType.BLUDGEONING)
+
+print()
+print_active_effects(player)
+print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
+print()
+
+crule("")
+
+for spell_name, spell in player.actions.spells.items():
+    key = f"'{spell_name}'"
+    log_info(f"{key:22} -> ranks: {[rank for rank in spell.mind_cost]}")
+
+mage_armor = player.actions.spells["mage armor"]
+blurr = player.actions.spells["blurr"]
+
+log_info(f"Player AC before mage armor: {player.AC}")
+
+mage_armor.cast_spell(actor=player, target=player, rank=0)
+log_info(f"Player AC after mage armor: {player.AC}")
+
+blurr.cast_spell(actor=player, target=player, rank=0)
+log_info(f"Player AC after blurr: {player.AC}")
