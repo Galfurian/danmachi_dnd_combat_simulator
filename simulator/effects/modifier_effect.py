@@ -387,7 +387,7 @@ class ActiveModifierEffect(ActiveEffect):
                 The response to the event. If the effect does not
                 respond to this event type, return None.
         """
-        if event.trigger_type == EventType.ON_TURN_END:
+        if event.event_type == EventType.ON_TURN_END:
             return self._on_turn_end(event)
         return None
 

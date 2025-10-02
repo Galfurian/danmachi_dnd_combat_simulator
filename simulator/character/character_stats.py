@@ -7,6 +7,7 @@ ability modifiers, HP, AC, initiative, and utility stat expressions.
 
 from typing import Any
 
+import character
 from core.constants import BonusType
 from core.dice_parser import VarInfo
 from core.utils import get_stat_modifier
@@ -134,6 +135,36 @@ class CharacterStats:
     # ============================================================================
     # DERIVED STATS (HP, MIND, AC, etc.)
     # ============================================================================
+
+    def hp_ratio(self, missing: bool = False) -> float:
+        """
+        Returns the current HP ratio (current HP / max HP).
+
+        Args:
+            missing (bool):
+                If True, returns the ratio of missing HP (1 - current / max).
+
+        Returns:
+            float: The current HP ratio between 0.0 and 1.0.
+
+        """
+        ratio = (self.hp / self.HP_MAX) if self.HP_MAX > 0 else 1.0
+        return 1.0 - ratio if missing else ratio
+
+    def mind_ratio(self, missing: bool = False) -> float:
+        """
+        Returns the current Mind ratio (current Mind / max Mind).
+
+        Args:
+            missing (bool):
+                If True, returns the ratio of missing Mind (1 - current / max).
+
+        Returns:
+            float: The current Mind ratio between 0.0 and 1.0.
+
+        """
+        ratio = (self.mind / self.MIND_MAX) if self.MIND_MAX > 0 else 1.0
+        return 1.0 - ratio if missing else ratio
 
     @property
     def HP_MAX(self) -> int:

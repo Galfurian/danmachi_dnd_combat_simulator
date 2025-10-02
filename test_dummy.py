@@ -81,7 +81,7 @@ ring_of_last_stand_data: str = """
             "name": "Last Stand",
             "description": "When below 25% HP, it enchances the wearer's armor class.",
             "trigger_condition": {
-                "trigger_type": "on_low_health",
+                "event_type": "on_low_health",
                 "threshold": 0.25
             },
             "trigger_effects": [

@@ -145,7 +145,7 @@
                 "effect_type": "TriggerEffect",
                 "description": "Next weapon attack deals extra radiant damage.",
                 "trigger_condition": {
-                    "trigger_type": "on_hit",
+                    "event_type": "on_hit",
                     "description": "when hitting with an attack"
                 },
                 "trigger_effects": [],
@@ -180,7 +180,7 @@
                 "description": "Next weapon attack deals extra fire damage and applies burning.",
                 "duration": 10,
                 "trigger_condition": {
-                    "trigger_type": "on_hit",
+                    "event_type": "on_hit",
                     "description": "when hitting with an attack"
                 },
                 "trigger_effects": [
@@ -226,7 +226,7 @@
                 "description": "Next weapon attack deals extra psychic damage and applies fear.",
                 "duration": 10,
                 "trigger_condition": {
-                    "trigger_type": "on_hit",
+                    "event_type": "on_hit",
                     "description": "when hitting with an attack"
                 },
                 "trigger_effects": [

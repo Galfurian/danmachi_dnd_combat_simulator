@@ -11,7 +11,7 @@ from core.constants import CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.logging import log_debug
 from core.utils import cprint
-from effects.event_system import TurnEndEvent, TurnStartEvent
+from effects.event_system import LowHealthEvent, TurnEndEvent, TurnStartEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 
 from .character_actions import CharacterActions
@@ -250,9 +250,10 @@ class Character:
             f"(base: {base}, adjusted: {adjusted}, remaining HP: {self.stats.hp})"
         )
 
-        # Handle effects that break on damage (like sleep effects), but only
+        # Handle event-based effects that trigger on taking damage, but only
         # if actual damage was taken.
         if actual > 0:
+            # First, those that activates on any damage taken.
             responses = self.effects.on_event(
                 DamageTakenEvent(
                     actor=self,
@@ -260,6 +261,11 @@ class Character:
                     damage_type=damage_type,
                 )
             )
+            for response in responses:
+                cprint(f"    {response.message}")
+            # Second, those that are activated when the health drops below a
+            # certain threshold.
+            responses = self.effects.on_event(LowHealthEvent(actor=self))
             for response in responses:
                 cprint(f"    {response.message}")
 

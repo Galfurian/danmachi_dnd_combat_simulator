@@ -122,25 +122,6 @@ class AbilitySelection:
         self.score: float = score
 
 
-def _hp_ratio(character: Character, missing: bool = False) -> float:
-    """
-    Helper function to calculate HP ratio.
-
-    Args:
-        character (Character):
-            The character whose HP ratio to calculate.
-        missing (bool):
-            If True, returns the missing HP ratio (1 - current HP / max HP).
-
-    Returns:
-        float:
-            The HP ratio (0.0 to 1.0), or missing HP ratio if specified.
-
-    """
-    ratio = (character.stats.hp / character.HP_MAX) if character.HP_MAX > 0 else 1.0
-    return 1.0 - ratio if missing else ratio
-
-
 def _can_apply_any_effect(
     source: Character,
     target: Character,
@@ -213,7 +194,7 @@ def _sort_targets_by_usefulness_and_hp_offensive(
     sorted_targets = sorted(
         targets,
         key=lambda target: (
-            _hp_ratio(target),
+            target.stats.hp_ratio(missing=False),
             _can_apply_any_effect(
                 source,
                 target,
@@ -264,7 +245,7 @@ def _sort_targets_by_usefulness_and_hp_healing(
     sorted_targets = sorted(
         targets,
         key=lambda target: (
-            _hp_ratio(target, missing=True),
+            target.stats.hp_ratio(missing=True),
             _can_apply_any_effect(
                 source,
                 target,
