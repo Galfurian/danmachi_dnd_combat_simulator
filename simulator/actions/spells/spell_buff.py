@@ -77,6 +77,7 @@ class SpellBuff(BaseSpell):
         effects_applied, effects_not_applied = self._spell_apply_effects(
             actor=actor,
             target=target,
+            effects=self.effects,
             rank=rank,
         )
 

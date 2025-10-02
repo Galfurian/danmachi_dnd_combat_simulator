@@ -13,7 +13,7 @@ from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.logging import log_warning
 from core.utils import cprint
 from effects.base_effect import EventResponse
-from effects.event_system import HitEvent
+from effects.event_system import DamageTakenEvent, HitEvent, LowHealthEvent
 from pydantic import Field
 
 
@@ -122,17 +122,26 @@ class BaseAttack(BaseAction):
             cprint(msg)
             return True
 
+        # Prepare a list to hold all the effects to apply.
+        effects_to_apply: list[ValidActionEffect] = []
+
+        # Add the base effects of the ability to the list of effects to apply.
+        effects_to_apply.extend(self.effects)
+
         # Get any on-hit triggers from effects.
         event_responses: list[EventResponse] = actor.effects.on_event(
-            HitEvent(source=actor, target=target)
+            HitEvent(
+                source=actor,
+                target=target,
+            )
         )
+
         # Collect all the new effects from the event responses.
-        event_effects: list[ValidActionEffect] = []
         event_damage_bonuses: list[DamageComponent] = []
         for response in event_responses:
             for effect in response.new_effects:
                 if isinstance(effect, ValidActionEffect):
-                    event_effects.append(effect)
+                    effects_to_apply.append(effect)
             event_damage_bonuses.extend(response.damage_bonus)
 
         # =====================================================================
@@ -194,6 +203,32 @@ class BaseAttack(BaseAction):
         damage_details += bonus_damage_details
 
         # =====================================================================
+        # OTHER EVENTS
+        # =====================================================================
+
+        event_responses = target.effects.on_event(
+            DamageTakenEvent(
+                source=actor,
+                target=target,
+                amount=damage,
+            )
+        )
+        for response in event_responses:
+            for effect in response.new_effects:
+                if isinstance(effect, ValidActionEffect):
+                    effects_to_apply.append(effect)
+
+        event_responses = target.effects.on_event(
+            LowHealthEvent(
+                source=actor,
+            )
+        )
+        for response in event_responses:
+            for effect in response.new_effects:
+                if isinstance(effect, ValidActionEffect):
+                    effects_to_apply.append(effect)
+
+        # =====================================================================
         # 4. EFFECT APPLICATION
         # =====================================================================
 
@@ -201,7 +236,7 @@ class BaseAttack(BaseAction):
         effects_applied, effects_not_applied = self._common_apply_effects(
             actor,
             target,
-            self.effects + event_effects,
+            effects_to_apply,
         )
 
         # =====================================================================

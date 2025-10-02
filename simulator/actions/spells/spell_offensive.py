@@ -104,13 +104,14 @@ class SpellOffensive(BaseSpell):
             self.damage,
         )
 
-        # Check if target was defeated
+        # Check if target was defeated.
         is_dead = not target.is_alive()
 
         # Apply the buffs.
         effects_applied, effects_not_applied = self._spell_apply_effects(
             actor=actor,
             target=target,
+            effects=self.effects,
             rank=rank,
         )
 

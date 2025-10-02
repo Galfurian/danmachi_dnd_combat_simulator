@@ -23,6 +23,7 @@ from effects.event_system import (
     EventType,
     HitEvent,
     LowHealthEvent,
+    TurnEndEvent,
 )
 from effects.event_system import EventType
 from items.armor import Armor
@@ -150,32 +151,15 @@ def print_active_effects(character: Character):
         return
     log_info(f"Active effects for {character.colored_name}:")
     for effect in character.effects.active_effects:
-        log_info(f" - {effect.colored_name} (Duration: {effect.duration})")
+        log_info(f"  {effect}")
 
 
-def print_triggers_of_type(character: Character, event_type: EventType):
-    existing = [
-        effect
-        for effect in character.effects.trigger_effects
-        if effect.trigger_effect.is_type(event_type)
-    ]
-    if not existing:
-        log_info(
-            f"{character.colored_name} has no trigger effects of type {event_type.colored_name}."
-        )
-        return
-    log_info(
-        f"Triggers of type {event_type.colored_name} for {character.colored_name}:"
-    )
-    for effect in existing:
-        log_info(f" - {effect.trigger_effect.colored_name}")
-
+# =============================================================================
 
 crule("Armor Effects")
 
 print()
 print_active_effects(player)
-print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
 print()
 
 ring_of_last_stand = Armor(**json.loads(ring_of_last_stand_data))
@@ -183,7 +167,6 @@ player.inventory.add_armor(ring_of_last_stand)
 
 print()
 print_active_effects(player)
-print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
 print()
 
 base, adjusted, actual = player.take_damage(player.HP_MAX - 1, DamageType.BLUDGEONING)
@@ -200,8 +183,7 @@ if actual > 0:
         DamageTakenEvent(
             source=training_dummy,
             target=player,
-            damage_amount=actual,
-            damage_type=DamageType.BLUDGEONING,
+            amount=actual,
         ),
     )
     on_event(
@@ -213,10 +195,20 @@ if actual > 0:
 
 print()
 print_active_effects(player)
-print_triggers_of_type(player, EventType.ON_LOW_HEALTH)
+print()
+
+for turn_number in range(1, 5):
+    log_info(f"--- Turn {turn_number} ---")
+    player.on_event(TurnEndEvent(source=player, turn_number=turn_number))
+
+print()
+print_active_effects(player)
 print()
 
 crule("")
+
+# =============================================================================
+
 
 for spell_name, spell in player.actions.spells.items():
     key = f"'{spell_name}'"

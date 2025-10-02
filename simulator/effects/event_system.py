@@ -131,8 +131,7 @@ class DamageTakenEvent(CombatEvent):
         description="The type of trigger event.",
     )
     target: Any = Field(description="The target of the damage.")
-    damage_amount: int = Field(description="Amount of damage taken.")
-    damage_type: DamageType = Field(description="Type of damage taken.")
+    amount: int = Field(description="Amount of damage taken.")
 
     def __str__(self) -> str:
         """
@@ -145,7 +144,7 @@ class DamageTakenEvent(CombatEvent):
         return (
             "DamageTakenEvent("
             f"{self.source.colored_name} on {self.target.colored_name}, "
-            f"damage={self.damage_amount}, type={self.damage_type})"
+            f"damage={self.amount})"
         )
 
 
@@ -257,6 +256,7 @@ class HealEvent(CombatEvent):
         default=EventType.ON_HEAL,
         description="The type of trigger event.",
     )
+    target: Any = Field(description="The target of the healing.")
     amount: int = Field(description="Amount of healing received.")
 
     def __str__(self) -> str:
@@ -268,7 +268,9 @@ class HealEvent(CombatEvent):
                 Formatted string representing the HealEvent.
         """
         return (
-            f"HealEvent({self.source.colored_name}, amount={self.amount}, "
+            "HealEvent("
+            f"{self.source.colored_name} on {self.target.colored_name}, "
+            f"amount={self.amount}, "
             f"hp={self.source.stats.hp}/{self.source.stats.max_hp})"
         )
 

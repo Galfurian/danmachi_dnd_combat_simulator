@@ -12,7 +12,12 @@ from core.dice_parser import VarInfo
 from core.logging import log_debug
 from core.utils import cprint
 from effects.base_effect import EventResponse
-from effects.event_system import CombatEvent, LowHealthEvent, TurnEndEvent, TurnStartEvent
+from effects.event_system import (
+    CombatEvent,
+    LowHealthEvent,
+    TurnEndEvent,
+    TurnStartEvent,
+)
 from effects.incapacitating_effect import IncapacitatingEffect
 
 from .character_actions import CharacterActions
@@ -249,13 +254,16 @@ class Character:
         return base, adjusted, actual
 
     def heal(self, amount: int) -> int:
-        """Increases the character's hp by the given amount, up to max_hp.
+        """
+        Increases the character's hp by the given amount, up to max_hp.
 
         Args:
-            amount: The amount of healing to apply
+            amount:
+                The amount of healing to apply
 
         Returns:
-            int: The actual amount healed
+            int:
+                The actual amount healed
 
         """
         return self.stats.adjust_hp(amount)
@@ -347,6 +355,26 @@ class Character:
         self.effects.on_event(TurnEndEvent(source=self, turn_number=turn_number))
         # Update action cooldowns and reset turn flags.
         self.actions.turn_end()
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the character.
+
+        Returns:
+            str:
+                The character's name.
+        """
+        return self.colored_name
+
+    def __repr__(self) -> str:
+        """
+        Returns a detailed string representation of the character.
+
+        Returns:
+            str:
+                The character's class name and name.
+        """
+        return f"{self.__class__.__name__}(name='{self.colored_name}', type={self.char_type})"
 
     def __hash__(self) -> int:
         """

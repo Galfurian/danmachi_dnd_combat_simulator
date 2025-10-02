@@ -8,6 +8,7 @@ various healing spells and abilities with different effects and ranges.
 from typing import Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
+from actions.base_action import ValidActionEffect
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
     parse_expr_and_assume_max_roll,
@@ -16,6 +17,7 @@ from core.dice_parser import (
     substitute_variables,
 )
 from core.utils import cprint
+from effects.event_system import HealEvent
 from pydantic import Field
 
 
@@ -66,11 +68,31 @@ class AbilityHeal(BaseAbility):
         heal = roll_and_describe(self.heal_roll, variables)
         # Apply healing to target.
         actual_healing = target.heal(heal.value)
+
+        # Gather the effects to apply.
+        effects_to_apply: list[ValidActionEffect] = []
+        
+        # Add the base effects of the ability to the list of effects to apply.
+        effects_to_apply.extend(self.effects)
+
+        # Activate events from healing.
+        event_responses = target.on_event(
+            HealEvent(
+                source=actor,
+                target=target,
+                amount=actual_healing,
+            )
+        )
+        for response in event_responses:
+            for new_effect in response.new_effects:
+                if isinstance(new_effect, ValidActionEffect):
+                    effects_to_apply.append(new_effect)
+
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
             actor,
             target,
-            self.effects,
+            effects_to_apply,
         )
 
         # Display the outcome.

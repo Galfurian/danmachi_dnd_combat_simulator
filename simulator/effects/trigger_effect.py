@@ -134,16 +134,10 @@ class TriggerCondition(BaseModel):
 
         # If the event is DamageTakenEvent, check damage type and amount.
         if isinstance(event, DamageTakenEvent):
-            if self.damage_type:
-                log_debug(
-                    f"  Checking damage type: {self.damage_type} vs {event.damage_type}"
-                )
-                return event.damage_type == self.damage_type
             log_debug(
-                f"  Checking damage amount: {event.damage_amount} > 0 = "
-                f"{event.damage_amount > 0}"
+                f"  Checking damage amount: {event.amount} > 0 = " f"{event.amount > 0}"
             )
-            return event.damage_amount > 0
+            return event.amount > 0
         # If the event is LowHealthEvent, check HP ratio against threshold.
         if isinstance(event, LowHealthEvent):
             log_debug(

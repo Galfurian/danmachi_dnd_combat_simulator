@@ -409,8 +409,9 @@ class PlayerInterface:
 
             # If the user typed a number, return the corresponding rank.
             selected_rank: int = self.get_digit_choice(answer)
+            # Return the selected rank if valid, 0-indexed to match list indices.
             if 0 < selected_rank <= len(spell.mind_cost):
-                return selected_rank
+                return selected_rank - 1
             # If the user typed 'q', return -1 to indicate going back.
             if isinstance(answer, str) and answer.lower() == "q":
                 return -1

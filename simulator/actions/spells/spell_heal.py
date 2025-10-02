@@ -7,6 +7,7 @@ various restorative magic with different effects and ranges.
 
 from typing import Any, Literal
 
+from actions.base_action import ValidActionEffect
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
@@ -16,6 +17,7 @@ from core.dice_parser import (
     substitute_variables,
 )
 from core.utils import cprint
+from effects.event_system import HealEvent
 from pydantic import Field
 
 
@@ -69,6 +71,13 @@ class SpellHeal(BaseSpell):
                 True if spell was cast successfully, False on failure.
 
         """
+        from character.main import Character
+
+        if not isinstance(actor, Character):
+            raise ValueError("The actor must be a Character instance.")
+        if not isinstance(target, Character):
+            raise ValueError("The target must be a Character instance.")
+
         # Call the base class cast_spell to handle common checks.
         if not super().cast_spell(actor, target, rank):
             return False
@@ -83,10 +92,30 @@ class SpellHeal(BaseSpell):
         # Apply healing to target (limited by max HP)
         actual_healing = target.heal(heal.value)
 
+        # Gather the effects to apply.
+        effects_to_apply: list[ValidActionEffect] = []
+
+        # Add the base effects of the ability to the list of effects to apply.
+        effects_to_apply.extend(self.effects)
+
+        # Activate events from healing.
+        event_responses = target.on_event(
+            HealEvent(
+                source=actor,
+                target=target,
+                amount=actual_healing,
+            )
+        )
+        for response in event_responses:
+            for new_effect in response.new_effects:
+                if isinstance(new_effect, ValidActionEffect):
+                    effects_to_apply.append(new_effect)
+
         # Apply the buffs.
         effects_applied, effects_not_applied = self._spell_apply_effects(
             actor=actor,
             target=target,
+            effects=effects_to_apply,
             rank=rank,
         )
 

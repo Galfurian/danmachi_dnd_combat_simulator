@@ -267,9 +267,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
 
         return EventResponse(
             effect=self.effect,
-            remove_effect=self.incapacitating_effect.breaks_on_damage(
-                event.damage_amount
-            ),
+            remove_effect=self.incapacitating_effect.breaks_on_damage(event.amount),
             new_effects=[],
             damage_bonus=[],
             message=f"{event.source.colored_name} wakes up from "

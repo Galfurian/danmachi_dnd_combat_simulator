@@ -226,6 +226,7 @@ class BaseSpell(BaseAction):
         self,
         actor: Any,
         target: Any,
+        effects: list[ValidActionEffect],
         rank: int,
     ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
         """
@@ -249,7 +250,7 @@ class BaseSpell(BaseAction):
         return self._common_apply_effects(
             actor=actor,
             target=target,
-            effects=self.effects,
+            effects=effects,
             variables=self.spell_get_variables(
                 actor,
                 rank,
