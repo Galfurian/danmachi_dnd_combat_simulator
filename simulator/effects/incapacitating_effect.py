@@ -13,7 +13,7 @@ from core.utils import cprint
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
-from .event_system import CombatEvent, DamageTakenEvent, EventType, TurnEndEvent
+from .event_system import CombatEvent, DamageTakenEvent, TurnEndEvent
 
 
 class IncapacitatingEffect(Effect):
@@ -235,10 +235,12 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         Args:
             event (Any):
                 The event to handle.
+
         Returns:
             EventResponse | None:
                 The response to the event. If the effect does not
                 respond to this event type, return None.
+
         """
         if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)

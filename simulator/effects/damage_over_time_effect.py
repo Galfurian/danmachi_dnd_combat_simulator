@@ -11,7 +11,7 @@ from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
 from core.logging import log_debug
 from core.utils import cprint
-from effects.event_system import CombatEvent, EventType, TurnEndEvent
+from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -216,10 +216,12 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
         Args:
             event (Any):
                 The event to handle.
+
         Returns:
             EventResponse | None:
                 The response to the event. If the effect does not
                 respond to this event type, return None.
+
         """
         if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)

@@ -10,7 +10,6 @@ import random
 from collections import deque
 from logging import debug
 
-from actions.abilities.base_ability import BaseAbility
 from actions.attacks.base_attack import (
     BaseAttack,
 )
@@ -970,17 +969,13 @@ class CombatManager:
         Handles the post-combat phase where the player can heal friendly
         characters.
         """
-        from actions.spells.spell_heal import (
-            SpellHeal,
-        )
-
         crule(":hourglass_done: Post-Combat Healing", style="green")
 
         targets = self.get_alive_friendlies(self.player)
 
         abilities: list[BaseAction]
         spells: list[BaseSpell]
-        
+
         while True:
 
             for ally in targets:

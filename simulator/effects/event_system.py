@@ -71,6 +71,7 @@ class HitEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the HitEvent.
+
         """
         return f"HitEvent({self.source.colored_name} on {self.target.colored_name})"
 
@@ -91,6 +92,7 @@ class MissEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the MissEvent.
+
         """
         return f"MissEvent({self.source.colored_name} on {self.target.colored_name})"
 
@@ -114,6 +116,7 @@ class CriticalHitEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the CriticalHitEvent.
+
         """
         return (
             "CriticalHitEvent("
@@ -140,6 +143,7 @@ class DamageTakenEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the DamageTakenEvent.
+
         """
         return (
             "DamageTakenEvent("
@@ -163,6 +167,7 @@ class LowHealthEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the LowHealthEvent.
+
         """
         return f"LowHealthEvent({self.source.colored_name}, hp={self.source.stats.hp_ratio():.2f}%)"
 
@@ -183,6 +188,7 @@ class TurnStartEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the TurnStartEvent.
+
         """
         return f"TurnStartEvent({self.source.colored_name}, turn={self.turn_number})"
 
@@ -203,6 +209,7 @@ class TurnEndEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the TurnEndEvent.
+
         """
         return f"TurnEndEvent({self.source.colored_name}, turn={self.turn_number})"
 
@@ -225,6 +232,7 @@ class DeathEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the DeathEvent.
+
         """
         return f"DeathEvent({self.source.colored_name}, killed_by={self.killer})"
 
@@ -245,6 +253,7 @@ class KillEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the KillEvent.
+
         """
         return f"KillEvent({self.source.colored_name}, defeated={self.killed.colored_name})"
 
@@ -266,6 +275,7 @@ class HealEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the HealEvent.
+
         """
         return (
             "HealEvent("
@@ -292,6 +302,7 @@ class SpellCastEvent(CombatEvent):
         Returns:
             str:
                 Formatted string representing the SpellCastEvent.
+
         """
         return (
             f"SpellCastEvent({self.source.colored_name}, category={self.spell_category}, "

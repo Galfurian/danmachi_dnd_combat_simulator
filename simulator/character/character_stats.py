@@ -7,7 +7,6 @@ ability modifiers, HP, AC, initiative, and utility stat expressions.
 
 from typing import Any
 
-import character
 from core.constants import BonusType
 from core.dice_parser import VarInfo
 from core.utils import get_stat_modifier

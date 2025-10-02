@@ -96,7 +96,7 @@ class CharacterActions:
         """
         from character.main import Character
 
-        assert isinstance(self._owner, Character), f"Owner is not a Character."
+        assert isinstance(self._owner, Character), "Owner is not a Character."
 
         # Check if incapacitated first
         if self._owner.is_incapacitated():
@@ -112,10 +112,10 @@ class CharacterActions:
             List[NaturalAttack]: A list of natural weapon attacks.
 
         """
-        from items.weapon import NaturalWeapon
         from character.main import Character
+        from items.weapon import NaturalWeapon
 
-        assert isinstance(self._owner, Character), f"Owner is not a Character."
+        assert isinstance(self._owner, Character), "Owner is not a Character."
 
         result: list[NaturalAttack] = []
         # Iterate through the natural weapons and check if they are available.
@@ -142,10 +142,10 @@ class CharacterActions:
             List[WeaponAttack]: A list of weapon attacks.
 
         """
-        from items.weapon import WieldedWeapon
         from character.main import Character
+        from items.weapon import WieldedWeapon
 
-        assert isinstance(self._owner, Character), f"Owner is not a Character."
+        assert isinstance(self._owner, Character), "Owner is not a Character."
 
         result: list[WeaponAttack] = []
         # Iterate through the equipped weapons and check if they are available.
@@ -231,7 +231,7 @@ class CharacterActions:
         """
         from character.main import Character
 
-        assert isinstance(self._owner, Character), f"Owner is not a Character."
+        assert isinstance(self._owner, Character), "Owner is not a Character."
 
         available_spells: list[BaseSpell] = []
         for spell in self.spells.values():
@@ -250,7 +250,6 @@ class CharacterActions:
         """
         Initialize the character's action state at the start of their turn.
         """
-        pass
 
     def turn_end(self) -> None:
         """
@@ -382,6 +381,7 @@ class CharacterActions:
         Args:
             action (BaseAction):
                 The action to learn.
+
         """
         lname = action.name.lower()
 

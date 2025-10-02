@@ -6,15 +6,12 @@ managing characters, including stats, equipment, actions, spells, and effects.
 Handles character serialization from JSON data.
 """
 
-from typing import Any
 from core.constants import CharacterType, DamageType
 from core.dice_parser import VarInfo
 from core.logging import log_debug
-from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import (
     CombatEvent,
-    LowHealthEvent,
     TurnEndEvent,
     TurnStartEvent,
 )
@@ -59,6 +56,7 @@ class Character:
             The number of attacks the character can make in a turn.
         passive_effects (list[ValidPassiveEffect]):
             List of passive effects that are always active on the character.
+
     """
 
     # === Static properties ===
@@ -234,7 +232,6 @@ class Character:
                 - The actual damage taken after applying to HP
 
         """
-
         base = amount
         adjusted = base
         if damage_type in self.resistances:
@@ -363,6 +360,7 @@ class Character:
         Returns:
             str:
                 The character's name.
+
         """
         return self.colored_name
 
@@ -373,6 +371,7 @@ class Character:
         Returns:
             str:
                 The character's class name and name.
+
         """
         return f"{self.__class__.__name__}(name='{self.colored_name}', type={self.char_type})"
 

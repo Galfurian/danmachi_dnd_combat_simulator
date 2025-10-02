@@ -6,11 +6,12 @@ with rich formatting, singleton pattern, and other shared functionality.
 """
 
 from __future__ import annotations
+
 from typing import Any, Generic
-from typing_extensions import TypeVar
 
 from rich.console import Console
 from rich.rule import Rule
+from typing_extensions import TypeVar
 
 # Initialize the rich console.
 _console = Console(markup=True, width=120, force_terminal=True, force_jupyter=False)

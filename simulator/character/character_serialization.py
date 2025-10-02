@@ -30,8 +30,8 @@ def character_from_dict(data: dict[str, Any]) -> Character:
 
     """
     from core.content import ContentRepository
-    from items.weapon import NaturalWeapon, WieldedWeapon
     from effects.base_effect import deserialize_effect
+    from items.weapon import NaturalWeapon, WieldedWeapon
 
     # Get the repository instance.
     repo = ContentRepository()

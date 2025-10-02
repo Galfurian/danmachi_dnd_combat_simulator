@@ -71,7 +71,7 @@ class AbilityHeal(BaseAbility):
 
         # Gather the effects to apply.
         effects_to_apply: list[ValidActionEffect] = []
-        
+
         # Add the base effects of the ability to the list of effects to apply.
         effects_to_apply.extend(self.effects)
 

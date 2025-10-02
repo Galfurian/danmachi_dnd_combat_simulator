@@ -20,12 +20,10 @@ from effects.base_effect import EventResponse
 from effects.event_system import (
     CombatEvent,
     DamageTakenEvent,
-    EventType,
     HitEvent,
     LowHealthEvent,
     TurnEndEvent,
 )
-from effects.event_system import EventType
 from items.armor import Armor
 
 # Set up logging
@@ -125,13 +123,7 @@ def on_event(character: Character, event: CombatEvent):
                 f"  Damage bonus applied to {character.colored_name}: {damage_bonus}"
             )
         for new_effect in response.new_effects:
-            if isinstance(event, HitEvent):
-                new_effect.apply_effect(
-                    actor=event.source,
-                    target=event.target,
-                    variables=event.source.get_expression_variables(),
-                )
-            elif isinstance(event, DamageTakenEvent):
+            if isinstance(event, HitEvent) or isinstance(event, DamageTakenEvent):
                 new_effect.apply_effect(
                     actor=event.source,
                     target=event.target,

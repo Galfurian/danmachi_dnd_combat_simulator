@@ -14,7 +14,7 @@ from core.constants import BonusType
 from core.dice_parser import VarInfo, get_max_roll
 from core.logging import log_debug
 from core.utils import cprint
-from effects.event_system import CombatEvent, EventType, TurnEndEvent
+from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import BaseModel, Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
@@ -45,6 +45,7 @@ class Modifier(BaseModel):
         Returns:
             bool:
                 True if the modifier stacks, False otherwise.
+
         """
         if self.bonus_type == BonusType.AC:
             return False
@@ -73,6 +74,7 @@ class Modifier(BaseModel):
         Returns:
             int:
                 The strength value of the modifier.
+
         """
         if isinstance(self.value, DamageComponent):
             return get_max_roll(self.value.damage_roll, variables)
@@ -164,6 +166,7 @@ class ModifierEffect(Effect):
         Returns:
             int:
                 The strength value of the modifier. 0 if not present.
+
         """
         for mod in self.modifiers:
             if mod.bonus_type == bonus_type:
@@ -191,6 +194,7 @@ class ModifierEffect(Effect):
         Returns:
             bool:
                 True if this effect is stronger than the other, False otherwise.
+
         """
         if not isinstance(other, ModifierEffect):
             raise TypeError(f"Cannot compare ModifierEffect with {type(other)}")
@@ -285,7 +289,6 @@ class ModifierEffect(Effect):
 
         """
         from character.main import Character
-        from combat.damage import DamageComponent
 
         if not self.can_apply(actor, target, variables):
             return False
@@ -345,6 +348,7 @@ class ActiveModifierEffect(ActiveEffect):
         Returns:
             int:
                 The strength value of the modifier.
+
         """
         return self.modifier_effect.get_projected_strength(bonus_type, self.variables)
 
@@ -355,10 +359,12 @@ class ActiveModifierEffect(ActiveEffect):
         Args:
             event (Any):
                 The event to handle.
+
         Returns:
             EventResponse | None:
                 The response to the event. If the effect does not
                 respond to this event type, return None.
+
         """
         if isinstance(event, TurnEndEvent):
             return self._on_turn_end(event)

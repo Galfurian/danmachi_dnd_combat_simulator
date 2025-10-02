@@ -10,19 +10,17 @@ from dataclasses import dataclass
 from typing import Any
 
 from combat.damage import DamageComponent
-from core.constants import BonusType, DamageType
-from core.dice_parser import VarInfo, get_max_roll
-from core.logging import log_debug, log_error
-from core.utils import cprint
+from core.constants import BonusType
+from core.dice_parser import VarInfo
+from core.logging import log_debug
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
-from effects.event_system import CombatEvent, DamageTakenEvent, EventType, HitEvent
+from effects.event_system import CombatEvent
 from effects.healing_over_time_effect import (
     ActiveHealingOverTimeEffect,
-    HealingOverTimeEffect,
 )
 from effects.incapacitating_effect import (
     ActiveIncapacitatingEffect,
@@ -83,6 +81,7 @@ class CharacterEffects:
         Returns:
             list[EventResponse]:
                 Responses from effects that were broken or triggered.
+
         """
         responses: list[EventResponse] = []
         effects_to_remove: list[ActiveEffect] = []

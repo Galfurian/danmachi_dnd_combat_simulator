@@ -12,10 +12,9 @@ from typing import Any
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
 from core.logging import log_debug
-from core.utils import cprint
 from pydantic import BaseModel, Field
 
-from .event_system import CombatEvent, DamageTakenEvent, HitEvent
+from .event_system import CombatEvent
 
 
 class Effect(BaseModel):
@@ -186,7 +185,7 @@ class ActiveEffect(BaseModel):
         default_factory=list,
         description="List of variable info for dynamic calculations",
     )
-    
+
     @property
     def colored_name(self) -> str:
         return self.effect.colored_name
@@ -198,10 +197,12 @@ class ActiveEffect(BaseModel):
         Args:
             event (Any):
                 The event to handle.
+
         Returns:
             EventResponse | None:
                 The response to the event. If the effect does not
                 respond to this event type, return None.
+
         """
         return None
 

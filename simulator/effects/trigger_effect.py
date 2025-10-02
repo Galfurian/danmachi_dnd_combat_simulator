@@ -20,7 +20,6 @@ from .event_system import (
     CombatEvent,
     DamageTakenEvent,
     EventType,
-    HitEvent,
     LowHealthEvent,
     SpellCastEvent,
     TurnEndEvent,
@@ -110,7 +109,7 @@ class TriggerCondition(BaseModel):
                 True if the condition is met, False otherwise.
 
         """
-        log_debug(f"Evaluating trigger condition:")
+        log_debug("Evaluating trigger condition:")
         log_debug(f"  {self}")
         log_debug(f"  {event}")
         if self.event_type != event.event_type:
@@ -135,7 +134,7 @@ class TriggerCondition(BaseModel):
         # If the event is DamageTakenEvent, check damage type and amount.
         if isinstance(event, DamageTakenEvent):
             log_debug(
-                f"  Checking damage amount: {event.amount} > 0 = " f"{event.amount > 0}"
+                f"  Checking damage amount: {event.amount} > 0 = {event.amount > 0}"
             )
             return event.amount > 0
         # If the event is LowHealthEvent, check HP ratio against threshold.
@@ -543,10 +542,12 @@ class ActiveTriggerEffect(ActiveEffect):
         Args:
             event (Any):
                 The event to handle.
+
         Returns:
             EventResponse | None:
                 The response to the event. If the effect does not
                 respond to this event type, return None.
+
         """
         if isinstance(event, TurnStartEvent):
             return self._on_turn_start(event)
