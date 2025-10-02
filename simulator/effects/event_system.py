@@ -129,7 +129,6 @@ class TurnStartEvent(CombatEvent):
         description="The type of trigger event.",
     )
     turn_number: int = Field(description="Current turn number.")
-    round_number: int = Field(default=1, description="Current round number.")
 
 
 class TurnEndEvent(CombatEvent):
@@ -140,7 +139,6 @@ class TurnEndEvent(CombatEvent):
         description="The type of trigger event.",
     )
     turn_number: int = Field(description="Current turn number.")
-    round_number: int = Field(default=1, description="Current round number.")
 
 
 class DeathEvent(CombatEvent):

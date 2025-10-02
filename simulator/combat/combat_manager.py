@@ -231,7 +231,7 @@ class CombatManager:
                 )
             else:
                 # Start of turn effects
-                participant.turn_start()
+                participant.turn_start(self.turn_number)
 
                 # Execute the participant's action based on whether they are the player or an NPC.
                 if participant == self.player:
@@ -240,7 +240,7 @@ class CombatManager:
                     self.execute_npc_action(participant)
 
             # Apply end-of-turn updates and check for expiration
-            participant.turn_end()
+            participant.turn_end(self.turn_number)
 
             cprint("")
 

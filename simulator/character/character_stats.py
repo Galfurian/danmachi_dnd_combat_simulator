@@ -144,12 +144,18 @@ class CharacterStats:
             int: The maximum HP value.
 
         """
+        from character.main import Character
+
+        assert isinstance(
+            self._owner, Character
+        ), f"Owner must be a Character, got {type(self._owner).__name__}."
+
         hp_max: int = 0
         # Add the class levels' HP multipliers to the max HP.
         for cls, lvl in self._owner.levels.items():
             hp_max += lvl * (cls.hp_mult + self.CON)
         # Sum all the HP modifiers from effects.
-        modifiers = self._owner.effects.get_modifier(BonusType.HP)
+        modifiers = self._owner.effects.get_base_modifier(BonusType.HP)
         if isinstance(modifiers, list):
             hp_max += sum(int(mod) for mod in modifiers)
         return hp_max
@@ -163,12 +169,18 @@ class CharacterStats:
             int: The maximum Mind value.
 
         """
+        from character.main import Character
+
+        assert isinstance(
+            self._owner, Character
+        ), f"Owner must be a Character, got {type(self._owner).__name__}."
+
         mind_max: int = 0
         # Add the class levels' Mind multipliers to the max Mind.
         for cls, lvl in self._owner.levels.items():
             mind_max += lvl * (cls.mind_mult + self.SPELLCASTING)
         # Sum all the Mind modifiers from effects.
-        modifiers = self._owner.effects.get_modifier(BonusType.MIND)
+        modifiers = self._owner.effects.get_base_modifier(BonusType.MIND)
         if isinstance(modifiers, list):
             mind_max += sum(int(mod) for mod in modifiers)
         return mind_max
@@ -182,6 +194,12 @@ class CharacterStats:
             int: The total AC value.
 
         """
+        from character.main import Character
+
+        assert isinstance(
+            self._owner, Character
+        ), f"Owner must be a Character, got {type(self._owner).__name__}."
+
         # Base AC is 10 + DEX modifier.
         base_ac = 10 + self.DEX
 
@@ -192,7 +210,7 @@ class CharacterStats:
             )
 
         # Sum all AC modifiers from active effects.
-        modifiers = self._owner.effects.get_modifier(BonusType.AC)
+        modifiers = self._owner.effects.get_base_modifier(BonusType.AC)
         effect_ac = 0
         if isinstance(modifiers, list):
             effect_ac += sum(int(mod) for mod in modifiers)
@@ -204,16 +222,23 @@ class CharacterStats:
     @property
     def INITIATIVE(self) -> int:
         """
-        Calculates the character's initiative based on dexterity and any active effects.
+        Calculates the character's initiative based on dexterity and any active
+        effects.
 
         Returns:
             int: The total initiative value.
 
         """
+        from character.main import Character
+
+        assert isinstance(
+            self._owner, Character
+        ), f"Owner must be a Character, got {type(self._owner).__name__}."
+
         # Base initiative is DEX modifier.
         initiative = self.DEX
         # Sum all initiative modifiers from active effects.
-        modifiers = self._owner.effects.get_modifier(BonusType.INITIATIVE)
+        modifiers = self._owner.effects.get_base_modifier(BonusType.INITIATIVE)
         if isinstance(modifiers, list):
             initiative += sum(int(mod) for mod in modifiers)
         return initiative
@@ -221,16 +246,23 @@ class CharacterStats:
     @property
     def CONCENTRATION_LIMIT(self) -> int:
         """
-        Calculate the maximum number of concentration effects this character can maintain.
+        Calculate the maximum number of concentration effects this character can
+        maintain.
 
         Returns:
             int: Maximum concentration effects.
 
         """
+        from character.main import Character
+
+        assert isinstance(
+            self._owner, Character
+        ), f"Owner must be a Character, got {type(self._owner).__name__}."
+
         base_limit = max(1, 1 + (self.SPELLCASTING // 2))
 
         # Sum all concentration modifiers from active effects.
-        modifiers = self._owner.effects.get_modifier(BonusType.CONCENTRATION)
+        modifiers = self._owner.effects.get_base_modifier(BonusType.CONCENTRATION)
         bonus_value = 0
         if isinstance(modifiers, list):
             bonus_value = sum(int(mod) for mod in modifiers)

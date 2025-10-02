@@ -187,57 +187,17 @@ class ActiveEffect(BaseModel):
         description="List of variable info for dynamic calculations",
     )
 
-    def turn_start(self) -> bool:
+    def on_event(self, event: Any) -> EventResponse | None:
         """
-        Called at the start of the target's turn.
-
-        Returns:
-            bool:
-                True if the effect should be removed before the turn starts,
-                False otherwise.
-        """
-        return False
-
-    def turn_end(self) -> bool:
-        """
-        Called at the end of the target's turn.
-
-        Returns:
-            bool:
-                True if the effect should be removed after this turn, False
-                otherwise.
-        """
-        return False
-
-    def on_hit(self, event: HitEvent) -> EventResponse | None:
-        """
-        Handle hit event for the effect.
+        Handle a generic event for the effect.
 
         Args:
-            event (HitEvent):
-                The hit event.
-
+            event (Any):
+                The event to handle.
         Returns:
             EventResponse | None:
-                The response to the hit event. If the effect does not
-                respond to hits, return None.
-
-        """
-        return None
-
-    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
-        """
-        Handle damage taken event for the effect.
-
-        Args:
-            event (DamageTakenEvent):
-                The damage taken event.
-
-        Returns:
-            EventResponse | None:
-                The response to the damage taken event. If the effect does not
-                respond to damage, return None.
-
+                The response to the event. If the effect does not
+                respond to this event type, return None.
         """
         return None
 

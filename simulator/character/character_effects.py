@@ -12,7 +12,7 @@ from typing import Any
 from combat.damage import DamageComponent
 from core.constants import BonusType, DamageType
 from core.dice_parser import VarInfo, get_max_roll
-from core.logging import log_error
+from core.logging import log_debug, log_error
 from core.utils import cprint
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
@@ -72,61 +72,29 @@ class CharacterEffects:
 
     # === Effect Management ===
 
-    def on_hit(self, event: HitEvent) -> list[EventResponse]:
+    def on_event(self, event: Any) -> list[EventResponse]:
         """
-        Handle effects that should trigger or break when a hit occurs.
+        Handle effects that should trigger or break on generic events.
 
         Args:
-            event (HitEvent):
-                The hit event.
+            event (Any):
+                The event to handle.
 
         Returns:
             list[EventResponse]:
                 Responses from effects that were broken or triggered.
-
         """
         responses: list[EventResponse] = []
         effects_to_remove: list[ActiveEffect] = []
-        for ae in self.incapacitating_effects:
-            response = ae.on_hit(event)
+        for ae in self.active_effects:
+            response = ae.on_event(event)
             if response:
                 if response.remove_effect:
                     effects_to_remove.append(ae)
                 responses.append(response)
-
         # Remove the effects that should break.
         for effect_to_remove in effects_to_remove:
             self.remove_effect(effect_to_remove)
-
-        return responses
-
-    def on_damage_taken(self, event: DamageTakenEvent) -> list[EventResponse]:
-        """
-        Handle effects that should trigger or break when damage is taken.
-
-        Args:
-            event (DamageTakenEvent):
-                The damage taken event.
-
-        Returns:
-            list[EventResponse]:
-                Responses from effects that were broken or triggered.
-
-        """
-        # Check for incapacitating effects that should break on damage.
-        responses: list[EventResponse] = []
-        effects_to_remove: list[ActiveEffect] = []
-        for ae in self.incapacitating_effects:
-            response = ae.on_damage_taken(event)
-            if response:
-                if response.remove_effect:
-                    effects_to_remove.append(ae)
-                responses.append(response)
-
-        # Remove the effects that should break.
-        for effect_to_remove in effects_to_remove:
-            self.remove_effect(effect_to_remove)
-
         return responses
 
     def remove_effect(self, effect: ActiveEffect) -> bool:
@@ -229,23 +197,15 @@ class CharacterEffects:
 
     # === Modifier Management ===
 
-    def get_modifier(self, bonus_type: BonusType) -> list[str | DamageComponent]:
-        """
-        Get the modifier value for a specific bonus type.
+    def get_base_modifier(self, bonus_type: BonusType) -> list[str]:
 
-        Args:
-            bonus_type (BonusType):
-                The type of bonus to retrieve.
-
-        Returns:
-            list[str | DamageComponent]:
-                List of modifier values for the specified bonus type.
-
-        """
+        assert (
+            bonus_type != BonusType.DAMAGE
+        ), "Use get_damage_modifier for DAMAGE type."
 
         @dataclass
         class Entry:
-            value: str | DamageComponent
+            value: str
             score: int
 
         # Collect all modifiers for this bonus type
@@ -254,6 +214,8 @@ class CharacterEffects:
         for effect in self.modifier_effects:
             for mod in effect.modifier_effect.modifiers:
                 if mod.bonus_type != bonus_type:
+                    continue
+                if isinstance(mod.value, DamageComponent):
                     continue
                 if not mod.stacks:
                     has_non_stacking = True
@@ -276,37 +238,74 @@ class CharacterEffects:
                     continue
                 # Otherwise, add the new modifier.
                 modifiers.append(new_entry)
-        
+
         if has_non_stacking:
             # For non-stacking, find the strongest modifier
             if modifiers:
                 best = max(modifiers, key=lambda e: e.score)
                 return [best.value]
             return []
-        else:
-            # Stacking: return all
-            return [m.value for m in modifiers]
+        # Stacking: return all
+        return [m.value for m in modifiers]
 
-    def turn_start(self) -> None:
+    def get_damage_modifier(self) -> list[DamageComponent]:
         """
-        Initialize effects at the start of the turn.
-        """
-        to_keep: list[ActiveEffect] = []
-        for ae in self.active_effects:
-            if not ae.turn_start():
-                to_keep.append(ae)
-        self.active_effects = to_keep
+        Get the modifier value for a specific bonus type.
 
-    def turn_end(self) -> None:
+        Args:
+            bonus_type (BonusType):
+                The type of bonus to retrieve.
+
+        Returns:
+            list[str | DamageComponent]:
+                List of modifier values for the specified bonus type.
+
         """
-        Update the effects for a turn, applying any changes and removing expired
-        effects.
-        """
-        to_keep: list[ActiveEffect] = []
-        for ae in self.active_effects:
-            if not ae.turn_end():
-                to_keep.append(ae)
-        self.active_effects = to_keep
+
+        @dataclass
+        class Entry:
+            value: DamageComponent
+            score: int
+
+        # Collect all modifiers for this bonus type
+        modifiers: list[Entry] = []
+        has_non_stacking = False
+        for effect in self.modifier_effects:
+            for mod in effect.modifier_effect.modifiers:
+                if mod.bonus_type != BonusType.DAMAGE:
+                    continue
+                if isinstance(mod.value, str):
+                    continue
+                if not mod.stacks:
+                    has_non_stacking = True
+                # Compute the projected strength with current variables.
+                new_entry = Entry(
+                    value=mod.value,
+                    score=mod.get_projected_strength(effect.variables),
+                )
+                # If the score is zero, skip adding this modifier.
+                if new_entry.score == 0:
+                    continue
+                # If there is already one with the same value, keep the one with
+                # the higher score, but only for those modifiers where we keep
+                # only the strongest.
+                existing = next((e for e in modifiers if e.value == mod.value), None)
+                if existing:
+                    if new_entry.score > existing.score:
+                        existing.value = new_entry.value
+                        existing.score = new_entry.score
+                    continue
+                # Otherwise, add the new modifier.
+                modifiers.append(new_entry)
+
+        if has_non_stacking:
+            # For non-stacking, find the strongest modifier
+            if modifiers:
+                best = max(modifiers, key=lambda e: e.score)
+                return [best.value]
+            return []
+        # Stacking: return all
+        return [m.value for m in modifiers]
 
     # === Helpers ===
 

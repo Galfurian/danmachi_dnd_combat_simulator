@@ -88,7 +88,7 @@ class BaseAttack(BaseAction):
         """Perform an attack roll using the same logic as BaseAttack."""
 
         # Get the attack modifier from effects.
-        modifiers = actor.effects.get_modifier(BonusType.ATTACK)
+        modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
 
         if not all(isinstance(modifier, str) for modifier in modifiers):
             log_warning(
@@ -123,7 +123,7 @@ class BaseAttack(BaseAction):
             return True
 
         # Get any on-hit triggers from effects.
-        event_responses: list[EventResponse] = actor.effects.on_hit(
+        event_responses: list[EventResponse] = actor.effects.on_event(
             HitEvent(
                 actor=actor,
                 target=target,
@@ -179,7 +179,7 @@ class BaseAttack(BaseAction):
         # =============================
 
         # Get all damage modifiers from effects.
-        modifiers = actor.effects.get_modifier(BonusType.DAMAGE)
+        modifiers = actor.effects.get_damage_modifier()
         if not all(isinstance(modifier, str) for modifier in modifiers):
             log_warning(
                 "Modifiers for damage roll must be strings.",

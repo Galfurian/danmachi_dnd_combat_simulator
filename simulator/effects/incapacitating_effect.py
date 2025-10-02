@@ -13,7 +13,7 @@ from core.utils import cprint
 from pydantic import Field
 
 from .base_effect import ActiveEffect, Effect, EventResponse
-from .event_system import DamageTakenEvent
+from .event_system import DamageTakenEvent, EventType, TurnEndEvent
 
 
 class IncapacitatingEffect(Effect):
@@ -228,7 +228,25 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             raise TypeError(f"Expected IncapacitatingEffect, got {type(self.effect)}")
         return self.effect
 
-    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
+    def on_event(self, event: Any) -> EventResponse | None:
+        """
+        Handle a generic event for the effect.
+
+        Args:
+            event (Any):
+                The event to handle.
+        Returns:
+            EventResponse | None:
+                The response to the event. If the effect does not
+                respond to this event type, return None.
+        """
+        if event.trigger_type == EventType.ON_TURN_END:
+            return self._on_turn_end(event)
+        if event.trigger_type == EventType.ON_DAMAGE_TAKEN:
+            return self._on_damage_taken(event)
+        return None
+
+    def _on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
         """
         Handle damage taken event for incapacitating effects.
 
@@ -258,7 +276,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             f"{self.incapacitating_effect.colored_name} due to taking damage!",
         )
 
-    def turn_end(self) -> bool:
+    def _on_turn_end(self, event: TurnEndEvent) -> EventResponse | None:
         """
         Update the effect for the current turn by decrementing duration at the
         end of the turn.
@@ -268,10 +286,18 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         if self.duration <= 0:
             raise ValueError("Effect duration is already zero or negative.")
         self.duration -= 1
+        remove_effect = False
         if self.duration <= 0:
             cprint(
                 f"    :hourglass_done: {self.effect.colored_name} "
                 f"has expired on {self.target.colored_name}."
             )
-            return True
-        return False
+            remove_effect = True
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=remove_effect,
+            new_effects=[],
+            damage_bonus=[],
+            message=f"{self.target.colored_name} is no longer "
+            f"affected by {self.incapacitating_effect.colored_name}.",
+        )

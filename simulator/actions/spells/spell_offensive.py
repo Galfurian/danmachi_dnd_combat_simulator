@@ -55,18 +55,22 @@ class SpellOffensive(BaseSpell):
                 True if spell was successfully cast (regardless of hit/miss).
 
         """
+        from character.main import Character
+
         # Call the base class cast_spell to handle common checks.
         if not super().cast_spell(actor, target, rank):
             return False
 
+        assert isinstance(actor, Character), "Actor must be a Character."
+
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
-        attack_modifier = actor.effects.get_modifier(BonusType.ATTACK)
+        attack_modifier = actor.effects.get_base_modifier(BonusType.ATTACK)
 
         # Roll spell attack vs target AC
         attack = self._roll_attack(
             actor,
-            spell_attack_bonus,
+            str(spell_attack_bonus),
             attack_modifier,
         )
         assert attack.rolls, "Attack roll must contain at least one die roll."

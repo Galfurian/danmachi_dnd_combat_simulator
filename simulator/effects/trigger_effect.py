@@ -23,6 +23,8 @@ from .event_system import (
     HitEvent,
     LowHealthEvent,
     SpellCastEvent,
+    TurnEndEvent,
+    TurnStartEvent,
 )
 from .incapacitating_effect import IncapacitatingEffect
 from .modifier_effect import ModifierEffect
@@ -108,8 +110,9 @@ class TriggerCondition(BaseModel):
                 True if the condition is met, False otherwise.
 
         """
+        log_debug(f"Evaluating trigger condition:\n\t{self}\nfor event:\n\t{event}.")
         if self.trigger_type != event.trigger_type:
-            raise ValueError("Event type does not match trigger condition type.")
+            return False
 
         # There are some trigger types that always activate when the event
         # occurs.
@@ -392,30 +395,6 @@ class ActiveTriggerEffect(ActiveEffect):
             raise TypeError(f"Expected TriggerEffect, got {type(self.effect)}")
         return self.effect
 
-    def turn_start(self) -> bool:
-        """
-        Handle turn start for trigger effects: decrement cooldown and clear
-        triggered flag.
-        """
-        self.decrement_cooldown()
-        self.clear_triggered_this_turn()
-        return False
-
-    def turn_end(self) -> bool:
-        """
-        Handle turn end for trigger effects.
-        """
-        # Decrement duration and check for expiration.
-        if self.duration is not None:
-            self.duration -= 1
-            if self.duration <= 0:
-                cprint(
-                    f"    :hourglass_done: {self.effect.colored_name} "
-                    f"has expired on {self.target.colored_name}."
-                )
-                return True
-        return False
-
     def check_trigger(self, event: "CombatEvent") -> bool:
         """
         Check if the trigger condition is met for the given event.
@@ -556,7 +535,64 @@ class ActiveTriggerEffect(ActiveEffect):
             return False
         return self.triggers_used >= self.trigger_effect.max_triggers
 
-    def on_hit(self, event: HitEvent) -> EventResponse | None:
+    def on_event(self, event: Any) -> EventResponse | None:
+        """
+        Handle a generic event for the effect.
+
+        Args:
+            event (Any):
+                The event to handle.
+        Returns:
+            EventResponse | None:
+                The response to the event. If the effect does not
+                respond to this event type, return None.
+        """
+        if event.trigger_type == EventType.ON_TURN_START:
+            return self._on_turn_start(event)
+        if event.trigger_type == EventType.ON_HIT:
+            return self._on_hit(event)
+        if event.trigger_type == EventType.ON_DAMAGE_TAKEN:
+            return self._on_damage_taken(event)
+        return None
+
+    def _on_turn_start(self, event: TurnStartEvent) -> EventResponse | None:
+        """
+        Handle turn start for trigger effects: decrement cooldown and clear
+        triggered flag.
+        """
+        self.decrement_cooldown()
+        self.clear_triggered_this_turn()
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=False,
+            new_effects=[],
+            damage_bonus=[],
+            message=None,
+        )
+
+    def _on_turn_end(self, event: TurnEndEvent) -> EventResponse | None:
+        """
+        Handle turn end for trigger effects.
+        """
+        # Decrement duration and check for expiration.
+        remove_effect = False
+        if self.duration is not None:
+            self.duration -= 1
+            if self.duration <= 0:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
+                remove_effect = True
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=remove_effect,
+            new_effects=[],
+            damage_bonus=[],
+            message=None,
+        )
+
+    def _on_hit(self, event: HitEvent) -> EventResponse | None:
         """
         Handle hit event for trigger effects.
 
@@ -585,7 +621,7 @@ class ActiveTriggerEffect(ActiveEffect):
             ),
         )
 
-    def on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
+    def _on_damage_taken(self, event: DamageTakenEvent) -> EventResponse | None:
         """
         Handle damage taken event for incapacitating effects.
 

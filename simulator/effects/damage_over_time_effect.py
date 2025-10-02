@@ -11,9 +11,10 @@ from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
 from core.logging import log_debug
 from core.utils import cprint
+from effects.event_system import EventType, TurnEndEvent
 from pydantic import Field
 
-from .base_effect import ActiveEffect, Effect
+from .base_effect import ActiveEffect, Effect, EventResponse
 
 
 class DamageOverTimeEffect(Effect):
@@ -208,7 +209,22 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
             raise TypeError("Effect is not a DamageOverTimeEffect.")
         return self.effect
 
-    def turn_end(self) -> bool:
+    def on_event(self, event: Any) -> EventResponse | None:
+        """
+        Handle a generic event for the effect.
+
+        Args:
+            event (Any):
+                The event to handle.
+        Returns:
+            EventResponse | None:
+                The response to the event. If the effect does not
+                respond to this event type, return None.
+        """
+        if event.trigger_type == EventType.ON_TURN_END:
+            return self._on_turn_end(event)
+
+    def _on_turn_end(self, event: TurnEndEvent) -> EventResponse | None:
         """
         Update the effect for the current turn by dealing damage at the end of the turn.
         """
@@ -245,6 +261,7 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
         if not self.target.is_alive():
             cprint(f"    [bold red]{self.target.name} has been defeated![/]")
         # Decrement duration and check for expiration.
+        remove_effect = False
         if self.duration is not None:
             self.duration -= 1
             if self.duration <= 0:
@@ -252,5 +269,11 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
                     f"    :hourglass_done: {self.effect.colored_name} "
                     f"has expired on {self.target.colored_name}."
                 )
-                return True
-        return False
+                remove_effect = True
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=remove_effect,
+            new_effects=[],
+            damage_bonus=[],
+            message="",
+        )

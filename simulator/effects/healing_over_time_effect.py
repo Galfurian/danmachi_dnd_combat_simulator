@@ -10,9 +10,10 @@ from typing import Any, Literal
 from core.dice_parser import VarInfo, roll_and_describe
 from core.logging import log_debug
 from core.utils import cprint
+from effects.event_system import EventType, TurnEndEvent
 from pydantic import Field
 
-from .base_effect import ActiveEffect, Effect
+from .base_effect import ActiveEffect, Effect, EventResponse
 
 
 class HealingOverTimeEffect(Effect):
@@ -191,7 +192,22 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
             raise ValueError("Effect must be a HealingOverTimeEffect instance.")
         return self.effect
 
-    def turn_end(self) -> bool:
+    def on_event(self, event: Any) -> EventResponse | None:
+        """
+        Handle a generic event for the effect.
+
+        Args:
+            event (Any):
+                The event to handle.
+        Returns:
+            EventResponse | None:
+                The response to the event. If the effect does not
+                respond to this event type, return None.
+        """
+        if event.trigger_type == EventType.ON_TURN_END:
+            return self._on_turn_end(event)
+
+    def _on_turn_end(self, event: TurnEndEvent) -> EventResponse | None:
         """
         Apply healing to the target at the end of their turn.
         """
@@ -217,6 +233,7 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
         message += HOT.colored_name + "."
         cprint(message)
         # Decrement duration and check for expiration.
+        remove_effect = False
         if self.duration is not None:
             self.duration -= 1
             if self.duration <= 0:
@@ -224,5 +241,11 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
                     f"    :hourglass_done: {self.effect.colored_name} "
                     f"has expired on {self.target.colored_name}."
                 )
-                return True
-        return False
+                remove_effect = True
+        return EventResponse(
+            effect=self.effect,
+            remove_effect=remove_effect,
+            new_effects=[],
+            damage_bonus=[],
+            message="",
+        )

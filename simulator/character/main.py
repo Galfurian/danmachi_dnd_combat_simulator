@@ -6,9 +6,12 @@ managing characters, including stats, equipment, actions, spells, and effects.
 Handles character serialization from JSON data.
 """
 
+from typing import Any
 from core.constants import CharacterType, DamageType
 from core.dice_parser import VarInfo
+from core.logging import log_debug
 from core.utils import cprint
+from effects.event_system import TurnEndEvent, TurnStartEvent
 from effects.incapacitating_effect import IncapacitatingEffect
 
 from .character_actions import CharacterActions
@@ -202,6 +205,12 @@ class Character:
         """Check if character can take any actions this turn."""
         return not self.is_incapacitated() and self.is_alive()
 
+    def on_event(self, event: Any) -> None:
+        """
+        Pass an event to the character's effects for processing.
+        """
+        self.effects.on_event(event)
+
     def take_damage(
         self,
         amount: int,
@@ -236,10 +245,15 @@ class Character:
         # Apply the damage and get the actual damage taken.
         actual = abs(self.stats.adjust_hp(-adjusted))
 
+        log_debug(
+            f"{self.colored_name} takes {actual} {damage_type.value} damage "
+            f"(base: {base}, adjusted: {adjusted}, remaining HP: {self.stats.hp})"
+        )
+
         # Handle effects that break on damage (like sleep effects), but only
         # if actual damage was taken.
         if actual > 0:
-            responses = self.effects.on_damage_taken(
+            responses = self.effects.on_event(
                 DamageTakenEvent(
                     actor=self,
                     damage_amount=actual,
@@ -331,23 +345,23 @@ class Character:
         """
         return self.SPELLCASTING + spell_level
 
-    def turn_start(self) -> None:
+    def turn_start(self, turn_number: int) -> None:
         """
         Initializes the character at the start of their turn.
         """
         # Update all active effects.
-        self.effects.turn_start()
+        self.effects.on_event(TurnStartEvent(actor=self, turn_number=turn_number))
         # Update action state.
         self.actions.turn_start()
 
-    def turn_end(self) -> None:
+    def turn_end(self, turn_number: int) -> None:
         """
         Updates the duration of all active effects, and cooldowns. Removes
         expired effects. This should be called at the end of a character's turn
         or a round.
         """
         # Update all active effects.
-        self.effects.turn_end()
+        self.effects.on_event(TurnEndEvent(actor=self, turn_number=turn_number))
         # Update action cooldowns and reset turn flags.
         self.actions.turn_end()
 
