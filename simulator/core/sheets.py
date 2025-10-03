@@ -324,17 +324,17 @@ def print_character_sheet(char: Character) -> None:
 
     if char.spellcasting_ability:
         # Convert full ability name to 3-letter abbreviation
-        ability_abbrev = char.spellcasting_ability[:3].upper()
+        ability_abbrev = char.spellcasting_ability.short_name
         spell_mod = getattr(char, ability_abbrev)
         cprint(
-            f"  Spellcasting: [magenta]{char.spellcasting_ability} ({spell_mod:+d})[/]"
+            f"  Spellcasting: [magenta]{ability_abbrev} ({spell_mod:+d})[/]"
         )
 
     # Ability scores and modifiers
     stat_display = []
     for stat_name, stat_value in char.stats.statistics.items():
-        modifier = getattr(char, stat_name[:3].upper())
-        stat_display.append(f"{stat_name.capitalize()}: {stat_value} ({modifier:+d})")
+        modifier = getattr(char, stat_name.short_name)
+        stat_display.append(f"{stat_name.short_name}: {stat_value} ({modifier:+d})")
     cprint(f"  {', '.join(stat_display)}")
 
     # Character details

@@ -66,7 +66,7 @@ def character_from_dict(data: dict[str, Any]) -> Character:
         race=race,
         levels=levels,
         stats=data["stats"],
-        spellcasting_ability=data.get("spellcasting_ability"),
+        spellcasting_ability=data.get("spellcasting_ability", None),
         total_hands=data.get("total_hands", 2),
         immunities={DamageType(dt) for dt in data.get("immunities", [])},
         resistances={DamageType(dt) for dt in data.get("resistances", [])},

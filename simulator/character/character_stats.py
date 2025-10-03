@@ -133,8 +133,7 @@ class CharacterStats:
         if self._owner.spellcasting_ability:
             # Convert string to StatType enum
             try:
-                ability_enum = StatType[self._owner.spellcasting_ability.upper()]
-                return get_stat_modifier(self.statistics[ability_enum])
+                return get_stat_modifier(self.statistics[self._owner.spellcasting_ability])
             except KeyError:
                 # If the spellcasting ability string doesn't match an StatType, return 0
                 pass

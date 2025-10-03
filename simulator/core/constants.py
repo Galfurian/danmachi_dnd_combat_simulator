@@ -344,6 +344,27 @@ def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     return True
 
 
+def adapt_str_to_enum(enum_class: Any, value: Any) -> Any:
+    """
+    Converts a string to the specified enumeration type.
+
+    Args:
+        enum_class (Any):
+            The enumeration class to convert the string to.
+        value (str):
+            The input string to convert.
+
+    Returns:
+        Any:
+            The corresponding enum member if found, otherwise returns the original string.
+    """
+    if isinstance(value, enum_class):
+        return value
+    if isinstance(value, str) and value.upper() in enum_class.__members__:
+        return enum_class[value.upper()]
+    return value
+
+
 def adapt_keys_to_enum(enum_class: Any, data: dict[Any, Any]) -> dict[Any, Any]:
     """
     Converts dictionary keys to the specified enumeration type.
@@ -358,7 +379,4 @@ def adapt_keys_to_enum(enum_class: Any, data: dict[Any, Any]) -> dict[Any, Any]:
         dict[Any, Any]:
             A new dictionary with keys converted to the specified enum type.
     """
-    return {
-        enum_class[key] if isinstance(key, str) else key: value
-        for key, value in data.items()
-    }
+    return {adapt_str_to_enum(enum_class, key): value for key, value in data.items()}

@@ -6,7 +6,7 @@ managing characters, including stats, equipment, actions, spells, and effects.
 Handles character serialization from JSON data.
 """
 
-from core.constants import CharacterType, DamageType, StatType
+from core.constants import CharacterType, DamageType, StatType, adapt_str_to_enum
 from core.dice_parser import VarInfo
 from core.logging import log_debug
 from effects.base_effect import EventResponse
@@ -42,7 +42,7 @@ class Character:
             The race of the character.
         levels (dict[CharacterClass, int]):
             The character's levels in different classes.
-        spellcasting_ability (str | None):
+        spellcasting_ability (StatType | None):
             The ability score used for spellcasting, if applicable.
         total_hands (int):
             The total number of hands the character has for wielding weapons.
@@ -65,7 +65,7 @@ class Character:
     name: str
     race: CharacterRace
     levels: dict[CharacterClass, int]
-    spellcasting_ability: str | None
+    spellcasting_ability: StatType | None
     total_hands: int
     immunities: set[DamageType]
     resistances: set[DamageType]
@@ -88,7 +88,7 @@ class Character:
         race: CharacterRace,
         levels: dict[CharacterClass, int],
         stats: dict[StatType | str, int],
-        spellcasting_ability: str | None,
+        spellcasting_ability: StatType | str | None,
         total_hands: int,
         immunities: set[DamageType],
         resistances: set[DamageType],
@@ -101,7 +101,7 @@ class Character:
         self.name = name
         self.race = race
         self.levels = levels
-        self.spellcasting_ability = spellcasting_ability
+        self.spellcasting_ability = adapt_str_to_enum(StatType, spellcasting_ability)
         self.total_hands = total_hands
         self.immunities = immunities
         self.resistances = resistances
