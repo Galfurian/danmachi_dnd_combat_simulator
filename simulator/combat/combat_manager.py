@@ -388,7 +388,7 @@ class CombatManager:
                     continue
                 for target in targets:
                     # Perform the action on the target.
-                    spell.cast_spell(
+                    spell.execute(
                         actor=self.player,
                         target=target,
                         rank=rank,
@@ -592,7 +592,7 @@ class CombatManager:
         if candidate_spell:
             # Cast the healing spell on the targets.
             for target in candidate_spell.targets:
-                candidate_spell.spell.cast_spell(
+                candidate_spell.spell.execute(
                     actor=npc,
                     target=target,
                     rank=candidate_spell.rank,
@@ -653,7 +653,7 @@ class CombatManager:
         if candidate_spell:
             # Cast the buff spell on the targets.
             for target in candidate_spell.targets:
-                candidate_spell.spell.cast_spell(
+                candidate_spell.spell.execute(
                     actor=npc,
                     target=target,
                     rank=candidate_spell.rank,
@@ -714,7 +714,7 @@ class CombatManager:
         if candidate_spell:
             # Cast the debuff spell on the targets.
             for target in candidate_spell.targets:
-                candidate_spell.spell.cast_spell(
+                candidate_spell.spell.execute(
                     actor=npc,
                     target=target,
                     rank=candidate_spell.rank,
@@ -775,7 +775,7 @@ class CombatManager:
         if candidate_spell:
             # Cast the attack spell on the targets.
             for target in candidate_spell.targets:
-                candidate_spell.spell.cast_spell(
+                candidate_spell.spell.execute(
                     actor=npc,
                     target=target,
                     rank=candidate_spell.rank,

@@ -5,7 +5,7 @@ Defines healing spells that restore hit points to allies, including
 various restorative magic with different effects and ranges.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.base_action import ValidActionEffect
 from actions.spells.base_spell import BaseSpell
@@ -20,6 +20,8 @@ from core.utils import cprint
 from effects.event_system import HealEvent
 from pydantic import Field
 
+if TYPE_CHECKING:
+    from character.main import Character
 
 class SpellHeal(BaseSpell):
     """Restorative spell that heals hit points and can apply beneficial effects.
@@ -49,39 +51,28 @@ class SpellHeal(BaseSpell):
     # HEALING SPELL METHODS
     # ============================================================================
 
-    def cast_spell(
+    def execute_spell(
         self,
-        actor: Any,
-        target: Any,
+        actor: "Character",
+        target: "Character",
         rank: int,
     ) -> bool:
         """
-        Execute a healing spell with automatic success and beneficial effects.
+        Execute the buff spell from actor to target.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
-                The character targeted by the spell.
+                The character being targeted.
             rank (int):
-                The spell level to cast at (affects cost and power).
+                The rank at which the spell is being cast.
 
         Returns:
             bool:
-                True if spell was cast successfully, False on failure.
+                True if action executed successfully, False otherwise.
 
         """
-        from character.main import Character
-
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
-
-        # Call the base class cast_spell to handle common checks.
-        if not super().cast_spell(actor, target, rank):
-            return False
-
         # Calculate healing with level scaling
         heal = self._spell_roll_and_describe(
             self.heal_roll,

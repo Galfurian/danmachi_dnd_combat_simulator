@@ -5,7 +5,7 @@ Defines offensive spells that deal damage to enemies, including
 direct damage spells, area effects, and magical attacks.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
 from combat.damage import DamageComponent
@@ -13,6 +13,8 @@ from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.utils import cprint
 from pydantic import Field
 
+if TYPE_CHECKING:
+    from character.main import Character
 
 class SpellOffensive(BaseSpell):
     """Offensive spell that deals damage through magical attacks.
@@ -39,30 +41,28 @@ class SpellOffensive(BaseSpell):
     # SPELL ATTACK METHODS
     # ============================================================================
 
-    def cast_spell(self, actor: Any, target: Any, rank: int) -> bool:
-        """Execute an offensive spell attack with complete combat resolution.
+    def execute_spell(
+        self,
+        actor: "Character",
+        target: "Character",
+        rank: int,
+    ) -> bool:
+        """
+        Execute the buff spell from actor to target.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
-                The character being attacked.
+                The character being targeted.
             rank (int):
                 The rank at which the spell is being cast.
 
         Returns:
             bool:
-                True if spell was successfully cast (regardless of hit/miss).
+                True if action executed successfully, False otherwise.
 
         """
-        from character.main import Character
-
-        # Call the base class cast_spell to handle common checks.
-        if not super().cast_spell(actor, target, rank):
-            return False
-
-        assert isinstance(actor, Character), "Actor must be a Character."
-
         # Calculate spell attack components
         spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
         attack_modifier = actor.effects.get_base_modifier(BonusType.ATTACK)

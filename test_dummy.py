@@ -211,8 +211,8 @@ blurr = player.actions.spells["blurr"]
 
 log_info(f"Player AC before mage armor: {player.AC}")
 
-mage_armor.cast_spell(actor=player, target=player, rank=0)
+mage_armor.execute(actor=player, target=player, rank=0)
 log_info(f"Player AC after mage armor: {player.AC}")
 
-blurr.cast_spell(actor=player, target=player, rank=0)
+blurr.execute(actor=player, target=player, rank=0)
 log_info(f"Player AC after blurr: {player.AC}")

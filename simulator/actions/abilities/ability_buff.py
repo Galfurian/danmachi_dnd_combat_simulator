@@ -5,11 +5,14 @@ Defines buff abilities that provide beneficial effects to allies, such as
 stat bonuses, damage resistance, or other positive enhancements.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class AbilityBuff(BaseAbility):
@@ -32,27 +35,27 @@ class AbilityBuff(BaseAbility):
         if not all(isinstance(effect, Effect) for effect in self.effects):
             raise ValueError("All effects must be Effect instances.")
 
-    def execute(self, actor: Any, target: Any) -> bool:
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
         """
         Execute this buff ability on a target in combat.
 
         Args:
-            actor (Any): The character using the ability.
-            target (Any): The character being buffed.
+            actor (Any):
+                The character performing the action.
+            target (Any):
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
-            bool: True if ability was executed successfully, False on system errors.
-
+            bool:
+                True if action executed successfully, False otherwise.
         """
-        from character.main import Character
-
-        if not self.effects:
-            raise ValueError("The effect field must be set.")
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
-
         # Check if the ability is on cooldown.
         if actor.actions.is_on_cooldown(self):
             return False

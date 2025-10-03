@@ -5,11 +5,14 @@ Defines buff spells that provide beneficial effects to targets, such as
 stat enhancements, protection, or other positive magical effects.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class SpellBuff(BaseSpell):
@@ -44,35 +47,28 @@ class SpellBuff(BaseSpell):
     # BUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(
+    def execute_spell(
         self,
-        actor: Any,
-        target: Any,
+        actor: "Character",
+        target: "Character",
         rank: int,
     ) -> bool:
         """
-        Execute a buff spell with automatic success and beneficial effects.
+        Execute the buff spell from actor to target.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
-                The character targeted by the spell.
+                The character being targeted.
             rank (int):
-                The rank or level of the spell being cast.
+                The rank at which the spell is being cast.
 
         Returns:
             bool:
-                True if spell was cast successfully, False on failure.
+                True if action executed successfully, False otherwise.
 
         """
-        # Call the base class cast_spell to handle common checks.
-        if not super().cast_spell(actor, target, rank):
-            return False
-        # Validate that the effects are set.
-        if not self.effects:
-            raise ValueError("The effects field must be set.")
-
         # Apply the buffs.
         effects_applied, effects_not_applied = self._spell_apply_effects(
             actor=actor,

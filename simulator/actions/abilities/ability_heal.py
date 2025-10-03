@@ -5,7 +5,7 @@ Defines healing abilities that restore hit points to allies, including
 various healing spells and abilities with different effects and ranges.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
@@ -19,6 +19,9 @@ from core.dice_parser import (
 from core.utils import cprint
 from effects.event_system import HealEvent
 from pydantic import Field
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class AbilityHeal(BaseAbility):
@@ -40,24 +43,28 @@ class AbilityHeal(BaseAbility):
         self.heal_roll = self.heal_roll.replace(" +", "+").replace("+ ", "+")
         self.heal_roll = self.heal_roll.replace(" -", "-").replace("- ", "-")
 
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Execute this healing ability on a target.
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
+        """
+        Execute this healing ability on a target.
 
         Args:
-            actor (Any): The character using the ability.
-            target (Any): The character being healed.
+            actor (Any):
+                The character performing the action.
+            target (Any):
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
-            bool: True if ability was executed successfully, False on system errors.
+            bool:
+                True if action executed successfully, False otherwise.
 
         """
-        from character.main import Character
-
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
-
         # Check if the ability is on cooldown.
         if actor.actions.is_on_cooldown(self):
             return False

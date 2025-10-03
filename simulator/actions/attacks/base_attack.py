@@ -5,7 +5,7 @@ Defines the base classes for character attacks, including weapon attacks
 and natural attacks, with common functionality for execution and effects.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from actions.base_action import BaseAction, ValidActionEffect
 from combat.damage import DamageComponent, roll_damage_components
@@ -15,6 +15,9 @@ from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import DamageTakenEvent, HitEvent, LowHealthEvent
 from pydantic import Field
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class BaseAttack(BaseAction):
@@ -56,27 +59,30 @@ class BaseAttack(BaseAction):
     # COMBAT EXECUTION METHODS
     # ============================================================================
 
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Execute this attack against a target.
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
+        """
+        Execute this attack against a target.
 
         Args:
-            actor (Any): The character performing the attack.
-            target (Any): The character being attacked.
+            actor (Any):
+                The character performing the action.
+            target (Any):
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
-            bool: True if attack was executed successfully, False on validation errors.
-
+            bool:
+                True if action executed successfully, False otherwise.
         """
-        from character.main import Character
-
         # =====================================================================
         # 1. VALIDATION AND PREPARATION
         # =====================================================================
-
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
 
         # Check if the ability is on cooldown.
         if actor.actions.is_on_cooldown(self):

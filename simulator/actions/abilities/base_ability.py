@@ -5,13 +5,12 @@ Defines the base classes for character abilities, including offensive, defensive
 healing, and buff abilities, with common functionality for execution and effects.
 """
 
-from abc import ABC, abstractmethod
 from typing import Any
 
 from actions.base_action import BaseAction
 
 
-class BaseAbility(BaseAction, ABC):
+class BaseAbility(BaseAction):
     """Abstract base class for all character abilities and special powers.
 
     This class provides a foundation for implementing various types of abilities,
@@ -39,23 +38,6 @@ class BaseAbility(BaseAction, ABC):
 
         """
         return not self.target_expr or self.target_expr.strip() == ""
-
-    # =========================================================================
-    # ABSTRACT METHODS (MUST BE IMPLEMENTED BY SUBCLASSES)
-    # =========================================================================
-
-    @abstractmethod
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Execute this ability against a target.
-
-        Args:
-            actor (Any): The character using the ability.
-            target (Any): The target character.
-
-        Returns:
-            bool: True if ability was executed successfully, False on system errors.
-
-        """
 
 
 def deserialize_ability(data: dict[str, Any]) -> Any:

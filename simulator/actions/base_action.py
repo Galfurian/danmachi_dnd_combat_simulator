@@ -5,7 +5,7 @@ Defines the base classes and interfaces for actions, including attacks,
 abilities, and spells, with common functionality for execution and effects.
 """
 
-from typing import Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from combat.damage import DamageComponent
 from core.constants import (
@@ -46,6 +46,9 @@ ValidActionEffect: TypeAlias = (
     | IncapacitatingEffect
     | TriggerEffect
 )
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class BaseAction(BaseModel):
@@ -93,15 +96,25 @@ class BaseAction(BaseModel):
         description="List of effects that this ability applies.",
     )
 
-    def execute(self, actor: Any, target: Any) -> bool:
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
         """Execute the action against a target character.
 
         Args:
-            actor (Any): The character performing the action.
-            target (Any): The character being targeted.
+            actor (Character):
+                The character performing the action.
+            target (Character):
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
-            bool: True if action executed successfully, False otherwise.
+            bool:
+                True if action executed successfully, False otherwise.
 
         Raises:
             NotImplementedError: This method must be implemented by subclasses.

@@ -5,12 +5,14 @@ Defines debuff spells that apply negative effects to targets, such as
 stat reductions, curses, or other detrimental magical effects.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.utils import cprint
 
+if TYPE_CHECKING:
+    from character.main import Character
 
 class SpellDebuff(BaseSpell):
     """Detrimental spell that weakens enemies with negative effects.
@@ -44,36 +46,28 @@ class SpellDebuff(BaseSpell):
     # DEBUFF SPELL METHODS
     # ============================================================================
 
-    def cast_spell(
+    def execute_spell(
         self,
-        actor: Any,
-        target: Any,
+        actor: "Character",
+        target: "Character",
         rank: int,
     ) -> bool:
         """
-        Cast the debuff spell from actor to target.
+        Execute the buff spell from actor to target.
 
         Args:
             actor (Any):
-                The entity casting the spell.
+                The character casting the spell.
             target (Any):
-                The entity receiving the spell.
+                The character being targeted.
             rank (int):
-                The rank or level of the spell being cast.
+                The rank at which the spell is being cast.
 
         Returns:
             bool:
-                True if the spell was successfully cast and the effect applied,
-                False otherwise.
+                True if action executed successfully, False otherwise.
 
         """
-        # Call the base class cast_spell to handle common checks.
-        if not super().cast_spell(actor, target, rank):
-            return False
-        # Validate that the effects are set.
-        if not self.effects:
-            raise ValueError("The effects field must be set.")
-
         # Apply the buffs.
         effects_applied, effects_not_applied = self._spell_apply_effects(
             actor=actor,

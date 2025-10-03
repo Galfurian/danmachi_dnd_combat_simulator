@@ -5,7 +5,7 @@ Defines offensive abilities that deal damage to enemies, including
 special attacks, area effects, and other combat abilities.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
@@ -16,6 +16,9 @@ from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import DamageTakenEvent, HitEvent, LowHealthEvent
 from pydantic import Field
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class AbilityOffensive(BaseAbility):
@@ -47,32 +50,31 @@ class AbilityOffensive(BaseAbility):
         """
         return f"[bold blue]{self.name}[/]"
 
-    def execute(self, actor: Any, target: Any) -> bool:
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
         """
         Execute this offensive ability against a target.
 
         Args:
             actor (Any):
-                The character using the ability.
+                The character performing the action.
             target (Any):
-                The character being damaged.
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
             bool:
-                True if ability was executed successfully, False on system
-                errors.
+                True if action executed successfully, False otherwise.
 
         """
-        from character.main import Character
-
         # =====================================================================
         # 1. VALIDATION AND PREPARATION
         # =====================================================================
-
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
 
         # Check if the ability is on cooldown.
         if actor.actions.is_on_cooldown(self):

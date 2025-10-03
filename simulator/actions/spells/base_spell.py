@@ -5,8 +5,7 @@ Defines the base classes for spells, including offensive, defensive,
 healing, and buff spells, with common functionality for casting and effects.
 """
 
-from abc import abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from actions.base_action import BaseAction, ValidActionEffect
 from combat.damage import (
@@ -21,6 +20,9 @@ from core.dice_parser import (
     roll_dice_expression,
 )
 from pydantic import Field
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class BaseSpell(BaseAction):
@@ -80,51 +82,33 @@ class BaseSpell(BaseAction):
     # SPELL SYSTEM METHODS
     # ============================================================================
 
-    def execute(self, actor: Any, target: Any) -> bool:
-        """Execute spell - delegates to cast_spell method.
-
-        Args:
-            actor (Any): The character casting the spell.
-            target (Any): The target of the spell.
-
-        Returns:
-            bool: Always False - use cast_spell() instead.
-
-        Raises:
-            NotImplementedError: Always raised to enforce using cast_spell().
-
-        """
-        raise NotImplementedError("Spells must use the cast_spell method.")
-
-    @abstractmethod
-    def cast_spell(
+    def execute(
         self,
-        actor: Any,
-        target: Any,
-        rank: int,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
     ) -> bool:
         """
-        Abstract method for casting spells with level-specific behavior.
+        Execute this spell against a target.
 
         Args:
             actor (Any):
-                The character casting the spell (must have mind points).
+                The character performing the action.
             target (Any):
-                The character targeted by the spell.
-            rank (int):
-                The rank at which the spell is being cast.
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
 
         Returns:
             bool:
-                True if spell was cast successfully, False on failure.
+                True if action executed successfully, False otherwise.
 
         """
-        from character.main import Character
+        # Get the rank from kwargs, defaulting to None if not provided.
+        rank: int | None = kwargs.get("rank", None)
 
-        if not isinstance(actor, Character):
-            raise ValueError("The actor must be a Character instance.")
-        if not isinstance(target, Character):
-            raise ValueError("The target must be a Character instance.")
+        if not isinstance(rank, int):
+            raise ValueError("Rank must be an integer.")
         if rank < 0 or rank >= len(self.mind_cost):
             raise ValueError("Rank is out of bounds for this spell.")
 
@@ -136,7 +120,31 @@ class BaseSpell(BaseAction):
         if actor.stats.mind < self.mind_cost[rank]:
             return False
 
-        return True
+        return self.execute_spell(actor, target, rank)
+
+    def execute_spell(
+        self,
+        actor: "Character",
+        target: "Character",
+        rank: int,
+    ) -> bool:
+        """
+        Common logic for executing a spell after validation.
+
+        Args:
+            actor (Any):
+                The character casting the spell.
+            target (Any):
+                The character being targeted.
+            rank (int):
+                The rank at which the spell is being cast.
+
+        Returns:
+            bool:
+                True if action executed successfully, False otherwise.
+
+        """
+        raise NotImplementedError("execute_spell must be implemented by subclasses")
 
     # ============================================================================
     # EFFECT ANALYSIS METHODS
