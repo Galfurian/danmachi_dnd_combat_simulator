@@ -164,9 +164,9 @@ class TriggerCondition(BaseModel):
         if self.threshold is not None:
             s += f"threshold={self.threshold}, "
         if self.damage_type is not None:
-            s += f"damage={self.damage_type.__name__}, "
+            s += f"damage={self.damage_type.name}, "
         if self.spell_category is not None:
-            s += f"spell={self.spell_category.__name__}, "
+            s += f"spell={self.spell_category.name}, "
         s += f"description={self.description})"
         return s
 
