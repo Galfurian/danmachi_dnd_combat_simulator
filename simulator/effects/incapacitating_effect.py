@@ -11,7 +11,7 @@ from core.dice_parser import VarInfo, evaluate_expression, substitute_variables
 from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
-from core.constants import AbilityType, IncapacitationType
+from core.constants import StatType, IncapacitationType
 
 from .base_effect import ActiveEffect, Effect, EventResponse
 from .event_system import CombatEvent, DamageTakenEvent, TurnEndEvent
@@ -34,7 +34,7 @@ class IncapacitatingEffect(Effect):
         default=None,
         description="Saving throw DC expression (e.g., '8' or 'spellcasting_modifier + 8'). None if no save allowed.",
     )
-    save_type: AbilityType | None = Field(
+    save_type: StatType | None = Field(
         default=None,
         description="Ability type for the saving throw. None if no save allowed.",
     )
@@ -335,17 +335,17 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         assert isinstance(self.target, Character), "Target must be a Character."
 
         ability_mod = 0
-        if self.incapacitating_effect.save_type == AbilityType.STRENGTH:
+        if self.incapacitating_effect.save_type == StatType.STRENGTH:
             ability_mod = self.target.stats.STR
-        elif self.incapacitating_effect.save_type == AbilityType.DEXTERITY:
+        elif self.incapacitating_effect.save_type == StatType.DEXTERITY:
             ability_mod = self.target.stats.DEX
-        elif self.incapacitating_effect.save_type == AbilityType.CONSTITUTION:
+        elif self.incapacitating_effect.save_type == StatType.CONSTITUTION:
             ability_mod = self.target.stats.CON
-        elif self.incapacitating_effect.save_type == AbilityType.INTELLIGENCE:
+        elif self.incapacitating_effect.save_type == StatType.INTELLIGENCE:
             ability_mod = self.target.stats.INT
-        elif self.incapacitating_effect.save_type == AbilityType.WISDOM:
+        elif self.incapacitating_effect.save_type == StatType.WISDOM:
             ability_mod = self.target.stats.WIS
-        elif self.incapacitating_effect.save_type == AbilityType.CHARISMA:
+        elif self.incapacitating_effect.save_type == StatType.CHARISMA:
             ability_mod = self.target.stats.CHA
 
         return ability_mod

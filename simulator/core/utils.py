@@ -7,6 +7,7 @@ with rich formatting, singleton pattern, and other shared functionality.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Generic
 
 from rich.console import Console

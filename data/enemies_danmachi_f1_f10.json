@@ -7,12 +7,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 8,
-            "dexterity": 12,
-            "constitution": 6,
-            "intelligence": 8,
-            "wisdom": 8,
-            "charisma": 6
+            "STRENGTH": 8,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 6,
+            "INTELLIGENCE": 8,
+            "WISDOM": 8,
+            "CHARISMA": 6
         },
         "wielded_weapons": [
             "Dagger"
@@ -26,12 +26,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 10,
-            "dexterity": 10,
-            "constitution": 8,
-            "intelligence": 6,
-            "wisdom": 6,
-            "charisma": 6
+            "STRENGTH": 10,
+            "DEXTERITY": 10,
+            "CONSTITUTION": 8,
+            "INTELLIGENCE": 6,
+            "WISDOM": 6,
+            "CHARISMA": 6
         },
         "wielded_weapons": [
             "Shortsword"
@@ -45,12 +45,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 12,
-            "dexterity": 8,
-            "constitution": 12,
-            "intelligence": 2,
-            "wisdom": 6,
-            "charisma": 1
+            "STRENGTH": 12,
+            "DEXTERITY": 8,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 2,
+            "WISDOM": 6,
+            "CHARISMA": 1
         },
         "natural_weapons": [
             "Worm Mouth"
@@ -64,12 +64,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 12,
-            "dexterity": 16,
-            "constitution": 10,
-            "intelligence": 6,
-            "wisdom": 10,
-            "charisma": 6
+            "STRENGTH": 12,
+            "DEXTERITY": 16,
+            "CONSTITUTION": 10,
+            "INTELLIGENCE": 6,
+            "WISDOM": 10,
+            "CHARISMA": 6
         },
         "natural_weapons": [
             "Claws"
@@ -83,12 +83,12 @@
             "Insectoid": 1
         },
         "stats": {
-            "strength": 14,
-            "dexterity": 8,
-            "constitution": 14,
-            "intelligence": 2,
-            "wisdom": 8,
-            "charisma": 2
+            "STRENGTH": 14,
+            "DEXTERITY": 8,
+            "CONSTITUTION": 14,
+            "INTELLIGENCE": 2,
+            "WISDOM": 8,
+            "CHARISMA": 2
         },
         "natural_weapons": [
             "Mandibles"
@@ -102,12 +102,12 @@
             "Ooze": 1
         },
         "stats": {
-            "strength": 8,
-            "dexterity": 6,
-            "constitution": 14,
-            "intelligence": 1,
-            "wisdom": 8,
-            "charisma": 1
+            "STRENGTH": 8,
+            "DEXTERITY": 6,
+            "CONSTITUTION": 14,
+            "INTELLIGENCE": 1,
+            "WISDOM": 8,
+            "CHARISMA": 1
         },
         "natural_weapons": [
             "Acid gland"
@@ -124,12 +124,12 @@
             "Brute": 1
         },
         "stats": {
-            "strength": 16,
-            "dexterity": 6,
-            "constitution": 16,
-            "intelligence": 6,
-            "wisdom": 8,
-            "charisma": 6
+            "STRENGTH": 16,
+            "DEXTERITY": 6,
+            "CONSTITUTION": 16,
+            "INTELLIGENCE": 6,
+            "WISDOM": 8,
+            "CHARISMA": 6
         },
         "wielded_weapons": [
             "Greatclub"
@@ -143,12 +143,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 16,
-            "dexterity": 15,
-            "constitution": 12,
-            "intelligence": 2,
-            "wisdom": 10,
-            "charisma": 6
+            "STRENGTH": 16,
+            "DEXTERITY": 15,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 2,
+            "WISDOM": 10,
+            "CHARISMA": 6
         },
         "natural_weapons": [
             "Fangs",
@@ -163,12 +163,12 @@
             "Brute": 2
         },
         "stats": {
-            "strength": 18,
-            "dexterity": 12,
-            "constitution": 16,
-            "intelligence": 4,
-            "wisdom": 10,
-            "charisma": 5
+            "STRENGTH": 18,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 16,
+            "INTELLIGENCE": 4,
+            "WISDOM": 10,
+            "CHARISMA": 5
         },
         "natural_weapons": [
             "Massive Fist",
@@ -183,12 +183,12 @@
             "Dragonkin": 2
         },
         "stats": {
-            "strength": 16,
-            "dexterity": 12,
-            "constitution": 16,
-            "intelligence": 14,
-            "wisdom": 12,
-            "charisma": 8
+            "STRENGTH": 16,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 16,
+            "INTELLIGENCE": 14,
+            "WISDOM": 12,
+            "CHARISMA": 8
         },
         "resistances": [
             "FIRE"
@@ -211,12 +211,12 @@
             "Beast": 1
         },
         "stats": {
-            "strength": 6,
-            "dexterity": 16,
-            "constitution": 8,
-            "intelligence": 2,
-            "wisdom": 12,
-            "charisma": 4
+            "STRENGTH": 6,
+            "DEXTERITY": 16,
+            "CONSTITUTION": 8,
+            "INTELLIGENCE": 2,
+            "WISDOM": 12,
+            "CHARISMA": 4
         },
         "natural_weapons": [
             "Needle Spikes"
@@ -230,12 +230,12 @@
             "Beast": 2
         },
         "stats": {
-            "strength": 12,
-            "dexterity": 14,
-            "constitution": 12,
-            "intelligence": 4,
-            "wisdom": 10,
-            "charisma": 3
+            "STRENGTH": 12,
+            "DEXTERITY": 14,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 4,
+            "WISDOM": 10,
+            "CHARISMA": 3
         },
         "natural_weapons": [
             "Acid gland"
@@ -249,12 +249,12 @@
             "Beast": 2
         },
         "stats": {
-            "strength": 8,
-            "dexterity": 18,
-            "constitution": 10,
-            "intelligence": 6,
-            "wisdom": 14,
-            "charisma": 8
+            "STRENGTH": 8,
+            "DEXTERITY": 18,
+            "CONSTITUTION": 10,
+            "INTELLIGENCE": 6,
+            "WISDOM": 14,
+            "CHARISMA": 8
         },
         "natural_weapons": [
             "Wing Dust"
@@ -271,12 +271,12 @@
             "Beast": 3
         },
         "stats": {
-            "strength": 16,
-            "dexterity": 8,
-            "constitution": 18,
-            "intelligence": 3,
-            "wisdom": 10,
-            "charisma": 4
+            "STRENGTH": 16,
+            "DEXTERITY": 8,
+            "CONSTITUTION": 18,
+            "INTELLIGENCE": 3,
+            "WISDOM": 10,
+            "CHARISMA": 4
         },
         "natural_ac": 4,
         "natural_weapons": [
@@ -291,12 +291,12 @@
             "Beast": 3
         },
         "stats": {
-            "strength": 14,
-            "dexterity": 16,
-            "constitution": 12,
-            "intelligence": 4,
-            "wisdom": 12,
-            "charisma": 6
+            "STRENGTH": 14,
+            "DEXTERITY": 16,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 4,
+            "WISDOM": 12,
+            "CHARISMA": 6
         },
         "natural_weapons": [
             "Horn"
@@ -310,12 +310,12 @@
             "Beast": 3
         },
         "stats": {
-            "strength": 14,
-            "dexterity": 12,
-            "constitution": 12,
-            "intelligence": 10,
-            "wisdom": 10,
-            "charisma": 8
+            "STRENGTH": 14,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 10,
+            "WISDOM": 10,
+            "CHARISMA": 8
         },
         "wielded_weapons": [
             "Shortsword"
@@ -332,12 +332,12 @@
             "Beast": 4
         },
         "stats": {
-            "strength": 16,
-            "dexterity": 14,
-            "constitution": 14,
-            "intelligence": 6,
-            "wisdom": 12,
-            "charisma": 8
+            "STRENGTH": 16,
+            "DEXTERITY": 14,
+            "CONSTITUTION": 14,
+            "INTELLIGENCE": 6,
+            "WISDOM": 12,
+            "CHARISMA": 8
         },
         "natural_weapons": [
             "Flame Bite"
@@ -357,12 +357,12 @@
             "Beast": 5
         },
         "stats": {
-            "strength": 18,
-            "dexterity": 12,
-            "constitution": 16,
-            "intelligence": 8,
-            "wisdom": 10,
-            "charisma": 8
+            "STRENGTH": 18,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 16,
+            "INTELLIGENCE": 8,
+            "WISDOM": 10,
+            "CHARISMA": 8
         },
         "wielded_weapons": [
             "Greatclub"

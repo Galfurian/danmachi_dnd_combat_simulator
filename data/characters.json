@@ -7,12 +7,12 @@
             "Warrior": 3
         },
         "stats": {
-            "strength": 14,
-            "dexterity": 14,
-            "constitution": 14,
-            "intelligence": 10,
-            "wisdom": 12,
-            "charisma": 11
+            "STRENGTH": 14,
+            "DEXTERITY": 14,
+            "CONSTITUTION": 14,
+            "INTELLIGENCE": 10,
+            "WISDOM": 12,
+            "CHARISMA": 11
         },
         "number_of_attacks": 2,
         "wielded_weapons": [

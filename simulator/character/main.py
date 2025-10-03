@@ -6,7 +6,7 @@ managing characters, including stats, equipment, actions, spells, and effects.
 Handles character serialization from JSON data.
 """
 
-from core.constants import CharacterType, DamageType
+from core.constants import CharacterType, DamageType, StatType
 from core.dice_parser import VarInfo
 from core.logging import log_debug
 from effects.base_effect import EventResponse
@@ -87,7 +87,7 @@ class Character:
         name: str,
         race: CharacterRace,
         levels: dict[CharacterClass, int],
-        stats: dict[str, int],
+        stats: dict[StatType | str, int],
         spellcasting_ability: str | None,
         total_hands: int,
         immunities: set[DamageType],

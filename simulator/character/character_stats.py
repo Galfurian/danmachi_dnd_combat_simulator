@@ -7,7 +7,7 @@ ability modifiers, HP, AC, initiative, and utility stat expressions.
 
 from typing import Any
 
-from core.constants import BonusType
+from core.constants import StatType, BonusType, adapt_keys_to_enum
 from core.dice_parser import VarInfo
 from core.utils import get_stat_modifier
 
@@ -21,9 +21,8 @@ class CharacterStats:
     Attributes:
         owner (Any):
             The Character instance that owns this CharacterStats.
-        stats (dict[str, int]):
-            A dictionary of the character's base stats (e.g., strength,
-            dexterity).
+        stats (dict[StatType, int]):
+            A dictionary of the character's base stats using StatType keys.
         hp (int):
             The current hit points (HP) of the character.
         mind (int):
@@ -31,19 +30,26 @@ class CharacterStats:
 
     """
 
-    def __init__(self, owner: Any, stats: dict[str, int]) -> None:
+    _owner: Any
+    statistics: dict[StatType, int]
+    hp: int
+    mind: int
+
+    def __init__(self, owner: Any, stats: dict[StatType | str, int]) -> None:
         """
         Initializes the CharacterStats with a reference to its owner.
 
         Args:
             owner (Any):
                 The Character instance that owns this CharacterStats.
+            stats (dict[StatType | str, int]):
+                A dictionary of ability scores with StatType or string keys.
 
         """
-        self._owner: Any = owner
-        self.statistics: dict[str, int] = stats
-        self.hp: int = self.HP_MAX
-        self.mind: int = self.MIND_MAX
+        self._owner = owner
+        self.statistics = adapt_keys_to_enum(StatType, stats)
+        self.hp = self.HP_MAX
+        self.mind = self.MIND_MAX
 
     # ============================================================================
     # ABILITY SCORE MODIFIERS (D&D 5e Standard)
@@ -58,7 +64,7 @@ class CharacterStats:
             int: The strength modifier value.
 
         """
-        return get_stat_modifier(self.statistics["strength"])
+        return get_stat_modifier(self.statistics[StatType.STRENGTH])
 
     @property
     def DEX(self) -> int:
@@ -69,7 +75,7 @@ class CharacterStats:
             int: The dexterity modifier value.
 
         """
-        return get_stat_modifier(self.statistics["dexterity"])
+        return get_stat_modifier(self.statistics[StatType.DEXTERITY])
 
     @property
     def CON(self) -> int:
@@ -80,7 +86,7 @@ class CharacterStats:
             int: The constitution modifier value.
 
         """
-        return get_stat_modifier(self.statistics["constitution"])
+        return get_stat_modifier(self.statistics[StatType.CONSTITUTION])
 
     @property
     def INT(self) -> int:
@@ -91,7 +97,7 @@ class CharacterStats:
             int: The intelligence modifier value.
 
         """
-        return get_stat_modifier(self.statistics["intelligence"])
+        return get_stat_modifier(self.statistics[StatType.INTELLIGENCE])
 
     @property
     def WIS(self) -> int:
@@ -102,7 +108,7 @@ class CharacterStats:
             int: The wisdom modifier value.
 
         """
-        return get_stat_modifier(self.statistics["wisdom"])
+        return get_stat_modifier(self.statistics[StatType.WISDOM])
 
     @property
     def CHA(self) -> int:
@@ -113,7 +119,7 @@ class CharacterStats:
             int: The charisma modifier value.
 
         """
-        return get_stat_modifier(self.statistics["charisma"])
+        return get_stat_modifier(self.statistics[StatType.CHARISMA])
 
     @property
     def SPELLCASTING(self) -> int:
@@ -124,11 +130,14 @@ class CharacterStats:
             int: The spellcasting ability modifier value.
 
         """
-        if (
-            self._owner.spellcasting_ability
-            and self._owner.spellcasting_ability in self.statistics
-        ):
-            return get_stat_modifier(self.statistics[self._owner.spellcasting_ability])
+        if self._owner.spellcasting_ability:
+            # Convert string to StatType enum
+            try:
+                ability_enum = StatType[self._owner.spellcasting_ability.upper()]
+                return get_stat_modifier(self.statistics[ability_enum])
+            except KeyError:
+                # If the spellcasting ability string doesn't match an StatType, return 0
+                pass
         return 0
 
     # ============================================================================

@@ -6,7 +6,7 @@ import pytest
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.main import Character
-from core.constants import AbilityType, CharacterType, IncapacitationType
+from core.constants import StatType, CharacterType, IncapacitationType
 from effects.event_system import CombatEvent, DamageTakenEvent, EventType, TurnEndEvent
 from effects.incapacitating_effect import (
     ActiveIncapacitatingEffect,
@@ -43,12 +43,12 @@ def attacker(sample_race, sample_class):
         race=sample_race,
         levels={sample_class: 1},
         stats={
-            "strength": 14,
-            "dexterity": 15,
-            "constitution": 15,
-            "intelligence": 16,
-            "wisdom": 14,
-            "charisma": 18,
+            "STRENGTH": 14,
+            "DEXTERITY": 15,
+            "CONSTITUTION": 15,
+            "INTELLIGENCE": 16,
+            "WISDOM": 14,
+            "CHARISMA": 18,
         },
         spellcasting_ability=None,
         total_hands=2,
@@ -68,12 +68,12 @@ def target(sample_race, sample_class):
         race=sample_race,
         levels={sample_class: 1},
         stats={
-            "strength": 14,
-            "dexterity": 15,
-            "constitution": 15,
-            "intelligence": 16,
-            "wisdom": 14,
-            "charisma": 18,
+            "STRENGTH": 14,
+            "DEXTERITY": 15,
+            "CONSTITUTION": 15,
+            "INTELLIGENCE": 16,
+            "WISDOM": 14,
+            "CHARISMA": 18,
         },
         spellcasting_ability=None,
         total_hands=2,
@@ -343,7 +343,7 @@ def test_incapacitating_effect_with_saving_throw(attacker, target):
     """
     Test incapacitating effect with saving throw mechanics.
     """
-    from core.constants import AbilityType
+    from core.constants import StatType
     
     # Create an effect with saving throws
     effect = IncapacitatingEffect(
@@ -352,7 +352,7 @@ def test_incapacitating_effect_with_saving_throw(attacker, target):
         duration=3,
         incapacitation_type=IncapacitationType.STUNNED,
         save_dc="13",
-        save_type=AbilityType.CONSTITUTION,
+        save_type=StatType.CONSTITUTION,
         save_timing="end_of_turn",
     )
     

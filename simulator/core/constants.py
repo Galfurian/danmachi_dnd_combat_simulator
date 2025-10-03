@@ -7,6 +7,7 @@ simulator.
 """
 
 from enum import Enum
+from typing import Any
 
 # Global verbose level for combat output:
 # 0 - Minimal (e.g., only final results)
@@ -298,8 +299,8 @@ class IncapacitationType(NiceEnum):
         return f"[{self.color}]{message}[/]"
 
 
-class AbilityType(NiceEnum):
-    """Defines the six ability types in D&D."""
+class StatType(NiceEnum):
+    """Defines the six stat types in D&D."""
 
     STRENGTH = "STRENGTH"
     DEXTERITY = "DEXTERITY"
@@ -310,14 +311,14 @@ class AbilityType(NiceEnum):
 
     @property
     def short_name(self) -> str:
-        """Returns the 3-letter abbreviation for the ability."""
+        """Returns the 3-letter abbreviation for the stat."""
         return {
-            AbilityType.STRENGTH: "STR",
-            AbilityType.DEXTERITY: "DEX",
-            AbilityType.CONSTITUTION: "CON",
-            AbilityType.INTELLIGENCE: "INT",
-            AbilityType.WISDOM: "WIS",
-            AbilityType.CHARISMA: "CHA",
+            StatType.STRENGTH: "STR",
+            StatType.DEXTERITY: "DEX",
+            StatType.CONSTITUTION: "CON",
+            StatType.INTELLIGENCE: "INT",
+            StatType.WISDOM: "WIS",
+            StatType.CHARISMA: "CHA",
         }.get(self, "UNK")
 
 
@@ -341,3 +342,23 @@ def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     if char1 in group2 and char2 in group2:
         return False
     return True
+
+
+def adapt_keys_to_enum(enum_class: Any, data: dict[Any, Any]) -> dict[Any, Any]:
+    """
+    Converts dictionary keys to the specified enumeration type.
+
+    Args:
+        enum_class (Any):
+            The enumeration class to convert keys to.
+        data (dict[Any, Any]):
+            The input dictionary with keys to convert.
+
+    Returns:
+        dict[Any, Any]:
+            A new dictionary with keys converted to the specified enum type.
+    """
+    return {
+        enum_class[key] if isinstance(key, str) else key: value
+        for key, value in data.items()
+    }
