@@ -7,11 +7,11 @@ taking actions or participating in combat.
 
 from typing import Any, Literal
 
-from core.dice_parser import VarInfo
+from core.dice_parser import VarInfo, evaluate_expression, substitute_variables
 from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
-from core.constants import IncapacitationType
+from core.constants import AbilityType, IncapacitationType
 
 from .base_effect import ActiveEffect, Effect, EventResponse
 from .event_system import CombatEvent, DamageTakenEvent, TurnEndEvent
@@ -30,6 +30,29 @@ class IncapacitatingEffect(Effect):
     incapacitation_type: IncapacitationType = Field(
         description="Type of incapacitation (e.g., 'sleep', 'paralyzed', 'stunned').",
     )
+    save_dc: str | None = Field(
+        default=None,
+        description="Saving throw DC expression (e.g., '8' or 'spellcasting_modifier + 8'). None if no save allowed.",
+    )
+    save_type: AbilityType | None = Field(
+        default=None,
+        description="Ability type for the saving throw. None if no save allowed.",
+    )
+    save_timing: str = Field(
+        default="end_of_turn",
+        description="When the saving throw is made ('end_of_turn', 'on_apply', etc.).",
+    )
+
+    def model_post_init(self, _: Any) -> None:
+        """Validate saving throw configuration."""
+        # Ensure save_dc and save_type are both provided or both None
+        has_save_dc = self.save_dc is not None
+        has_save_type = self.save_type is not None
+
+        if has_save_dc != has_save_type:
+            raise ValueError(
+                "save_dc and save_type must both be provided or both be None"
+            )
 
     @property
     def color(self) -> str:
@@ -266,6 +289,100 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             f"{self.incapacitating_effect.colored_name} due to taking damage!",
         )
 
+    def _has_save_dc(self) -> bool:
+        """
+        Check if the incapacitating effect has a saving throw DC configured.
+
+        Returns:
+            bool:
+                True if a saving throw DC is configured, False otherwise.
+        """
+        return (
+            self.incapacitating_effect.save_dc is not None
+            and self.incapacitating_effect.save_type is not None
+        )
+
+    def _get_save_dc(self) -> int:
+        """
+        Evaluate and return the save DC for this incapacitating effect.
+
+        Returns:
+            int:
+                The evaluated save DC.
+        """
+        from character.main import Character
+
+        assert isinstance(self.target, Character), "Target must be a Character."
+
+        if not self._has_save_dc():
+            return 0
+
+        return evaluate_expression(
+            self.incapacitating_effect.save_dc,  # type: ignore[arg-type]
+            self.variables,
+        )
+
+    def _get_ability_modifier(self) -> int:
+        """
+        Get the ability modifier for the saving throw.
+
+        Returns:
+            int:
+                The ability modifier for the saving throw.
+        """
+        from character.main import Character
+
+        assert isinstance(self.target, Character), "Target must be a Character."
+
+        ability_mod = 0
+        if self.incapacitating_effect.save_type == AbilityType.STRENGTH:
+            ability_mod = self.target.stats.STR
+        elif self.incapacitating_effect.save_type == AbilityType.DEXTERITY:
+            ability_mod = self.target.stats.DEX
+        elif self.incapacitating_effect.save_type == AbilityType.CONSTITUTION:
+            ability_mod = self.target.stats.CON
+        elif self.incapacitating_effect.save_type == AbilityType.INTELLIGENCE:
+            ability_mod = self.target.stats.INT
+        elif self.incapacitating_effect.save_type == AbilityType.WISDOM:
+            ability_mod = self.target.stats.WIS
+        elif self.incapacitating_effect.save_type == AbilityType.CHARISMA:
+            ability_mod = self.target.stats.CHA
+
+        return ability_mod
+
+    def _perform_saving_throw(self) -> bool:
+        """
+        Perform a saving throw for this incapacitating effect.
+
+        Returns:
+            bool: True if the saving throw succeeds, False otherwise.
+        """
+        import random
+        from character.main import Character
+
+        if not self._has_save_dc():
+            return False
+
+        if not isinstance(self.target, Character):
+            return False
+
+        # Calculate the save DC.
+        dc = self._get_save_dc()
+        # Get the ability modifier.
+        ability_mod = self._get_ability_modifier()
+        # Roll d20 + modifier vs DC
+        d20_roll = random.randint(1, 20)
+        roll = d20_roll + ability_mod
+        success = roll >= dc
+
+        cprint(
+            f"    🎲 {self.target.colored_name} rolls {roll} "
+            f"({d20_roll} + {ability_mod}) vs DC {dc} "
+            f"{'✅' if success else '❌'}"
+        )
+
+        return success
+
     def _on_turn_end(self, event: TurnEndEvent) -> EventResponse | None:
         """
         Update the effect for the current turn by decrementing duration at the
@@ -275,14 +392,38 @@ class ActiveIncapacitatingEffect(ActiveEffect):
             raise ValueError("Effect duration is not set.")
         if self.duration <= 0:
             raise ValueError("Effect duration is already zero or negative.")
+
+        # Handle saving throws if configured and timing is end_of_turn
+        save_success = False
+        if (
+            self._has_save_dc()
+            and self.incapacitating_effect.save_timing == "end_of_turn"
+        ):
+            save_success = self._perform_saving_throw()
+
         self.duration -= 1
         remove_effect = False
-        if self.duration <= 0:
-            cprint(
-                f"    :hourglass_done: {self.effect.colored_name} "
-                f"has expired on {self.target.colored_name}."
-            )
+
+        # Effect ends if duration expires OR save succeeds
+        if self.duration <= 0 or save_success:
+            if save_success:
+                save_type_name = (
+                    self.incapacitating_effect.save_type.short_name
+                    if self.incapacitating_effect.save_type
+                    else "UNK"
+                )
+                cprint(
+                    f"    :shield: {self.target.colored_name} succeeds on "
+                    f"{save_type_name} save against "
+                    f"{self.effect.colored_name}!"
+                )
+            else:
+                cprint(
+                    f"    :hourglass_done: {self.effect.colored_name} "
+                    f"has expired on {self.target.colored_name}."
+                )
             remove_effect = True
+
         return EventResponse(
             effect=self.effect,
             remove_effect=remove_effect,

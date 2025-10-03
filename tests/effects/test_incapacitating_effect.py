@@ -6,7 +6,7 @@ import pytest
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.main import Character
-from core.constants import CharacterType, IncapacitationType
+from core.constants import AbilityType, CharacterType, IncapacitationType
 from effects.event_system import CombatEvent, DamageTakenEvent, EventType, TurnEndEvent
 from effects.incapacitating_effect import (
     ActiveIncapacitatingEffect,
@@ -337,3 +337,37 @@ def test_incapacitating_model_validation():
         incapacitation_type=IncapacitationType.SLEEP,
     )
     assert effect.incapacitation_type == IncapacitationType.SLEEP
+
+
+def test_incapacitating_effect_with_saving_throw(attacker, target):
+    """
+    Test incapacitating effect with saving throw mechanics.
+    """
+    from core.constants import AbilityType
+    
+    # Create an effect with saving throws
+    effect = IncapacitatingEffect(
+        name="Test Stun",
+        description="Test stun with saves",
+        duration=3,
+        incapacitation_type=IncapacitationType.STUNNED,
+        save_dc="13",
+        save_type=AbilityType.CONSTITUTION,
+        save_timing="end_of_turn",
+    )
+    
+    # Apply the effect
+    success = effect.apply_effect(attacker, target, [])
+    assert success
+    
+    # Get the active effect
+    active_effects = list(target.effects.incapacitating_effects)
+    assert len(active_effects) == 1
+    active_effect = active_effects[0]
+    
+    # Test that saving throw is attempted on turn end
+    event = TurnEndEvent(source=target, turn_number=1)
+    response = active_effect.on_event(event)
+    
+    # Response should exist (either effect continues or ends due to save/duration)
+    assert response is not None

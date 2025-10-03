@@ -298,6 +298,29 @@ class IncapacitationType(NiceEnum):
         return f"[{self.color}]{message}[/]"
 
 
+class AbilityType(NiceEnum):
+    """Defines the six ability types in D&D."""
+
+    STRENGTH = "STRENGTH"
+    DEXTERITY = "DEXTERITY"
+    CONSTITUTION = "CONSTITUTION"
+    INTELLIGENCE = "INTELLIGENCE"
+    WISDOM = "WISDOM"
+    CHARISMA = "CHARISMA"
+
+    @property
+    def short_name(self) -> str:
+        """Returns the 3-letter abbreviation for the ability."""
+        return {
+            AbilityType.STRENGTH: "STR",
+            AbilityType.DEXTERITY: "DEX",
+            AbilityType.CONSTITUTION: "CON",
+            AbilityType.INTELLIGENCE: "INT",
+            AbilityType.WISDOM: "WIS",
+            AbilityType.CHARISMA: "CHA",
+        }.get(self, "UNK")
+
+
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     """Determines if char2 is an opponent of char1.
 
