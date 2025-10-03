@@ -76,8 +76,7 @@ class AbilityOffensive(BaseAbility):
         # 1. VALIDATION AND PREPARATION
         # =====================================================================
 
-        # Check if the ability is on cooldown.
-        if actor.actions.is_on_cooldown(self):
+        if not super().execute(actor, target, **kwargs):
             return False
 
         # =====================================================================
@@ -255,7 +254,7 @@ class AbilityOffensive(BaseAbility):
             if not target.is_alive():
                 msg += f" defeating {target.colored_name}"
             msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             msg += f"({attack_details}), "
             if damage_details:
                 msg += f" dealing {damage} damage → "

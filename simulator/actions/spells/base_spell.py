@@ -104,22 +104,20 @@ class BaseSpell(BaseAction):
                 True if action executed successfully, False otherwise.
 
         """
+
+        if not super().execute(actor, target, **kwargs):
+            return False
+
         # Get the rank from kwargs, defaulting to None if not provided.
         rank: int | None = kwargs.get("rank", None)
-
         if not isinstance(rank, int):
             raise ValueError("Rank must be an integer.")
         if rank < 0 or rank >= len(self.mind_cost):
             raise ValueError("Rank is out of bounds for this spell.")
-
-        # Check if the ability is on cooldown.
-        if actor.actions.is_on_cooldown(self):
-            return False
-
         # Check if actor has enough mind points to cast the spell.
         if actor.stats.mind < self.mind_cost[rank]:
             return False
-
+        # Call the subclass-specific spell execution logic.
         return self.execute_spell(actor, target, rank)
 
     def execute_spell(

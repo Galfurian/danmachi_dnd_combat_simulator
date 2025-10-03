@@ -122,7 +122,7 @@ class SpellHeal(BaseSpell):
             if effects_not_applied:
                 msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             if actual_healing != heal.value:
                 msg += f" healing {actual_healing} 💚 (rolled {heal.value}, capped at max 💚)"
             else:

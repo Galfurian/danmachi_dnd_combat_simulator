@@ -65,8 +65,7 @@ class AbilityHeal(BaseAbility):
                 True if action executed successfully, False otherwise.
 
         """
-        # Check if the ability is on cooldown.
-        if actor.actions.is_on_cooldown(self):
+        if not super().execute(actor, target, **kwargs):
             return False
 
         # Get expression variables from actor.
@@ -114,7 +113,7 @@ class AbilityHeal(BaseAbility):
             if effects_not_applied:
                 msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             if actual_healing != heal.value:
                 msg += f" healing {actual_healing} 💚 (rolled {heal.value}, capped at max 💚)"
             else:

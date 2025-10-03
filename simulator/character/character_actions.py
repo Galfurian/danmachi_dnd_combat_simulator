@@ -266,10 +266,14 @@ class CharacterActions:
         self.reset_available_actions()
 
     def turn_done(self) -> bool:
-        """Check if the character has used both a standard and bonus action this turn.
+        """
+        Check if the character has used both a standard and bonus action this
+        turn.
 
         Returns:
-            bool: True if the character's turn is done, False if they can still act.
+            bool:
+                True if the character's turn is done, False if they can still
+                act.
 
         """
         result: list[BaseAction] = (
@@ -330,25 +334,6 @@ class CharacterActions:
                 )
                 self._uses[action.name] = action.get_maximum_uses()
 
-    def get_remaining_uses(self, action: BaseAction) -> int:
-        """
-        Return the remaining uses of an action.
-
-        Args:
-            action (BaseAction):
-                The action to check.
-
-        Returns:
-            int:
-                The remaining uses of the action. Returns -1 for unlimited use
-                actions.
-
-        """
-        # Unlimited uses.
-        if not action.has_limited_uses():
-            return -1
-        return self._uses.get(action.name, 0)
-
     def decrement_uses(self, action: BaseAction) -> bool:
         """
         Decrement the uses of an action by 1.
@@ -373,6 +358,40 @@ class CharacterActions:
                 self._uses[action.name] -= 1
                 return True
         return False
+
+    def get_remaining_uses(self, action: BaseAction) -> int:
+        """
+        Return the remaining uses of an action.
+
+        Args:
+            action (BaseAction):
+                The action to check.
+
+        Returns:
+            int:
+                The remaining uses of the action. Returns -1 for unlimited use
+                actions.
+
+        """
+        if not action.has_limited_uses():
+            return -1
+        return self._uses.get(action.name, 0)
+
+    def has_uses_left(self, action: BaseAction) -> bool:
+        """
+        Check if an action has uses left.
+
+        Args:
+            action (BaseAction):
+                The action to check.
+
+        Returns:
+            bool:
+                True if the action has uses left, False otherwise.
+        """
+        if not action.has_limited_uses():
+            return True
+        return self.get_remaining_uses(action) > 0
 
     def learn(self, action: BaseAction) -> None:
         """

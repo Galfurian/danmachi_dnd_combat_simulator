@@ -77,15 +77,13 @@ class BaseAction(BaseModel):
         default="",
         description="Expression defining number of targets.",
     )
-    cooldown: int = Field(
-        default=-1,
-        ge=-1,
-        description="Cooldown period in turns (-1 for no cooldown)",
+    cooldown: int | None = Field(
+        default=None,
+        description="Cooldown period in turns.",
     )
-    maximum_uses: int = Field(
-        default=-1,
-        ge=-1,
-        description="Maximum number of uses per encounter/day (-1 for unlimited)",
+    maximum_uses: int | None = Field(
+        default=None,
+        description="Maximum number of uses per encounter.",
     )
     target_restrictions: list[str] = Field(
         default_factory=list,
@@ -116,11 +114,20 @@ class BaseAction(BaseModel):
             bool:
                 True if action executed successfully, False otherwise.
 
-        Raises:
-            NotImplementedError: This method must be implemented by subclasses.
-
         """
-        raise NotImplementedError("Subclasses must implement the execute method")
+        # 1. Check if the target is valid.
+        if not self.is_valid_target(actor, target):
+            return False
+        # 2. Check that both actor and target are alive.
+        if not actor.is_alive() or not target.is_alive():
+            return False
+        # 3. Check if the ability has uses left.
+        if not actor.actions.has_uses_left(self):
+            return False
+        # 4. Check if the ability is off cooldown.
+        if actor.actions.is_on_cooldown(self):
+            return False
+        return True
 
     # ===========================================================================
     # GENERIC METHODS
@@ -135,7 +142,7 @@ class BaseAction(BaseModel):
                 True if maximum uses is greater than 0, False if unlimited.
 
         """
-        return self.maximum_uses > 0
+        return self.maximum_uses is not None and self.maximum_uses > 0
 
     def get_maximum_uses(self) -> int:
         """
@@ -146,6 +153,7 @@ class BaseAction(BaseModel):
                 Maximum uses per encounter/day (-1 for unlimited).
 
         """
+        assert self.maximum_uses is not None, "Maximum uses is not set"
         return self.maximum_uses
 
     def target_count(self, variables: list[VarInfo] = []) -> int:
@@ -174,7 +182,7 @@ class BaseAction(BaseModel):
                 True if cooldown is greater than 0, False otherwise.
 
         """
-        return self.cooldown > 0
+        return self.cooldown is not None and self.cooldown > 0
 
     def get_cooldown(self) -> int:
         """
@@ -185,6 +193,7 @@ class BaseAction(BaseModel):
                 Cooldown period in turns (-1 for no cooldown).
 
         """
+        assert self.cooldown is not None, "Cooldown is not set"
         return self.cooldown
 
     # ============================================================================

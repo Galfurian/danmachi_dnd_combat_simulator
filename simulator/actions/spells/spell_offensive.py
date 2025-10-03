@@ -10,11 +10,13 @@ from typing import TYPE_CHECKING, Any, Literal
 from actions.spells.base_spell import BaseSpell
 from combat.damage import DamageComponent
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.logging import log_warning
 from core.utils import cprint
 from pydantic import Field
 
 if TYPE_CHECKING:
     from character.main import Character
+
 
 class SpellOffensive(BaseSpell):
     """Offensive spell that deals damage through magical attacks.
@@ -63,38 +65,52 @@ class SpellOffensive(BaseSpell):
                 True if action executed successfully, False otherwise.
 
         """
-        # Calculate spell attack components
-        spell_attack_bonus = actor.get_spell_attack_bonus(self.level)
-        attack_modifier = actor.effects.get_base_modifier(BonusType.ATTACK)
 
-        # Roll spell attack vs target AC
-        attack = self._roll_attack(
-            actor,
-            str(spell_attack_bonus),
-            attack_modifier,
+        # =====================================================================
+        # ATTACK ROLL
+        # =====================================================================
+
+        # Get the spell attack bonus from the actor's stats.
+        spell_attack_bonus = str(actor.get_spell_attack_bonus(self.level))
+
+        # Get the attack modifier from effects.
+        modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
+
+        # Roll the attack.
+        attack = self._roll_attack(actor, spell_attack_bonus, modifiers)
+
+        if not attack.rolls:
+            log_warning(
+                "Attack roll failed, no rolls returned.",
+                {"ability": self.name, "actor": actor.name},
+            )
+            return False
+
+        # Prepare the roll message.
+        attack_details = (
+            f"rolled ({attack.description}) {attack.value} vs AC {target.AC}"
         )
-        assert attack.rolls, "Attack roll must contain at least one die roll."
-        d20_roll = attack.rolls[0]
-        is_crit = d20_roll == 20
-        is_fumble = d20_roll == 1
 
-        msg = f"    🎯 {actor.colored_name} casts [bold]{self.name}[/] on {target.colored_name}"
+        # =====================================================================
+        # MISS
+        # =====================================================================
 
-        # Handle fumble (always misses)
-        if is_fumble:
-            if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack.description}) [magenta]{attack.value}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [magenta]fumble![/]"
+        # If the attack misses or is a fumble, display the miss message and return.
+        if (attack.value < target.AC) or attack.is_fumble():
+            msg = (
+                f"    ❌ {actor.colored_name} "
+                f"casts {self.colored_name} on "
+                f"{target.colored_name}"
+            )
+            if GLOBAL_VERBOSE_LEVEL == 1:
+                msg += f"({attack_details}), "
+            msg += f"{"fumbles" if attack.is_fumble() else "misses"}!"
             cprint(msg)
             return True
 
-        # Handle miss (unless critical hit)
-        if attack.value < target.AC and not is_crit:
-            if GLOBAL_VERBOSE_LEVEL >= 1:
-                msg += f" rolled ({attack.description}) [red]{attack.value}[/] vs AC [yellow]{target.AC}[/]"
-            msg += " and [red]miss![/]"
-            cprint(msg)
-            return True
+        # =====================================================================
+        # DAMAGE CALCULATION
+        # =====================================================================
 
         # Handle successful hit - calculate and apply damage
         total_damage, damage_details = self._spell_roll_damage_components(
@@ -104,8 +120,9 @@ class SpellOffensive(BaseSpell):
             self.damage,
         )
 
-        # Check if target was defeated.
-        is_dead = not target.is_alive()
+        # =====================================================================
+        # APPLY EFFECTS
+        # =====================================================================
 
         # Apply the buffs.
         effects_applied, effects_not_applied = self._spell_apply_effects(
@@ -115,6 +132,12 @@ class SpellOffensive(BaseSpell):
             rank=rank,
         )
 
+        msg = (
+            f"    🎯 {actor.colored_name} "
+            f"casts {self.colored_name} on "
+            f"{target.colored_name}"
+        )
+
         # Display combat results with appropriate detail level
         if GLOBAL_VERBOSE_LEVEL == 0:
             msg += f" dealing {total_damage} damage"
@@ -122,12 +145,12 @@ class SpellOffensive(BaseSpell):
                 msg += f" applying {self._effect_list_string(effects_applied)}"
             if effects_not_applied:
                 msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
-            if is_dead:
+            if target.is_dead():
                 msg += f" defeating {target.colored_name}"
             msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             msg += f" rolled ({attack.description}) {attack.value} vs AC [yellow]{target.AC}[/] → "
-            msg += "[magenta]crit![/]\n" if is_crit else "[green]hit![/]\n"
+            msg += "[magenta]crit![/]\n" if attack.is_critical() else "[green]hit![/]\n"
             msg += f"        Dealing {total_damage} damage to {target.colored_name} → "
             msg += " + ".join(damage_details) + ".\n"
             if effects_applied:
@@ -138,7 +161,7 @@ class SpellOffensive(BaseSpell):
                 msg += f"        {target.colored_name} doesn't gain "
                 msg += self._effect_list_string(effects_not_applied)
                 msg += ".\n"
-            if is_dead:
+            if target.is_dead():
                 msg += f"        {target.colored_name} is defeated."
         cprint(msg)
 

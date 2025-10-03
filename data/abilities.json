@@ -46,7 +46,6 @@
         "action_class": "STANDARD",
         "description": "A smaller flame breath attack used by hellhounds and similar creatures.",
         "cooldown": 2,
-        "maximum_uses": -1,
         "target_expr": "2",
         "damage": [
             {
@@ -72,8 +71,6 @@
         "name": "Radiant Smite",
         "action_class": "STANDARD",
         "description": "A burst of radiant energy strikes your foe.",
-        "cooldown": 0,
-        "maximum_uses": -1,
         "target_expr": "1",
         "damage": [
             {

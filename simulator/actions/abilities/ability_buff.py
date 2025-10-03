@@ -56,8 +56,7 @@ class AbilityBuff(BaseAbility):
             bool:
                 True if action executed successfully, False otherwise.
         """
-        # Check if the ability is on cooldown.
-        if actor.actions.is_on_cooldown(self):
+        if not super().execute(actor, target, **kwargs):
             return False
 
         # Apply the buff effect.
@@ -77,7 +76,7 @@ class AbilityBuff(BaseAbility):
             if effects_not_applied:
                 msg += f" but fails to apply {self._effect_list_string(effects_not_applied)}"
             msg += "."
-        if GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             msg += "."
             if effects_applied or effects_not_applied:
                 msg += "\n"

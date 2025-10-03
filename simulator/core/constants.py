@@ -11,8 +11,7 @@ from typing import Any
 
 # Global verbose level for combat output:
 # 0 - Minimal (e.g., only final results)
-# 1 - Moderate (e.g., show dice rolls)
-# 2 - Full detail (e.g., intermediate computations, effects applied, bonuses, etc.)
+# 1 - Full (e.g., show dice rolls)
 GLOBAL_VERBOSE_LEVEL = 0
 
 

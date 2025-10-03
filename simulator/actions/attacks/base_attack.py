@@ -81,27 +81,18 @@ class BaseAttack(BaseAction):
                 True if action executed successfully, False otherwise.
         """
         # =====================================================================
-        # 1. VALIDATION AND PREPARATION
+        # VALIDATION AND PREPARATION
         # =====================================================================
 
-        # Check if the ability is on cooldown.
-        if actor.actions.is_on_cooldown(self):
+        if not super().execute(actor, target, **kwargs):
             return False
 
         # =====================================================================
-        # 2. ATTACK ROLL (TO-HIT, CRIT, FUMBLE)
+        # ATTACK ROLL
         # =====================================================================
-        """Perform an attack roll using the same logic as BaseAttack."""
 
         # Get the attack modifier from effects.
         modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
-
-        if not all(isinstance(modifier, str) for modifier in modifiers):
-            log_warning(
-                "Modifiers for attack roll must be strings.",
-                {"ability": self.name, "modifiers": modifiers},
-            )
-            return False
 
         # Roll the attack.
         attack = self._roll_attack(actor, self.attack_roll, modifiers)
@@ -118,15 +109,26 @@ class BaseAttack(BaseAction):
             f"rolled ({attack.description}) {attack.value} vs AC {target.AC}"
         )
 
-        # Determine if the attack hits, crits, or fumbles.
+        # =====================================================================
+        # MISS
+        # =====================================================================
+
+        # If the attack misses or is a fumble, display the miss message and return.
         if (attack.value < target.AC) or attack.is_fumble():
             msg = (
-                f"    ❌ {actor.colored_name} uses {self.colored_name} on "
-                f"{target.colored_name}, {attack_details}, but "
+                f"    ❌ {actor.colored_name} "
+                f"attacks {target.colored_name} with "
+                f"{self.colored_name} "
             )
+            if GLOBAL_VERBOSE_LEVEL == 1:
+                msg += f"({attack_details}), "
             msg += f"{"fumbles" if attack.is_fumble() else "misses"}!"
             cprint(msg)
             return True
+
+        # =====================================================================
+        # EFFECT GATHERING
+        # =====================================================================
 
         # Prepare a list to hold all the effects to apply.
         effects_to_apply: list[ValidActionEffect] = []
@@ -151,7 +153,7 @@ class BaseAttack(BaseAction):
             event_damage_bonuses.extend(response.damage_bonus)
 
         # =====================================================================
-        # 3. DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
+        # DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
         # =====================================================================
 
         # =============================
@@ -266,7 +268,7 @@ class BaseAttack(BaseAction):
             if not target.is_alive():
                 msg += f" defeating {target.colored_name}"
             msg += "."
-        elif GLOBAL_VERBOSE_LEVEL >= 1:
+        else:
             msg += f"({attack_details}), "
             if damage_details:
                 msg += f" dealing {damage} damage → "
