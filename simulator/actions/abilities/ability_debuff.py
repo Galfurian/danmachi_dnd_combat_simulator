@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from actions.abilities.base_ability import BaseAbility
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
+from core.dice_parser import VarInfo
 from core.utils import cprint
 
 if TYPE_CHECKING:
@@ -35,36 +36,33 @@ class AbilityDebuff(BaseAbility):
         if not all(isinstance(effect, Effect) for effect in self.effects):
             raise ValueError("All effects must be Effect instances.")
 
-    def execute(
+    def _execute_ability(
         self,
         actor: "Character",
         target: "Character",
-        **kwargs: Any,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute this debuff ability on a target in combat.
+        Abstract method to be implemented by subclasses for specific ability execution.
 
         Args:
-            actor (Any):
+            actor (Character):
                 The character performing the action.
-            target (Any):
+            target (Character):
                 The character being targeted.
-            **kwargs (Any):
-                Additional parameters for action execution.
+            variables (list[VarInfo]):
+                The variables available for the action execution.
 
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
-
         """
-        if not super().execute(actor, target, **kwargs):
-            return False
-
         # Apply the buff effect.
         effects_applied, effects_not_applied = self._common_apply_effects(
-            actor,
-            target,
-            self.effects,
+            actor=actor,
+            target=target,
+            effects=self.effects,
+            variables=variables,
         )
 
         # Display the outcome.

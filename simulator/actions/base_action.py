@@ -11,6 +11,7 @@ from combat.damage import DamageComponent
 from core.constants import (
     ActionCategory,
     ActionClass,
+    BonusType,
     is_oponent,
 )
 from core.dice_parser import (
@@ -272,6 +273,43 @@ class BaseAction(BaseModel):
         # Unknown category - default to no targeting.
         return False
 
+    def get_modifier_expressions(
+        self,
+        variables: list[VarInfo],
+    ) -> dict[BonusType, str]:
+        """
+        Get modifier expressions with variables substituted for display.
+
+        Args:
+            variables (list[VarInfo]):
+                List of variable info for substitution.
+
+        Returns:
+            dict[BonusType, str]:
+                Dictionary mapping bonus types to their expressions.
+
+        """
+        from combat.damage import DamageComponent, get_damage_expr
+        from effects.modifier_effect import ModifierEffect
+
+        expressions: dict[BonusType, str] = {}
+
+        for effect in self.effects:
+            if not isinstance(effect, ModifierEffect):
+                continue
+            for modifier in effect.modifiers:
+                expression = None
+                if isinstance(modifier.value, DamageComponent):
+                    expression = modifier.value.damage_roll
+                else:
+                    expression = modifier.value
+                expressions[modifier.bonus_type] = substitute_variables(
+                    expression,
+                    variables,
+                )
+
+        return expressions
+
     # ============================================================================
     # EFFECT SYSTEM METHODS
     # ============================================================================
@@ -462,132 +500,3 @@ class BaseAction(BaseModel):
             "msg": msg,
             "d20_roll": d20_roll,
         }
-
-    # ============================================================================
-    # COMMON UTILITY METHODS (SHARED BY DAMAGE-DEALING ABILITIES)
-    # ============================================================================
-
-    def _common_get_damage_expr(
-        self,
-        actor: Any,
-        damage_components: list["DamageComponent"],
-        variables: list[VarInfo] = [],
-    ) -> str:
-        """
-        Returns the damage expression with variables substituted.
-
-        Args:
-            actor:
-                The character using the ability
-            damage_components:
-                List of damage components to build expression from
-            variables:
-                Additional variables to include in the expression
-
-        Returns:
-            str:
-                Complete damage expression with variables replaced by values
-
-        """
-        from character.main import Character
-        from combat.damage import DamageComponent
-
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert damage_components, "damage_components list cannot be empty"
-        assert all(
-            isinstance(comp, DamageComponent) for comp in damage_components
-        ), "All damage_components must be DamageComponent instances"
-        assert all(
-            isinstance(var, VarInfo) for var in variables
-        ), "All variables must be VarInfo instances"
-
-        # Build the full expression by substituting each component's damage roll.
-        return " + ".join(
-            substitute_variables(component.damage_roll, variables)
-            for component in damage_components
-        )
-
-    def _common_get_min_damage(
-        self,
-        actor: Any,
-        damage_components: list["DamageComponent"],
-        variables: list[VarInfo] = [],
-    ) -> int:
-        """
-        Returns the minimum possible damage value for the ability.
-
-        Args:
-            actor:
-                The character using the ability
-            damage_components:
-                List of damage components to calculate from
-            variables:
-                Additional variables to include in the calculation
-
-        Returns:
-            int:
-                Minimum total damage across all damage components
-
-        """
-        from character.main import Character
-        from combat.damage import DamageComponent
-
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert damage_components, "damage_components list cannot be empty"
-        assert all(
-            isinstance(comp, DamageComponent) for comp in damage_components
-        ), "All damage_components must be DamageComponent instances"
-        assert all(
-            isinstance(var, VarInfo) for var in variables
-        ), "All variables must be VarInfo instances"
-
-        # Calculate the minimum damage by assuming all dice roll their minimum values.
-        return sum(
-            parse_expr_and_assume_min_roll(
-                substitute_variables(component.damage_roll, variables)
-            )
-            for component in damage_components
-        )
-
-    def _common_get_max_damage(
-        self,
-        actor: Any,
-        damage_components: list["DamageComponent"],
-        variables: list[VarInfo] = [],
-    ) -> int:
-        """
-        Returns the maximum possible damage value for the ability.
-
-        Args:
-            actor:
-                The character using the ability
-            damage_components:
-                List of damage components to calculate from
-            variables:
-                Additional variables to include in the calculation
-
-        Returns:
-            int:
-                Maximum total damage across all damage components
-
-        """
-        from character.main import Character
-        from combat.damage import DamageComponent
-
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert damage_components, "damage_components list cannot be empty"
-        assert all(
-            isinstance(comp, DamageComponent) for comp in damage_components
-        ), "All damage_components must be DamageComponent instances"
-        assert all(
-            isinstance(var, VarInfo) for var in variables
-        ), "All variables must be VarInfo instances"
-
-        # Calculate the maximum damage by assuming all dice roll their maximum
-        # values.
-        return sum(
-            parse_expr_and_assume_max_roll(
-                substitute_variables(component.damage_roll, variables)
-            )
-            for component in damage_components
-        )

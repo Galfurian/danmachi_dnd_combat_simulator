@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
+from core.dice_parser import VarInfo
 from core.utils import cprint
 
 if TYPE_CHECKING:
@@ -47,34 +48,34 @@ class SpellBuff(BaseSpell):
     # BUFF SPELL METHODS
     # ============================================================================
 
-    def execute_spell(
+    def _execute_spell(
         self,
         actor: "Character",
         target: "Character",
-        rank: int,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute the buff spell from actor to target.
+        Common logic for executing a spell after validation.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            rank (int):
-                The rank at which the spell is being cast.
+            variables (list[VarInfo]):
+                List of variables for expression evaluation.
 
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
 
         """
-        # Apply the buffs.
-        effects_applied, effects_not_applied = self._spell_apply_effects(
+        # Apply the effects.
+        effects_applied, effects_not_applied = self._common_apply_effects(
             actor=actor,
             target=target,
             effects=self.effects,
-            rank=rank,
+            variables=variables,
         )
 
         # Display the outcome.

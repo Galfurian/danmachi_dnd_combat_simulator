@@ -8,8 +8,9 @@ direct damage spells, area effects, and magical attacks.
 from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
-from combat.damage import DamageComponent
+from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.dice_parser import VarInfo
 from core.logging import log_warning
 from core.utils import cprint
 from pydantic import Field
@@ -43,22 +44,22 @@ class SpellOffensive(BaseSpell):
     # SPELL ATTACK METHODS
     # ============================================================================
 
-    def execute_spell(
+    def _execute_spell(
         self,
         actor: "Character",
         target: "Character",
-        rank: int,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute the buff spell from actor to target.
+        Common logic for executing a spell after validation.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            rank (int):
-                The rank at which the spell is being cast.
+            variables (list[VarInfo]):
+                List of variables for expression evaluation.
 
         Returns:
             bool:
@@ -113,23 +114,23 @@ class SpellOffensive(BaseSpell):
         # =====================================================================
 
         # Handle successful hit - calculate and apply damage
-        total_damage, damage_details = self._spell_roll_damage_components(
-            actor,
-            target,
-            rank,
-            self.damage,
+        total_damage, damage_details = roll_damage_components(
+            actor=actor,
+            target=target,
+            damage_components=self.damage,
+            variables=variables,
         )
 
         # =====================================================================
         # APPLY EFFECTS
         # =====================================================================
 
-        # Apply the buffs.
-        effects_applied, effects_not_applied = self._spell_apply_effects(
+        # Apply the effects.
+        effects_applied, effects_not_applied = self._common_apply_effects(
             actor=actor,
             target=target,
             effects=self.effects,
-            rank=rank,
+            variables=variables,
         )
 
         msg = (
@@ -166,72 +167,3 @@ class SpellOffensive(BaseSpell):
         cprint(msg)
 
         return True
-
-    # ============================================================================
-    # DAMAGE CALCULATION METHODS
-    # ============================================================================
-
-    def get_damage_expr(self, actor: Any, rank: int) -> str:
-        """Get damage expression with variables substituted for display.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The spell rank to use for variable substitution.
-
-        Returns:
-            str:
-                Complete damage expression with variables substituted.
-
-        """
-        return super()._common_get_damage_expr(
-            actor,
-            self.damage,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
-
-    def get_min_damage(self, actor: Any, rank: int) -> int:
-        """Calculate the minimum possible damage for the spell.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The spell rank to use for scaling calculations.
-
-        Returns:
-            int: Minimum possible damage (sum of all components' minimums).
-
-        """
-        return super()._common_get_min_damage(
-            actor,
-            self.damage,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
-
-    def get_max_damage(self, actor: Any, rank: int) -> int:
-        """Calculate the maximum possible damage for the spell.
-
-        Args:
-            actor (Any): The character casting the spell.
-            rank (int): The spell rank to use for scaling calculations.
-
-        Returns:
-            int: Maximum possible damage (sum of all components' maximums).
-
-        """
-        return super()._common_get_max_damage(
-            actor,
-            self.damage,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )

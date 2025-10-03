@@ -11,8 +11,10 @@ from actions.base_action import ValidActionEffect
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
+    VarInfo,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
+    roll_and_describe,
     simplify_expression,
     substitute_variables,
 )
@@ -22,6 +24,7 @@ from pydantic import Field
 
 if TYPE_CHECKING:
     from character.main import Character
+
 
 class SpellHeal(BaseSpell):
     """Restorative spell that heals hit points and can apply beneficial effects.
@@ -51,22 +54,22 @@ class SpellHeal(BaseSpell):
     # HEALING SPELL METHODS
     # ============================================================================
 
-    def execute_spell(
+    def _execute_spell(
         self,
         actor: "Character",
         target: "Character",
-        rank: int,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute the buff spell from actor to target.
+        Common logic for executing a spell after validation.
 
         Args:
             actor (Any):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            rank (int):
-                The rank at which the spell is being cast.
+            variables (list[VarInfo]):
+                List of variables for expression evaluation.
 
         Returns:
             bool:
@@ -74,11 +77,7 @@ class SpellHeal(BaseSpell):
 
         """
         # Calculate healing with level scaling
-        heal = self._spell_roll_and_describe(
-            self.heal_roll,
-            actor,
-            rank,
-        )
+        heal = roll_and_describe(expr=self.heal_roll, variables=variables)
 
         # Apply healing to target (limited by max HP)
         actual_healing = target.heal(heal.value)
@@ -102,12 +101,12 @@ class SpellHeal(BaseSpell):
                 if isinstance(new_effect, ValidActionEffect):
                     effects_to_apply.append(new_effect)
 
-        # Apply the buffs.
-        effects_applied, effects_not_applied = self._spell_apply_effects(
+        # Apply the effects.
+        effects_applied, effects_not_applied = self._common_apply_effects(
             actor=actor,
             target=target,
             effects=effects_to_apply,
-            rank=rank,
+            variables=variables,
         )
 
         # Display the heal.
@@ -140,78 +139,3 @@ class SpellHeal(BaseSpell):
         cprint(msg)
 
         return True
-
-    # ============================================================================
-    # HEALING CALCULATION METHODS
-    # ============================================================================
-
-    def get_heal_expr(self, actor: Any, rank: int) -> str:
-        """
-        Get healing expression with variables substituted for display.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The spell level to use for MIND variable substitution.
-
-        Returns:
-            str:
-                Complete healing expression with variables substituted.
-
-        """
-        return simplify_expression(
-            self.heal_roll,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
-
-    def get_min_heal(self, actor: Any, rank: int) -> int:
-        """Calculate the minimum possible healing for the spell.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The spell level to use for scaling calculations.
-
-        Returns:
-            int:
-                Minimum possible healing amount.
-
-        """
-        return parse_expr_and_assume_min_roll(
-            substitute_variables(
-                self.heal_roll,
-                self.spell_get_variables(
-                    actor,
-                    rank,
-                ),
-            )
-        )
-
-    def get_max_heal(self, actor: Any, rank: int) -> int:
-        """Calculate the maximum possible healing for the spell.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The spell level to use for scaling calculations.
-
-        Returns:
-            int:
-                Maximum possible healing amount.
-
-        """
-        return parse_expr_and_assume_max_roll(
-            substitute_variables(
-                self.heal_roll,
-                self.spell_get_variables(
-                    actor,
-                    rank,
-                ),
-            )
-        )

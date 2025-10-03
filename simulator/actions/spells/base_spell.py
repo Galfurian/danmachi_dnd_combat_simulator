@@ -117,14 +117,15 @@ class BaseSpell(BaseAction):
         # Check if actor has enough mind points to cast the spell.
         if actor.stats.mind < self.mind_cost[rank]:
             return False
-        # Call the subclass-specific spell execution logic.
-        return self.execute_spell(actor, target, rank)
 
-    def execute_spell(
+        # Call the subclass-specific spell execution logic.
+        return self._execute_spell(actor, target, self.spell_get_variables(actor, rank))
+
+    def _execute_spell(
         self,
         actor: "Character",
         target: "Character",
-        rank: int,
+        variables: list[VarInfo],
     ) -> bool:
         """
         Common logic for executing a spell after validation.
@@ -134,8 +135,8 @@ class BaseSpell(BaseAction):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            rank (int):
-                The rank at which the spell is being cast.
+            variables (list[VarInfo]):
+                List of variables for expression evaluation.
 
         Returns:
             bool:
@@ -148,24 +149,24 @@ class BaseSpell(BaseAction):
     # EFFECT ANALYSIS METHODS
     # ============================================================================
 
-    def spell_get_variables(self, actor: Any, rank: int) -> list[VarInfo]:
+    def spell_get_variables(
+        self,
+        actor: "Character",
+        rank: int,
+    ) -> list[VarInfo]:
         """
         Get a list of variables used in spell expressions.
 
         Args:
-            actor (Any): The character casting the spell.
-            rank (int): The rank at which the spell is being cast.
+            actor (Character):
+                The character casting the spell.
+            rank (int):
+                The rank at which the spell is being cast.
 
         Returns:
             list[VarInfo]: A list of VarInfo objects representing the variables.
 
         """
-        from character.main import Character
-
-        assert isinstance(actor, Character), "Actor must be an object"
-        assert rank >= 0, "Rank must be non-negative"
-        assert rank < len(self.mind_cost), "Rank exceeds available mind cost levels"
-
         # Get the mind cost for the specified rank.
         mind_level = self.mind_cost[rank]
         # Prepare variables for substitution.
@@ -173,219 +174,6 @@ class BaseSpell(BaseAction):
         variables.append(VarInfo(name="MIND", value=mind_level))
         variables.append(VarInfo(name="RANK", value=rank + 1))
         return variables
-
-    def get_modifier_expressions(
-        self,
-        actor: Any,
-        rank: int = 0,
-    ) -> dict[BonusType, str]:
-        """
-        Get modifier expressions with variables substituted for display.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The rank at which the spell is being cast.
-
-        Returns:
-            dict[BonusType, str]:
-                Dictionary mapping bonus types to their expressions.
-
-        """
-        from combat.damage import DamageComponent
-        from effects.modifier_effect import ModifierEffect
-
-        # Find the first ModifierEffect in the effects list
-        modifier_effect = None
-        for effect in self.effects:
-            if isinstance(effect, ModifierEffect):
-                modifier_effect = effect
-                break
-
-        if modifier_effect is None:
-            raise ValueError("BaseSpell must have at least one ModifierEffect")
-
-        expressions: dict[BonusType, str] = {}
-
-        for modifier in modifier_effect.modifiers:
-            bonus_type = modifier.bonus_type
-            value = modifier.value
-            if isinstance(value, DamageComponent):
-                expressions[bonus_type] = self._spell_substitute_variables(
-                    value.damage_roll,
-                    actor,
-                    rank,
-                )
-            elif isinstance(value, str):
-                expressions[bonus_type] = self._spell_substitute_variables(
-                    value,
-                    actor,
-                    rank,
-                )
-            else:
-                expressions[bonus_type] = str(value)
-
-        return expressions
-
-    def _spell_apply_effects(
-        self,
-        actor: Any,
-        target: Any,
-        effects: list[ValidActionEffect],
-        rank: int,
-    ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
-        """
-        Apply the spell's effects to the target.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            target (Any):
-                The character targeted by the spell.
-            rank (int):
-                The rank at which the spell is being cast.
-
-        Returns:
-            tuple[list[ValidActionEffect], list[ValidActionEffect]]:
-                A tuple containing two lists:
-                - First list: effects that were successfully applied.
-                - Second list: effects that were not applied (e.g., resisted).
-
-        """
-        return self._common_apply_effects(
-            actor=actor,
-            target=target,
-            effects=effects,
-            variables=self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
-
-    def _spell_roll_damage_components(
-        self,
-        actor: Any,
-        target: Any,
-        rank: int,
-        components: list[DamageComponent],
-    ) -> tuple[int, list[str]]:
-        """
-        Roll and describe a list of damage components for spell calculations.
-
-        Args:
-            actor (Any):
-                The character casting the spell.
-            target (Any):
-                The character being attacked.
-            rank (int):
-                The rank at which the spell is being cast.
-            components (list[DamageComponent]):
-                The list of damage components to roll.
-
-        Returns:
-            tuple[int, str]:
-                A tuple containing the total damage and a detailed description string.
-
-        """
-        return roll_damage_components(
-            actor,
-            target,
-            components,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
-
-    def _spell_roll_and_describe(
-        self,
-        expression: str,
-        actor: Any,
-        rank: int,
-    ) -> RollBreakdown:
-        """
-        Evaluate, roll, and describe an expression for spell calculations.
-
-        Args:
-            expression (str):
-                The expression to evaluate.
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The rank at which the spell is being cast.
-
-        Returns:
-            RollBreakdown:
-                The result and breakdown of the rolled expression.
-
-        """
-        return roll_and_describe(
-            self._spell_substitute_variables(
-                expression,
-                actor,
-                rank,
-            )
-        )
-
-    def _spell_roll_dice_expression(
-        self,
-        expression: str,
-        actor: Any,
-        rank: int,
-    ) -> int:
-        """
-        Evaluate and roll an expression for spell calculations.
-
-        Args:
-            expression (str):
-                The expression to evaluate.
-            actor (Any):
-                The character casting the spell.
-            rank (int):
-                The rank at which the spell is being cast.
-
-        Returns:
-            int:
-                The result of the rolled expression.
-
-        """
-        return roll_dice_expression(
-            self._spell_substitute_variables(
-                expression,
-                actor,
-                rank,
-            ),
-        )
-
-    def _spell_substitute_variables(
-        self,
-        expression: str,
-        actor: Any,
-        rank: int,
-    ) -> str:
-        """
-        Substitute variables in an expression for spell calculations.
-
-        Args:
-            expression (str): The expression to modify.
-            actor (Any): The character casting the spell.
-            rank (int): The rank at which the spell is being cast.
-
-        Returns:
-            str: The modified expression with substituted variables.
-
-        """
-        from core.dice_parser import substitute_variables
-
-        # Evaluate and roll the expression.
-        return substitute_variables(
-            expression,
-            self.spell_get_variables(
-                actor,
-                rank,
-            ),
-        )
 
 
 def deserialize_spell(data: dict[str, Any]) -> BaseSpell | None:

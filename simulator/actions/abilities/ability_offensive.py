@@ -11,6 +11,7 @@ from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.dice_parser import VarInfo
 from core.logging import log_warning
 from core.utils import cprint
 from effects.base_effect import EventResponse
@@ -50,49 +51,33 @@ class AbilityOffensive(BaseAbility):
         """
         return f"[bold blue]{self.name}[/]"
 
-    def execute(
+    def _execute_ability(
         self,
         actor: "Character",
         target: "Character",
-        **kwargs: Any,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute this offensive ability against a target.
+        Abstract method to be implemented by subclasses for specific ability execution.
 
         Args:
-            actor (Any):
+            actor (Character):
                 The character performing the action.
-            target (Any):
+            target (Character):
                 The character being targeted.
-            **kwargs (Any):
-                Additional parameters for action execution.
+            variables (list[VarInfo]):
+                The variables available for the action execution.
 
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
-
         """
         # =====================================================================
-        # 1. VALIDATION AND PREPARATION
+        # ATTACK ROLL
         # =====================================================================
-
-        if not super().execute(actor, target, **kwargs):
-            return False
-
-        # =====================================================================
-        # 2. ATTACK ROLL (TO-HIT, CRIT, FUMBLE)
-        # =====================================================================
-        """Perform an attack roll using the same logic as BaseAttack."""
 
         # Get the attack modifier from effects.
         modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
-
-        if not all(isinstance(modifier, str) for modifier in modifiers):
-            log_warning(
-                "Modifiers for attack roll must be strings.",
-                {"ability": self.name, "modifiers": modifiers},
-            )
-            return False
 
         # Roll the attack.
         attack = self._roll_attack(actor, self.attack_roll, modifiers)
@@ -144,20 +129,26 @@ class AbilityOffensive(BaseAbility):
         # 3. DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
         # =====================================================================
 
+        variables = actor.get_expression_variables()
+
         # =============================
         # 3a. Roll the base damage
         # =============================
 
         # Roll the base damage.
         damage, damage_details = roll_damage_components(
-            actor,
-            target,
-            self.damage,
+            actor=actor,
+            target=target,
+            damage_components=self.damage,
+            variables=variables,
         )
         # If the attack is a critical hit, roll damage another time.
         if attack.is_critical():
             crit_damage, crit_details = roll_damage_components(
-                actor, target, self.damage
+                actor=actor,
+                target=target,
+                damage_components=self.damage,
+                variables=variables,
             )
             damage += crit_damage
             damage_details += crit_details
@@ -168,9 +159,10 @@ class AbilityOffensive(BaseAbility):
 
         # Roll damage from ON_HIT events.
         event_damage, event_damage_details = roll_damage_components(
-            actor,
-            target,
-            event_damage_bonuses,
+            actor=actor,
+            target=target,
+            damage_components=event_damage_bonuses,
+            variables=variables,
         )
         # Add the ON_HIT event damage.
         damage += event_damage
@@ -190,9 +182,10 @@ class AbilityOffensive(BaseAbility):
             return False
         # Roll the bonus damage.
         bonus_damage, bonus_damage_details = roll_damage_components(
-            actor,
-            target,
-            modifiers,
+            actor=actor,
+            target=target,
+            damage_components=modifiers,
+            variables=variables,
         )
         # Sum up the base damage.
         damage += bonus_damage
@@ -282,43 +275,3 @@ class AbilityOffensive(BaseAbility):
             cprint(f"    ⚡ {response.message}")
 
         return True
-
-    # ============================================================================
-    # DAMAGE CALCULATION METHODS
-    # ============================================================================
-
-    def get_damage_expr(self, actor: Any) -> str:
-        """Returns the damage expression with variables substituted.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            str: Complete damage expression with variables replaced by values.
-
-        """
-        return super()._common_get_damage_expr(actor, self.damage)
-
-    def get_min_damage(self, actor: Any) -> int:
-        """Returns the minimum possible damage value for the ability.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            int: Minimum total damage across all damage components.
-
-        """
-        return super()._common_get_min_damage(actor, self.damage)
-
-    def get_max_damage(self, actor: Any) -> int:
-        """Returns the maximum possible damage value for the ability.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            int: Maximum total damage across all damage components.
-
-        """
-        return super()._common_get_max_damage(actor, self.damage)

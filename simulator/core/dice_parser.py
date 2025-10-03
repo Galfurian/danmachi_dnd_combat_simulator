@@ -611,6 +611,33 @@ def roll_expression(
     return roll_dice_expression(substitute_variables(expr, variables))
 
 
+def get_min_roll(
+    expr: str,
+    variables: list[VarInfo] = [],
+) -> int:
+    """
+    Gets the minimum possible roll for a dice expression.
+
+    Args:
+        expr (str):
+            The dice expression to analyze.
+        variables (list[VarInfo]):
+            A list of variable information for substitution.
+
+    Returns:
+        int:
+            The minimum possible result.
+    """
+    if not expr:
+        return 0
+    expr = expr.upper().strip()
+    if expr == "":
+        return 0
+    if expr.isdigit():
+        return int(expr)
+    return parse_expr_and_assume_min_roll(substitute_variables(expr, variables))
+
+
 def get_max_roll(
     expr: str,
     variables: list[VarInfo] = [],

@@ -11,6 +11,7 @@ from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
+    VarInfo,
     parse_expr_and_assume_max_roll,
     parse_expr_and_assume_min_roll,
     roll_and_describe,
@@ -43,35 +44,29 @@ class AbilityHeal(BaseAbility):
         self.heal_roll = self.heal_roll.replace(" +", "+").replace("+ ", "+")
         self.heal_roll = self.heal_roll.replace(" -", "-").replace("- ", "-")
 
-    def execute(
+    def _execute_ability(
         self,
         actor: "Character",
         target: "Character",
-        **kwargs: Any,
+        variables: list[VarInfo],
     ) -> bool:
         """
-        Execute this healing ability on a target.
+        Abstract method to be implemented by subclasses for specific ability execution.
 
         Args:
-            actor (Any):
+            actor (Character):
                 The character performing the action.
-            target (Any):
+            target (Character):
                 The character being targeted.
-            **kwargs (Any):
-                Additional parameters for action execution.
+            variables (list[VarInfo]):
+                The variables available for the action execution.
 
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
-
         """
-        if not super().execute(actor, target, **kwargs):
-            return False
-
-        # Get expression variables from actor.
-        variables = actor.get_expression_variables()
         # Roll healing amount.
-        heal = roll_and_describe(self.heal_roll, variables)
+        heal = roll_and_describe(expr=self.heal_roll, variables=variables)
         # Apply healing to target.
         actual_healing = target.heal(heal.value)
 
@@ -133,48 +128,3 @@ class AbilityHeal(BaseAbility):
         cprint(msg)
 
         return True
-
-    # ============================================================================
-    # HEALING CALCULATION METHODS
-    # ============================================================================
-
-    def get_heal_expr(self, actor: Any) -> str:
-        """Returns the healing expression with variables substituted.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            str: Complete healing expression with variables replaced by values.
-
-        """
-        variables = actor.get_expression_variables()
-        return substitute_variables(self.heal_roll, variables)
-
-    def get_min_heal(self, actor: Any) -> int:
-        """Returns the minimum possible healing value for the ability.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            int: Minimum healing amount.
-
-        """
-        variables = actor.get_expression_variables()
-        substituted = substitute_variables(self.heal_roll, variables)
-        return parse_expr_and_assume_min_roll(substituted)
-
-    def get_max_heal(self, actor: Any) -> int:
-        """Returns the maximum possible healing value for the ability.
-
-        Args:
-            actor (Any): The character using the ability.
-
-        Returns:
-            int: Maximum healing amount.
-
-        """
-        variables = actor.get_expression_variables()
-        substituted = substitute_variables(self.heal_roll, variables)
-        return parse_expr_and_assume_max_roll(substituted)

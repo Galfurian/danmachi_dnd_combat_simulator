@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from actions.base_action import BaseAction, ValidActionEffect
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
+from core.dice_parser import VarInfo
 from core.logging import log_warning
 from core.utils import cprint
 from effects.base_effect import EventResponse
@@ -55,23 +56,18 @@ class BaseAttack(BaseAction):
         """
         return f"[bold blue]{self.name}[/]"
 
-    # ============================================================================
-    # COMBAT EXECUTION METHODS
-    # ============================================================================
-
     def execute(
         self,
         actor: "Character",
         target: "Character",
         **kwargs: Any,
     ) -> bool:
-        """
-        Execute this attack against a target.
+        """Execute the action against a target character.
 
         Args:
-            actor (Any):
+            actor (Character):
                 The character performing the action.
-            target (Any):
+            target (Character):
                 The character being targeted.
             **kwargs (Any):
                 Additional parameters for action execution.
@@ -79,14 +75,41 @@ class BaseAttack(BaseAction):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
-        """
-        # =====================================================================
-        # VALIDATION AND PREPARATION
-        # =====================================================================
 
+        """
         if not super().execute(actor, target, **kwargs):
             return False
 
+        # Gather the variables for the action execution.
+        variables = actor.get_expression_variables()
+
+        return self._execute_attack(actor, target, variables)
+
+    # ============================================================================
+    # COMBAT EXECUTION METHODS
+    # ============================================================================
+
+    def _execute_attack(
+        self,
+        actor: "Character",
+        target: "Character",
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Abstract method to be implemented by subclasses for specific ability execution.
+
+        Args:
+            actor (Character):
+                The character performing the action.
+            target (Character):
+                The character being targeted.
+            variables (list[VarInfo]):
+                The variables available for the action execution.
+
+        Returns:
+            bool:
+                True if action executed successfully, False otherwise.
+        """
         # =====================================================================
         # ATTACK ROLL
         # =====================================================================
@@ -156,20 +179,26 @@ class BaseAttack(BaseAction):
         # DAMAGE CALCULATION (INCLUDING CRIT/FUMBLE MODIFIERS)
         # =====================================================================
 
+        variables = actor.get_expression_variables()
+
         # =============================
         # 3a. Roll the base damage
         # =============================
 
         # Roll the base damage.
         damage, damage_details = roll_damage_components(
-            actor,
-            target,
-            self.damage,
+            actor=actor,
+            target=target,
+            damage_components=self.damage,
+            variables=variables,
         )
         # If the attack is a critical hit, roll damage another time.
         if attack.is_critical():
             crit_damage, crit_details = roll_damage_components(
-                actor, target, self.damage
+                actor=actor,
+                target=target,
+                damage_components=self.damage,
+                variables=variables,
             )
             damage += crit_damage
             damage_details += crit_details
@@ -180,9 +209,10 @@ class BaseAttack(BaseAction):
 
         # Roll damage from ON_HIT events.
         event_damage, event_damage_details = roll_damage_components(
-            actor,
-            target,
-            event_damage_bonuses,
+            actor=actor,
+            target=target,
+            damage_components=event_damage_bonuses,
+            variables=variables,
         )
         # Add the ON_HIT event damage.
         damage += event_damage
@@ -202,9 +232,10 @@ class BaseAttack(BaseAction):
             return False
         # Roll the bonus damage.
         bonus_damage, bonus_damage_details = roll_damage_components(
-            actor,
-            target,
-            modifiers,
+            actor=actor,
+            target=target,
+            damage_components=modifiers,
+            variables=variables,
         )
         # Sum up the base damage.
         damage += bonus_damage
@@ -296,54 +327,6 @@ class BaseAttack(BaseAction):
             cprint(f"    ⚡ {response.message}")
 
         return True
-
-    # ============================================================================
-    # DAMAGE CALCULATION METHODS
-    # ============================================================================
-
-    def get_damage_expr(self, actor: Any) -> str:
-        """
-        Returns the damage expression with variables substituted.
-
-        Args:
-            actor (Any):
-                The character performing the action.
-
-        Returns:
-            str:
-                Complete damage expression with variables replaced by values.
-
-        """
-        return super()._common_get_damage_expr(actor, self.damage)
-
-    def get_min_damage(self, actor: Any) -> int:
-        """
-        Returns the minimum possible damage value for the attack.
-
-        Args:
-            actor (Any):
-                The character performing the action.
-
-        Returns:
-            int:
-                Minimum total damage across all damage components.
-
-        """
-        return super()._common_get_min_damage(actor, self.damage)
-
-    def get_max_damage(self, actor: Any) -> int:
-        """Returns the maximum possible damage value for the attack.
-
-        Args:
-            actor (Any):
-                The character performing the action.
-
-        Returns:
-            int:
-                Maximum total damage across all damage components.
-
-        """
-        return super()._common_get_max_damage(actor, self.damage)
 
 
 def deserialize_attack(data: dict[str, Any]) -> BaseAttack | None:

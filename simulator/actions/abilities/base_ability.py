@@ -5,9 +5,13 @@ Defines the base classes for character abilities, including offensive, defensive
 healing, and buff abilities, with common functionality for execution and effects.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from actions.base_action import BaseAction
+from core.dice_parser import VarInfo
+
+if TYPE_CHECKING:
+    from character.main import Character
 
 
 class BaseAbility(BaseAction):
@@ -25,6 +29,58 @@ class BaseAbility(BaseAction):
         Returns the colored name of the attack for display purposes.
         """
         return f"[bold yellow]{self.name}[/]"
+
+    def execute(
+        self,
+        actor: "Character",
+        target: "Character",
+        **kwargs: Any,
+    ) -> bool:
+        """Execute the action against a target character.
+
+        Args:
+            actor (Character):
+                The character performing the action.
+            target (Character):
+                The character being targeted.
+            **kwargs (Any):
+                Additional parameters for action execution.
+
+        Returns:
+            bool:
+                True if action executed successfully, False otherwise.
+
+        """
+        if not super().execute(actor, target, **kwargs):
+            return False
+
+        # Gather the variables for the action execution.
+        variables = actor.get_expression_variables()
+
+        return self._execute_ability(actor, target, variables)
+
+    def _execute_ability(
+        self,
+        actor: "Character",
+        target: "Character",
+        variables: list[VarInfo],
+    ) -> bool:
+        """
+        Abstract method to be implemented by subclasses for specific ability execution.
+
+        Args:
+            actor (Character):
+                The character performing the action.
+            target (Character):
+                The character being targeted.
+            variables (list[VarInfo]):
+                The variables available for the action execution.
+
+        Returns:
+            bool:
+                True if action executed successfully, False otherwise.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
 
     # =========================================================================
     # TARGETING SYSTEM METHODS (SHARED BY ALL ABILITIES)

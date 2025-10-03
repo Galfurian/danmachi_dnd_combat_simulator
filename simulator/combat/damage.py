@@ -119,7 +119,7 @@ def roll_damage_components(
     actor: Any,
     target: Any,
     damage_components: list[DamageComponent],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> tuple[int, list[str]]:
     """
     Rolls damage for multiple components and returns the total damage and
@@ -133,21 +133,21 @@ def roll_damage_components(
         damage (list[DamageComponent]):
             The damage components being applied.
         variables (list[VarInfo]):
-            Optional variables for damage roll expressions. If nothing is
-            provided, the actors variables will be used.
+            The variables for damage roll expressions.
 
     Returns:
         tuple[int, list[str]]:
             The total damage dealt and a list of damage detail strings.
 
     """
+    if not damage_components:
+        return 0, []
+
     from character.main import Character
 
     assert isinstance(actor, Character), "Actor must be an object"
     assert isinstance(target, Character), "Target must be an object"
-
-    # Use actor's variables if none are provided.
-    variables = variables or actor.get_expression_variables()
+    assert variables, "Variables list cannot be empty"
 
     total_damage = 0
     damage_details: list[str] = []
@@ -164,3 +164,124 @@ def roll_damage_components(
         # Add the damage string to the list of damage details.
         damage_details.append(dmg_str)
     return total_damage, damage_details
+
+
+def get_full_expr(
+    components: list[str],
+    variables: list[VarInfo],
+) -> str:
+    """
+    Returns the damage expression with variables substituted.
+
+    Args:
+        actor:
+            The character using the ability
+        components:
+            List of damage components to build expression from
+        variables:
+            Additional variables to include in the expression
+
+    Returns:
+        str:
+            Complete damage expression with variables replaced by values
+
+    """
+    assert components, "components list cannot be empty"
+    assert variables, "variables list cannot be empty"
+
+    from core.dice_parser import substitute_variables
+
+    return " + ".join(
+        substitute_variables(component, variables) for component in components
+    )
+
+
+def get_damage_expr(
+    damage_components: list["DamageComponent"],
+    variables: list[VarInfo],
+) -> str:
+    """
+    Returns the damage expression with variables substituted.
+
+    Args:
+        damage_components:
+            List of damage components to build expression from
+        variables:
+            Additional variables to include in the expression
+
+    Returns:
+        str:
+            Complete damage expression with variables replaced by values
+
+    """
+    if not damage_components:
+        return "0"
+
+    assert variables, "variables list cannot be empty"
+
+    from core.dice_parser import substitute_variables
+
+    return " + ".join(
+        substitute_variables(component.damage_roll, variables)
+        for component in damage_components
+    )
+
+
+def get_min_damage(
+    damage_components: list["DamageComponent"],
+    variables: list[VarInfo] = [],
+) -> int:
+    """
+    Returns the minimum possible damage value for the ability.
+
+    Args:
+        damage_components:
+            List of damage components to calculate from
+        variables:
+            Additional variables to include in the calculation
+
+    Returns:
+        int:
+            Minimum total damage across all damage components
+
+    """
+    if not damage_components:
+        return 0
+
+    from core.dice_parser import get_min_roll
+
+    assert variables, "variables list cannot be empty"
+
+    expr = " + ".join(component.damage_roll for component in damage_components)
+
+    return get_min_roll(expr, variables)
+
+
+def get_max_damage(
+    damage_components: list["DamageComponent"],
+    variables: list[VarInfo] = [],
+) -> int:
+    """
+    Returns the maximum possible damage value for the ability.
+
+    Args:
+        damage_components:
+            List of damage components to calculate from
+        variables:
+            Additional variables to include in the calculation
+
+    Returns:
+        int:
+            Maximum total damage across all damage components
+
+    """
+    if not damage_components:
+        return 0
+    
+    from core.dice_parser import get_max_roll
+
+    assert variables, "variables list cannot be empty"
+
+    expr = " + ".join(component.damage_roll for component in damage_components)
+
+    return get_max_roll(expr, variables)

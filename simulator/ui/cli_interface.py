@@ -14,8 +14,15 @@ from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
 from character.main import Character
+from combat.damage import get_damage_expr, get_max_damage, get_min_damage
 from core.constants import ActionCategory, ActionClass
-from core.dice_parser import VarInfo, evaluate_expression, simplify_expression
+from core.dice_parser import (
+    VarInfo,
+    evaluate_expression,
+    get_max_roll,
+    get_min_roll,
+    simplify_expression,
+)
 from core.utils import ccapture
 from prompt_toolkit import ANSI, PromptSession
 from rich.table import Table
@@ -372,24 +379,24 @@ class PlayerInterface:
             # Format each spell type accordingly.
             if isinstance(spell, SpellHeal):
                 expr = simplify_expression(spell.heal_roll, variables)
-                min_heal = spell.get_min_heal(actor, rank)
-                max_heal = spell.get_max_heal(actor, rank)
+                min_heal = get_min_roll(spell.heal_roll, variables)
+                max_heal = get_max_roll(spell.heal_roll, variables)
                 prompt += f"Heals {expr} (~ {min_heal:>2}-{max_heal:<2})"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
             elif isinstance(spell, SpellOffensive):
-                expr = spell.get_damage_expr(actor, rank)
-                min_damage = spell.get_min_damage(actor, rank)
-                max_damage = spell.get_max_damage(actor, rank)
+                expr = get_damage_expr(spell.damage, variables)
+                min_damage = get_min_damage(spell.damage, variables)
+                max_damage = get_max_damage(spell.damage, variables)
                 prompt += f"Deals {expr} (~ {min_damage:>2}-{max_damage:<2})"
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += "\n"
 
             elif isinstance(spell, SpellBuff | SpellDebuff):
-                modifiers = spell.get_modifier_expressions(actor, rank)
+                modifiers = spell.get_modifier_expressions(variables)
                 if max_targets > 1:
                     prompt += f" (up to {max_targets} targets)"
                 prompt += ", ".join(
