@@ -258,6 +258,46 @@ class ArmorType(NiceEnum):
         return f"[{self.color}]{message}[/]"
 
 
+class IncapacitationType(NiceEnum):
+    """Defines types of incapacitating effects."""
+
+    PARALYZED = "PARALYZED"
+    STUNNED = "STUNNED"
+    SLEEP = "SLEEP"
+    CHARMED = "CHARMED"
+    FRIGHTENED = "FRIGHTENED"
+
+    @property
+    def emoji(self) -> str:
+        """Returns the emoji associated with this incapacitation type."""
+        return {
+            IncapacitationType.PARALYZED: "😵‍💫",
+            IncapacitationType.STUNNED: "💫",
+            IncapacitationType.SLEEP: "💤",
+            IncapacitationType.CHARMED: "😍",
+            IncapacitationType.FRIGHTENED: "😱",
+        }.get(self, "❔")
+
+    @property
+    def color(self) -> str:
+        """Returns the color string associated with this incapacitation type."""
+        return {
+            IncapacitationType.PARALYZED: "bold red",
+            IncapacitationType.STUNNED: "bold yellow",
+            IncapacitationType.SLEEP: "cyan",
+            IncapacitationType.CHARMED: "bold magenta",
+            IncapacitationType.FRIGHTENED: "bold blue",
+        }.get(self, "dim white")
+
+    @property
+    def colored_name(self) -> str:
+        return self.colorize(self.display_name)
+
+    def colorize(self, message: str) -> str:
+        """Applies incapacitation type color formatting to a message."""
+        return f"[{self.color}]{message}[/]"
+
+
 def is_oponent(char1: CharacterType, char2: CharacterType) -> bool:
     """Determines if char2 is an opponent of char1.
 

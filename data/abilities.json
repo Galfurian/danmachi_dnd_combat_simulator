@@ -96,12 +96,9 @@
             {
                 "name": "Sleeping",
                 "effect_type": "IncapacitatingEffect",
+                "incapacitation_type": "SLEEP",
                 "description": "The target falls asleep and cannot take actions.",
-                "duration": 3,
-                "incapacitation_type": "sleep",
-                "save_ends": true,
-                "save_dc": 13,
-                "save_stat": "CON"
+                "duration": 3
             }
         ]
     },

@@ -620,13 +620,10 @@
         "effects": [
             {
                 "name": "Paralyzed",
+                "effect_type": "IncapacitatingEffect",
+                "incapacitation_type": "PARALYZED",
                 "description": "The target is paralyzed and cannot move or act.",
-                "duration": 10,
-                "incapacitation_type": "paralysis",
-                "save_ends": true,
-                "save_dc": 13,
-                "save_stat": "WIS",
-                "effect_type": "IncapacitatingEffect"
+                "duration": 10
             }
         ]
     },

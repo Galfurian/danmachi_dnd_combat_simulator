@@ -11,6 +11,7 @@ from core.dice_parser import VarInfo
 from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
+from core.constants import IncapacitationType
 
 from .base_effect import ActiveEffect, Effect, EventResponse
 from .event_system import CombatEvent, DamageTakenEvent, TurnEndEvent
@@ -26,42 +27,40 @@ class IncapacitatingEffect(Effect):
 
     effect_type: Literal["IncapacitatingEffect"] = "IncapacitatingEffect"
 
-    incapacitation_type: str = Field(
+    incapacitation_type: IncapacitationType = Field(
         description="Type of incapacitation (e.g., 'sleep', 'paralyzed', 'stunned').",
-    )
-    save_ends: bool = Field(
-        False,
-        description="Whether the effect can end on a successful saving throw.",
-    )
-    save_dc: int = Field(
-        0,
-        description="DC for the saving throw to end the effect.",
-    )
-    save_stat: str = Field(
-        "CON",
-        description="Stat used for the saving throw (e.g., 'CON', 'WIS').",
-    )
-    damage_threshold: int = Field(
-        1,
-        description="Minimum damage needed to break effect (if applicable).",
     )
 
     @property
     def color(self) -> str:
-        """Returns the color string for incapacitating effects."""
-        return "bold red"
+        """
+        Returns the color for incapacitating effects.
+
+        Returns:
+            str:
+                The color associated with the incapacitation type.
+        """
+
+        return self.incapacitation_type.color
 
     @property
     def emoji(self) -> str:
-        """Returns the emoji for incapacitating effects."""
-        return "😵‍💫"
+        """
+        Returns the emoji for incapacitating effects.
+
+        Returns:
+            str:
+                The emoji associated with the incapacitation type.
+        """
+        return self.incapacitation_type.emoji
 
     def prevents_actions(self) -> bool:
         """
         Check if this effect prevents the character from taking actions.
 
         Returns:
-            bool: True if actions are prevented, False otherwise.
+            bool:
+                True if actions are prevented, False otherwise.
 
         """
         return True
@@ -71,38 +70,29 @@ class IncapacitatingEffect(Effect):
         Check if this effect prevents movement.
 
         Returns:
-            bool: True if movement is prevented, False otherwise.
+            bool:
+                True if movement is prevented, False otherwise.
 
         """
-        return self.incapacitation_type in ["paralyzed", "stunned", "unconscious"]
+        return self.incapacitation_type in [
+            IncapacitationType.PARALYZED,
+            IncapacitationType.STUNNED,
+            IncapacitationType.SLEEP,
+        ]
 
-    def auto_fails_saves(self) -> bool:
-        """
-        Check if character automatically fails certain saves.
-
-        Returns:
-            bool: True if saves are automatically failed, False otherwise.
-
-        """
-        return self.incapacitation_type in ["unconscious"]
-
-    def breaks_on_damage(self, damage_amount: int = 1) -> bool:
+    def breaks_on_damage(self) -> bool:
         """
         Check if taking damage should break this incapacitation.
 
-        Args:
-            damage_amount (int): Amount of damage taken.
-
         Returns:
-            bool: True if damage breaks the effect, False otherwise.
+            bool:
+                True if damage breaks the effect, False otherwise.
 
         """
-        # First check if this type of incapacitation can break on damage
-        if self.incapacitation_type not in ["sleep", "charm"]:
-            return False
-
-        # Then check if damage meets the threshold
-        return damage_amount >= self.damage_threshold
+        return self.incapacitation_type in [
+            IncapacitationType.SLEEP,
+            IncapacitationType.CHARMED,
+        ]
 
     def can_apply(
         self,
@@ -269,7 +259,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
 
         return EventResponse(
             effect=self.effect,
-            remove_effect=self.incapacitating_effect.breaks_on_damage(event.amount),
+            remove_effect=self.incapacitating_effect.breaks_on_damage(),
             new_effects=[],
             damage_bonus=[],
             message=f"{event.source.colored_name} wakes up from "
