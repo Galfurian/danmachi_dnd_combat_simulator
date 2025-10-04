@@ -262,7 +262,7 @@ DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 # ---- Variable Substitution ----
 def substitute_variables(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> str:
     """
     Substitutes variables in the expression with their corresponding values.
@@ -585,7 +585,7 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 # ---- Public API ----
 def roll_expression(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Rolls a dice expression with variable substitution.
@@ -613,7 +613,7 @@ def roll_expression(
 
 def get_min_roll(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Gets the minimum possible roll for a dice expression.
@@ -640,7 +640,7 @@ def get_min_roll(
 
 def get_max_roll(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Gets the maximum possible roll for a dice expression.
@@ -668,7 +668,7 @@ def get_max_roll(
 
 def roll_and_describe(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> RollBreakdown:
     """
     Rolls a dice expression with variable substitution and provides a breakdown.
@@ -728,7 +728,7 @@ def roll_and_describe(
 
 def evaluate_expression(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Evaluates a mathematical expression with variable substitution.
@@ -770,7 +770,7 @@ def evaluate_expression(
 
 def simplify_expression(
     expr: str,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> str:
     """
     Simplifies an expression by substituting variables and evaluating arithmetic.

@@ -123,7 +123,7 @@ class CharacterEffects:
     def add_passive_effect(
         self,
         effect: Effect,
-        variables: list[VarInfo] = [],
+        variables: list[VarInfo],
     ) -> bool:
         """
         Add a passive effect that is always active (like boss phase triggers).

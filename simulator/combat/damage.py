@@ -64,7 +64,7 @@ def roll_damage_component(
     actor: Any,
     target: Any,
     damage_component: DamageComponent,
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> tuple[int, str]:
     """
     Applies a single damage component to the target, handles resistances,
@@ -90,13 +90,8 @@ def roll_damage_component(
     assert isinstance(actor, Character), "Actor must be an object"
     assert isinstance(target, Character), "Target must be an object"
 
-    # Use actor's variables if none are provided.
-    variables = variables or actor.get_expression_variables()
-
-    damage = roll_and_describe(
-        damage_component.damage_roll,
-        variables,
-    )
+    damage = roll_and_describe(damage_component.damage_roll, variables)
+    
     # Apply the damage to the target, taking into account resistances.
     base, adjusted, taken = target.take_damage(
         damage.value,
@@ -147,7 +142,6 @@ def roll_damage_components(
 
     assert isinstance(actor, Character), "Actor must be an object"
     assert isinstance(target, Character), "Target must be an object"
-    assert variables, "Variables list cannot be empty"
 
     total_damage = 0
     damage_details: list[str] = []
@@ -229,7 +223,7 @@ def get_damage_expr(
 
 def get_min_damage(
     damage_components: list["DamageComponent"],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Returns the minimum possible damage value for the ability.
@@ -259,7 +253,7 @@ def get_min_damage(
 
 def get_max_damage(
     damage_components: list["DamageComponent"],
-    variables: list[VarInfo] = [],
+    variables: list[VarInfo],
 ) -> int:
     """
     Returns the maximum possible damage value for the ability.
@@ -277,7 +271,7 @@ def get_max_damage(
     """
     if not damage_components:
         return 0
-    
+
     from core.dice_parser import get_max_roll
 
     assert variables, "variables list cannot be empty"

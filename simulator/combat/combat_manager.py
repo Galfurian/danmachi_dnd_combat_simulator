@@ -284,6 +284,8 @@ class CombatManager:
 
         # Choose the attack type to use for all attacks in the sequence
         attack = self.ui.choose_action(attacks)
+        if isinstance(attack, str) and attack == "q":
+            return
         if attack is None or not isinstance(attack, BaseAttack):
             log_warning(
                 "Invalid attack selected. Ending full attack",

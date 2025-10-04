@@ -186,12 +186,6 @@ class AbilityOffensive(BaseAbility):
 
         # Get all damage modifiers from effects.
         modifiers = actor.effects.get_damage_modifier()
-        if not all(isinstance(modifier, str) for modifier in modifiers):
-            log_warning(
-                "Modifiers for damage roll must be strings.",
-                {"ability": self.name, "modifiers": modifiers},
-            )
-            return False
         # Roll the bonus damage.
         bonus_damage, bonus_damage_details = roll_damage_components(
             actor=actor,
