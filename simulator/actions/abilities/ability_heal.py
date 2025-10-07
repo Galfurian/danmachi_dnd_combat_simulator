@@ -91,9 +91,10 @@ class AbilityHeal(BaseAbility):
 
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
-            actor,
-            target,
-            effects_to_apply,
+            actor=actor,
+            target=target,
+            effects=effects_to_apply,
+            variables=variables,
         )
 
         # Display the outcome.

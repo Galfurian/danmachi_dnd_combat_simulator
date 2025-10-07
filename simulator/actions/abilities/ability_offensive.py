@@ -80,7 +80,12 @@ class AbilityOffensive(BaseAbility):
         modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
 
         # Roll the attack.
-        attack = self._roll_attack(actor, self.attack_roll, modifiers)
+        attack = self._roll_attack(
+            actor,
+            self.attack_roll,
+            modifiers,
+            variables,
+        )
 
         if not attack.rolls:
             log_warning(
@@ -97,12 +102,19 @@ class AbilityOffensive(BaseAbility):
         # Determine if the attack hits, crits, or fumbles.
         if (attack.value < target.AC) or attack.is_fumble():
             msg = (
-                f"    ❌ {actor.colored_name} uses {self.colored_name} on "
-                f"{target.colored_name}, {attack_details}, but "
+                f"    ❌ {actor.colored_name} "
+                f"uses {self.colored_name} on "
+                f"{target.colored_name}"
             )
+            if GLOBAL_VERBOSE_LEVEL == 1:
+                msg += f"({attack_details}), "
             msg += f"{"fumbles" if attack.is_fumble() else "misses"}!"
             cprint(msg)
             return True
+
+        # =====================================================================
+        # EFFECT GATHERING
+        # =====================================================================
 
         # Prepare a list to hold all the effects to apply.
         effects_to_apply: list[ValidActionEffect] = []
@@ -223,9 +235,10 @@ class AbilityOffensive(BaseAbility):
 
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
-            actor,
-            target,
-            effects_to_apply,
+            actor=actor,
+            target=target,
+            effects=effects_to_apply,
+            variables=variables,
         )
 
         # =====================================================================

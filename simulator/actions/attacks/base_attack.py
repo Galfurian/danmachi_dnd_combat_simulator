@@ -118,7 +118,12 @@ class BaseAttack(BaseAction):
         modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
 
         # Roll the attack.
-        attack = self._roll_attack(actor, self.attack_roll, modifiers)
+        attack = self._roll_attack(
+            actor,
+            self.attack_roll,
+            modifiers,
+            variables,
+        )
 
         if not attack.rolls:
             log_warning(
@@ -273,9 +278,10 @@ class BaseAttack(BaseAction):
 
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
-            actor,
-            target,
-            effects_to_apply,
+            actor=actor,
+            target=target,
+            effects=effects_to_apply,
+            variables=variables,
         )
 
         # =====================================================================

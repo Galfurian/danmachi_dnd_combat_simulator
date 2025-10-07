@@ -78,7 +78,12 @@ class SpellOffensive(BaseSpell):
         modifiers = actor.effects.get_base_modifier(BonusType.ATTACK)
 
         # Roll the attack.
-        attack = self._roll_attack(actor, spell_attack_bonus, modifiers)
+        attack = self._roll_attack(
+            actor,
+            spell_attack_bonus,
+            modifiers,
+            variables,
+        )
 
         if not attack.rolls:
             log_warning(

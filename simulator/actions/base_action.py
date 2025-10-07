@@ -157,7 +157,7 @@ class BaseAction(BaseModel):
         assert self.maximum_uses is not None, "Maximum uses is not set"
         return self.maximum_uses
 
-    def target_count(self, variables: list[VarInfo] = []) -> int:
+    def target_count(self, variables: list[VarInfo]) -> int:
         """
         Calculate the number of targets this ability can affect.
 
@@ -319,7 +319,7 @@ class BaseAction(BaseModel):
         actor: Any,
         target: Any,
         effects: list[ValidActionEffect],
-        variables: list[VarInfo] = [],
+        variables: list[VarInfo],
     ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
         """
         Apply a list of effects to a target character.
@@ -346,12 +346,6 @@ class BaseAction(BaseModel):
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"
-        assert all(
-            isinstance(effect, Effect) for effect in effects
-        ), "All effects must be Effect instances"
-        assert all(
-            isinstance(var, VarInfo) for var in variables
-        ), "All variables must be VarInfo instances"
 
         # Ensure both actor and target are alive.
         if not actor.is_alive() or not target.is_alive():
@@ -402,6 +396,7 @@ class BaseAction(BaseModel):
         actor,
         to_hit_expression: str,
         bonus_list: list[str] | None,
+        variables: list[VarInfo],
     ) -> RollBreakdown:
         """
         Roll a d20 attack with bonuses and return detailed breakdown.
@@ -413,6 +408,8 @@ class BaseAction(BaseModel):
                 The attack bonus expression (e.g., "STR + PROF").
             bonus_list:
                 Additional bonus expressions to add to the roll.
+            variables:
+                List of variable info for substitution.
 
         Returns:
             RollBreakdown:
@@ -435,68 +432,4 @@ class BaseAction(BaseModel):
                 expr += f"+{bonus}"
 
         # Get actor variables and ensure it's a dict.
-        return roll_and_describe(expr, actor.get_expression_variables())
-
-    def _resolve_attack_roll(
-        self,
-        actor: Any,
-        target: Any,
-        attack_bonus: str = "",
-        bonus_list: list[str] | None = None,
-        target_ac_attr: str = "AC",
-        auto_hit_on_crit: bool = True,
-        auto_miss_on_fumble: bool = True,
-    ) -> dict:
-        """
-        Perform an attack roll, returning a structured result with crit/fumble/hit info.
-
-        Args:
-            actor (Any): The character making the attack.
-            target (Any): The character being attacked.
-            attack_bonus (str): Attack bonus expression (e.g., "STR + PROF").
-            bonus_list (list[str]): Additional bonus expressions.
-            target_ac_attr (str): Attribute name for target's AC (default: "AC").
-            auto_hit_on_crit (bool): If True, crit always hits.
-            auto_miss_on_fumble (bool): If True, fumble always misses.
-
-        Returns:
-            dict: {
-                'hit': bool,
-                'is_critical': bool,
-                'is_fumble': bool,
-                'attack_total': int,
-                'attack_roll_desc': str,
-                'msg': str,
-                'd20_roll': int,
-            }
-
-        """
-        if bonus_list is None:
-            bonus_list = []
-        attack = self._roll_attack(
-            actor,
-            attack_bonus,
-            bonus_list,
-        )
-        assert attack.rolls, "Rolls should not be empty"
-        d20_roll = attack.rolls[0]
-        is_critical = d20_roll == 20
-        is_fumble = d20_roll == 1
-        target_ac = getattr(target, target_ac_attr, 0)
-        # Determine hit logic
-        if is_fumble and auto_miss_on_fumble:
-            hit = False
-        elif is_critical and auto_hit_on_crit:
-            hit = True
-        else:
-            hit = attack.value >= target_ac
-        msg = f"rolled ({attack.description}) {attack.value} vs AC {target_ac}"
-        return {
-            "hit": hit,
-            "is_critical": is_critical,
-            "is_fumble": is_fumble,
-            "attack_total": attack.value,
-            "attack_roll_desc": attack.description,
-            "msg": msg,
-            "d20_roll": d20_roll,
-        }
+        return roll_and_describe(expr, variables)
