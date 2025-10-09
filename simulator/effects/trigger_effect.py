@@ -72,8 +72,6 @@ class TriggerCondition(BaseModel):
             return "when hitting with an attack"
         if self.event_type == EventType.ON_MISS:
             return "when missing with an attack"
-        if self.event_type == EventType.ON_CRITICAL_HIT:
-            return "when scoring a critical hit"
         if self.event_type == EventType.ON_DAMAGE_TAKEN:
             if self.damage_type:
                 return f"when taking {self.damage_type.name.lower()} damage"
@@ -121,7 +119,6 @@ class TriggerCondition(BaseModel):
         if event.event_type in [
             EventType.ON_HIT,
             EventType.ON_MISS,
-            EventType.ON_CRITICAL_HIT,
             EventType.ON_TURN_START,
             EventType.ON_TURN_END,
             EventType.ON_DEATH,

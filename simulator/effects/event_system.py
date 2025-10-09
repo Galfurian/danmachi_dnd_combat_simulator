@@ -17,7 +17,6 @@ class EventType(Enum):
 
     ON_HIT = "on_hit"  # When character hits with an attack
     ON_MISS = "on_miss"  # When character misses an attack
-    ON_CRITICAL_HIT = "on_critical_hit"  # When character scores a critical hit
     ON_DAMAGE_TAKEN = "on_damage_taken"  # When character takes damage
 
     ON_LOW_HEALTH = "on_low_health"  # When HP drops below threshold
@@ -95,35 +94,6 @@ class MissEvent(CombatEvent):
 
         """
         return f"MissEvent({self.source.colored_name} on {self.target.colored_name})"
-
-
-class CriticalHitEvent(CombatEvent):
-    """Event data for ON_CRITICAL_HIT triggers."""
-
-    event_type: EventType = Field(
-        default=EventType.ON_CRITICAL_HIT,
-        description="The type of trigger event.",
-    )
-    target: Any = Field(description="The target of the attack.")
-    attack_roll: int = Field(description="The attack roll result.")
-    damage_dealt: int = Field(description="Amount of damage dealt.")
-    damage_type: DamageType = Field(description="Type of damage dealt.")
-
-    def __str__(self) -> str:
-        """
-        String representation of the CriticalHitEvent.
-
-        Returns:
-            str:
-                Formatted string representing the CriticalHitEvent.
-
-        """
-        return (
-            "CriticalHitEvent("
-            f"{self.source.colored_name} on {self.target.colored_name}, "
-            f"attack={self.attack_roll}, damage={self.damage_dealt}, "
-            f"type={self.damage_type})"
-        )
 
 
 class DamageTakenEvent(CombatEvent):

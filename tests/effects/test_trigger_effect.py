@@ -256,7 +256,6 @@ def test_trigger_condition_description_generation():
     conditions = [
         (EventType.ON_HIT, "when hitting with an attack"),
         (EventType.ON_MISS, "when missing with an attack"),
-        (EventType.ON_CRITICAL_HIT, "when scoring a critical hit"),
         (EventType.ON_DAMAGE_TAKEN, "when taking damage"),
         (EventType.ON_TURN_START, "at the start of your turn"),
         (EventType.ON_TURN_END, "at the end of your turn"),
@@ -289,7 +288,6 @@ def test_trigger_condition_is_met_unconditional_events(attacker):
     unconditional_events = [
         EventType.ON_HIT,
         EventType.ON_MISS,
-        EventType.ON_CRITICAL_HIT,
         EventType.ON_TURN_START,
         EventType.ON_TURN_END,
         EventType.ON_DEATH,
@@ -442,7 +440,7 @@ def test_trigger_effect_can_apply_stacking_limit(attacker, target):
     variables = attacker.get_expression_variables()
 
     # Apply 3 trigger effects with different event types
-    event_types = [EventType.ON_HIT, EventType.ON_MISS, EventType.ON_CRITICAL_HIT]
+    event_types = [EventType.ON_HIT, EventType.ON_MISS, EventType.ON_DAMAGE_TAKEN]
     for i, event_type in enumerate(event_types):
         effect = TriggerEffect(
             name=f"Effect {i}",
