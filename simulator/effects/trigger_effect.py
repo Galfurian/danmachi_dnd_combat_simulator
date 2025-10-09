@@ -26,9 +26,10 @@ from .event_system import (
     TurnStartEvent,
 )
 from .incapacitating_effect import IncapacitatingEffect
+from .instant_damage_effect import InstantDamageEffect
 from .modifier_effect import ModifierEffect
 
-ValidTriggerEffect = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect
+ValidTriggerEffect = DamageOverTimeEffect | ModifierEffect | IncapacitatingEffect | InstantDamageEffect
 
 
 class TriggerCondition(BaseModel):
@@ -222,7 +223,7 @@ class TriggerEffect(Effect):
         if not all(isinstance(e, ValidTriggerEffect) for e in self.trigger_effects):
             raise ValueError(
                 "All trigger effects must be valid effect types (ModifierEffect, "
-                "IncapacitatingEffect, or DamageOverTimeEffect)."
+                "IncapacitatingEffect, DamageOverTimeEffect, or InstantDamageEffect)."
             )
         if not all(isinstance(dmg, DamageComponent) for dmg in self.damage_bonus):
             raise ValueError("All damage bonuses must be DamageComponent instances.")

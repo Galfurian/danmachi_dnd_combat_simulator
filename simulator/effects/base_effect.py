@@ -7,7 +7,7 @@ active effects, event responses, and effect management.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
@@ -37,6 +37,15 @@ class Effect(BaseModel):
         description=(
             "The duration of the effect in turns. "
             "None for permanent effects, 0 for instant effects."
+        ),
+    )
+    applies_to: Literal["TARGET", "SOURCE", "SELF"] = Field(
+        default="TARGET",
+        description=(
+            "Who the effect applies to when triggered. "
+            "'TARGET' applies to the target of the event, "
+            "'SOURCE' applies to the source of the event, "
+            "'SELF' applies to the character with the effect."
         ),
     )
 
@@ -231,6 +240,7 @@ def deserialize_effect(data: dict[str, Any]) -> Effect | None:
     from .damage_over_time_effect import DamageOverTimeEffect
     from .healing_over_time_effect import HealingOverTimeEffect
     from .incapacitating_effect import IncapacitatingEffect
+    from .instant_damage_effect import InstantDamageEffect
     from .modifier_effect import ModifierEffect
     from .trigger_effect import TriggerEffect
 
@@ -238,6 +248,8 @@ def deserialize_effect(data: dict[str, Any]) -> Effect | None:
 
     if effect_type == "DamageOverTimeEffect":
         return DamageOverTimeEffect(**data)
+    if effect_type == "InstantDamageEffect":
+        return InstantDamageEffect(**data)
     if effect_type == "HealingOverTimeEffect":
         return HealingOverTimeEffect(**data)
     if effect_type == "IncapacitatingEffect":
