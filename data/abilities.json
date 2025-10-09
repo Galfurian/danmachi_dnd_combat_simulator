@@ -78,7 +78,7 @@
                 "damage_type": "RADIANT"
             }
         ],
-        "attack_roll": "1D20 + SPELLCASTING + proficiency"
+        "attack_roll": "1D20 + [SPELLCASTING]"
     },
     {
         "action_type": "AbilityDebuff",

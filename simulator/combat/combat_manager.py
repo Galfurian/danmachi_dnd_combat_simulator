@@ -263,13 +263,31 @@ class CombatManager:
 
             # Player selects an action or submenu option.
             choice = self.ui.choose_action(actions, submenus, "Skip")
-            if choice is None or (isinstance(choice, str) and choice == "q"):
+            if isinstance(choice, str) and choice == "q":
+                break
+            if choice is None:
                 break
             # If the action is a BaseSpell, we need to handle it differently.
             if choice == FULL_ATTACK:
                 self.ask_for_player_full_attack()
             elif choice == "Cast a Spell":
                 self.ask_for_player_spell_cast(spells)
+            elif isinstance(choice, BaseAction):
+                target = self.ask_for_player_target(choice)
+                if isinstance(target, str) and target == "q":
+                    break
+                if not isinstance(target, Character):
+                    continue
+                # Perform the action on the target.
+                choice.execute(self.player, target)
+                # Add the action to the cooldowns if it has one.
+                self.player.actions.add_cooldown(choice)
+                # Mark the action class as used.
+                self.player.actions.use_action_class(choice.action_class)
+            else:
+                log_warning(
+                    f"Invalid action selected {choice}",
+                )
 
     def ask_for_player_full_attack(self) -> None:
         """Asks the player to choose targets for a full attack action."""

@@ -15,6 +15,7 @@ The combat simulator supports:
 
 from collections import Counter
 from copy import deepcopy
+import logging
 from pathlib import Path
 
 from character.character_serialization import load_character, load_characters
@@ -26,7 +27,7 @@ from core.sheets import crule, print_character_sheet
 from core.utils import cprint
 
 # Set up logging
-setup_logging()
+setup_logging(logging.INFO)
 
 # Get the path to the data folder.
 data_dir = Path(__file__).with_suffix("").parent / "../data"
