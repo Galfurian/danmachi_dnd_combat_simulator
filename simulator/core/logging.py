@@ -25,16 +25,13 @@ def setup_logging(level: int = logging.INFO) -> None:
     # Configure the rich handler
     rich_handler = RichHandler(
         console=console,
-        show_time=True,
+        show_time=False,
         show_level=True,
-        show_path=False,  # Don't show file path to keep output clean
+        show_path=True,
         markup=True,
         rich_tracebacks=True,
         tracebacks_show_locals=True,
     )
-
-    # Set up the formatter
-    rich_handler.setFormatter(logging.Formatter("%(message)s", datefmt="%X"))
 
     # Configure the root logger
     logging.basicConfig(
@@ -44,6 +41,7 @@ def setup_logging(level: int = logging.INFO) -> None:
     # Set specific levels for noisy libraries if needed
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

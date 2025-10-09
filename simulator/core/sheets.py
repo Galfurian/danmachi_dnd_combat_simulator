@@ -60,6 +60,8 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         sheet += f'[italic]"{effect.description}"[/], '
     if effect.duration:
         sheet += f"{effect.duration} turns, "
+    else:
+        sheet += "[magenta]permanent[/], "
     if isinstance(effect, ModifierEffect):
         modifiers_str = ", ".join(
             [modifier_to_string(modifier) for modifier in effect.modifiers]
@@ -97,46 +99,6 @@ def print_effect_sheet(effect: Effect, padding: int = 2) -> None:
         if effect.trigger_effects:
             for trigger_effect in effect.trigger_effects:
                 print_effect_sheet(trigger_effect, padding + 2)
-
-
-def print_passive_effect_sheet(effect: Effect, padding: int = 2) -> None:
-    """Prints the details of a passive effect in a formatted way."""
-    sheet: str = f"[{effect.color}]{effect.name}[/]"
-    if effect.description:
-        sheet += f' - [italic]"{effect.description}"[/]'
-    cprint(Padding(sheet, (0, padding)))
-
-    # Handle TriggerEffect effects
-    if isinstance(effect, TriggerEffect):
-        # Show what it triggers
-        if effect.trigger_effects:
-            cprint(Padding("Triggers:", (0, padding + 2)))
-            for trigger_effect in effect.trigger_effects:
-                print_effect_sheet(trigger_effect, padding + 4)
-
-        # Show damage bonuses
-        if effect.damage_bonus:
-            damage_str = ", ".join([str(damage) for damage in effect.damage_bonus])
-            cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
-
-        # Show what it triggers
-        if effect.trigger_effects:
-            cprint(Padding("Triggers:", (0, padding + 2)))
-            for trigger_effect in effect.trigger_effects:
-                print_effect_sheet(trigger_effect, padding + 4)
-
-        # Show damage bonuses
-        if effect.damage_bonus:
-            damage_str = ", ".join([str(damage) for damage in effect.damage_bonus])
-            cprint(Padding(f"Damage bonus: {damage_str}", (0, padding + 2)))
-
-    # Generic passive effect - just show description
-    elif hasattr(effect, "trigger_effects"):
-        trigger_effects = getattr(effect, "trigger_effects", [])
-        if trigger_effects:
-            cprint(Padding("Triggers:", (0, padding + 2)))
-            for trigger_effect in trigger_effects:
-                print_effect_sheet(trigger_effect, padding + 4)
 
 
 def print_base_attack_sheet(attack: "BaseAttack", padding: int = 2) -> None:
@@ -326,9 +288,7 @@ def print_character_sheet(char: Character) -> None:
         # Convert full ability name to 3-letter abbreviation
         ability_abbrev = char.spellcasting_ability.short_name
         spell_mod = getattr(char, ability_abbrev)
-        cprint(
-            f"  Spellcasting: [magenta]{ability_abbrev} ({spell_mod:+d})[/]"
-        )
+        cprint(f"  Spellcasting: [magenta]{ability_abbrev} ({spell_mod:+d})[/]")
 
     # Ability scores and modifiers
     stat_display = []
@@ -390,18 +350,7 @@ def print_character_sheet(char: Character) -> None:
     if char.effects.active_effects:
         cprint("  [yellow]Active Effects[/]:")
         for active_effect in char.effects.active_effects:
-            effect_info = (
-                f"[{active_effect.effect.color}]{active_effect.effect.name}[/]"
-            )
-            if active_effect.duration and active_effect.duration > 0:
-                effect_info += f" ({active_effect.duration} turns remaining)"
-            cprint(Padding(effect_info, (0, 4)))
-
-    # Passive Effects (if any)
-    if hasattr(char, "passive_effects") and char.passive_effects:
-        cprint("  [dim]Passive Effects[/]:")
-        for effect in char.passive_effects:
-            print_passive_effect_sheet(effect, 4)
+            print_effect_sheet(active_effect.effect, 4)
 
     # Cooldowns and uses
     active_cooldowns = {

@@ -71,7 +71,6 @@ class Character:
     resistances: set[DamageType]
     vulnerabilities: set[DamageType]
     number_of_attacks: int
-    passive_effects: list[ValidPassiveEffect]
 
     # === Management Modules ===
 
@@ -107,7 +106,6 @@ class Character:
         self.resistances = resistances
         self.vulnerabilities = vulnerabilities
         self.number_of_attacks = number_of_attacks
-        self.passive_effects = passive_effects
 
         # Initialize modules.
         self.effects = CharacterEffects(owner=self)
@@ -115,6 +113,9 @@ class Character:
         self.inventory = CharacterInventory(owner=self)
         self.actions = CharacterActions(owner=self)
         self.display = CharacterDisplay(owner=self)
+
+        for effect in passive_effects:
+            effect.apply_effect(self, self, self.get_expression_variables())
 
     # ============================================================================
     # DELEGATED STAT PROPERTIES

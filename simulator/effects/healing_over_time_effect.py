@@ -245,6 +245,12 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
                     f"has expired on {self.target.colored_name}."
                 )
                 remove_effect = True
+
+        log_debug(
+            f"HealingOverTimeEffect '{HOT.name}' on {self.target.colored_name}"
+            f" applied {hot_value} healing, remaining duration: {self.duration}."
+        )
+
         return EventResponse(
             effect=self.effect,
             remove_effect=remove_effect,

@@ -44,14 +44,11 @@ class CharacterEffects:
             The character that owns this effects module.
         active_effects (list[ActiveEffect]):
             List of currently active effects on the character.
-        passive_effects (list[ActiveEffect]):
-            List of passive effects that are always active.
 
     """
 
     _owner: Any
     active_effects: list[ActiveEffect]
-    passive_effects: list[ActiveEffect]
 
     def __init__(self, owner: Any) -> None:
         """
@@ -65,8 +62,6 @@ class CharacterEffects:
         super().__init__()
         self._owner = owner
         self.active_effects: list[ActiveEffect] = []
-        # TODO: Properly populate this one.
-        self.passive_effects: list[ActiveEffect] = []
 
     # === Effect Management ===
 
@@ -117,67 +112,6 @@ class CharacterEffects:
             self.active_effects.remove(effect)
             return True
         return False
-
-    # === Passive Effect Management ===
-
-    def add_passive_effect(
-        self,
-        effect: Effect,
-        variables: list[VarInfo],
-    ) -> bool:
-        """
-        Add a passive effect that is always active (like boss phase triggers).
-
-        Args:
-            effect (Effect):
-                The passive effect to add.
-
-        Returns:
-            bool:
-                True if the passive effect was added, False if it was already
-                present.
-
-        """
-        from effects.base_effect import ActiveEffect
-
-        # If the effect is already present, do not add it again.
-        if effect in [ae.effect for ae in self.passive_effects]:
-            return False
-
-        # Use provided variables or get default ones from the owner.
-        variables = variables or self._owner.get_expression_variables()
-
-        # Build the ActiveEffect for the passive effect.
-        passive_ae = ActiveEffect(
-            source=self._owner,
-            target=self._owner,
-            effect=effect,
-            duration=None,
-            variables=variables,
-        )
-        # Add the passive effect to the list.
-        self.passive_effects.append(passive_ae)
-
-        return True
-
-    def remove_passive_effect(self, effect: Effect) -> bool:
-        """
-        Remove a passive effect.
-
-        Args:
-            effect (Effect): The passive effect to remove.
-
-        Returns:
-            bool: True if the passive effect was removed, False otherwise.
-
-        """
-        for ae in self.passive_effects:
-            if ae.effect == effect:
-                self.passive_effects.remove(ae)
-                return True
-        return False
-
-    # === Regular Effect Management ===
 
     def get_effect_remaining_duration(self, effect: Effect) -> int | None:
         """

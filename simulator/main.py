@@ -27,7 +27,7 @@ from core.sheets import crule, print_character_sheet
 from core.utils import cprint
 
 # Set up logging
-setup_logging(logging.INFO)
+setup_logging(logging.DEBUG)
 
 # Get the path to the data folder.
 data_dir = Path(__file__).with_suffix("").parent / "../data"

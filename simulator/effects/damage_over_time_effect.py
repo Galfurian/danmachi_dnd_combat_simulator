@@ -273,6 +273,13 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
                     f"has expired on {self.target.colored_name}."
                 )
                 remove_effect = True
+
+        log_debug(
+            f"DamageOverTime effect '{DOT.name}' on {self.target.colored_name} "
+            f"dealt {taken} {DOT.damage.damage_type} damage. "
+            f"Duration remaining: {self.duration if self.duration is not None else '∞'}."
+        )
+
         return EventResponse(
             effect=self.effect,
             remove_effect=remove_effect,

@@ -372,7 +372,6 @@
                 "effect_type": "TriggerEffect",
                 "name": "Berserk Rage",
                 "description": "When below 25% HP, enters a berserker rage!",
-                "duration": 0,
                 "trigger_condition": {
                     "event_type": "on_low_health",
                     "threshold": 0.25,
@@ -382,7 +381,6 @@
                     {
                         "name": "Rage",
                         "description": "Massive boost to attack and damage from primal fury!",
-                        "duration": 999,
                         "modifiers": [
                             {
                                 "bonus_type": "ATTACK",
