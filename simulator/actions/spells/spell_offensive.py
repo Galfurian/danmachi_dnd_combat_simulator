@@ -102,7 +102,7 @@ class SpellOffensive(BaseSpell):
             msg = (
                 f"    ❌ {actor.colored_name} "
                 f"casts {self.colored_name} on "
-                f"{target.colored_name}"
+                f"{target.colored_name} "
             )
             if GLOBAL_VERBOSE_LEVEL == 1:
                 msg += f"({attack_details}), "

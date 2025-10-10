@@ -13,7 +13,7 @@ from core.utils import make_bar
 class CharacterDisplay:
     """
     Handles display, formatting, and UI functionality for Character objects.
-    
+
     Attributes:
         owner (Any):
             The Character instance that this display is associated with.
@@ -74,10 +74,8 @@ class CharacterDisplay:
         )
 
         # Use dynamic name width based on name length, but cap it
-        name_width = min(max(len(self._owner.name), 8), 16)
-        status = (
-            f"{self._owner.char_type.emoji} [bold]{self._owner.name:<{name_width}}[/] "
-        )
+        status = f"{self._owner.char_type.emoji} "
+        status += self._owner.char_type.colorize(f"{self._owner.name:<15}")
 
         # Show AC only for player and allies (not enemies) with yellow color
         if show_ac:
@@ -86,16 +84,18 @@ class CharacterDisplay:
         # Build HP display based on parameters with green color
         hp_display = ""
         if show_numbers and show_bars:
-            hp_display = (
-                f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/]{hp_bar} "
-            )
+            hp_display = f"| [green]HP:{self._owner.stats.hp:>2}/{self._owner.HP_MAX:<2}[/]{hp_bar} "
         elif show_numbers:
-            hp_display = f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/] "
+            hp_display = (
+                f"| [green]HP:{self._owner.stats.hp:>2}/{self._owner.HP_MAX:<2}[/] "
+            )
         elif show_bars:
             hp_display = f"| [green]HP:[/]{hp_bar} "
         else:
             # Default to showing numbers if neither is specified
-            hp_display = f"| [green]HP:{self._owner.stats.hp:>3}/{self._owner.HP_MAX}[/] "
+            hp_display = (
+                f"| [green]HP:{self._owner.stats.hp:>2}/{self._owner.HP_MAX:<2}[/] "
+            )
         status += hp_display
 
         if self._owner.MIND_MAX > 0:
@@ -113,18 +113,14 @@ class CharacterDisplay:
             # Build MP display based on parameters with blue color
             mp_display = ""
             if show_numbers and show_bars:
-                mp_display = f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/]{mind_bar} "
+                mp_display = f"| [blue]MP:{self._owner.stats.mind:>2}/{self._owner.MIND_MAX:<2}[/]{mind_bar} "
             elif show_numbers:
-                mp_display = (
-                    f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/] "
-                )
+                mp_display = f"| [blue]MP:{self._owner.stats.mind:>2}/{self._owner.MIND_MAX:<2}[/] "
             elif show_bars:
                 mp_display = f"| [blue]MP:[/]{mind_bar} "
             else:
                 # Default to showing numbers if neither is specified
-                mp_display = (
-                    f"| [blue]MP:{self._owner.stats.mind:>3}/{self._owner.MIND_MAX}[/] "
-                )
+                mp_display = f"| [blue]MP:{self._owner.stats.mind:>2}/{self._owner.MIND_MAX:<2}[/] "
             status += mp_display
 
         # Handle effects more intelligently

@@ -243,11 +243,17 @@ def _sort_targets_by_usefulness_and_hp_healing(
             Sorted list of targets based on usefulness and HP ratio.
 
     """
+    filtered_targets = [
+        target
+        for target in targets
+        if target.stats.hp < target.HP_MAX
+    ]
+    
     # So here is the order of importance:
     # 1. Targets that has a low HP ratio (primary).
     # 2. Targets that can benefit from the effect (secondary).
     sorted_targets = sorted(
-        targets,
+        filtered_targets,
         key=lambda target: (
             target.stats.hp_ratio(missing=True),
             _can_apply_any_effect(

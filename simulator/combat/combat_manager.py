@@ -250,10 +250,10 @@ class CombatManager:
             # NPCs get bars only for cleaner display.
             cprint(
                 participant.display.get_status_line(
-                    show_all_effects=False,
-                    show_numbers=False,
+                    show_all_effects=True,
+                    show_numbers=True,
                     show_bars=True,
-                    show_ac=False,
+                    show_ac=True,
                 )
             )
 

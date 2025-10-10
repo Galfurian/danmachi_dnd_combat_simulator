@@ -43,10 +43,10 @@ def setup_logging(
 
     # Set up root logger first
     logging.basicConfig(
-        level=logging.WARNING,  # Root logger at WARNING to not interfere
+        level=logging.WARNING,
         format="%(message)s",
         datefmt="%X",
-        handlers=[]
+        handlers=[],
     )
 
     # Configure logger levels.
@@ -70,21 +70,7 @@ def setup_logging(
     logging.getLogger("asyncio").setLevel(logging.WARNING)
 
 
-def get_logger(name: str) -> logging.Logger:
-    """
-    Gets a logger instance with the specified name.
-
-    Args:
-        name (str): The name of the logger.
-
-    Returns:
-        logging.Logger: The configured logger instance.
-
-    """
-    return logging.getLogger(name)
-
-
 # Create default loggers for the simulator
-logger = get_logger("simulator")
-effects_logger = get_logger("simulator.effects")
-character_logger = get_logger("simulator.character")
+logger = logging.getLogger("simulator")
+effects_logger = logging.getLogger("simulator.effects")
+character_logger = logging.getLogger("simulator.character")

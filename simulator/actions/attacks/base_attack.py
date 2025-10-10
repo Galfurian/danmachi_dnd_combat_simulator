@@ -287,7 +287,7 @@ class BaseAttack(BaseAction):
         )
 
         if GLOBAL_VERBOSE_LEVEL == 0:
-            msg += f" dealing {damage} damage"
+            msg += f"dealing {damage} damage"
             if attack.is_critical():
                 msg += " (critical hit!)"
             if effects_applied:
