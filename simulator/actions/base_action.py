@@ -18,8 +18,6 @@ from core.dice_parser import (
     RollBreakdown,
     VarInfo,
     evaluate_expression,
-    parse_expr_and_assume_max_roll,
-    parse_expr_and_assume_min_roll,
     roll_and_describe,
     substitute_variables,
 )
@@ -289,7 +287,6 @@ class BaseAction(BaseModel):
                 Dictionary mapping bonus types to their expressions.
 
         """
-        from combat.damage import DamageComponent, get_damage_expr
         from effects.modifier_effect import ModifierEffect
 
         expressions: dict[BonusType, str] = {}
@@ -342,7 +339,6 @@ class BaseAction(BaseModel):
 
         """
         from character.main import Character
-        from effects.base_effect import Effect
 
         assert isinstance(actor, Character), "Actor must be an object"
         assert isinstance(target, Character), "Target must be an object"

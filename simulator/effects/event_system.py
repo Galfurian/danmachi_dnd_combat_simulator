@@ -8,7 +8,7 @@ event dispatching, and event-based effect resolution.
 from enum import Enum
 from typing import Any
 
-from core.constants import ActionCategory, DamageType
+from core.constants import ActionCategory
 from pydantic import BaseModel, Field
 
 

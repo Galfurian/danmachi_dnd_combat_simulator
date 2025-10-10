@@ -9,7 +9,6 @@ from character.main import Character
 from core.constants import CharacterType
 from effects.event_system import CombatEvent, EventType, TurnEndEvent
 from effects.healing_over_time_effect import (
-    ActiveHealingOverTimeEffect,
     HealingOverTimeEffect,
 )
 

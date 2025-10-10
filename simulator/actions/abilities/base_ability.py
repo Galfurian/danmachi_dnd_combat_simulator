@@ -79,6 +79,7 @@ class BaseAbility(BaseAction):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
+
         """
         raise NotImplementedError("Subclasses must implement this method.")
 

@@ -627,6 +627,7 @@ def get_min_roll(
     Returns:
         int:
             The minimum possible result.
+
     """
     if not expr:
         return 0

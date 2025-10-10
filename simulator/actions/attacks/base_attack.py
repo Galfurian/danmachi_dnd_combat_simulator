@@ -109,6 +109,7 @@ class BaseAttack(BaseAction):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
+
         """
         # =====================================================================
         # ATTACK ROLL

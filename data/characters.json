@@ -7,19 +7,70 @@
             "Warrior": 3
         },
         "stats": {
-            "STRENGTH": 14,
-            "DEXTERITY": 14,
-            "CONSTITUTION": 14,
+            "STRENGTH": 16,
+            "DEXTERITY": 12,
+            "CONSTITUTION": 16,
             "INTELLIGENCE": 10,
             "WISDOM": 12,
             "CHARISMA": 11
         },
         "number_of_attacks": 2,
         "wielded_weapons": [
-            "Shortsword"
+            "Longsword"
         ],
         "armors": [
-            "Leather Armor"
+            "Chainmail"
+        ],
+        "active_effects": [],
+        "actions": [],
+        "spells": []
+    },
+    {
+        "name": "Elara",
+        "char_type": "ALLY",
+        "race": "Elf",
+        "levels": {
+            "Wizard": 3
+        },
+        "stats": {
+            "STRENGTH": 8,
+            "DEXTERITY": 14,
+            "CONSTITUTION": 12,
+            "INTELLIGENCE": 16,
+            "WISDOM": 12,
+            "CHARISMA": 10
+        },
+        "number_of_attacks": 1,
+        "wielded_weapons": [
+            "Dagger"
+        ],
+        "armors": [],
+        "active_effects": [],
+        "actions": [],
+        "spells": []
+    },
+    {
+        "name": "Thrain",
+        "char_type": "ALLY",
+        "race": "Dwarf",
+        "levels": {
+            "Cleric": 3
+        },
+        "stats": {
+            "STRENGTH": 14,
+            "DEXTERITY": 10,
+            "CONSTITUTION": 14,
+            "INTELLIGENCE": 10,
+            "WISDOM": 16,
+            "CHARISMA": 12
+        },
+        "number_of_attacks": 1,
+        "wielded_weapons": [
+            "Mace"
+        ],
+        "armors": [
+            "Chainmail",
+            "Steel Shield"
         ],
         "active_effects": [],
         "actions": [],

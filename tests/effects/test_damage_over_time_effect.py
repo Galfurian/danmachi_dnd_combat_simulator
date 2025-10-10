@@ -9,7 +9,6 @@ from character.main import Character
 from combat.damage import DamageComponent
 from core.constants import CharacterType, DamageType
 from effects.damage_over_time_effect import (
-    ActiveDamageOverTimeEffect,
     DamageOverTimeEffect,
 )
 from effects.event_system import CombatEvent, EventType, TurnEndEvent

@@ -338,6 +338,8 @@ class Character:
         """
         Initializes the character at the start of their turn.
         """
+        # Reset the participant's turn flags to allow for new actions.
+        self.actions.reset_available_actions()
         # Update all active effects.
         self.effects.on_event(TurnStartEvent(source=self, turn_number=turn_number))
         # Update action state.

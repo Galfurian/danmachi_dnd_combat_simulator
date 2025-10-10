@@ -13,9 +13,9 @@ The combat simulator supports:
 - Combat logging and reporting
 """
 
+import logging
 from collections import Counter
 from copy import deepcopy
-import logging
 from pathlib import Path
 
 from character.character_serialization import load_character, load_characters
@@ -140,23 +140,38 @@ def make_names_unique(in_list: list[Character]) -> None:
 
 
 if __name__ == "__main__":
+    # Set up the players list.
+    players = [
+        # player,
+        # deepcopy(player),
+    ]
+
     # Test the new incapacitation system with Sleep Powder
-    add_to_list(enemies, opponents, "Purple Moth")
+    # add_to_list(enemies, opponents, "Purple Moth")
     # add_to_list(enemies, opponents, "Minotaur Boss")
-    add_to_list(enemies, opponents, "Infant Dragon")
+    # add_to_list(enemies, opponents, "Infant Dragon")
     # add_to_list(enemies, opponents, "Orc")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
-    # add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
+    add_to_list(enemies, opponents, "Goblin")
     # add_to_list(enemies, opponents, "Dungeon Worm")
-    # add_to_list(characters, allies, "Naerin")
-    # add_to_list(characters, allies, "Naerin")
+
+    add_to_list(characters, allies, "Naerin")
+    add_to_list(characters, allies, "Elara")
+    add_to_list(characters, allies, "Thrain")
+
+    make_names_unique(players)
     make_names_unique(opponents)
     make_names_unique(allies)
 
-    combat_manager = CombatManager(player, opponents, allies)
+    combat_manager = CombatManager(players + opponents + allies)
 
     cprint()
     crule(":crossed_swords:  Initializing Combat", style="bold green")

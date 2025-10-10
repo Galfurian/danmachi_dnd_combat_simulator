@@ -91,7 +91,7 @@ def roll_damage_component(
     assert isinstance(target, Character), "Target must be an object"
 
     damage = roll_and_describe(damage_component.damage_roll, variables)
-    
+
     # Apply the damage to the target, taking into account resistances.
     base, adjusted, taken = target.take_damage(
         damage.value,

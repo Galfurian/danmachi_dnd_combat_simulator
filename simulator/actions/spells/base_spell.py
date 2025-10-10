@@ -7,17 +7,9 @@ healing, and buff spells, with common functionality for casting and effects.
 
 from typing import TYPE_CHECKING, Any
 
-from actions.base_action import BaseAction, ValidActionEffect
-from combat.damage import (
-    DamageComponent,
-    roll_damage_components,
-)
-from core.constants import BonusType
+from actions.base_action import BaseAction
 from core.dice_parser import (
-    RollBreakdown,
     VarInfo,
-    roll_and_describe,
-    roll_dice_expression,
 )
 from pydantic import Field
 
@@ -104,12 +96,11 @@ class BaseSpell(BaseAction):
                 True if action executed successfully, False otherwise.
 
         """
-
         if not super().execute(actor, target, **kwargs):
             return False
 
         # Get the rank from kwargs, defaulting to None if not provided.
-        rank: int | None = kwargs.get("rank", None)
+        rank: int | None = kwargs.get("rank")
         if not isinstance(rank, int):
             raise ValueError("Rank must be an integer.")
         if rank < 0 or rank >= len(self.mind_cost):

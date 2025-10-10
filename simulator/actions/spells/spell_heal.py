@@ -12,11 +12,7 @@ from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
     VarInfo,
-    parse_expr_and_assume_max_roll,
-    parse_expr_and_assume_min_roll,
     roll_and_describe,
-    simplify_expression,
-    substitute_variables,
 )
 from core.utils import cprint
 from effects.event_system import HealEvent

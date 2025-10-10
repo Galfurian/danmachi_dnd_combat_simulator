@@ -66,7 +66,6 @@ class SpellOffensive(BaseSpell):
                 True if action executed successfully, False otherwise.
 
         """
-
         # =====================================================================
         # ATTACK ROLL
         # =====================================================================

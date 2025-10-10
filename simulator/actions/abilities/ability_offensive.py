@@ -71,6 +71,7 @@ class AbilityOffensive(BaseAbility):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
+
         """
         # =====================================================================
         # ATTACK ROLL

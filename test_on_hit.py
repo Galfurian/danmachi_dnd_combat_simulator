@@ -5,7 +5,6 @@ Contains tests and examples for on_hit and on_damage_taken effects,
 including Thorns effect.
 """
 
-import json
 import logging
 from pathlib import Path
 
@@ -13,7 +12,7 @@ from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.character_serialization import load_character
 from character.main import Character
-from core.constants import CharacterType, DamageType, StatType
+from core.constants import CharacterType
 from core.content import ContentRepository
 from core.logging import log_info, setup_logging
 from core.utils import crule
@@ -22,10 +21,7 @@ from effects.event_system import (
     CombatEvent,
     DamageTakenEvent,
     HitEvent,
-    LowHealthEvent,
-    TurnEndEvent,
 )
-from items.armor import Armor
 
 # Set up logging
 setup_logging(logging.DEBUG)
@@ -90,19 +86,18 @@ def resolve_target(event: CombatEvent, applies_to: str, active_effect_target: Ch
 
     Returns:
         The resolved target character
+
     """
     if applies_to == "TARGET":
-        target_attr = getattr(event, 'target', None)
+        target_attr = getattr(event, "target", None)
         if target_attr:
             return target_attr
-        else:
-            return active_effect_target
-    elif applies_to == "SOURCE":
+        return active_effect_target
+    if applies_to == "SOURCE":
         return event.source
-    elif applies_to == "SELF":
+    if applies_to == "SELF":
         return active_effect_target
-    else:
-        return active_effect_target
+    return active_effect_target
 
 
 def on_event(character: Character, event: CombatEvent):
@@ -169,6 +164,7 @@ thorns_data = {
 }
 
 from effects.trigger_effect import TriggerEffect
+
 thorns_effect = TriggerEffect(**thorns_data)
 
 # Apply Thorns to player

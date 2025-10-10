@@ -56,6 +56,7 @@ class AbilityDebuff(BaseAbility):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
+
         """
         # Apply the buff effect.
         effects_applied, effects_not_applied = self._common_apply_effects(

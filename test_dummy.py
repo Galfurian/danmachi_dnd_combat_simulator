@@ -12,7 +12,7 @@ from character.character_class import CharacterClass
 from character.character_race import CharacterRace
 from character.character_serialization import load_character
 from character.main import Character
-from core.constants import CharacterType, DamageType, StatType
+from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
 from core.logging import log_info, setup_logging
 from core.utils import crule

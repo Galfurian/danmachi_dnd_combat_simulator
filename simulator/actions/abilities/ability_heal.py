@@ -12,10 +12,7 @@ from actions.base_action import ValidActionEffect
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
 from core.dice_parser import (
     VarInfo,
-    parse_expr_and_assume_max_roll,
-    parse_expr_and_assume_min_roll,
     roll_and_describe,
-    substitute_variables,
 )
 from core.utils import cprint
 from effects.event_system import HealEvent
@@ -64,6 +61,7 @@ class AbilityHeal(BaseAbility):
         Returns:
             bool:
                 True if action executed successfully, False otherwise.
+
         """
         # Roll healing amount.
         heal = roll_and_describe(expr=self.heal_roll, variables=variables)

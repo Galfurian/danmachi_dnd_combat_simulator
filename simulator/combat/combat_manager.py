@@ -61,26 +61,19 @@ class CombatManager:
 
     def __init__(
         self,
-        player: Character,
-        enemies: list[Character],
-        friendlies: list[Character],
+        participants: list[Character],
     ):
         """Initialize the CombatManager with participants and turn order.
 
         Args:
-            player (Character): The player character controlled by the user.
-            enemies (list[Character]): List of enemy characters.
-            friendlies (list[Character]): List of friendly characters.
+            participants (list[Character]): List of all characters participating in combat.
 
         """
         # Store the ui.
         self.ui: PlayerInterface = PlayerInterface()
 
-        # The player character, who is controlled by the user.
-        self.player: Character = player
-
-        # Combine all participants for the deque, ensuring player is handled specifically
-        self.participants: deque[Character] = deque([player] + enemies + friendlies)
+        # Combine all participants for the deque
+        self.participants: deque[Character] = deque(participants)
 
         # Stores the initiative of each participant.
         self.initiatives: dict[Character, int] = {
@@ -113,13 +106,53 @@ class CombatManager:
             )
             cprint(f"    🎲 {self.initiatives[participant]:3}  {status_line}")
 
-    def get_alive_participants(self) -> list[Character]:
-        """Returns a list of all participants (player, enemies, friendlies) who are still alive.
+    def is_combat_over(self) -> bool:
+        """Determines if combat has ended.
 
         Returns:
-            list[Character]: A list of alive characters.
+            bool: True if combat has ended, False otherwise.
 
         """
+        alive_enemies = self.get_alive_participants(CharacterType.ENEMY)
+
+        # Combat ends if there are no enemies left
+        if not alive_enemies:
+            cprint("[bold green]Combat ends. All enemies defeated![/]")
+            return True
+
+        # If there are no more players or allies alive, combat ends.
+        alive_players = self.get_alive_participants(CharacterType.PLAYER)
+        alive_allies = self.get_alive_participants(CharacterType.ALLY)
+        if not alive_players and not alive_allies:
+            cprint("[bold red]Combat ends. All allies have been defeated![/]")
+            return True
+
+        return False
+
+    def get_alive_participants(
+        self,
+        char_type: CharacterType | None = None,
+    ) -> list[Character]:
+        """
+        Returns a list of all participants (player, enemies, friendlies) who are
+        still alive.
+
+        Args:
+            char_type (CharacterType | None, optional):
+                The type of character to filter by. If None, returns all alive
+                participants.
+
+        Returns:
+            list[Character]:
+                A list of alive characters.
+
+        """
+        if char_type is not None:
+            return [
+                char
+                for char in self.participants
+                if char.is_alive() and char.char_type == char_type
+            ]
         return [char for char in self.participants if char.is_alive()]
 
     def get_alive_opponents(self, actor: Character) -> list[Character]:
@@ -169,7 +202,7 @@ class CombatManager:
             return False
 
         # If there are no more enemies alive, combat ends.
-        if not self.get_alive_opponents(self.player):
+        if not self.get_alive_participants(CharacterType.ENEMY):
             debug("All enemies defeated! Combat ends.")
             return False
 
@@ -198,63 +231,64 @@ class CombatManager:
                 The participant whose turn is being run.
 
         """
-        if participant.is_alive():
-            # Reset the participant's turn flags to allow for new actions.
-            participant.actions.reset_available_actions()
-
-            # Print the participant's status line with appropriate display mode
-            if participant == self.player:
-                # Player gets full display: numbers + bars + AC
-                cprint(
-                    participant.display.get_status_line(
-                        show_numbers=True,
-                        show_bars=True,
-                        show_ac=True,
-                    )
-                )
-            else:
-                # NPCs get bars only for cleaner display
-                # Show AC for allies, hide for enemies
-                show_ac = participant.char_type != CharacterType.ENEMY
-                cprint(
-                    participant.display.get_status_line(
-                        show_bars=True,
-                        show_ac=show_ac,
-                    )
-                )
-
-            # Check if character is incapacitated
-            if participant.is_incapacitated():
-                cprint(
-                    f"    💤 {participant.name} is incapacitated and cannot act this turn."
-                )
-            else:
-                # Start of turn effects
-                participant.turn_start(self.turn_number)
-
-                # Execute the participant's action based on whether they are the player or an NPC.
-                if participant == self.player:
-                    self.ask_for_player_action()
-                else:
-                    self.execute_npc_action(participant)
-
-            # Apply end-of-turn updates and check for expiration
-            participant.turn_end(self.turn_number)
-
-            cprint("")
-
-    def ask_for_player_action(self) -> None:
-        """Handles player input for choosing an action and target during their turn."""
-        if not self.get_alive_opponents(self.player):
+        if not participant.is_alive():
             return
 
-        while not self.player.actions.turn_done():
+        # Print the participant's status line with appropriate display mode
+        if participant.char_type == CharacterType.PLAYER:
+            # Player gets full display: numbers + bars + AC
+            cprint(
+                participant.display.get_status_line(
+                    show_all_effects=True,
+                    show_numbers=True,
+                    show_bars=True,
+                    show_ac=True,
+                )
+            )
+        else:
+            # NPCs get bars only for cleaner display.
+            cprint(
+                participant.display.get_status_line(
+                    show_all_effects=False,
+                    show_numbers=False,
+                    show_bars=True,
+                    show_ac=False,
+                )
+            )
+
+        # Start of turn effects
+        participant.turn_start(self.turn_number)
+
+        # Check if character is incapacitated
+        if participant.is_incapacitated():
+            cprint(
+                f"    💤 {participant.name} is incapacitated and cannot act this turn."
+            )
+        else:
+            # Execute the participant's action based on whether they are the
+            # player or an NPC.
+            if participant.char_type == CharacterType.PLAYER:
+                self.ask_for_player_action(participant)
+            else:
+                self.execute_npc_action(participant)
+
+        # Apply end-of-turn updates and check for expiration
+        participant.turn_end(self.turn_number)
+
+        cprint("")
+
+    def ask_for_player_action(self, player: Character) -> None:
+        """Handles player input for choosing an action and target during their turn."""
+        if not self.get_alive_opponents(player):
+            return
+
+        while not player.actions.turn_done():
             # Gather available actions and attacks.
             actions = []
-            if self.player.actions.has_action_class(ActionClass.STANDARD):
+            if player.actions.has_action_class(ActionClass.STANDARD):
                 actions.append(FULL_ATTACK)
-            actions.extend(self.player.actions.get_available_abilities())
-            spells = self.player.actions.get_available_spells()
+            actions.extend(player.actions.get_available_abilities())
+            spells = player.actions.get_available_spells()
 
             # Main action selection menu.
             submenus = []
@@ -269,34 +303,34 @@ class CombatManager:
                 break
             # If the action is a BaseSpell, we need to handle it differently.
             if choice == FULL_ATTACK:
-                self.ask_for_player_full_attack()
+                self.ask_for_player_full_attack(player)
             elif choice == "Cast a Spell":
-                self.ask_for_player_spell_cast(spells)
+                self.ask_for_player_spell_cast(player, spells)
             elif isinstance(choice, BaseAction):
-                target = self.ask_for_player_target(choice)
+                target = self.ask_for_player_target(player, choice)
                 if isinstance(target, str) and target == "q":
                     break
                 if not isinstance(target, Character):
                     continue
                 # Perform the action on the target.
-                choice.execute(self.player, target)
+                choice.execute(player, target)
                 # Add the action to the cooldowns if it has one.
-                self.player.actions.add_cooldown(choice)
+                player.actions.add_cooldown(choice)
                 # Mark the action class as used.
-                self.player.actions.use_action_class(choice.action_class)
+                player.actions.use_action_class(choice.action_class)
             else:
                 log_warning(
                     f"Invalid action selected {choice}",
                 )
 
-    def ask_for_player_full_attack(self) -> None:
+    def ask_for_player_full_attack(self, player: Character) -> None:
         """Asks the player to choose targets for a full attack action."""
         # Get the list of all attacks available in the full attack.
-        attacks = self.player.actions.get_available_attacks()
+        attacks = player.actions.get_available_attacks()
         if not attacks:
             log_warning(
                 "No available attacks for the full attack action",
-                {"player": self.player.name, "context": "full_attack_selection"},
+                {"player": player.name, "context": "full_attack_selection"},
             )
             return
 
@@ -308,7 +342,7 @@ class CombatManager:
             log_warning(
                 "Invalid attack selected. Ending full attack",
                 {
-                    "player": self.player.name,
+                    "player": player.name,
                     "selected_attack": str(attack),
                     "context": "full_attack_selection",
                 },
@@ -316,12 +350,12 @@ class CombatManager:
             return
 
         # Get the legal targets for the action.
-        valid_targets = self._get_legal_targets(self.player, attack)
+        valid_targets = self._get_legal_targets(player, attack)
         if not valid_targets:
             log_warning(
                 f"No valid targets for {attack.name}",
                 {
-                    "player": self.player.name,
+                    "player": player.name,
                     "attack": attack.name,
                     "context": "full_attack_target_selection",
                 },
@@ -335,15 +369,15 @@ class CombatManager:
 
         # Execute the full attack sequence using the same attack type
         attacks_made = 0
-        for attack_num in range(self.player.number_of_attacks):
+        for attack_num in range(player.number_of_attacks):
             # Check if there are still valid opponents
-            if not self.get_alive_opponents(self.player):
+            if not self.get_alive_opponents(player):
                 break
 
             # If the current target is dead, ask for a new target
             if target.is_dead():
                 # Get remaining legal targets
-                remaining_targets = self._get_legal_targets(self.player, attack)
+                remaining_targets = self._get_legal_targets(player, attack)
                 if not remaining_targets:
                     break
                 target = self.ui.choose_target(remaining_targets, [])
@@ -352,20 +386,23 @@ class CombatManager:
                 return
 
             # Perform the attack
-            attack.execute(self.player, target)
+            attack.execute(player, target)
             attacks_made += 1
 
             # Add cooldown only once for the attack type
             if attack_num == 0:
-                self.player.actions.add_cooldown(attack)
+                player.actions.add_cooldown(attack)
 
         # Mark the action class as used.
-        self.player.actions.use_action_class(ActionClass.STANDARD)
+        player.actions.use_action_class(ActionClass.STANDARD)
 
-    def ask_for_player_spell_cast(self, spells: list[BaseSpell]) -> bool:
+    def ask_for_player_spell_cast(
+        self, player: Character, spells: list[BaseSpell]
+    ) -> bool:
         """Handles the player's choice to cast a spell.
 
         Args:
+            player (Character): The player character casting the spell.
             spells (list[BaseSpell]): List of available spells for the player.
 
         Returns:
@@ -374,7 +411,7 @@ class CombatManager:
         """
         while True:
             # Ask for the spell and the rank level.
-            choice = self.ask_for_player_spell_and_rank(spells)
+            choice = self.ask_for_player_spell_and_rank(player, spells)
             if choice is None:
                 break
             if isinstance(choice, str):
@@ -385,16 +422,16 @@ class CombatManager:
             spell, rank = choice
             while True:
                 # Get the maximum number of targets if applicable.
-                variables = spell.spell_get_variables(self.player, rank)
+                variables = spell.spell_get_variables(player, rank)
                 # Get the maximum number of targets if applicable.
                 max_targets = spell.target_count(variables)
                 # Get the targets for the spell.
-                targets = self.ask_for_player_targets(spell, max_targets)
+                targets = self.ask_for_player_targets(player, spell, max_targets)
                 if not targets:
                     log_warning(
                         f"No valid targets for {spell.name}",
                         {
-                            "player": self.player.name,
+                            "player": player.name,
                             "spell": spell.name,
                             "context": "spell_target_selection",
                         },
@@ -409,27 +446,29 @@ class CombatManager:
                 for target in targets:
                     # Perform the action on the target.
                     spell.execute(
-                        actor=self.player,
+                        actor=player,
                         target=target,
                         rank=rank,
                     )
                 # Remove the MIND cost from the player.
-                self.player.use_mind(spell.mind_cost[rank])
+                player.use_mind(spell.mind_cost[rank])
                 # Mark the action class as used.
-                self.player.actions.use_action_class(spell.action_class)
+                player.actions.use_action_class(spell.action_class)
                 # Add the spell to the cooldowns if it has one.
-                self.player.actions.add_cooldown(spell)
+                player.actions.add_cooldown(spell)
                 return True
         return False
 
     def ask_for_player_spell_and_rank(
         self,
+        player: Character,
         spells: list[BaseSpell],
     ) -> tuple[BaseSpell, int] | str | None:
         """
         Asks the player to choose a spell from their available spells.
 
         Args:
+            player (Character): The player character choosing the spell.
             spells (list[BaseSpell]):
             List of available spells for the player.
 
@@ -448,16 +487,19 @@ class CombatManager:
                     return spell
                 continue
             # Ask for the rank level to use for the spell.
-            rank = self.ui.choose_rank(self.player, spell)
+            rank = self.ui.choose_rank(player, spell)
             if rank == -1:
                 return "q"
             return spell, rank
         return None
 
-    def ask_for_player_target(self, action: BaseAction) -> Character | str | None:
+    def ask_for_player_target(
+        self, player: Character, action: BaseAction
+    ) -> Character | str | None:
         """Asks the player to choose a target for the given action.
 
         Args:
+            player (Character): The player character choosing the target.
             action (BaseAction): The action for which to choose a target.
 
         Returns:
@@ -465,12 +507,12 @@ class CombatManager:
 
         """
         # Get the legal targets for the action.
-        valid_targets = self._get_legal_targets(self.player, action)
+        valid_targets = self._get_legal_targets(player, action)
         if not valid_targets:
             log_warning(
                 f"No valid targets for {action.name}",
                 {
-                    "player": self.player.name,
+                    "player": player.name,
                     "action": action.name,
                     "context": "single_target_selection",
                 },
@@ -480,11 +522,12 @@ class CombatManager:
         return self.ui.choose_target(valid_targets)
 
     def ask_for_player_targets(
-        self, action: BaseAction, max_targets: int
+        self, player: Character, action: BaseAction, max_targets: int
     ) -> list[Character] | str | None:
         """Asks the player to choose multiple targets for the given action.
 
         Args:
+            player (Character): The player character choosing the targets.
             action (BaseAction): The action for which to choose targets.
             max_targets (int): The maximum number of targets to choose.
 
@@ -493,12 +536,12 @@ class CombatManager:
 
         """
         # Get the legal targets for the action.
-        valid_targets = self._get_legal_targets(self.player, action)
+        valid_targets = self._get_legal_targets(player, action)
         if len(valid_targets) == 0:
             log_warning(
                 f"No valid targets for {action.name}",
                 {
-                    "player": self.player.name,
+                    "player": player.name,
                     "action": action.name,
                     "context": "multi_target_selection",
                 },
@@ -508,7 +551,7 @@ class CombatManager:
             log_warning(
                 f"Invalid maximum number of targets: {max_targets}",
                 {
-                    "player": self.player.name,
+                    "player": player.name,
                     "action": action.name,
                     "max_targets": max_targets,
                     "context": "target_validation",
@@ -516,12 +559,12 @@ class CombatManager:
             )
             return None
         if max_targets == 1 or len(valid_targets) == 1:
-            target = self.ask_for_player_target(action)
+            target = self.ask_for_player_target(player, action)
             if target is None:
                 log_warning(
                     f"No valid target for {action.name}",
                     {
-                        "player": self.player.name,
+                        "player": player.name,
                         "action": action.name,
                         "context": "single_target_fallback",
                     },
@@ -532,6 +575,169 @@ class CombatManager:
             return [target]
         # Ask the player to choose multiple targets.
         return self.ui.choose_targets(valid_targets, max_targets)
+
+    def pre_combat_phase(self) -> None:
+        """
+        Handles the pre-combat phase where players can prepare for combat.
+        """
+        crule(":hourglass_done: Pre-Combat Phase", style="blue")
+
+        alive_players = self.get_alive_participants(CharacterType.PLAYER)
+        for player in alive_players:
+            cprint(f"[bold cyan]Pre-combat actions for {player.name}:[/]")
+
+            targets = self.get_alive_friendlies(player)
+
+            while True:
+                for ally in targets:
+                    # Show full details for healing phase (allies show AC)
+                    cprint(
+                        ally.display.get_status_line(
+                            show_numbers=True,
+                            show_bars=True,
+                            show_ac=True,
+                        )
+                    )
+                abilities: list[BaseAction] = []
+                spells: list[BaseSpell] = []
+
+                # Get the list of buff spells/abilities.
+                abilities.extend(
+                    [
+                        a
+                        for a in player.actions.abilities.values()
+                        if a.category == ActionCategory.BUFF
+                    ]
+                )
+                spells.extend(
+                    [
+                        s
+                        for s in player.actions.spells.values()
+                        if s.category == ActionCategory.BUFF
+                    ]
+                )
+
+                # If someone needs healing, add healing spells/abilities.
+                if any(t.stats.hp < t.HP_MAX for t in targets):
+                    abilities.extend(
+                        [
+                            a
+                            for a in player.actions.abilities.values()
+                            if a.category == ActionCategory.HEALING
+                        ]
+                    )
+                    spells.extend(
+                        [
+                            s
+                            for s in player.actions.spells.values()
+                            if s.category == ActionCategory.HEALING
+                        ]
+                    )
+
+                # Main action selection menu.
+                submenus = []
+                if spells:
+                    submenus.append("Cast a Spell")
+
+                # Player selects an action or submenu option.
+                choice = self.ui.choose_action(abilities, submenus, "Skip")
+                if choice is None or (isinstance(choice, str) and choice == "q"):
+                    break
+                # If the action is a BaseSpell, we need to handle it differently.
+                if choice == "Cast a Spell":
+                    self.ask_for_player_spell_cast(player, spells)
+
+    def post_combat_phase(self) -> None:
+        """
+        Handles the post-combat phase where players can heal friendly
+        characters.
+        """
+        crule(":hourglass_done: Post-Combat Healing", style="green")
+
+        alive_players = self.get_alive_participants(CharacterType.PLAYER)
+        for player in alive_players:
+            cprint(f"[bold green]Post-combat healing for {player.name}:[/]")
+
+            targets = self.get_alive_friendlies(player)
+
+            abilities: list[BaseAction]
+            spells: list[BaseSpell]
+
+            while True:
+
+                for ally in targets:
+                    # Show full details for healing phase (allies show AC)
+                    cprint(
+                        ally.display.get_status_line(
+                            show_numbers=True,
+                            show_bars=True,
+                            show_ac=True,
+                        )
+                    )
+
+                # If someone needs healing, add healing spells/abilities.
+                if not any(t.stats.hp < t.HP_MAX for t in targets):
+                    cprint("[bold green]All allies are at full health![/]")
+
+                abilities = [
+                    a
+                    for a in player.actions.abilities.values()
+                    if a.category == ActionCategory.HEALING
+                ]
+                spells = [
+                    s
+                    for s in player.actions.spells.values()
+                    if s.category == ActionCategory.HEALING
+                ]
+
+                # Main action selection menu.
+                submenus = []
+                if spells:
+                    submenus.append("Cast a Spell")
+
+                # Player selects an action or submenu option.
+                choice = self.ui.choose_action(abilities, submenus, "Skip")
+                if choice is None or (isinstance(choice, str) and choice == "q"):
+                    break
+                # If the action is a BaseSpell, we need to handle it differently.
+                if choice == "Cast a Spell":
+                    self.ask_for_player_spell_cast(player, spells)
+
+    def final_report(self) -> None:
+        """Generates the final battle report after combat ends."""
+        crule("📊  Final Battle Report", style="bold blue")
+        # Show all alive players
+        alive_players = self.get_alive_participants(CharacterType.PLAYER)
+        for player in alive_players:
+            cprint(
+                player.display.get_status_line(
+                    show_numbers=True,
+                    show_bars=True,
+                    show_ac=True,
+                )
+            )
+        # Allies get full display too in final report
+        for ally in self.get_alive_participants():
+            if ally.char_type == CharacterType.ALLY and ally not in alive_players:
+                cprint(
+                    ally.display.get_status_line(
+                        show_numbers=True,
+                        show_bars=True,
+                        show_ac=True,
+                    )
+                )
+        # Fallen foes
+        defeated = [
+            c
+            for c in self.participants
+            if not c.is_alive() and c.char_type == CharacterType.ENEMY
+        ]
+        if defeated:
+            cprint(
+                f"[bold magenta]Defeated Enemies ({len(defeated)}):[/] "
+                + ", ".join(d.name for d in defeated)
+            )
+        cprint("")  # blank line
 
     def execute_npc_action(self, npc: Character) -> None:
         """
@@ -916,173 +1122,3 @@ class CombatManager:
             for participant in self.participants
             if ability.is_valid_target(character, participant)
         ]
-
-    def pre_combat_phase(self) -> None:
-        """
-        Handles the pre-combat phase where the player can prepare for combat.
-        """
-        crule(":hourglass_done: Pre-Combat Phase", style="blue")
-
-        targets = self.get_alive_friendlies(self.player)
-
-        while True:
-            for ally in targets:
-                # Show full details for healing phase (allies show AC)
-                cprint(
-                    ally.display.get_status_line(
-                        show_numbers=True,
-                        show_bars=True,
-                        show_ac=True,
-                    )
-                )
-            abilities: list[BaseAction] = []
-            spells: list[BaseSpell] = []
-
-            # Get the list of buff spells/abilities.
-            abilities.extend(
-                [
-                    a
-                    for a in self.player.actions.abilities.values()
-                    if a.category == ActionCategory.BUFF
-                ]
-            )
-            spells.extend(
-                [
-                    s
-                    for s in self.player.actions.spells.values()
-                    if s.category == ActionCategory.BUFF
-                ]
-            )
-
-            # If someone needs healing, add healing spells/abilities.
-            if any(t.stats.hp < t.HP_MAX for t in targets):
-                abilities.extend(
-                    [
-                        a
-                        for a in self.player.actions.abilities.values()
-                        if a.category == ActionCategory.HEALING
-                    ]
-                )
-                spells.extend(
-                    [
-                        s
-                        for s in self.player.actions.spells.values()
-                        if s.category == ActionCategory.HEALING
-                    ]
-                )
-
-            # Main action selection menu.
-            submenus = []
-            if spells:
-                submenus.append("Cast a Spell")
-
-            # Player selects an action or submenu option.
-            choice = self.ui.choose_action(abilities, submenus, "Skip")
-            if choice is None or (isinstance(choice, str) and choice == "q"):
-                break
-            # If the action is a BaseSpell, we need to handle it differently.
-            if choice == "Cast a Spell":
-                self.ask_for_player_spell_cast(spells)
-
-    def post_combat_phase(self) -> None:
-        """
-        Handles the post-combat phase where the player can heal friendly
-        characters.
-        """
-        crule(":hourglass_done: Post-Combat Healing", style="green")
-
-        targets = self.get_alive_friendlies(self.player)
-
-        abilities: list[BaseAction]
-        spells: list[BaseSpell]
-
-        while True:
-
-            for ally in targets:
-                # Show full details for healing phase (allies show AC)
-                cprint(
-                    ally.display.get_status_line(
-                        show_numbers=True,
-                        show_bars=True,
-                        show_ac=True,
-                    )
-                )
-
-            # If someone needs healing, add healing spells/abilities.
-            if not any(t.stats.hp < t.HP_MAX for t in targets):
-                cprint("[bold green]All allies are at full health![/]")
-
-            abilities = [
-                a
-                for a in self.player.actions.abilities.values()
-                if a.category == ActionCategory.HEALING
-            ]
-            spells = [
-                s
-                for s in self.player.actions.spells.values()
-                if s.category == ActionCategory.HEALING
-            ]
-
-            # Main action selection menu.
-            submenus = []
-            if spells:
-                submenus.append("Cast a Spell")
-
-            # Player selects an action or submenu option.
-            choice = self.ui.choose_action(abilities, submenus, "Skip")
-            if choice is None or (isinstance(choice, str) and choice == "q"):
-                break
-            # If the action is a BaseSpell, we need to handle it differently.
-            if choice == "Cast a Spell":
-                self.ask_for_player_spell_cast(spells)
-
-    def final_report(self) -> None:
-        """Generates the final battle report after combat ends."""
-        crule("📊  Final Battle Report", style="bold blue")
-        # Player gets full display in final report
-        cprint(
-            self.player.display.get_status_line(
-                show_numbers=True,
-                show_bars=True,
-                show_ac=True,
-            )
-        )
-        # Allies get full display too in final report
-        for ally in self.get_alive_friendlies(self.player):
-            if ally != self.player:
-                cprint(
-                    ally.display.get_status_line(
-                        show_numbers=True,
-                        show_bars=True,
-                        show_ac=True,
-                    )
-                )
-        # Fallen foes
-        defeated = [
-            c
-            for c in self.participants
-            if not c.is_alive() and c.char_type == CharacterType.ENEMY
-        ]
-        if defeated:
-            cprint(
-                f"[bold magenta]Defeated Enemies ({len(defeated)}):[/] "
-                + ", ".join(d.name for d in defeated)
-            )
-        cprint("")  # blank line
-
-    def is_combat_over(self) -> bool:
-        """Determines if combat has ended.
-
-        Returns:
-            bool: True if combat has ended, False otherwise.
-
-        """
-        if not self.player.is_alive():
-            cprint("[bold red]Combat ends. You have been defeated![/]")
-            return True
-        if not self.get_alive_opponents(self.player):
-            cprint(
-                "[bold green]Combat ends. All enemies defeated! You are victorious![/]"
-            )
-            return True
-        return False

@@ -11,7 +11,6 @@ from typing import Any
 
 from combat.damage import DamageComponent
 from core.constants import BonusType
-from core.dice_parser import VarInfo
 from core.logging import log_debug
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (

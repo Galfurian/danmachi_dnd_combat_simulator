@@ -388,6 +388,7 @@ class CharacterActions:
         Returns:
             bool:
                 True if the action has uses left, False otherwise.
+
         """
         if not action.has_limited_uses():
             return True

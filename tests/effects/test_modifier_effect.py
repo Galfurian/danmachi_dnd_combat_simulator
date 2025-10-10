@@ -10,7 +10,6 @@ from combat.damage import DamageComponent
 from core.constants import BonusType, CharacterType, DamageType
 from effects.event_system import CombatEvent, EventType, TurnEndEvent
 from effects.modifier_effect import (
-    ActiveModifierEffect,
     Modifier,
     ModifierEffect,
 )

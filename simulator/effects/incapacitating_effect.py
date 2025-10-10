@@ -7,11 +7,11 @@ taking actions or participating in combat.
 
 from typing import Any, Literal
 
-from core.dice_parser import VarInfo, evaluate_expression, substitute_variables
+from core.constants import IncapacitationType, StatType
+from core.dice_parser import VarInfo, evaluate_expression
 from core.logging import log_debug
 from core.utils import cprint
 from pydantic import Field
-from core.constants import StatType, IncapacitationType
 
 from .base_effect import ActiveEffect, Effect, EventResponse
 from .event_system import CombatEvent, DamageTakenEvent, TurnEndEvent
@@ -62,8 +62,8 @@ class IncapacitatingEffect(Effect):
         Returns:
             str:
                 The color associated with the incapacitation type.
-        """
 
+        """
         return self.incapacitation_type.color
 
     @property
@@ -74,6 +74,7 @@ class IncapacitatingEffect(Effect):
         Returns:
             str:
                 The emoji associated with the incapacitation type.
+
         """
         return self.incapacitation_type.emoji
 
@@ -296,6 +297,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         Returns:
             bool:
                 True if a saving throw DC is configured, False otherwise.
+
         """
         return (
             self.incapacitating_effect.save_dc is not None
@@ -309,6 +311,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         Returns:
             int:
                 The evaluated save DC.
+
         """
         from character.main import Character
 
@@ -329,6 +332,7 @@ class ActiveIncapacitatingEffect(ActiveEffect):
         Returns:
             int:
                 The ability modifier for the saving throw.
+
         """
         from character.main import Character
 
@@ -356,8 +360,10 @@ class ActiveIncapacitatingEffect(ActiveEffect):
 
         Returns:
             bool: True if the saving throw succeeds, False otherwise.
+
         """
         import random
+
         from character.main import Character
 
         if not self._has_save_dc():

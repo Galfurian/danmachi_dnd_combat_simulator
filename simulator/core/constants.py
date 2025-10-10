@@ -356,6 +356,7 @@ def adapt_str_to_enum(enum_class: Any, value: Any) -> Any:
     Returns:
         Any:
             The corresponding enum member if found, otherwise returns the original string.
+
     """
     if isinstance(value, enum_class):
         return value
@@ -377,5 +378,6 @@ def adapt_keys_to_enum(enum_class: Any, data: dict[Any, Any]) -> dict[Any, Any]:
     Returns:
         dict[Any, Any]:
             A new dictionary with keys converted to the specified enum type.
+
     """
     return {adapt_str_to_enum(enum_class, key): value for key, value in data.items()}
