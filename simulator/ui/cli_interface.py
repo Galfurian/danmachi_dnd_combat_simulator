@@ -17,7 +17,6 @@ from character.main import Character
 from combat.damage import get_damage_expr, get_max_damage, get_min_damage
 from core.constants import ActionCategory, ActionClass
 from core.dice_parser import (
-    VarInfo,
     evaluate_expression,
     get_max_roll,
     get_min_roll,
@@ -368,8 +367,8 @@ class PlayerInterface:
         for rank, mind_level in enumerate(spell.mind_cost, 0):
             # Set the mind level in the variables for evaluation.
             variables = actor.get_expression_variables()
-            variables.append(VarInfo(name="RANK", value=rank + 1))
-            variables.append(VarInfo(name="MIND", value=mind_level))
+            variables["RANK"] = rank + 1
+            variables["MIND"] = mind_level
 
             # Get the maximum number of targets if applicable.
             max_targets = evaluate_expression(spell.target_expr, variables)

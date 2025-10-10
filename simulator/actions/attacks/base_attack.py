@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 from actions.base_action import BaseAction, ValidActionEffect
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
-from core.dice_parser import VarInfo
 from core.logging import logger
 from core.utils import cprint
 from effects.base_effect import EventResponse
@@ -93,7 +92,7 @@ class BaseAttack(BaseAction):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Abstract method to be implemented by subclasses for specific ability execution.
@@ -103,7 +102,7 @@ class BaseAttack(BaseAction):
                 The character performing the action.
             target (Character):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 The variables available for the action execution.
 
         Returns:

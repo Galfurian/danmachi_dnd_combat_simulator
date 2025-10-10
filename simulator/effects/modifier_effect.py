@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.constants import BonusType
-from core.dice_parser import VarInfo, get_max_roll
+from core.dice_parser import get_max_roll
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
@@ -63,12 +63,12 @@ class Modifier(BaseModel):
                 self.value, str
             ), f"Modifier value for '{self.bonus_type}' must be a string."
 
-    def get_projected_strength(self, variables: list[VarInfo]) -> int:
+    def get_projected_strength(self, variables: dict[str, int]) -> int:
         """
         Determine the strength of a specific modifier type.
 
         Args:
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -152,7 +152,7 @@ class ModifierEffect(Effect):
     def get_projected_strength(
         self,
         bonus_type: BonusType,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> int:
         """
         Determine the strength of a specific modifier type.
@@ -160,7 +160,7 @@ class ModifierEffect(Effect):
         Args:
             bonus_type (BonusType):
                 The bonus type to evaluate.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -176,7 +176,7 @@ class ModifierEffect(Effect):
     def is_stronger_than(
         self,
         other: ModifierEffect,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Compare this ModifierEffect to another to determine if it is stronger.
@@ -184,7 +184,7 @@ class ModifierEffect(Effect):
         Args:
             other (ModifierEffect):
                 The other ModifierEffect to compare against.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Raises:
@@ -212,7 +212,7 @@ class ModifierEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the modifier effect can be applied to the target.
@@ -228,7 +228,7 @@ class ModifierEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -278,7 +278,7 @@ class ModifierEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the modifier effect to the target, creating an ActiveEffect if valid.
@@ -290,7 +290,7 @@ class ModifierEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

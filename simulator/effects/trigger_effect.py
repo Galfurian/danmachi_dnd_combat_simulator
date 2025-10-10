@@ -9,7 +9,6 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.constants import ActionCategory, DamageType
-from core.dice_parser import VarInfo
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from pydantic import BaseModel, Field
@@ -234,7 +233,7 @@ class TriggerEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the trigger effect can be applied to the target.
@@ -249,7 +248,7 @@ class TriggerEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -285,7 +284,7 @@ class TriggerEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the trigger effect to the target, creating an ActiveEffect if valid.
@@ -297,7 +296,7 @@ class TriggerEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

@@ -8,7 +8,7 @@ poison, bleed, or ongoing damage spells.
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
-from core.dice_parser import VarInfo, roll_and_describe
+from core.dice_parser import roll_and_describe
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
@@ -53,7 +53,7 @@ class DamageOverTimeEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the damage over time effect can be applied to the target.
@@ -70,7 +70,7 @@ class DamageOverTimeEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -124,7 +124,7 @@ class DamageOverTimeEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the damage over time effect to the target, creating an
@@ -135,7 +135,7 @@ class DamageOverTimeEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

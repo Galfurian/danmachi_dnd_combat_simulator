@@ -22,7 +22,6 @@ from actions.spells.spell_debuff import SpellDebuff
 from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
 from character.main import Character
-from core.dice_parser import VarInfo
 from core.logging import logger
 
 # =============================================================================
@@ -127,7 +126,7 @@ def _can_apply_any_effect(
     source: Character,
     target: Character,
     effects: list[ValidActionEffect],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> bool:
     """
     Checks if any effect can be applied to the target.
@@ -139,7 +138,7 @@ def _can_apply_any_effect(
             The character receiving the effect.
         effects (list[ValidActionEffect]):
             List of effects to evaluate.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             List of variables to use for evaluating usefulness.
 
     Returns:
@@ -164,7 +163,7 @@ def _sort_targets_by_usefulness_and_hp_offensive(
     action: BaseAttack | AbilityOffensive | SpellOffensive,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo],
+    variables: dict[str, int],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -180,7 +179,7 @@ def _sort_targets_by_usefulness_and_hp_offensive(
         action (Any):
             The action being considered for the targets. Can be a spell, attack,
             or other action.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             List of variables to use for evaluating usefulness. Defaults to an
             empty list.
         max_targets (int):
@@ -216,7 +215,7 @@ def _sort_targets_by_usefulness_and_hp_healing(
     action: AbilityHeal | SpellHeal,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo],
+    variables: dict[str, int],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -231,7 +230,7 @@ def _sort_targets_by_usefulness_and_hp_healing(
         action (Any):
             The healing action being considered for the targets. Can be a spell,
             ability, or other action.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             List of variables to use for evaluating usefulness. Defaults to an
             empty list.
         max_targets (int):
@@ -273,7 +272,7 @@ def _sort_targets_by_usefulness_and_buff(
     action: AbilityBuff | AbilityDebuff | SpellBuff | SpellDebuff,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo],
+    variables: dict[str, int],
     max_targets: int = 0,
 ) -> list[Character]:
     """
@@ -287,7 +286,7 @@ def _sort_targets_by_usefulness_and_buff(
             List of potential targets.
         action (Any):
             The buff action being considered for the targets.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             List of variables to use for evaluating usefulness. Defaults to an
             empty list.
         max_targets (int):
@@ -319,7 +318,7 @@ def _get_best_base_attack(
     attack: BaseAttack,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> AttackSelection | None:
     """
     Prioritizes targets for base attacks.
@@ -331,7 +330,7 @@ def _get_best_base_attack(
             The character performing the attack.
         targets (list[Character]):
             List of potential targets.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             List of variables to use for evaluating usefulness. Defaults to an
             empty list.
 
@@ -541,7 +540,7 @@ def _get_best_ability_attack(
     ability: AbilityOffensive,
     source: Character,
     targets: list[Character],
-    variables: list[VarInfo],
+    variables: dict[str, int],
     max_targets: int = 0,
 ) -> AbilitySelection | None:
     """
@@ -554,7 +553,7 @@ def _get_best_ability_attack(
             The character using the ability.
         targets (list[Character]):
             List of potential targets.
-        variables (list[VarInfo], optional):
+        variables (dict[str, int], optional):
             List of variables to consider for the ability.
         max_targets (int, optional):
             Maximum number of targets to consider.

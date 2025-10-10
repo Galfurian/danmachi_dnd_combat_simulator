@@ -10,7 +10,6 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
-from core.dice_parser import VarInfo
 from core.logging import effects_logger as logger
 from pydantic import BaseModel, Field
 
@@ -85,7 +84,7 @@ class Effect(BaseModel):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the effect can be applied to the target.
@@ -95,7 +94,7 @@ class Effect(BaseModel):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -120,7 +119,7 @@ class Effect(BaseModel):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the effect to the target, creating an ActiveEffect if valid.
@@ -134,7 +133,7 @@ class Effect(BaseModel):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -190,8 +189,8 @@ class ActiveEffect(BaseModel):
         default=None,
         description="Remaining duration in turns, None for indefinite effects",
     )
-    variables: list[VarInfo] = Field(
-        default_factory=list,
+    variables: dict[str, int] = Field(
+        default_factory=dict,
         description="List of variable info for dynamic calculations",
     )
 
@@ -220,8 +219,8 @@ class ActiveEffect(BaseModel):
             raise ValueError("Effect must be an Effect instance.")
         if self.duration is not None and self.duration < 0:
             raise ValueError("Duration must be a non-negative integer or None.")
-        if not all(isinstance(var, VarInfo) for var in self.variables):
-            raise ValueError("All items in variables must be VarInfo instances.")
+        if not all(isinstance(var, int) for var in self.variables.values()):
+            raise ValueError("All items in variables must be integers.")
 
 
 def deserialize_effect(data: dict[str, Any]) -> Effect | None:

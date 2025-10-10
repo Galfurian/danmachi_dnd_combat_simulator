@@ -16,7 +16,6 @@ from core.constants import (
 )
 from core.dice_parser import (
     RollBreakdown,
-    VarInfo,
     evaluate_expression,
     roll_and_describe,
     substitute_variables,
@@ -155,7 +154,7 @@ class BaseAction(BaseModel):
         assert self.maximum_uses is not None, "Maximum uses is not set"
         return self.maximum_uses
 
-    def target_count(self, variables: list[VarInfo]) -> int:
+    def target_count(self, variables: dict[str, int]) -> int:
         """
         Calculate the number of targets this ability can affect.
 
@@ -273,13 +272,13 @@ class BaseAction(BaseModel):
 
     def get_modifier_expressions(
         self,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> dict[BonusType, str]:
         """
         Get modifier expressions with variables substituted for display.
 
         Args:
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for substitution.
 
         Returns:
@@ -316,7 +315,7 @@ class BaseAction(BaseModel):
         actor: Any,
         target: Any,
         effects: list[ValidActionEffect],
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> tuple[list[ValidActionEffect], list[ValidActionEffect]]:
         """
         Apply a list of effects to a target character.
@@ -392,7 +391,7 @@ class BaseAction(BaseModel):
         actor,
         to_hit_expression: str,
         bonus_list: list[str] | None,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> RollBreakdown:
         """
         Roll a d20 attack with bonuses and return detailed breakdown.

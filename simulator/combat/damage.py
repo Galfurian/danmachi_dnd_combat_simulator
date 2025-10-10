@@ -8,7 +8,7 @@ damage components, types, and effects on characters.
 from typing import Any
 
 from core.constants import DamageType
-from core.dice_parser import VarInfo, roll_and_describe
+from core.dice_parser import roll_and_describe
 from pydantic import BaseModel, Field
 
 
@@ -64,7 +64,7 @@ def roll_damage_component(
     actor: Any,
     target: Any,
     damage_component: DamageComponent,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> tuple[int, str]:
     """
     Applies a single damage component to the target, handles resistances,
@@ -77,7 +77,7 @@ def roll_damage_component(
             The target receiving the damage.
         damage_component (DamageComponent):
             The damage component being applied.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             Optional variables for damage roll expressions. If nothing is
             provided, the actors variables will be used.
 
@@ -114,7 +114,7 @@ def roll_damage_components(
     actor: Any,
     target: Any,
     damage_components: list[DamageComponent],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> tuple[int, list[str]]:
     """
     Rolls damage for multiple components and returns the total damage and
@@ -127,7 +127,7 @@ def roll_damage_components(
             The target receiving the damage.
         damage (list[DamageComponent]):
             The damage components being applied.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             The variables for damage roll expressions.
 
     Returns:
@@ -162,7 +162,7 @@ def roll_damage_components(
 
 def get_full_expr(
     components: list[str],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> str:
     """
     Returns the damage expression with variables substituted.
@@ -192,7 +192,7 @@ def get_full_expr(
 
 def get_damage_expr(
     damage_components: list["DamageComponent"],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> str:
     """
     Returns the damage expression with variables substituted.
@@ -223,7 +223,7 @@ def get_damage_expr(
 
 def get_min_damage(
     damage_components: list["DamageComponent"],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Returns the minimum possible damage value for the ability.
@@ -253,7 +253,7 @@ def get_min_damage(
 
 def get_max_damage(
     damage_components: list["DamageComponent"],
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Returns the maximum possible damage value for the ability.

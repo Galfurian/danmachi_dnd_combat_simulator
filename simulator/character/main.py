@@ -7,7 +7,6 @@ Handles character serialization from JSON data.
 """
 
 from core.constants import CharacterType, DamageType, StatType, adapt_str_to_enum
-from core.dice_parser import VarInfo
 from core.logging import character_logger as logger
 from effects.base_effect import EventResponse
 from effects.event_system import (
@@ -194,7 +193,7 @@ class Character:
         """
         return self.stats.adjust_mind(amount)
 
-    def get_expression_variables(self) -> list[VarInfo]:
+    def get_expression_variables(self) -> dict[str, int]:
         """Returns a dictionary of the character's modifiers."""
         return self.stats.get_expression_variables()
 

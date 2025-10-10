@@ -7,7 +7,7 @@ Defines effects that deal damage immediately upon application.
 from typing import Any, Literal
 
 from combat.damage import DamageComponent
-from core.dice_parser import VarInfo, roll_and_describe
+from core.dice_parser import roll_and_describe
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from pydantic import Field
@@ -51,7 +51,7 @@ class InstantDamageEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the instant damage effect can be applied to the target.
@@ -65,7 +65,7 @@ class InstantDamageEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -96,7 +96,7 @@ class InstantDamageEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the instant damage effect to the target, dealing damage immediately.
@@ -106,7 +106,7 @@ class InstantDamageEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

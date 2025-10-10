@@ -10,10 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from actions.abilities.base_ability import BaseAbility
 from actions.base_action import ValidActionEffect
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
-from core.dice_parser import (
-    VarInfo,
-    roll_and_describe,
-)
+from core.dice_parser import roll_and_describe
 from core.utils import cprint
 from effects.event_system import HealEvent
 from pydantic import Field
@@ -45,7 +42,7 @@ class AbilityHeal(BaseAbility):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Abstract method to be implemented by subclasses for specific ability execution.
@@ -55,7 +52,7 @@ class AbilityHeal(BaseAbility):
                 The character performing the action.
             target (Character):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 The variables available for the action execution.
 
         Returns:

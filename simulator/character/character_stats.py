@@ -8,7 +8,6 @@ ability modifiers, HP, AC, initiative, and utility stat expressions.
 from typing import Any
 
 from core.constants import BonusType, StatType, adapt_keys_to_enum
-from core.dice_parser import VarInfo
 from core.utils import get_stat_modifier
 
 
@@ -133,7 +132,9 @@ class CharacterStats:
         if self._owner.spellcasting_ability:
             # Convert string to StatType enum
             try:
-                return get_stat_modifier(self.statistics[self._owner.spellcasting_ability])
+                return get_stat_modifier(
+                    self.statistics[self._owner.spellcasting_ability]
+                )
             except KeyError:
                 # If the spellcasting ability string doesn't match an StatType, return 0
                 pass
@@ -350,21 +351,21 @@ class CharacterStats:
         self.mind = new_mind
         return actual_adjustment
 
-    def get_expression_variables(self) -> list[VarInfo]:
+    def get_expression_variables(self) -> dict[str, int]:
         """
         Returns a list of the character's modifiers for use in expressions.
 
         Returns:
-            List[VarInfo]:
+            dict[str, int]:
                 A list containing the character's modifiers.
 
         """
-        return [
-            VarInfo(name="SPELLCASTING", value=self.SPELLCASTING),
-            VarInfo(name="STR", value=self.STR),
-            VarInfo(name="DEX", value=self.DEX),
-            VarInfo(name="CON", value=self.CON),
-            VarInfo(name="INT", value=self.INT),
-            VarInfo(name="WIS", value=self.WIS),
-            VarInfo(name="CHA", value=self.CHA),
-        ]
+        return {
+            "SPELLCASTING": self.SPELLCASTING,
+            "STR": self.STR,
+            "DEX": self.DEX,
+            "CON": self.CON,
+            "INT": self.INT,
+            "WIS": self.WIS,
+            "CHA": self.CHA,
+        }

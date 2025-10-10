@@ -8,9 +8,6 @@ healing, and buff spells, with common functionality for casting and effects.
 from typing import TYPE_CHECKING, Any
 
 from actions.base_action import BaseAction
-from core.dice_parser import (
-    VarInfo,
-)
 from pydantic import Field
 
 if TYPE_CHECKING:
@@ -116,7 +113,7 @@ class BaseSpell(BaseAction):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Common logic for executing a spell after validation.
@@ -126,7 +123,7 @@ class BaseSpell(BaseAction):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variables for expression evaluation.
 
         Returns:
@@ -144,7 +141,7 @@ class BaseSpell(BaseAction):
         self,
         actor: "Character",
         rank: int,
-    ) -> list[VarInfo]:
+    ) -> dict[str, int]:
         """
         Get a list of variables used in spell expressions.
 
@@ -155,15 +152,16 @@ class BaseSpell(BaseAction):
                 The rank at which the spell is being cast.
 
         Returns:
-            list[VarInfo]: A list of VarInfo objects representing the variables.
+            dict[str, int]:
+                A list of variables representing the variables.
 
         """
         # Get the mind cost for the specified rank.
         mind_level = self.mind_cost[rank]
         # Prepare variables for substitution.
         variables = actor.get_expression_variables()
-        variables.append(VarInfo(name="MIND", value=mind_level))
-        variables.append(VarInfo(name="RANK", value=rank + 1))
+        variables["MIND"] = mind_level
+        variables["RANK"] = rank + 1
         return variables
 
 

@@ -72,7 +72,7 @@
     },
     {
         "name": "Wizard",
-        "hp_mult": 2,
+        "hp_mult": 4,
         "mind_mult": 8,
         "spells_by_level": {
             "1": [

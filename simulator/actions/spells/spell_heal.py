@@ -10,10 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from actions.base_action import ValidActionEffect
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
-from core.dice_parser import (
-    VarInfo,
-    roll_and_describe,
-)
+from core.dice_parser import roll_and_describe
 from core.utils import cprint
 from effects.event_system import HealEvent
 from pydantic import Field
@@ -54,7 +51,7 @@ class SpellHeal(BaseSpell):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Common logic for executing a spell after validation.
@@ -64,7 +61,7 @@ class SpellHeal(BaseSpell):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variables for expression evaluation.
 
         Returns:
@@ -72,6 +69,9 @@ class SpellHeal(BaseSpell):
                 True if action executed successfully, False otherwise.
 
         """
+        # Get the rank, for prints.
+        rank = variables.get("RANK", 1)
+
         # Calculate healing with level scaling
         heal = roll_and_describe(expr=self.heal_roll, variables=variables)
 
@@ -107,7 +107,7 @@ class SpellHeal(BaseSpell):
 
         # Display the heal.
         msg = f"    🔮 {actor.colored_name} "
-        msg += f"casts {self.colored_name} "
+        msg += f"casts {self.colored_name} of rank {rank} "
         msg += f"on {target.colored_name}"
 
         if GLOBAL_VERBOSE_LEVEL == 0:

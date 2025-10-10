@@ -8,7 +8,6 @@ healing, and buff abilities, with common functionality for execution and effects
 from typing import TYPE_CHECKING, Any
 
 from actions.base_action import BaseAction
-from core.dice_parser import VarInfo
 
 if TYPE_CHECKING:
     from character.main import Character
@@ -63,7 +62,7 @@ class BaseAbility(BaseAction):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Abstract method to be implemented by subclasses for specific ability execution.
@@ -73,7 +72,7 @@ class BaseAbility(BaseAction):
                 The character performing the action.
             target (Character):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 The variables available for the action execution.
 
         Returns:

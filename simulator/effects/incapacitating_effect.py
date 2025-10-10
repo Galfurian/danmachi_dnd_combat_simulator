@@ -8,7 +8,7 @@ taking actions or participating in combat.
 from typing import Any, Literal
 
 from core.constants import IncapacitationType, StatType
-from core.dice_parser import VarInfo, evaluate_expression
+from core.dice_parser import evaluate_expression
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from pydantic import Field
@@ -122,7 +122,7 @@ class IncapacitatingEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the incapacitating effect can be applied to the target.
@@ -137,7 +137,7 @@ class IncapacitatingEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -177,7 +177,7 @@ class IncapacitatingEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the incapacitating effect to the target, creating an
@@ -188,7 +188,7 @@ class IncapacitatingEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from actions.spells.base_spell import BaseSpell
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
-from core.dice_parser import VarInfo
 from core.logging import logger
 from core.utils import cprint
 from pydantic import Field
@@ -48,7 +47,7 @@ class SpellOffensive(BaseSpell):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Common logic for executing a spell after validation.
@@ -58,7 +57,7 @@ class SpellOffensive(BaseSpell):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variables for expression evaluation.
 
         Returns:
@@ -66,6 +65,9 @@ class SpellOffensive(BaseSpell):
                 True if action executed successfully, False otherwise.
 
         """
+        # Get the rank, for prints.
+        rank = variables.get("RANK", 1)
+
         # =====================================================================
         # ATTACK ROLL
         # =====================================================================
@@ -101,8 +103,8 @@ class SpellOffensive(BaseSpell):
         if (attack.value < target.AC) or attack.is_fumble():
             msg = (
                 f"    ❌ {actor.colored_name} "
-                f"casts {self.colored_name} on "
-                f"{target.colored_name} "
+                f"casts {self.colored_name} of rank {rank} "
+                f"on {target.colored_name} "
             )
             if GLOBAL_VERBOSE_LEVEL == 1:
                 msg += f"({attack_details}), "
@@ -136,8 +138,8 @@ class SpellOffensive(BaseSpell):
 
         msg = (
             f"    🎯 {actor.colored_name} "
-            f"casts {self.colored_name} on "
-            f"{target.colored_name}"
+            f"casts {self.colored_name} of rank {rank} "
+            f"on {target.colored_name}"
         )
 
         # Display combat results with appropriate detail level

@@ -16,35 +16,55 @@ from core.logging import logger
 from pydantic import BaseModel, Field
 
 
-class VarInfo(BaseModel):
-    """Class to hold variable information."""
+def _replace_var_in_expr(
+    expr: str,
+    name: str,
+    value: int,
+) -> str:
+    """
+    Replaces occurrences of the variable in the expression with its value.
 
-    name: str = Field(description="Variable name")
-    value: int = Field(description="Variable value")
+    Args:
+        expr (str):
+            The expression to perform replacements in.
+        name (str):
+            The variable name to replace.
+        value (int):
+            The variable value to substitute.
 
-    def model_post_init(self, _: Any) -> None:
-        """Validates fields after model initialization."""
-        if not self.name or not isinstance(self.name, str):
-            raise ValueError("name must be a non-empty string")
-        if not isinstance(self.value, int):
-            raise ValueError("value must be an integer")
-        # Normalize name to uppercase.
-        self.name = self.name.upper().strip()
+    Returns:
+        str:
+            The expression with variable replaced by its value.
 
-    def replace_in_expr(self, expr: str) -> str:
-        """
-        Replaces occurrences of the variable in the expression with its value.
+    """
+    if not expr or not name or name not in expr:
+        return expr
+    return expr.replace(f"[{name}]", str(value))
 
-        Args:
-            expr (str): The expression to perform replacements in.
 
-        Returns:
-            str: The expression with variable replaced by its value.
+def _replace_variables_in_expr(
+    expr: str,
+    variables: dict[str, int],
+) -> str:
+    """
+    Replaces all variables in the expression with their values.
 
-        """
-        if not expr or not self.name:
-            return expr
-        return expr.replace(f"[{self.name}]", str(self.value))
+    Args:
+        expr (str):
+            The expression to perform replacements in.
+        variables (dict[str, int]):
+            Dictionary of variable names and their values.
+
+    Returns:
+        str:
+            The expression with variables replaced by their values.
+
+    """
+    if not expr or not variables:
+        return expr
+    for name, value in variables.items():
+        expr = _replace_var_in_expr(expr, name, value)
+    return expr
 
 
 class RollBreakdown(BaseModel):
@@ -262,7 +282,7 @@ DICE_PATTERN = re.compile(r"^(\d*)[dD](\d+)$")
 # ---- Variable Substitution ----
 def substitute_variables(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> str:
     """
     Substitutes variables in the expression with their corresponding values.
@@ -283,9 +303,7 @@ def substitute_variables(
     if expr.isdigit():
         return str(expr)
     # Replace the variables with their actual values.
-    for variable in variables or []:
-        expr = variable.replace_in_expr(expr)
-    return expr
+    return _replace_variables_in_expr(expr, variables or {})
 
 
 # ---- Dice Parsing ----
@@ -560,7 +578,7 @@ def parse_expr_and_assume_max_roll(expr: str) -> int:
 # ---- Public API ----
 def roll_expression(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Rolls a dice expression with variable substitution.
@@ -568,7 +586,7 @@ def roll_expression(
     Args:
         expr (str):
             The dice expression to roll.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:
@@ -588,7 +606,7 @@ def roll_expression(
 
 def get_min_roll(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Gets the minimum possible roll for a dice expression.
@@ -596,7 +614,7 @@ def get_min_roll(
     Args:
         expr (str):
             The dice expression to analyze.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:
@@ -616,7 +634,7 @@ def get_min_roll(
 
 def get_max_roll(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Gets the maximum possible roll for a dice expression.
@@ -624,7 +642,7 @@ def get_max_roll(
     Args:
         expr (str):
             The dice expression to analyze.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:
@@ -644,7 +662,7 @@ def get_max_roll(
 
 def roll_and_describe(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> RollBreakdown:
     """
     Rolls a dice expression with variable substitution and provides a breakdown.
@@ -652,7 +670,7 @@ def roll_and_describe(
     Args:
         expr (str):
             The dice expression to roll.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:
@@ -696,7 +714,7 @@ def roll_and_describe(
 
 def evaluate_expression(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> int:
     """
     Evaluates a mathematical expression with variable substitution.
@@ -704,7 +722,7 @@ def evaluate_expression(
     Args:
         expr (str):
             The expression to evaluate.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:
@@ -729,7 +747,7 @@ def evaluate_expression(
 
 def simplify_expression(
     expr: str,
-    variables: list[VarInfo],
+    variables: dict[str, int],
 ) -> str:
     """
     Simplifies an expression by substituting variables and evaluating arithmetic.
@@ -737,7 +755,7 @@ def simplify_expression(
     Args:
         expr (str):
             The expression to simplify.
-        variables (list[VarInfo]):
+        variables: (dict[str, int]):
             A list of variable information for substitution.
 
     Returns:

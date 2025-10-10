@@ -7,7 +7,7 @@ regeneration or restorative spells with ongoing benefits.
 
 from typing import Any, Literal
 
-from core.dice_parser import VarInfo, roll_and_describe
+from core.dice_parser import roll_and_describe
 from core.logging import effects_logger as logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
@@ -52,7 +52,7 @@ class HealingOverTimeEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Check if the healing over time effect can be applied to the target.
@@ -66,7 +66,7 @@ class HealingOverTimeEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:
@@ -107,7 +107,7 @@ class HealingOverTimeEffect(Effect):
         self,
         actor: Any,
         target: Any,
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Apply the healing over time effect to the target, creating an
@@ -118,7 +118,7 @@ class HealingOverTimeEffect(Effect):
                 The character applying the effect.
             target (Character):
                 The character receiving the effect.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variable info for dynamic calculations.
 
         Returns:

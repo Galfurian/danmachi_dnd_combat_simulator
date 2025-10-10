@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from actions.spells.base_spell import BaseSpell
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory
-from core.dice_parser import VarInfo
 from core.utils import cprint
 
 if TYPE_CHECKING:
@@ -52,7 +51,7 @@ class SpellBuff(BaseSpell):
         self,
         actor: "Character",
         target: "Character",
-        variables: list[VarInfo],
+        variables: dict[str, int],
     ) -> bool:
         """
         Common logic for executing a spell after validation.
@@ -62,7 +61,7 @@ class SpellBuff(BaseSpell):
                 The character casting the spell.
             target (Any):
                 The character being targeted.
-            variables (list[VarInfo]):
+            variables: (dict[str, int]):
                 List of variables for expression evaluation.
 
         Returns:
@@ -70,6 +69,9 @@ class SpellBuff(BaseSpell):
                 True if action executed successfully, False otherwise.
 
         """
+        # Get the rank, for prints.
+        rank = variables.get("RANK", 1)
+
         # Apply the effects.
         effects_applied, effects_not_applied = self._common_apply_effects(
             actor=actor,
@@ -80,7 +82,7 @@ class SpellBuff(BaseSpell):
 
         # Display the outcome.
         msg = f"    🔮 {actor.colored_name} "
-        msg += f"casts [bold blue]{self.name}[/] "
+        msg += f"casts {self.colored_name} of rank {rank} "
         msg += f"on {target.colored_name}"
         if GLOBAL_VERBOSE_LEVEL == 0:
             if effects_applied:
