@@ -8,7 +8,7 @@ validation of hand requirements, armor slots, and inventory constraints.
 from typing import Any
 
 from core.constants import ArmorSlot
-from core.logging import logger
+from core.logging import character_logger as logger
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 

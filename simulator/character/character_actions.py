@@ -14,7 +14,7 @@ from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
 from core.constants import ActionCategory, ActionClass
-from core.logging import logger
+from core.logging import character_logger as logger
 
 
 class CharacterActions:

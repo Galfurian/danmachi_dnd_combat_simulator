@@ -11,7 +11,7 @@ from typing import Any
 
 from combat.damage import DamageComponent
 from core.constants import BonusType
-from core.logging import logger
+from core.logging import character_logger as logger
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,

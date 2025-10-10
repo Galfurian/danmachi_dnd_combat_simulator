@@ -28,45 +28,46 @@ def _create_rich_handler(console: Console, level: int = logging.NOTSET) -> RichH
 
 
 def setup_logging(
-    level: int = logging.INFO,
-    logger_levels: Dict[str, int] | None = None
+    logger_levels: Dict[str, int] = {},
 ) -> None:
     """
     Sets up logging configuration with rich colored output.
 
     Args:
-        level (int): The default logging level to set. Defaults to logging.INFO.
-        logger_levels (Dict[str, int] | None): Dictionary mapping logger names to their specific levels.
+        logger_levels (Dict[str, int]): Dictionary mapping logger names to their specific levels.
+                                       The "simulator" logger allows propagation, others are independent.
 
     """
     # Create a rich console for logging
     console = Console(width=120, force_terminal=True, force_jupyter=False)
 
-    # Configure the rich handler
-    rich_handler = _create_rich_handler(console)
-
-    # Configure the root logger
+    # Set up root logger first
     logging.basicConfig(
-        level=level, format="%(message)s", datefmt="%X", handlers=[rich_handler]
+        level=logging.WARNING,  # Root logger at WARNING to not interfere
+        format="%(message)s",
+        datefmt="%X",
+        handlers=[]
     )
+
+    # Configure logger levels.
+    for logger_name, logger_level in logger_levels.items():
+        specific_logger = logging.getLogger(logger_name)
+        # Clear existing handlers to avoid duplicates
+        specific_logger.handlers.clear()
+        specific_logger.setLevel(logger_level)
+
+        # Only make non-simulator loggers independent (no propagation)
+        if logger_name != "simulator":
+            specific_logger.propagate = False
+
+        # Create a handler for this logger with the specific level
+        specific_handler = _create_rich_handler(console, logger_level)
+        specific_logger.addHandler(specific_handler)
 
     # Set specific levels for noisy libraries if needed
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
-
-    # Configure specific logger levels
-    if logger_levels:
-        for logger_name, logger_level in logger_levels.items():
-            specific_logger = logging.getLogger(logger_name)
-            # Clear existing handlers to avoid duplicates
-            specific_logger.handlers.clear()
-            specific_logger.setLevel(logger_level)
-            # Prevent propagation to root logger for independently configured loggers
-            specific_logger.propagate = False
-            # Create a handler for this logger with the specific level
-            specific_handler = _create_rich_handler(console, logger_level)
-            specific_logger.addHandler(specific_handler)
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -86,3 +87,4 @@ def get_logger(name: str) -> logging.Logger:
 # Create default loggers for the simulator
 logger = get_logger("simulator")
 effects_logger = get_logger("simulator.effects")
+character_logger = get_logger("simulator.character")

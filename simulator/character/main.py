@@ -8,7 +8,7 @@ Handles character serialization from JSON data.
 
 from core.constants import CharacterType, DamageType, StatType, adapt_str_to_enum
 from core.dice_parser import VarInfo
-from core.logging import logger
+from core.logging import character_logger as logger
 from effects.base_effect import EventResponse
 from effects.event_system import (
     CombatEvent,

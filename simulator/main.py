@@ -97,6 +97,27 @@ def make_names_unique(in_list: list[Character]) -> None:
             opponent.name = f"{base} ({seen[base]})"
 
 
+def get_log_Level(log_level: str) -> int:
+    """
+    Convert a log level string to a logging level integer.
+
+    Args:
+        log_level (str):
+            Log level as a string (e.g., "DEBUG", "INFO").
+    Returns:
+        int:
+            Corresponding logging level integer.
+    """
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    return level_map.get(log_level.upper(), logging.INFO)
+
+
 def main(args: argparse.Namespace) -> None:
     """
     Main function for the combat simulator.
@@ -106,21 +127,14 @@ def main(args: argparse.Namespace) -> None:
             Parsed command-line arguments containing log_level and effects_log_level.
 
     """
-    # Set up logging based on log level
-    level_map = {
-        "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
-        "WARNING": logging.WARNING,
-        "ERROR": logging.ERROR,
-        "CRITICAL": logging.CRITICAL,
-    }
 
     # Configure logger-specific levels
-    logger_levels = {}
-    if hasattr(args, 'effects_log_level') and args.effects_log_level:
-        logger_levels["simulator.effects"] = level_map.get(args.effects_log_level.upper(), logging.INFO)
-
-    setup_logging(level_map.get(args.log_level.upper(), logging.INFO), logger_levels)
+    logger_levels = {
+        "simulator": get_log_Level(args.log_level),
+        "simulator.effects": get_log_Level(args.effects_log_level),
+        "simulator.character": get_log_Level(args.character_log_level),
+    }
+    setup_logging(logger_levels)
 
     # =========================================================================
 
@@ -161,13 +175,13 @@ def main(args: argparse.Namespace) -> None:
     add_to_list(enemies_f01_f10, opponents, "Goblin")
     add_to_list(enemies_f01_f10, opponents, "Goblin")
     add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
-    #add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
+    # add_to_list(enemies_f01_f10, opponents, "Goblin")
     # add_to_list(enemies_f01_f10, opponents, "Dungeon Worm")
 
     # Add allies.
@@ -176,7 +190,7 @@ def main(args: argparse.Namespace) -> None:
     add_to_list(characters, allies, "Thrain")
 
     # Add player characters.
-    #add_to_list(characters, players, "Zephyros")
+    # add_to_list(characters, players, "Zephyros")
 
     # Make names unique by appending numbers to duplicates.
     make_names_unique(players)
@@ -212,23 +226,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="DanMachi D&D Combat Simulator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python simulator/main.py --log-level DEBUG
-  python simulator/main.py --log-level INFO
-  python simulator/main.py --log-level WARNING --effects-log-level DEBUG
-        """,
     )
     parser.add_argument(
+        "-ll",
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set the default logging level (default: INFO)",
     )
     parser.add_argument(
+        "-el",
         "--effects-log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="Set the logging level specifically for effects (default: same as --log-level)",
+        default="INFO",
+        help="Set the logging level specifically for effects (default: INFO)",
+    )
+    parser.add_argument(
+        "-cl",
+        "--character-log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level specifically for characters (default: INFO)",
     )
 
     args = parser.parse_args()

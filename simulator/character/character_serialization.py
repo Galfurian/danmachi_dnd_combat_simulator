@@ -13,7 +13,7 @@ from character.character_class import CharacterClass
 from character.character_effects import ValidPassiveEffect
 from character.main import Character
 from core.constants import CharacterType, DamageType
-from core.logging import logger
+from core.logging import character_logger as logger
 
 
 def character_from_dict(data: dict[str, Any]) -> Character:
