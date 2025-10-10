@@ -10,7 +10,7 @@ from pathlib import Path
 
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
-from character.character_serialization import load_character
+from character.character_serialization import load_character, load_characters
 from character.main import Character
 from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
@@ -73,7 +73,8 @@ training_dummy = Character(
     passive_effects=[],
 )
 
-player = load_character(Path("./data/player.json"))
+characters = load_characters(Path("./data/characters.json"))
+player = characters.get("Zephyros")
 
 assert player, "Failed to load player character from JSON."
 

@@ -1,5 +1,37 @@
 [
     {
+        "name": "Zephyros",
+        "char_type": "ALLY",
+        "race": "Aasimar",
+        "levels": {
+            "Paladin": 4,
+            "Sorcerer": 4
+        },
+        "stats": {
+            "STRENGTH": 14,
+            "DEXTERITY": 15,
+            "CONSTITUTION": 15,
+            "INTELLIGENCE": 16,
+            "WISDOM": 14,
+            "CHARISMA": 18
+        },
+        "spellcasting_ability": "CHARISMA",
+        "number_of_attacks": 2,
+        "wielded_weapons": [
+            "Fine Shortsword"
+        ],
+        "armors": [
+            "Chainmail",
+            "Steel Shield"
+        ],
+        "actions": [
+            "Radiant Smite"
+        ],
+        "spells": [
+            "Shatter"
+        ]
+    },
+    {
         "name": "Naerin",
         "char_type": "ALLY",
         "race": "Human",

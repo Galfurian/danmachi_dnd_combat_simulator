@@ -10,7 +10,7 @@ from pathlib import Path
 
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
-from character.character_serialization import load_character
+from character.character_serialization import load_character, load_characters
 from character.main import Character
 from core.constants import CharacterType
 from core.content import ContentRepository
@@ -70,12 +70,16 @@ training_dummy = Character(
     passive_effects=[],
 )
 
-player = load_character(Path("./data/player.json"))
+characters = load_characters(Path("./data/characters.json"))
+player = characters.get("Zephyros")
+
 
 assert player, "Failed to load player character from JSON."
 
 
-def resolve_target(event: CombatEvent, applies_to: str, active_effect_target: Character):
+def resolve_target(
+    event: CombatEvent, applies_to: str, active_effect_target: Character
+):
     """
     Resolve the target for an effect based on applies_to.
 
@@ -112,7 +116,9 @@ def on_event(character: Character, event: CombatEvent):
         for new_effect in response.new_effects:
             # Resolve the target based on applies_to
             target = resolve_target(event, new_effect.applies_to, character)
-            log_info(f"  Applying {new_effect.name} to {target.colored_name} (applies_to: {new_effect.applies_to})")
+            log_info(
+                f"  Applying {new_effect.name} to {target.colored_name} (applies_to: {new_effect.applies_to})"
+            )
             success = new_effect.apply_effect(
                 actor=character,  # The character with the effect
                 target=target,
@@ -145,22 +151,17 @@ thorns_data = {
     "name": "Thorns",
     "description": "Deals damage back to attackers when hit.",
     "duration": 5,  # 5 turns
-    "trigger_condition": {
-        "event_type": "on_damage_taken"
-    },
+    "trigger_condition": {"event_type": "on_damage_taken"},
     "trigger_effects": [
         {
             "effect_type": "InstantDamageEffect",
             "name": "Thorns Damage",
             "description": "Instant damage from thorns",
             "duration": 0,  # Instant
-            "damage": {
-                "damage_roll": "1d4",
-                "damage_type": "PIERCING"
-            },
-            "applies_to": "SOURCE"  # Apply to the source of the damage (attacker)
+            "damage": {"damage_roll": "1d4", "damage_type": "PIERCING"},
+            "applies_to": "SOURCE",  # Apply to the source of the damage (attacker)
         }
-    ]
+    ],
 }
 
 from effects.trigger_effect import TriggerEffect
@@ -169,9 +170,7 @@ thorns_effect = TriggerEffect(**thorns_data)
 
 # Apply Thorns to player
 success = thorns_effect.apply_effect(
-    actor=player,
-    target=player,
-    variables=player.get_expression_variables()
+    actor=player, target=player, variables=player.get_expression_variables()
 )
 if success:
     log_info("Thorns effect applied to player")
@@ -191,7 +190,9 @@ hit_event = HitEvent(source=training_dummy, target=player)
 on_event(player, hit_event)
 
 # Then, damage taken event
-damage_event = DamageTakenEvent(source=training_dummy, target=player, amount=damage_amount)
+damage_event = DamageTakenEvent(
+    source=training_dummy, target=player, amount=damage_amount
+)
 on_event(player, damage_event)
 
 print()
