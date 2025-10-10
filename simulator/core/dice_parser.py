@@ -12,7 +12,7 @@ from collections.abc import Callable
 from logging import debug
 from typing import Any
 
-from core.logging import log_warning
+from core.logging import logger
 from pydantic import BaseModel, Field
 
 
@@ -329,19 +329,13 @@ def _parse_term_and_process_dice(
     if term.isdigit():
         value = int(term)
         if value < 0:
-            log_warning(
-                f"Negative dice value not allowed: {value}",
-                {"term": term, "value": value},
-            )
+            logger.warning(f"Negative dice value not allowed: {value}")
             return 0, []
         return value, [value]
 
     match = DICE_PATTERN.match(term)
     if not match:
-        log_warning(
-            f"Invalid dice string format: '{term}'",
-            {"term": term},
-        )
+        logger.warning(f"Invalid dice string format: '{term}'")
         return 0, []
 
     num_str, sides_str = match.groups()
@@ -350,31 +344,19 @@ def _parse_term_and_process_dice(
 
     # Validate dice parameters
     if num <= 0:
-        log_warning(
-            f"Number of dice must be positive, got {num}",
-            {"term": term, "num": num, "sides": sides},
-        )
+        logger.warning(f"Number of dice must be positive, got {num}")
         return 0, []
 
     if sides <= 0:
-        log_warning(
-            f"Number of sides must be positive, got {sides}",
-            {"term": term, "num": num, "sides": sides},
-        )
+        logger.warning(f"Number of sides must be positive, got {sides}")
         return 0, []
 
     if num > 100:  # Reasonable limit
-        log_warning(
-            f"Too many dice requested: {num} (limit: 100)",
-            {"term": term, "num": num, "sides": sides},
-        )
+        logger.warning(f"Too many dice requested: {num} (limit: 100)")
         return 0, []
 
     if sides > 1000:  # Reasonable limit
-        log_warning(
-            f"Too many sides on dice: {sides} (limit: 1000)",
-            {"term": term, "num": num, "sides": sides},
-        )
+        logger.warning(f"Too many sides on dice: {sides} (limit: 1000)")
         return 0, []
 
     rolls = dice_action(num, sides)
@@ -529,14 +511,7 @@ def _process_dice_expression(
     try:
         return int(eval(processed_expr, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        log_warning(
-            f"Failed to evaluate '{processed_expr}': {e}",
-            {
-                "expression": processed_expr,
-                "error": str(e),
-                "context": "dice_expression_evaluation",
-            },
-        )
+        logger.warning(f"Failed to evaluate '{processed_expr}': {e}")
         return 0
 
 
@@ -715,15 +690,7 @@ def roll_and_describe(
             rolls=dice_rolls,
         )
     except Exception as e:
-        log_warning(
-            f"Failed to evaluate '{breakdown}': {e}",
-            {
-                "breakdown": breakdown,
-                "original_expr": original_expr,
-                "error": str(e),
-                "context": "dice_breakdown_evaluation",
-            },
-        )
+        logger.warning(f"Failed to evaluate '{breakdown}': {e}")
         return RollBreakdown(value=0, description="", rolls=[])
 
 
@@ -756,16 +723,7 @@ def evaluate_expression(
     try:
         return int(eval(substituted, {"__builtins__": None}, math.__dict__))
     except Exception as e:
-        log_warning(
-            f"Failed to evaluate '{substituted}': {e}",
-            {
-                "expression": substituted,
-                "original": expr,
-                "variables": variables or {},
-                "error": str(e),
-                "context": "variable_expression_evaluation",
-            },
-        )
+        logger.warning(f"Failed to evaluate '{substituted}': {e}")
         return 0
 
 

@@ -8,7 +8,7 @@ Handles character serialization from JSON data.
 
 from core.constants import CharacterType, DamageType, StatType, adapt_str_to_enum
 from core.dice_parser import VarInfo
-from core.logging import log_debug
+from core.logging import logger
 from effects.base_effect import EventResponse
 from effects.event_system import (
     CombatEvent,
@@ -244,7 +244,7 @@ class Character:
         # Apply the damage and get the actual damage taken.
         actual = abs(self.stats.adjust_hp(-adjusted))
 
-        log_debug(
+        logger.debug(
             f"{self.colored_name} takes {actual} {damage_type.value} damage "
             f"(base: {base}, adjusted: {adjusted}, remaining HP: {self.stats.hp})"
         )

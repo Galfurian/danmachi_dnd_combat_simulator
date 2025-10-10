@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from pydantic import Field
 
@@ -84,7 +84,7 @@ class InstantDamageEffect(Effect):
 
         # Rule 2: Damage type immunity check
         if self.damage.damage_type in target.immunities:
-            log_debug(
+            logger.debug(
                 f"Cannot apply instant damage effect: Target {target.colored_name} "
                 f"is immune to {self.damage.damage_type}."
             )
@@ -139,7 +139,7 @@ class InstantDamageEffect(Effect):
         cprint(damage_str)
         if not target.is_alive():
             cprint(f"    [bold red]{target.name} has been defeated![/]")
-        log_debug(
+        logger.debug(
             f"Instant damage effect '{self.name}' on {target.colored_name} "
             f"dealt {taken} {self.damage.damage_type} damage."
         )

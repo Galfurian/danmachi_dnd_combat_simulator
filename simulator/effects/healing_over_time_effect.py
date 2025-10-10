@@ -8,7 +8,7 @@ regeneration or restorative spells with ongoing benefits.
 from typing import Any, Literal
 
 from core.dice_parser import VarInfo, roll_and_describe
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import Field
@@ -95,7 +95,7 @@ class HealingOverTimeEffect(Effect):
             return True
         # Otherwise, enforce stacking limit.
         if sum(1 for _ in target.effects.healing_over_time_effects) >= 3:
-            log_debug(
+            logger.debug(
                 f"Cannot apply HoT effect: Target {target.colored_name} "
                 "already has 3 or more active HoT effects."
             )
@@ -151,7 +151,7 @@ class HealingOverTimeEffect(Effect):
             cprint(f"    ⚠️  {self.name} duration refreshed on {target.colored_name}.")
             return True
 
-        log_debug(
+        logger.debug(
             f"Applying DoT effect '{self.colored_name}' "
             f"from {actor.colored_name} to {target.colored_name}."
         )
@@ -246,7 +246,7 @@ class ActiveHealingOverTimeEffect(ActiveEffect):
                 )
                 remove_effect = True
 
-        log_debug(
+        logger.debug(
             f"HealingOverTimeEffect '{HOT.name}' on {self.target.colored_name}"
             f" applied {hot_value} healing, remaining duration: {self.duration}."
         )

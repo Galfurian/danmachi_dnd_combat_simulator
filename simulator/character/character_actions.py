@@ -14,7 +14,7 @@ from actions.attacks.weapon_attack import WeaponAttack
 from actions.base_action import BaseAction
 from actions.spells.base_spell import BaseSpell
 from core.constants import ActionCategory, ActionClass
-from core.logging import log_debug, log_warning
+from core.logging import logger
 
 
 class CharacterActions:
@@ -328,7 +328,7 @@ class CharacterActions:
         """
         if action.name not in self._uses:
             if action.has_limited_uses():
-                log_debug(
+                logger.debug(
                     f"Initializing uses for action {action.name} to "
                     f"{action.get_maximum_uses()}"
                 )
@@ -351,7 +351,7 @@ class CharacterActions:
             return True
         if action.name in self._uses:
             if self._uses[action.name] > 0:
-                log_debug(
+                logger.debug(
                     f"Decrementing uses for action {action.name}. "
                     f"Remaining uses: {self._uses[action.name] - 1}"
                 )
@@ -410,19 +410,16 @@ class CharacterActions:
         assert lname not in self.spells, f"Action '{action.name}' is already known."
 
         if isinstance(action, BaseAttack):
-            log_debug(f"Learning attack: {action.name}")
+            logger.debug(f"Learning attack: {action.name}")
             self.attacks[lname] = action
         elif isinstance(action, BaseSpell):
-            log_debug(f"Learning spell: {action.name}")
+            logger.debug(f"Learning spell: {action.name}")
             self.spells[lname] = action
         elif isinstance(action, BaseAbility):
-            log_debug(f"Learning action: {action.name}")
+            logger.debug(f"Learning action: {action.name}")
             self.abilities[lname] = action
         else:
-            log_warning(
-                f"Unknown action type for learning: {type(action)}",
-                {"character": self._owner.name, "action": action.name},
-            )
+            logger.warning(f"Unknown action type for learning: {type(action)}")
             return
 
         # Initialize the uses for the action if it has limited uses.
@@ -439,22 +436,13 @@ class CharacterActions:
         """
         lname = action.name.lower()
         if lname in self.attacks:
-            log_debug(f"Unlearning attack: {action.name}")
+            logger.debug(f"Unlearning attack: {action.name}")
             del self.attacks[lname]
         elif lname in self.spells:
-            log_debug(f"Unlearning spell: {action.name}")
+            logger.debug(f"Unlearning spell: {action.name}")
             del self.spells[lname]
         elif lname in self.abilities:
-            log_debug(f"Unlearning ability: {action.name}")
+            logger.debug(f"Unlearning ability: {action.name}")
             del self.abilities[lname]
         else:
-            log_warning(
-                f"{self._owner.name} does not know action '{action.name}'",
-                {
-                    "character": self._owner.name,
-                    "action": action.name,
-                    "known_attacks": list(self.attacks.keys()),
-                    "known_spells": list(self.spells.keys()),
-                    "known_abilities": list(self.abilities.keys()),
-                },
-            )
+            logger.warning(f"{self._owner.name} does not know action '{action.name}'")

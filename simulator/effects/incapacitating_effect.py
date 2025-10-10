@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from core.constants import IncapacitationType, StatType
 from core.dice_parser import VarInfo, evaluate_expression
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from pydantic import Field
 
@@ -156,7 +156,7 @@ class IncapacitatingEffect(Effect):
 
         # Rule 2: Self-targeting restriction
         if actor == target:
-            log_debug(
+            logger.debug(
                 "Cannot apply incapacitating effect: Self-targeting is not allowed."
             )
             return False
@@ -164,7 +164,7 @@ class IncapacitatingEffect(Effect):
         # Rule 3: No stacking - prevent applying if target already has
         # incapacitating effect.
         if sum(1 for _ in target.effects.incapacitating_effects) >= 1:
-            log_debug(
+            logger.debug(
                 f"Cannot apply incapacitating effect: Target "
                 f"{target.colored_name} already has an active "
                 "incapacitating effect."
@@ -204,7 +204,7 @@ class IncapacitatingEffect(Effect):
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
 
-        log_debug(
+        logger.debug(
             f"Applying incapacitating effect {self.colored_name} "
             f"from {actor.colored_name} to {target.colored_name}."
         )

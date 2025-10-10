@@ -14,7 +14,7 @@ from character.character_serialization import load_character, load_characters
 from character.main import Character
 from core.constants import CharacterType, DamageType
 from core.content import ContentRepository
-from core.logging import log_info, setup_logging
+from core.logging import logger, setup_logging
 from core.utils import crule
 from effects.base_effect import EventResponse
 from effects.event_system import (
@@ -118,9 +118,9 @@ def on_event(character: Character, event: CombatEvent):
     responses: list[EventResponse] = character.on_event(event)
     for response in responses:
         if response.message:
-            log_info(response.message)
+            logger.info(response.message)
         for damage_bonus in response.damage_bonus:
-            log_info(
+            logger.info(
                 f"  Damage bonus applied to {character.colored_name}: {damage_bonus}"
             )
         for new_effect in response.new_effects:
@@ -140,11 +140,11 @@ def on_event(character: Character, event: CombatEvent):
 
 def print_active_effects(character: Character):
     if not character.effects.active_effects:
-        log_info(f"{character.colored_name} has no active effects.")
+        logger.info(f"{character.colored_name} has no active effects.")
         return
-    log_info(f"Active effects for {character.colored_name}:")
+    logger.info(f"Active effects for {character.colored_name}:")
     for effect in character.effects.active_effects:
-        log_info(f"  {effect}")
+        logger.info(f"  {effect}")
 
 
 # =============================================================================
@@ -191,7 +191,7 @@ print_active_effects(player)
 print()
 
 for turn_number in range(1, 5):
-    log_info(f"--- Turn {turn_number} ---")
+    logger.info(f"--- Turn {turn_number} ---")
     player.on_event(TurnEndEvent(source=player, turn_number=turn_number))
 
 print()
@@ -205,15 +205,15 @@ crule("")
 
 for spell_name, spell in player.actions.spells.items():
     key = f"'{spell_name}'"
-    log_info(f"{key:22} -> ranks: {[rank for rank in spell.mind_cost]}")
+    logger.info(f"{key:22} -> ranks: {[rank for rank in spell.mind_cost]}")
 
 mage_armor = player.actions.spells["mage armor"]
 blurr = player.actions.spells["blurr"]
 
-log_info(f"Player AC before mage armor: {player.AC}")
+logger.info(f"Player AC before mage armor: {player.AC}")
 
 mage_armor.execute(actor=player, target=player, rank=0)
-log_info(f"Player AC after mage armor: {player.AC}")
+logger.info(f"Player AC after mage armor: {player.AC}")
 
 blurr.execute(actor=player, target=player, rank=0)
-log_info(f"Player AC after blurr: {player.AC}")
+logger.info(f"Player AC after blurr: {player.AC}")

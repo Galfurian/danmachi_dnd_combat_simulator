@@ -14,7 +14,7 @@ from character.character_serialization import load_character, load_characters
 from character.main import Character
 from core.constants import CharacterType
 from core.content import ContentRepository
-from core.logging import log_info, setup_logging
+from core.logging import logger, setup_logging
 from core.utils import crule
 from effects.base_effect import EventResponse
 from effects.event_system import (
@@ -108,15 +108,15 @@ def on_event(character: Character, event: CombatEvent):
     responses: list[EventResponse] = character.on_event(event)
     for response in responses:
         if response.message:
-            log_info(response.message)
+            logger.info(response.message)
         for damage_bonus in response.damage_bonus:
-            log_info(
+            logger.info(
                 f"  Damage bonus applied to {character.colored_name}: {damage_bonus}"
             )
         for new_effect in response.new_effects:
             # Resolve the target based on applies_to
             target = resolve_target(event, new_effect.applies_to, character)
-            log_info(
+            logger.info(
                 f"  Applying {new_effect.name} to {target.colored_name} (applies_to: {new_effect.applies_to})"
             )
             success = new_effect.apply_effect(
@@ -125,16 +125,16 @@ def on_event(character: Character, event: CombatEvent):
                 variables=character.get_expression_variables(),
             )
             if not success:
-                log_info(f"  Failed to apply {new_effect.name}")
+                logger.info(f"  Failed to apply {new_effect.name}")
 
 
 def print_active_effects(character: Character):
     if not character.effects.active_effects:
-        log_info(f"{character.colored_name} has no active effects.")
+        logger.info(f"{character.colored_name} has no active effects.")
         return
-    log_info(f"Active effects for {character.colored_name}:")
+    logger.info(f"Active effects for {character.colored_name}:")
     for effect in character.effects.active_effects:
-        log_info(f"  {effect}")
+        logger.info(f"  {effect}")
 
 
 # =============================================================================
@@ -173,9 +173,9 @@ success = thorns_effect.apply_effect(
     actor=player, target=player, variables=player.get_expression_variables()
 )
 if success:
-    log_info("Thorns effect applied to player")
+    logger.info("Thorns effect applied to player")
 else:
-    log_info("Failed to apply Thorns effect")
+    logger.info("Failed to apply Thorns effect")
 
 print()
 print_active_effects(player)
@@ -183,7 +183,7 @@ print()
 
 # Simulate damage from training dummy
 damage_amount = 10
-log_info(f"Training dummy attacks player for {damage_amount} damage")
+logger.info(f"Training dummy attacks player for {damage_amount} damage")
 
 # First, the hit event
 hit_event = HitEvent(source=training_dummy, target=player)
@@ -200,8 +200,8 @@ print_active_effects(player)
 print()
 
 # Check if damage was dealt back
-log_info(f"Player HP: {player.stats.hp}/{player.HP_MAX}")
-log_info(f"Training Dummy HP: {training_dummy.stats.hp}/{training_dummy.HP_MAX}")
+logger.info(f"Player HP: {player.stats.hp}/{player.HP_MAX}")
+logger.info(f"Training Dummy HP: {training_dummy.stats.hp}/{training_dummy.HP_MAX}")
 
 crule("")
 

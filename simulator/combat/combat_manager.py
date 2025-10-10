@@ -38,7 +38,7 @@ from core.constants import (
     CharacterType,
     is_oponent,
 )
-from core.logging import log_warning
+from core.logging import logger
 from core.utils import cprint, crule
 from ui.cli_interface import PlayerInterface
 
@@ -319,19 +319,14 @@ class CombatManager:
                 # Mark the action class as used.
                 player.actions.use_action_class(choice.action_class)
             else:
-                log_warning(
-                    f"Invalid action selected {choice}",
-                )
+                logger.warning(f"Invalid action selected {choice}")
 
     def ask_for_player_full_attack(self, player: Character) -> None:
         """Asks the player to choose targets for a full attack action."""
         # Get the list of all attacks available in the full attack.
         attacks = player.actions.get_available_attacks()
         if not attacks:
-            log_warning(
-                "No available attacks for the full attack action",
-                {"player": player.name, "context": "full_attack_selection"},
-            )
+            logger.warning("No available attacks for the full attack action")
             return
 
         # Choose the attack type to use for all attacks in the sequence
@@ -339,27 +334,13 @@ class CombatManager:
         if isinstance(attack, str) and attack == "q":
             return
         if attack is None or not isinstance(attack, BaseAttack):
-            log_warning(
-                "Invalid attack selected. Ending full attack",
-                {
-                    "player": player.name,
-                    "selected_attack": str(attack),
-                    "context": "full_attack_selection",
-                },
-            )
+            logger.warning("Invalid attack selected. Ending full attack")
             return
 
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(player, attack)
         if not valid_targets:
-            log_warning(
-                f"No valid targets for {attack.name}",
-                {
-                    "player": player.name,
-                    "attack": attack.name,
-                    "context": "full_attack_target_selection",
-                },
-            )
+            logger.warning(f"No valid targets for {attack.name}")
             return
 
         # Choose the initial target
@@ -428,14 +409,7 @@ class CombatManager:
                 # Get the targets for the spell.
                 targets = self.ask_for_player_targets(player, spell, max_targets)
                 if not targets:
-                    log_warning(
-                        f"No valid targets for {spell.name}",
-                        {
-                            "player": player.name,
-                            "spell": spell.name,
-                            "context": "spell_target_selection",
-                        },
-                    )
+                    logger.warning(f"No valid targets for {spell.name}")
                     break
                 if isinstance(targets, str):
                     if targets == "q":
@@ -509,14 +483,7 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(player, action)
         if not valid_targets:
-            log_warning(
-                f"No valid targets for {action.name}",
-                {
-                    "player": player.name,
-                    "action": action.name,
-                    "context": "single_target_selection",
-                },
-            )
+            logger.warning(f"No valid targets for {action.name}")
             return None
         # Ask the player to choose a target.
         return self.ui.choose_target(valid_targets)
@@ -538,37 +505,15 @@ class CombatManager:
         # Get the legal targets for the action.
         valid_targets = self._get_legal_targets(player, action)
         if len(valid_targets) == 0:
-            log_warning(
-                f"No valid targets for {action.name}",
-                {
-                    "player": player.name,
-                    "action": action.name,
-                    "context": "multi_target_selection",
-                },
-            )
+            logger.warning(f"No valid targets for {action.name}")
             return None
         if max_targets <= 0:
-            log_warning(
-                f"Invalid maximum number of targets: {max_targets}",
-                {
-                    "player": player.name,
-                    "action": action.name,
-                    "max_targets": max_targets,
-                    "context": "target_validation",
-                },
-            )
+            logger.warning(f"Invalid maximum number of targets: {max_targets}")
             return None
         if max_targets == 1 or len(valid_targets) == 1:
             target = self.ask_for_player_target(player, action)
             if target is None:
-                log_warning(
-                    f"No valid target for {action.name}",
-                    {
-                        "player": player.name,
-                        "action": action.name,
-                        "context": "single_target_fallback",
-                    },
-                )
+                logger.warning(f"No valid target for {action.name}")
                 return None
             if isinstance(target, str):
                 return target
@@ -752,14 +697,7 @@ class CombatManager:
         enemies = self.get_alive_opponents(npc)
 
         if not enemies:
-            log_warning(
-                f"SKIP: {npc.name} has no enemies to attack",
-                {
-                    "npc": npc.name,
-                    "allies_count": len(allies),
-                    "context": "npc_ai_decision",
-                },
-            )
+            logger.warning(f"SKIP: {npc.name} has no enemies to attack")
             return
 
         # Try perfroming actions in order of priority.
@@ -777,15 +715,7 @@ class CombatManager:
             and npc.actions.has_action_class(ActionClass.FREE)
             and npc.actions.has_action_class(ActionClass.STANDARD)
         ):
-            log_warning(
-                f"SKIP: {npc.name} could not find any action to perform",
-                {
-                    "npc": npc.name,
-                    "allies_count": len(allies),
-                    "enemies_count": len(enemies),
-                    "context": "npc_ai_decision",
-                },
-            )
+            logger.warning(f"SKIP: {npc.name} could not find any action to perform")
 
     def _execute_npc_healing(
         self,

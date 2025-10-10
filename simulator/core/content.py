@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from character.character_class import CharacterClass
 from character.character_race import CharacterRace
-from core.logging import log_warning
+from core.logging import logger
 from core.utils import Singleton, cprint
 
 if TYPE_CHECKING:
@@ -136,28 +136,17 @@ class ContentRepository(metaclass=Singleton):
         collection = getattr(self, collection_name, None)
         # Check if collection exists.
         if not collection:
-            log_warning(
+            logger.warning(
                 f"Collection '{collection_name}' not found in ContentRepository.",
-                {
-                    "collection_name": collection_name,
-                    "item_name": item_name,
-                    "expected_type": expected_type,
-                },
             )
             return None
         # Get the entry.
         entry = collection.get(item_name)
         # Check type if specified.
         if entry and expected_type and not isinstance(entry, expected_type):
-            log_warning(
+            logger.warning(
                 f"Item '{item_name}' in collection '{collection_name}' "
                 f"is not of expected type '{expected_type.__name__}'.",
-                {
-                    "collection_name": collection_name,
-                    "item_name": item_name,
-                    "expected_type": expected_type,
-                    "actual_type": type(entry).__name__,
-                },
             )
             return None
         return entry

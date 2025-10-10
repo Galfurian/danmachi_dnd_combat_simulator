@@ -13,7 +13,7 @@ from character.character_class import CharacterClass
 from character.character_effects import ValidPassiveEffect
 from character.main import Character
 from core.constants import CharacterType, DamageType
-from core.logging import log_error
+from core.logging import logger
 
 
 def character_from_dict(data: dict[str, Any]) -> Character:
@@ -162,14 +162,7 @@ def load_character(file_path: Path) -> Character | None:
         with open(file_path) as f:
             return character_from_dict(json.load(f))
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        log_error(
-            f"Failed to load character from {file_path}: {e}",
-            {
-                "file_path": str(file_path),
-                "error": str(e),
-                "context": "character_file_loading",
-            },
-        )
+        logger.error(f"Failed to load character from {file_path}: {e}")
         return None
 
 
@@ -195,21 +188,7 @@ def load_characters(file_path: Path) -> dict[str, Character]:
                     if character is not None:
                         characters[character.name] = character
             else:
-                log_error(
-                    f"Character data in {file_path} is not a list.",
-                    {
-                        "file_path": str(file_path),
-                        "error": "Invalid format",
-                        "context": "character_file_loading",
-                    },
-                )
+                logger.error(f"Character data in {file_path} is not a list.")
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        log_error(
-            f"Failed to load character from {file_path}: {e}",
-            {
-                "file_path": str(file_path),
-                "error": str(e),
-                "context": "character_file_loading",
-            },
-        )
+        logger.error(f"Failed to load character from {file_path}: {e}")
     return characters

@@ -12,7 +12,7 @@ from actions.base_action import ValidActionEffect
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.dice_parser import VarInfo
-from core.logging import log_warning
+from core.logging import logger
 from core.utils import cprint
 from effects.base_effect import EventResponse
 from effects.event_system import DamageTakenEvent, HitEvent, LowHealthEvent
@@ -89,10 +89,7 @@ class AbilityOffensive(BaseAbility):
         )
 
         if not attack.rolls:
-            log_warning(
-                "Attack roll failed, no rolls returned.",
-                {"ability": self.name, "actor": actor.name},
-            )
+            logger.warning("Attack roll failed, no rolls returned.")
             return False
 
         # Prepare the roll message.

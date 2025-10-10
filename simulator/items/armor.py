@@ -8,7 +8,7 @@ their properties, and effects within the combat simulator.
 from typing import Any, TypeAlias
 
 from core.constants import ArmorSlot, ArmorType
-from core.logging import log_debug
+from core.logging import logger
 from effects.damage_over_time_effect import DamageOverTimeEffect
 from effects.incapacitating_effect import IncapacitatingEffect
 from effects.modifier_effect import ModifierEffect
@@ -123,8 +123,8 @@ class Armor(BaseModel):
         variables = wearer.get_expression_variables()
 
         for effect in self.effects:
-            log_debug(
-                f"Applying effect {effect.colored_name} from armor {self.colored_name} to {wearer.colored_name}",
-                context={"character": wearer.name, "armor": self.name, "effect": effect.name},
+            logger.debug(
+                f"Applying effect {effect.colored_name} from armor "
+                f"{self.colored_name} to {wearer.colored_name}"
             )
             effect.apply_effect(wearer, wearer, variables)

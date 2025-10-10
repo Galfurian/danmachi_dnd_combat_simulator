@@ -23,6 +23,7 @@ from actions.spells.spell_heal import SpellHeal
 from actions.spells.spell_offensive import SpellOffensive
 from character.main import Character
 from core.dice_parser import VarInfo
+from core.logging import logger
 
 # =============================================================================
 # Support Functions
@@ -148,7 +149,13 @@ def _can_apply_any_effect(
     """
     if not effects:
         return False
-    return any(effect.can_apply(source, target, variables) for effect in effects)
+    for effect in effects:
+        if effect.can_apply(source, target, variables):
+            logger.debug(
+                f"Effect {effect.colored_name} can be applied from {source.name} to {target.name}"
+            )
+            return True
+    return False
 
 
 # =============================================================================

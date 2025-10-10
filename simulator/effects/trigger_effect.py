@@ -10,7 +10,7 @@ from typing import Any, Literal
 from combat.damage import DamageComponent
 from core.constants import ActionCategory, DamageType
 from core.dice_parser import VarInfo
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from pydantic import BaseModel, Field
 
@@ -108,11 +108,11 @@ class TriggerCondition(BaseModel):
                 True if the condition is met, False otherwise.
 
         """
-        log_debug("Evaluating trigger condition:")
-        log_debug(f"  {self}")
-        log_debug(f"  {event}")
+        logger.debug("Evaluating trigger condition:")
+        logger.debug(f"  {self}")
+        logger.debug(f"  {event}")
         if self.event_type != event.event_type:
-            log_debug(f"  Event type mismatch: {self.event_type} != {event.event_type}")
+            logger.debug(f"  Event type mismatch: {self.event_type} != {event.event_type}")
             return False
 
         # There are some trigger types that always activate when the event
@@ -126,18 +126,18 @@ class TriggerCondition(BaseModel):
             EventType.ON_HEAL,
             EventType.ON_KILL,
         ]:
-            log_debug("  Trigger condition met (unconditional event).")
+            logger.debug("  Trigger condition met (unconditional event).")
             return True
 
         # If the event is DamageTakenEvent, check damage type and amount.
         if isinstance(event, DamageTakenEvent):
-            log_debug(
+            logger.debug(
                 f"  Checking damage amount: {event.amount} > 0 = {event.amount > 0}"
             )
             return event.amount > 0
         # If the event is LowHealthEvent, check HP ratio against threshold.
         if isinstance(event, LowHealthEvent):
-            log_debug(
+            logger.debug(
                 f"  Checking HP ratio: {event.source.stats.hp_ratio():.2f} <= "
                 f"{(self.threshold or 0.25):.2f} = "
                 f"{event.source.stats.hp_ratio() <= (self.threshold or 0.25)}"
@@ -146,15 +146,15 @@ class TriggerCondition(BaseModel):
         # If the event is SpellCastEvent, check spell category if specified.
         if isinstance(event, SpellCastEvent):
             if self.spell_category:
-                log_debug(
+                logger.debug(
                     f"  Checking spell category: {self.spell_category} vs "
                     f"{event.spell_category} = "
                     f"{event.spell_category == self.spell_category}"
                 )
                 return event.spell_category == self.spell_category
-            log_debug("  Trigger condition met (any spell cast).")
+            logger.debug("  Trigger condition met (any spell cast).")
             return True
-        log_debug("  Trigger condition not met.")
+        logger.debug("  Trigger condition not met.")
         return False
 
     def __str__(self) -> str:
@@ -269,7 +269,7 @@ class TriggerEffect(Effect):
         # Rule 2: Stacking limit - prevent applying if target has 3+ trigger
         # effects
         if sum(1 for _ in target.effects.trigger_effects) >= 3:
-            log_debug(
+            logger.debug(
                 f"Cannot apply trigger effect: Target {target.colored_name} "
                 "already has 3 or more active trigger effects."
             )
@@ -334,7 +334,7 @@ class TriggerEffect(Effect):
                     f"OnHit trigger on {target.colored_name}."
                 )
 
-        log_debug(
+        logger.debug(
             f"Applying trigger effect '{self.colored_name}' "
             f"from {actor.colored_name} to {target.colored_name}."
         )

@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import Field
@@ -89,12 +89,12 @@ class DamageOverTimeEffect(Effect):
 
         # Rule 2: Self-targeting restriction
         if actor == target:
-            log_debug("Cannot apply DoT effect: Self-targeting is not allowed.")
+            logger.debug("Cannot apply DoT effect: Self-targeting is not allowed.")
             return False
 
         # Rule 3: Damage type immunity check
         if self.damage.damage_type in target.immunities:
-            log_debug(
+            logger.debug(
                 f"Cannot apply DoT effect: Target {target.colored_name} "
                 f"is immune to {self.damage.damage_type}."
             )
@@ -112,7 +112,7 @@ class DamageOverTimeEffect(Effect):
             return True
         # Otherwise, enforce stacking limit.
         if sum(1 for _ in target.effects.damage_over_time_effects) >= 3:
-            log_debug(
+            logger.debug(
                 f"Cannot apply DoT effect: Target {target.colored_name} "
                 "already has 3 or more active DoT effects."
             )
@@ -168,7 +168,7 @@ class DamageOverTimeEffect(Effect):
             cprint(f"    ⚠️  {self.name} duration refreshed on {target.colored_name}.")
             return True
 
-        log_debug(
+        logger.debug(
             f"Applying DoT effect '{self.colored_name}' "
             f"from {actor.colored_name} to {target.colored_name}."
         )
@@ -274,7 +274,7 @@ class ActiveDamageOverTimeEffect(ActiveEffect):
                 )
                 remove_effect = True
 
-        log_debug(
+        logger.debug(
             f"DamageOverTime effect '{DOT.name}' on {self.target.colored_name} "
             f"dealt {taken} {DOT.damage.damage_type} damage. "
             f"Duration remaining: {self.duration if self.duration is not None else '∞'}."

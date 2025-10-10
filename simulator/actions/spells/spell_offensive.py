@@ -11,7 +11,7 @@ from actions.spells.base_spell import BaseSpell
 from combat.damage import DamageComponent, roll_damage_components
 from core.constants import GLOBAL_VERBOSE_LEVEL, ActionCategory, BonusType
 from core.dice_parser import VarInfo
-from core.logging import log_warning
+from core.logging import logger
 from core.utils import cprint
 from pydantic import Field
 
@@ -85,10 +85,7 @@ class SpellOffensive(BaseSpell):
         )
 
         if not attack.rolls:
-            log_warning(
-                "Attack roll failed, no rolls returned.",
-                {"ability": self.name, "actor": actor.name},
-            )
+            logger.warning("Attack roll failed, no rolls returned.")
             return False
 
         # Prepare the roll message.

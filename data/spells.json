@@ -662,38 +662,6 @@
     },
     {
         "action_type": "SpellBuff",
-        "name": "Spiritual Weapon",
-        "action_class": "BONUS",
-        "description": "You create a floating, spectral weapon within range that lasts for the duration or until you cast this spell again.",
-        "level": 2,
-        "mind_cost": [
-            2,
-            3,
-            4
-        ],
-        "target_restrictions": [
-            "SELF"
-        ],
-        "effects": [
-            {
-                "name": "Spiritual Weapon",
-                "effect_type": "ModifierEffect",
-                "description": "Creates a spectral weapon that can attack as a bonus action.",
-                "duration": 10,
-                "modifiers": [
-                    {
-                        "bonus_type": "DAMAGE",
-                        "value": {
-                            "damage_roll": "1D8 + [SPELLCASTING] + [RANK]D8",
-                            "damage_type": "FORCE"
-                        }
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "action_type": "SpellBuff",
         "name": "Hunter's Mark",
         "action_class": "BONUS",
         "description": "You choose a creature you can see within range and mystically mark it as your quarry.",
@@ -723,21 +691,6 @@
                     }
                 ]
             }
-        ]
-    },
-    {
-        "action_type": "SpellHeal",
-        "name": "Lesser Restoration",
-        "action_class": "STANDARD",
-        "description": "You touch a creature and can end either one disease or one condition afflicting it.",
-        "level": 2,
-        "mind_cost": [
-            2
-        ],
-        "heal_roll": "0",
-        "target_restrictions": [
-            "SELF",
-            "ALLY"
         ]
     },
     {

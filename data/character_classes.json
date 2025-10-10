@@ -18,9 +18,6 @@
                 "Divine Favor",
                 "Shield of Faith"
             ],
-            "3": [
-                "Lesser Restoration"
-            ],
             "5": [
                 "Prayer of Healing"
             ],
@@ -66,9 +63,7 @@
                 "Shield of Faith"
             ],
             "3": [
-                "Prayer of Healing",
-                "Lesser Restoration",
-                "Spiritual Weapon"
+                "Prayer of Healing"
             ],
             "5": [
                 "Mass Cure Wounds"
@@ -120,9 +115,6 @@
             "2": [
                 "Hunter's Mark",
                 "Cure Wounds"
-            ],
-            "5": [
-                "Lesser Restoration"
             ],
             "9": [
                 "Barkskin"
@@ -177,8 +169,7 @@
                 "Cure Wounds"
             ],
             "3": [
-                "Barkskin",
-                "Lesser Restoration"
+                "Barkskin"
             ],
             "5": [
                 "Mass Cure Wounds"

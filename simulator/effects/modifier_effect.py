@@ -12,7 +12,7 @@ from typing import Any, Literal
 from combat.damage import DamageComponent
 from core.constants import BonusType
 from core.dice_parser import VarInfo, get_max_roll
-from core.logging import log_debug
+from core.logging import logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import BaseModel, Field
@@ -204,16 +204,7 @@ class ModifierEffect(Effect):
             bonus_type = modifier.bonus_type
             self_strength = self.get_projected_strength(bonus_type, variables)
             other_strength = other.get_projected_strength(bonus_type, variables)
-            log_debug(
-                f"Comparing ModifierEffect strengths for bonus type {bonus_type.name}: "
-                f"{self_strength} (self) vs {other_strength} (other)"
-            )
             if self_strength > other_strength:
-                log_debug(
-                    f"ModifierEffect {self.colored_name} is stronger than "
-                    f"{other.colored_name} for bonus type {bonus_type.name}: "
-                    f"{self_strength} > {other_strength}"
-                )
                 return True
         return False
 
@@ -257,18 +248,27 @@ class ModifierEffect(Effect):
         # Rule 2: Duplicate check - prevent applying the same effect twice
         for active_effect in target.effects.modifier_effects:
             if active_effect.effect.name == self.name:
-                log_debug(
-                    f"Cannot apply modifier effect: Target {target.colored_name} "
-                    f"already has effect '{self.name}' active."
+                logger.debug(
+                    f"Cannot apply {self.colored_name} on {target.colored_name}, "
+                    f"effect is already active."
                 )
                 return False
 
-        # Rule 3: Stacking limit - prevent applying if target has 5+ modifier
+        # Rule 3: Check if the effect is already present and stronger
+        for active_effect in target.effects.modifier_effects:
+            if active_effect.modifier_effect.is_stronger_than(self, variables):
+                logger.debug(
+                    f"Cannot apply {self.colored_name} on {target.colored_name}, "
+                    f"a stronger effect '{active_effect.effect.colored_name}' is already active."
+                )
+                return False
+
+        # Rule 4: Stacking limit - prevent applying if target has 5+ modifier
         # effects.
         if sum(1 for _ in target.effects.modifier_effects) >= 5:
-            log_debug(
-                f"Cannot apply modifier effect: Target {target.colored_name} "
-                "already has 5 or more active modifier effects."
+            logger.debug(
+                f"Cannot apply {self.colored_name} on {target.colored_name}, "
+                f"target already has 5 or more active modifier effects."
             )
             return False
 
@@ -306,7 +306,7 @@ class ModifierEffect(Effect):
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
 
-        log_debug(
+        logger.debug(
             f"Applying modifier effect '{self.colored_name}' "
             f"from {actor.colored_name} to {target.colored_name}."
         )

@@ -8,7 +8,7 @@ validation of hand requirements, armor slots, and inventory constraints.
 from typing import Any
 
 from core.constants import ArmorSlot
-from core.logging import log_debug, log_warning
+from core.logging import logger
 from items.armor import Armor
 from items.weapon import NaturalWeapon, Weapon, WieldedWeapon
 
@@ -64,9 +64,7 @@ class CharacterInventory:
             for item in self.wielded_weapons
             if item.requires_hands()
         )
-        used_hands += sum(
-            armor.armor_slot == ArmorSlot.SHIELD for armor in self.armors
-        )
+        used_hands += sum(armor.armor_slot == ArmorSlot.SHIELD for armor in self.armors)
         return used_hands
 
     def get_free_hands(self) -> int:
@@ -198,9 +196,8 @@ class CharacterInventory:
         assert isinstance(self._owner, Character), "Owner must be a Character."
 
         if self.can_equip_armor(armor):
-            log_debug(
-                f"{self._owner.colored_name} is equipping {armor.colored_name}",
-                context={"character": self._owner.name, "armor": armor.name},
+            logger.debug(
+                f"{self._owner.colored_name} is equipping {armor.colored_name}"
             )
             # Add the armor to the character's armor list.
             self.armors.append(armor)
@@ -224,8 +221,5 @@ class CharacterInventory:
             # Remove the armor from the character's armor list.
             self.armors.remove(armor)
             return True
-        log_warning(
-            f"{self._owner.name} does not have {armor.name} equipped",
-            {"character": self._owner.name, "armor": armor.name},
-        )
+        logger.warning(f"{self._owner.name} does not have {armor.name} equipped")
         return False

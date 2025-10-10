@@ -11,7 +11,7 @@ from typing import Any
 
 from combat.damage import DamageComponent
 from core.constants import BonusType
-from core.logging import log_debug
+from core.logging import logger
 from effects.base_effect import ActiveEffect, Effect, EventResponse
 from effects.damage_over_time_effect import (
     ActiveDamageOverTimeEffect,
@@ -87,7 +87,7 @@ class CharacterEffects:
                 responses.append(response)
         # Remove the effects that should break.
         for effect_to_remove in effects_to_remove:
-            log_debug(
+            logger.warning(
                 f"Removing effect {effect_to_remove.colored_name} "
                 f"from {self._owner.colored_name} due to event {event}."
             )
