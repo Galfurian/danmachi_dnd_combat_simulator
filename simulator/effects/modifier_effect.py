@@ -228,7 +228,8 @@ class ModifierEffect(Effect):
 
         Rules for modifier effect application:
             1. Basic eligibility: Actor and target must be alive Characters
-            2. Stacking limit: Target cannot have 5 or more active modifier
+            2. Duplicate check: Same effect cannot be applied twice
+            3. Stacking limit: Target cannot have 5 or more active modifier
                effects
 
         Args:
@@ -253,7 +254,16 @@ class ModifierEffect(Effect):
         assert isinstance(actor, Character), "Actor must be a Character."
         assert isinstance(target, Character), "Target must be a Character."
 
-        # Rule 2: Stacking limit - prevent applying if target has 5+ modifier
+        # Rule 2: Duplicate check - prevent applying the same effect twice
+        for active_effect in target.effects.modifier_effects:
+            if active_effect.effect.name == self.name:
+                log_debug(
+                    f"Cannot apply modifier effect: Target {target.colored_name} "
+                    f"already has effect '{self.name}' active."
+                )
+                return False
+
+        # Rule 3: Stacking limit - prevent applying if target has 5+ modifier
         # effects.
         if sum(1 for _ in target.effects.modifier_effects) >= 5:
             log_debug(

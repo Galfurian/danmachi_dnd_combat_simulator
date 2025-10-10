@@ -103,23 +103,18 @@ def main(args: argparse.Namespace) -> None:
 
     Args:
         args (argparse.Namespace):
-            Parsed command-line arguments containing configuration options.
+            Parsed command-line arguments containing log_level.
 
     """
-    setup_logging(args.log_level)
-
-    crule("Combat Simulator", style="bold green")
-
-    cprint(
-        "Welcome to the Combat Simulator! This is a simple combat simulator for tabletop RPGs. "
-        "You can create characters, equip them with weapons and armor, and engage in combat. "
-        "The combat system is turn-based, and you can use various actions such as attacks, spells, and effects. "
-        "The combat manager will handle the turn order and combat logic. "
-        "You can also create custom characters and actions by modifying the data files in the 'data' directory. "
-        "Have fun!"
-        "\n",
-        style="bold blue",
-    )
+    # Set up logging based on log level
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+    setup_logging(level_map.get(args.log_level.upper(), logging.INFO))
 
     # =========================================================================
 
@@ -225,15 +220,5 @@ Examples:
     )
 
     args = parser.parse_args()
-
-    # Adapt the log level argument for compatibility.
-    level_map = {
-        "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
-        "WARNING": logging.WARNING,
-        "ERROR": logging.ERROR,
-        "CRITICAL": logging.CRITICAL,
-    }
-    args.log_level = level_map.get(args.log_level.upper(), logging.INFO)
 
     main(args)
