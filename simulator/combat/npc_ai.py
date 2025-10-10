@@ -151,9 +151,6 @@ def _can_apply_any_effect(
         return False
     for effect in effects:
         if effect.can_apply(source, target, variables):
-            logger.debug(
-                f"Effect {effect.colored_name} can be applied from {source.name} to {target.name}"
-            )
             return True
     return False
 
@@ -296,20 +293,15 @@ def _sort_targets_by_usefulness_and_buff(
             Sorted list of targets based on usefulness.
 
     """
-    # So here is the order of importance:
-    # 1. Targets that can benefit from the effect (primary).
-    sorted_targets = sorted(
-        targets,
-        key=lambda target: _can_apply_any_effect(
-            source,
-            target,
-            action.effects,
-            variables,
-        ),
-    )
-    if max_targets > 0 and len(sorted_targets) > max_targets:
-        return sorted_targets[:max_targets]
-    return sorted_targets
+    # Filter to only include targets where effects can be applied
+    valid_targets = [
+        target
+        for target in targets
+        if _can_apply_any_effect(source, target, action.effects, variables)
+    ]
+    if max_targets > 0 and len(valid_targets) > max_targets:
+        return valid_targets[:max_targets]
+    return valid_targets
 
 
 # =============================================================================
@@ -851,7 +843,7 @@ def choose_best_target_for_attack(
     if not attack or not enemies:
         return None
 
-    # Use existing sorting logic but only for this attack
+    # Use existing sorting logic but only for this attack.
     best_attack = _get_best_base_attack(
         attack=attack,
         source=source,

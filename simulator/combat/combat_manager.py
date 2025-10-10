@@ -9,6 +9,7 @@ character actions, and combat resolution between players and enemies.
 import random
 from collections import deque
 from logging import debug
+from typing import Callable
 
 from actions.attacks.base_attack import (
     BaseAttack,
@@ -22,13 +23,13 @@ from actions.spells.base_spell import (
 from character.main import Character
 from combat.npc_ai import (
     choose_best_attack_spell_action,
+    choose_best_base_attack_action,
     choose_best_buff_or_debuff_ability_action,
     choose_best_buff_or_debuff_spell_action,
     choose_best_healing_ability_action,
     choose_best_healing_spell_action,
     choose_best_offensive_ability_action,
     choose_best_target_for_attack,
-    choose_best_weapon_attack_for_situation,
     get_actions_by_type,
     get_natural_attacks,
 )
@@ -686,351 +687,225 @@ class CombatManager:
 
     def execute_npc_action(self, npc: Character) -> None:
         """
-        Executes the action logic for an NPC during their turn.
+        Executes the best action for an NPC based on score evaluation.
 
         Args:
-            npc (Character):
-                The NPC whose action is being executed.
+            npc (Character): The NPC whose action is being executed.
 
         """
         allies = self.get_alive_friendlies(npc)
         enemies = self.get_alive_opponents(npc)
 
-        if not enemies:
-            logger.warning(f"SKIP: {npc.name} has no enemies to attack")
-            return
+        # Choose the best action using score-based evaluation
+        best_action = self._choose_best_action(npc, allies, enemies)
 
-        # Try perfroming actions in order of priority.
-        self._execute_npc_healing(npc, allies)
-        self._execute_npc_buff(npc, allies)
-        self._execute_npc_debuff(npc, enemies)
-        self._execute_npc_offensive(npc, enemies)
-        self._execute_npc_full_attack(npc, enemies)
-        self._execute_npc_full_natural_attack(npc, enemies)
+        # Execute the best action if one was found
+        if best_action:
+            best_action()
+        else:
+            cprint(f"    {npc.name} has no available actions this turn.")
 
-        # Just check if the NPC still has all action classes available but did
-        # nothing.
-        if (
-            npc.actions.has_action_class(ActionClass.BONUS)
-            and npc.actions.has_action_class(ActionClass.FREE)
-            and npc.actions.has_action_class(ActionClass.STANDARD)
-        ):
-            logger.warning(f"SKIP: {npc.name} could not find any action to perform")
-
-    def _execute_npc_healing(
+    def _choose_best_action(
         self,
         npc: Character,
         allies: list[Character],
-    ) -> None:
-        """
-        Executes the best healing action for the NPC if available.
-
-        Args:
-            npc (Character):
-                The NPC whose healing is being executed.
-            allies (list[Character]):
-                List of friendly characters.
-
-        """
-        from actions.abilities.ability_heal import (
-            AbilityHeal,
-        )
-        from actions.spells.spell_heal import (
-            SpellHeal,
-        )
-
-        # Check for healing spells.
-        candidate_spell = choose_best_healing_spell_action(
-            source=npc,
-            allies=allies,
-            spells=get_actions_by_type(npc, SpellHeal),
-        )
-        if candidate_spell:
-            # Cast the healing spell on the targets.
-            for target in candidate_spell.targets:
-                candidate_spell.spell.execute(
-                    actor=npc,
-                    target=target,
-                    rank=candidate_spell.rank,
-                )
-            # Add the spell to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_spell.spell)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_spell.spell.action_class)
-            # Remove the MIND cost from the NPC.
-            npc.use_mind(candidate_spell.mind_level)
-
-        # Check for healing abilities.
-        candidate_ability = choose_best_healing_ability_action(
-            source=npc,
-            allies=allies,
-            abilities=get_actions_by_type(npc, AbilityHeal),
-        )
-        if candidate_ability:
-            # Use the healing ability on the targets.
-            for target in candidate_ability.targets:
-                candidate_ability.ability.execute(
-                    actor=npc,
-                    target=target,
-                )
-            # Add the ability to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_ability.ability)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_ability.ability.action_class)
-
-    def _execute_npc_buff(
-        self,
-        npc: Character,
-        allies: list[Character],
-    ) -> None:
-        """
-        Executes the best buff spell for the NPC if available.
-
-        Args:
-            npc (Character):
-                The NPC whose buff is being executed.
-            allies (list[Character]):
-                List of friendly characters.
-
-        """
-        from actions.abilities.ability_buff import (
-            AbilityBuff,
-        )
-        from actions.spells.spell_buff import (
-            SpellBuff,
-        )
-
-        # Check for buff spells.
-        candidate_spell = choose_best_buff_or_debuff_spell_action(
-            source=npc,
-            targets=allies,
-            spells=get_actions_by_type(npc, SpellBuff),
-        )
-        if candidate_spell:
-            # Cast the buff spell on the targets.
-            for target in candidate_spell.targets:
-                candidate_spell.spell.execute(
-                    actor=npc,
-                    target=target,
-                    rank=candidate_spell.rank,
-                )
-            # Add the spell to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_spell.spell)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_spell.spell.action_class)
-            # Remove the MIND cost from the NPC.
-            npc.use_mind(candidate_spell.mind_level)
-
-        # Check for buff abilities.
-        candidate_ability = choose_best_buff_or_debuff_ability_action(
-            source=npc,
-            targets=allies,
-            abilities=get_actions_by_type(npc, AbilityBuff),
-        )
-        if candidate_ability:
-            # Use the buff ability on the targets.
-            for target in candidate_ability.targets:
-                candidate_ability.ability.execute(
-                    actor=npc,
-                    target=target,
-                )
-            # Add the ability to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_ability.ability)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_ability.ability.action_class)
-
-    def _execute_npc_debuff(
-        self,
-        npc: Character,
         enemies: list[Character],
-    ) -> None:
+    ) -> Callable[[], None] | None:
         """
-        Executes the best debuff spell for the NPC if available.
+        Evaluates all possible actions for an NPC and returns the best one by
+        score.
 
         Args:
             npc (Character):
-                The NPC whose debuff is being executed.
+                The NPC making the decision.
+            allies (list[Character]):
+                List of friendly characters.
             enemies (list[Character]):
                 List of enemy characters.
 
+        Returns:
+            Callable[[], None] | None:
+                A function that executes the best action, or None if no action
+                is available.
         """
-        from actions.abilities.ability_debuff import (
-            AbilityDebuff,
-        )
-        from actions.spells.spell_debuff import (
-            SpellDebuff,
-        )
+        from actions.abilities.ability_buff import AbilityBuff
+        from actions.abilities.ability_debuff import AbilityDebuff
+        from actions.abilities.ability_heal import AbilityHeal
+        from actions.abilities.ability_offensive import AbilityOffensive
+        from actions.spells.spell_buff import SpellBuff
+        from actions.spells.spell_debuff import SpellDebuff
+        from actions.spells.spell_heal import SpellHeal
+        from actions.spells.spell_offensive import SpellOffensive
+        from actions.attacks.weapon_attack import WeaponAttack
 
-        # Check for debuff spells.
-        candidate_spell = choose_best_buff_or_debuff_spell_action(
-            source=npc,
-            targets=enemies,
-            spells=get_actions_by_type(npc, SpellDebuff),
-        )
-        if candidate_spell:
-            # Cast the debuff spell on the targets.
-            for target in candidate_spell.targets:
-                candidate_spell.spell.execute(
-                    actor=npc,
-                    target=target,
-                    rank=candidate_spell.rank,
-                )
-            # Add the spell to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_spell.spell)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_spell.spell.action_class)
-            # Remove the MIND cost from the NPC.
-            npc.use_mind(candidate_spell.mind_level)
+        best_score = -1
+        best_action: Callable[[], None] | None = None
 
-        # Check for debuff abilities.
-        candidate_ability = choose_best_buff_or_debuff_ability_action(
+        # Helper functions for action execution
+        def execute_healing_spell():
+            self._execute_spell_action(npc, healing_spell)
+
+        def execute_healing_ability():
+            self._execute_ability_action(npc, healing_ability)
+
+        def execute_buff_spell():
+            self._execute_spell_action(npc, buff_spell)
+
+        def execute_buff_ability():
+            self._execute_ability_action(npc, buff_ability)
+
+        def execute_debuff_spell():
+            self._execute_spell_action(npc, debuff_spell)
+
+        def execute_debuff_ability():
+            self._execute_ability_action(npc, debuff_ability)
+
+        def execute_offensive_spell():
+            self._execute_spell_action(npc, offensive_spell)
+
+        def execute_offensive_ability():
+            self._execute_ability_action(npc, offensive_ability)
+
+        def execute_weapon_attack():
+            self._execute_weapon_attack(npc, weapon_attack_selection, enemies)
+
+        def execute_natural_attack():
+            self._execute_natural_attack(npc, natural_attack_selection, enemies)
+
+        # Evaluate healing actions
+        healing_spell = choose_best_healing_spell_action(
+            source=npc, allies=allies, spells=get_actions_by_type(npc, SpellHeal)
+        )
+        if healing_spell and healing_spell.score > best_score:
+            best_score = healing_spell.score
+            best_action = execute_healing_spell
+
+        healing_ability = choose_best_healing_ability_action(
+            source=npc, allies=allies, abilities=get_actions_by_type(npc, AbilityHeal)
+        )
+        if healing_ability and healing_ability.score > best_score:
+            best_score = healing_ability.score
+            best_action = execute_healing_ability
+
+        # Evaluate buff actions
+        buff_spell = choose_best_buff_or_debuff_spell_action(
+            source=npc, targets=allies, spells=get_actions_by_type(npc, SpellBuff)
+        )
+        if buff_spell and buff_spell.score > best_score:
+            best_score = buff_spell.score
+            best_action = execute_buff_spell
+
+        buff_ability = choose_best_buff_or_debuff_ability_action(
+            source=npc, targets=allies, abilities=get_actions_by_type(npc, AbilityBuff)
+        )
+        if buff_ability and buff_ability.score > best_score:
+            best_score = buff_ability.score
+            best_action = execute_buff_ability
+
+        # Evaluate debuff actions
+        debuff_spell = choose_best_buff_or_debuff_spell_action(
+            source=npc, targets=enemies, spells=get_actions_by_type(npc, SpellDebuff)
+        )
+        if debuff_spell and debuff_spell.score > best_score:
+            best_score = debuff_spell.score
+            best_action = execute_debuff_spell
+
+        debuff_ability = choose_best_buff_or_debuff_ability_action(
             source=npc,
             targets=enemies,
             abilities=get_actions_by_type(npc, AbilityDebuff),
         )
-        if candidate_ability:
-            # Use the debuff ability on the targets.
-            for target in candidate_ability.targets:
-                candidate_ability.ability.execute(
-                    actor=npc,
-                    target=target,
-                )
-            # Add the ability to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_ability.ability)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_ability.ability.action_class)
+        if debuff_ability and debuff_ability.score > best_score:
+            best_score = debuff_ability.score
+            best_action = execute_debuff_ability
 
-    def _execute_npc_offensive(
-        self,
-        npc: Character,
-        enemies: list[Character],
-    ) -> None:
-        """
-        Executes the best offensive spell for the NPC if available.
-
-        Args:
-            npc (Character):
-                The NPC whose spell attack is being executed.
-            enemies (list[Character]):
-                List of enemy characters.
-
-        """
-        from actions.abilities.ability_offensive import (
-            AbilityOffensive,
+        # Evaluate offensive actions
+        offensive_spell = choose_best_attack_spell_action(
+            source=npc, enemies=enemies, spells=get_actions_by_type(npc, SpellOffensive)
         )
-        from actions.spells.spell_offensive import (
-            SpellOffensive,
-        )
+        if offensive_spell and offensive_spell.score > best_score:
+            best_score = offensive_spell.score
+            best_action = execute_offensive_spell
 
-        # Check for attack spells.
-        candidate_spell = choose_best_attack_spell_action(
-            source=npc,
-            enemies=enemies,
-            spells=get_actions_by_type(npc, SpellOffensive),
-        )
-        if candidate_spell:
-            # Cast the attack spell on the targets.
-            for target in candidate_spell.targets:
-                candidate_spell.spell.execute(
-                    actor=npc,
-                    target=target,
-                    rank=candidate_spell.rank,
-                )
-            # Add the spell to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_spell.spell)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_spell.spell.action_class)
-            # Remove the MIND cost from the NPC.
-            npc.use_mind(candidate_spell.mind_level)
-
-        # Check for attack abilities.
-        candidate_ability = choose_best_offensive_ability_action(
+        offensive_ability = choose_best_offensive_ability_action(
             source=npc,
             enemies=enemies,
             abilities=get_actions_by_type(npc, AbilityOffensive),
         )
-        if candidate_ability:
-            # Use the offensive ability on the targets.
-            for target in candidate_ability.targets:
-                candidate_ability.ability.execute(npc, target)
-            # Add the ability to the cooldowns if it has one.
-            npc.actions.add_cooldown(candidate_ability.ability)
-            # Mark the action class as used.
-            npc.actions.use_action_class(candidate_ability.ability.action_class)
+        if offensive_ability and offensive_ability.score > best_score:
+            best_score = offensive_ability.score
+            best_action = execute_offensive_ability
 
-    def _execute_npc_full_attack(
-        self,
-        npc: Character,
-        enemies: list[Character],
+        # Evaluate weapon attacks
+        weapon_attacks = get_actions_by_type(npc, WeaponAttack)
+        if weapon_attacks:
+            weapon_attack_selection = choose_best_base_attack_action(
+                source=npc, enemies=enemies, base_attacks=weapon_attacks
+            )
+            if weapon_attack_selection and weapon_attack_selection.score > best_score:
+                best_score = weapon_attack_selection.score
+                best_action = execute_weapon_attack
+
+        # Evaluate natural attacks
+        natural_attacks = get_natural_attacks(npc)
+        if natural_attacks:
+            natural_attack_selection = choose_best_base_attack_action(
+                source=npc, enemies=enemies, base_attacks=natural_attacks  # type: ignore
+            )
+            if natural_attack_selection and natural_attack_selection.score > best_score:
+                best_score = natural_attack_selection.score
+                best_action = execute_natural_attack
+
+        return best_action
+
+    def _execute_spell_action(self, npc: Character, spell_selection) -> None:
+        """Execute a spell action from a SpellSelection."""
+        for target in spell_selection.targets:
+            spell_selection.spell.execute(
+                actor=npc,
+                target=target,
+                rank=spell_selection.rank,
+            )
+        npc.actions.add_cooldown(spell_selection.spell)
+        npc.actions.use_action_class(spell_selection.spell.action_class)
+        npc.use_mind(spell_selection.mind_level)
+
+    def _execute_ability_action(self, npc: Character, ability_selection) -> None:
+        """Execute an ability action from an AbilitySelection."""
+        for target in ability_selection.targets:
+            ability_selection.ability.execute(
+                actor=npc,
+                target=target,
+            )
+        npc.actions.add_cooldown(ability_selection.ability)
+        npc.actions.use_action_class(ability_selection.ability.action_class)
+
+    def _execute_weapon_attack(
+        self, npc: Character, attack_selection, enemies: list[Character]
     ) -> None:
-        """
-        Executes a full attack sequence for the NPC if possible.
-
-        Args:
-            npc (Character):
-                The NPC performing the full attack.
-            enemies (list[Character]):
-                List of enemy characters.
-
-        """
-        from actions.attacks.weapon_attack import (
-            WeaponAttack,
-        )
-
-        weapon_attacks: list[WeaponAttack] = get_actions_by_type(npc, WeaponAttack)
-        if not weapon_attacks:
-            return
-
-        # Choose the best weapon type once for the full attack sequence
-        attack = choose_best_weapon_attack_for_situation(npc, weapon_attacks, enemies)
-        if not attack:
-            return
-
-        # Perform multiple attacks with the same weapon type.
-        attacks_made: bool = False
+        """Execute weapon attacks from an AttackSelection."""
+        attacks_made = False
         for _ in range(npc.number_of_attacks):
-            target = choose_best_target_for_attack(npc, attack, enemies)
-            # If we have a valid target, perform the attack.
+            target = choose_best_target_for_attack(
+                npc, attack_selection.attack, enemies
+            )
             if target:
-                attack.execute(npc, target)
+                attack_selection.attack.execute(npc, target)
                 attacks_made = True
-
-        # Add cooldown and mark action class only once after all attacks.
         if attacks_made:
-            npc.actions.add_cooldown(attack)
-            npc.actions.use_action_class(attack.action_class)
+            npc.actions.add_cooldown(attack_selection.attack)
+            npc.actions.use_action_class(attack_selection.attack.action_class)
 
-    def _execute_npc_full_natural_attack(
-        self,
-        npc: Character,
-        enemies: list[Character],
+    def _execute_natural_attack(
+        self, npc: Character, attack_selection, enemies: list[Character]
     ) -> None:
-        """
-        Executes a full sequence of natural attacks for the NPC if possible.
-
-        Args:
-            npc (Character):
-                The NPC performing the natural attacks.
-            enemies (list[Character]):
-                List of enemy characters.
-
-        """
-        from actions.attacks.natural_attack import (
-            NaturalAttack,
-        )
-
-        natural_attacks: list[NaturalAttack] = get_natural_attacks(npc)
-        if not natural_attacks:
-            return
-
-        # All natural attacks are performed once each in a full sequence.
-        for attack in natural_attacks:
-            # Choose the best target for this attack.
+        """Execute natural attacks from an AttackSelection."""
+        for (
+            attack
+        ) in attack_selection.targets:  # attack_selection.targets contains the attacks
             target = choose_best_target_for_attack(npc, attack, enemies)
-            # If we have a valid target, perform the attack.
             if target:
                 attack.execute(npc, target)
-                # Add cooldown and mark action class for the natural attack.
                 npc.actions.add_cooldown(attack)
                 npc.actions.use_action_class(attack.action_class)
 
