@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo, roll_and_describe
-from core.logging import logger
+from core.logging import effects_logger as logger
 from core.utils import cprint
 from effects.event_system import CombatEvent, TurnEndEvent
 from pydantic import Field

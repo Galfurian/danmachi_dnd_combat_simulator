@@ -11,7 +11,7 @@ from typing import Any, Literal
 
 from combat.damage import DamageComponent
 from core.dice_parser import VarInfo
-from core.logging import logger
+from core.logging import effects_logger as logger
 from pydantic import BaseModel, Field
 
 from .event_system import CombatEvent

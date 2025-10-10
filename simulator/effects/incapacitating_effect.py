@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from core.constants import IncapacitationType, StatType
 from core.dice_parser import VarInfo, evaluate_expression
-from core.logging import logger
+from core.logging import effects_logger as logger
 from core.utils import cprint
 from pydantic import Field
 

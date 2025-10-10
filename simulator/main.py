@@ -103,7 +103,7 @@ def main(args: argparse.Namespace) -> None:
 
     Args:
         args (argparse.Namespace):
-            Parsed command-line arguments containing log_level.
+            Parsed command-line arguments containing log_level and effects_log_level.
 
     """
     # Set up logging based on log level
@@ -114,7 +114,13 @@ def main(args: argparse.Namespace) -> None:
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-    setup_logging(level_map.get(args.log_level.upper(), logging.INFO))
+
+    # Configure logger-specific levels
+    logger_levels = {}
+    if hasattr(args, 'effects_log_level') and args.effects_log_level:
+        logger_levels["simulator.effects"] = level_map.get(args.effects_log_level.upper(), logging.INFO)
+
+    setup_logging(level_map.get(args.log_level.upper(), logging.INFO), logger_levels)
 
     # =========================================================================
 
@@ -210,13 +216,19 @@ if __name__ == "__main__":
 Examples:
   python simulator/main.py --log-level DEBUG
   python simulator/main.py --log-level INFO
+  python simulator/main.py --log-level WARNING --effects-log-level DEBUG
         """,
     )
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
-        help="Set the logging level (default: INFO)",
+        help="Set the default logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "--effects-log-level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set the logging level specifically for effects (default: same as --log-level)",
     )
 
     args = parser.parse_args()
